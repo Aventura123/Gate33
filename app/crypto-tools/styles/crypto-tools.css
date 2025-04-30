@@ -1,0 +1,49 @@
+/* Wallet age bar styling */
+.wallet-age-bar {
+  transition: width 0.6s ease;
+  width: var(--wallet-age-percentage, 0%);
+}
+
+/* Luck score bar styling */
+.luck-score-bar {
+  width: 0;
+  transition: width 0.6s ease;
+  animation: expandBar 1s forwards;
+}
+
+@keyframes expandBar {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+/* Color variations for luck scores */
+.luck-score-bar.bg-red-500 {
+  width: 30%;
+}
+
+.luck-score-bar.bg-yellow-500 {
+  width: 60%;
+}
+
+.luck-score-bar.bg-green-500 {
+  width: 100%;
+}
+
+/* Avatar generation styles */
+.avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.avatar-gradient-border {
+  padding: 0.25rem;
+  background: linear-gradient(to right, #f97316, #facc15);
+  border-radius: 9999px;
+}
+
+.avatar-inner {
+  background-color: #1f2937;
+  padding: 0.25rem;
+  border-radius: 9999px;
+}
