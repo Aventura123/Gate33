@@ -1,0 +1,2 @@
+0000000000000000000000000000000000000000 911af84a63a4b8c5d63bd5d9c2d1dbc54e906637 Andre Ventura <ventura.vnsa@gmail.com> 1745495667 +0100	commit (initial): Versão antiga do projeto (inicial) rebuild
+911af84a63a4b8c5d63bd5d9c2d1dbc54e906637 3284a307ed4809e15d75412dd0403528b49dc1e3 Andre Ventura <ventura.vnsa@gmail.com> 1745496089 +0100	commit: Atualizar .gitignore para ignorar a pasta .next e arquivos grandes

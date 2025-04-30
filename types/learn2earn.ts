@@ -1,0 +1,46 @@
+import { Timestamp } from 'firebase/firestore';
+
+// Define task types for Learn2Earn
+export interface Learn2EarnTask {
+  id: string;
+  type: 'content' | 'question';
+  title: string;
+  description: string;
+  videoUrl?: string;
+  contentText?: string;
+  question?: string;
+  options?: string[];
+  correctOption?: number;
+}
+
+// Define the main Learn2Earn interface
+export interface Learn2Earn {
+  id: string;
+  title: string;
+  description: string;
+  tokenSymbol: string; // e.g., "ETH", "USDT"
+  tokenAmount: number;
+  tokenAddress: string;
+  tokenPerParticipant: number;
+  totalParticipants: number;
+  maxParticipants?: number;
+  startDate: Date | Timestamp | string | null;
+  endDate: Date | Timestamp | string | null;
+  tasks: Learn2EarnTask[];
+  status: 'active' | 'paused' | 'completed' | 'draft';
+  companyId: string;
+  contractAddress?: string;
+  transactionHash?: string;
+  createdAt?: Date | Timestamp | string;
+  learn2earnId?: string;
+  network?: string;
+  socialLinks?: {
+    discord?: string;
+    telegram?: string;
+    twitter?: string;
+    website?: string;
+  }
+}
+
+// Define an interface for creating a new Learn2Earn (omitting id and companyId)
+export type NewLearn2Earn = Omit<Learn2Earn, 'id' | 'companyId'>;

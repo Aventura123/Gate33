@@ -1,0 +1,147 @@
+/* Bitcoin Analysis Page Styles */
+
+/* Layout & General */
+.bitcoin-analysis-container {
+  background: linear-gradient(to bottom right, rgb(124, 45, 18), rgb(0, 0, 0), rgb(0, 0, 0));
+  color: white;
+  min-height: 100vh;
+  padding-top: 2rem;
+}
+
+/* Cards & Indicators */
+.bitcoin-price-card {
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.fear-greed-bar {
+  width: 100%;
+  height: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 9999px;
+  margin-top: 0.75rem;
+}
+
+.fear-greed-value {
+  height: 100%;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+.fear-greed-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.loading-indicator {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  height: 1rem;
+  width: 1rem;
+  border-top: 2px solid white;
+  border-bottom: 2px solid white;
+  border-radius: 9999px;
+}
+
+/* Trend Meter */
+.trend-meter {
+  height: 0.5rem;
+  border-radius: 9999px;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Chart Container */
+.chart-container {
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  height: 600px;
+}
+
+/* Signal Alert */
+.signal-buy {
+  background-color: rgba(22, 163, 74, 0.3);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+}
+
+.signal-sell {
+  background-color: rgba(220, 38, 38, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.signal-icon-bg-buy {
+  background-color: rgb(22, 163, 74);
+}
+
+.signal-icon-bg-sell {
+  background-color: rgb(220, 38, 38);
+}
+
+/* Methodology Section */
+.methodology-section {
+  margin-top: 2.5rem;
+  background: linear-gradient(to bottom right, rgba(124, 45, 18, 0.7), rgba(0, 0, 0, 0.7));
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  border: 1px solid rgb(51, 51, 51);
+}
+
+/* Disclaimer */
+.disclaimer-card {
+  margin-top: 1.5rem;
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+/* Utilities */
+.from-green-gradient {
+  background-image: linear-gradient(to right, rgb(22, 163, 74), rgb(34, 197, 94));
+}
+
+.from-red-gradient {
+  background-image: linear-gradient(to right, rgb(185, 28, 28), rgb(220, 38, 38));
+}
+
+.from-orange-gradient {
+  background-image: linear-gradient(to right, rgb(154, 52, 18), rgb(234, 88, 12));
+}
+
+.from-yellow-gradient {
+  background-image: linear-gradient(to right, rgb(202, 138, 4), rgb(234, 179, 8));
+}
+
+.from-gray-gradient {
+  background-image: linear-gradient(to right, rgb(31, 41, 55), rgb(75, 85, 99));
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Classes para larguras dinâmicas específicas */
+.width-0 { width: 0%; }
+.width-10 { width: 10%; }
+.width-20 { width: 20%; }
+.width-30 { width: 30%; }
+.width-40 { width: 40%; }
+.width-50 { width: 50%; }
+.width-60 { width: 60%; }
+.width-70 { width: 70%; }
+.width-80 { width: 80%; }
+.width-90 { width: 90%; }
+.width-100 { width: 100%; }

@@ -1,0 +1,609 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import Layout from "@/components/Layout";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../lib/firebase";
+
+// Definindo os tipos
+interface Job {
+  id: string;
+  jobTitle: string;
+  companyName: string;
+  requiredSkills: string;
+  jobDescription: string;
+  applyLink: string;
+  category: string;
+  insertedDate: string;
+  location: string;
+  jobType: string; // Full-time, Part-time, etc.
+  salaryRange: string;
+  isFeatured: boolean;
+  acceptsCryptoPay: boolean;
+  experienceLevel: string; // Junior, Mid, Senior
+  techTags?: string[]; // Array de tags tecnológicas específicas
+}
+
+// Array de categorias para o filtro
+const JOB_CATEGORIES = [
+  "All",
+  "Engineering",
+  "Marketing",
+  "Design",
+  "Operations",
+  "Sales",
+  "Product",
+  "Finance",
+  "DeFi",
+  "Web3",
+  "Non-Tech",
+  "Other"
+];
+
+// Array de tecnologias web3/blockchain comuns
+const TECH_TAGS = [
+  "Solidity",
+  "Rust",
+  "Web3.js",
+  "Ethers.js",
+  "React",
+  "Next.js",
+  "TypeScript",
+  "Smart Contracts",
+  "DeFi",
+  "NFT",
+  "DAO",
+  "Layer 2",
+  "Ethereum",
+  "Solana",
+  "Polkadot",
+  "NEAR",
+  "Cosmos",
+  "Zero Knowledge",
+  "Polygon",
+  "Arbitrum",
+  "Optimism",
+  "Blockchain",
+  "Cryptography",
+  "Consensus",
+  "zkEVM",
+  "Rollups",
+  "IPFS",
+  "Filecoin",
+  "Chainlink",
+  "The Graph",
+  "Python",
+  "Go",
+  "Node.js",
+  "Move",
+  "Substrate",
+  "Hardhat",
+  "Truffle",
+  "Foundry",
+  "MetaMask",
+  "WalletConnect"
+];
+
+// Array de tipos de trabalho
+const JOB_TYPES = [
+  "All Types",
+  "Full-Time",
+  "Part-Time",
+  "Contract",
+  "Freelance"
+];
+
+// Array de níveis de experiência
+const EXPERIENCE_LEVELS = [
+  "All Levels",
+  "Junior",
+  "Mid-Level",
+  "Senior",
+  "Lead"
+];
+
+export default function JobsPage() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState("");
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  
+  // Novos estados para filtros adicionais
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedJobType, setSelectedJobType] = useState("All Types");
+  const [selectedExperienceLevel, setSelectedExperienceLevel] = useState("All Levels");
+  const [showCryptoPayOnly, setShowCryptoPayOnly] = useState(false);
+  const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
+  
+  // Estado para filtro de tags tecnológicas
+  const [selectedTechTags, setSelectedTechTags] = useState<string[]>([]);
+  const [showTechTagsFilter, setShowTechTagsFilter] = useState(false);
+
+  // Função para extrair tags tecnológicas de uma string de habilidades
+  const extractTechTags = (skills: string): string[] => {
+    if (!skills) return [];
+    
+    const skillsArray = skills.split(',').map(skill => skill.trim());
+    return TECH_TAGS.filter(tag => 
+      skillsArray.some(skill => 
+        skill.toLowerCase().includes(tag.toLowerCase()) || 
+        tag.toLowerCase().includes(skill.toLowerCase())
+      )
+    );
+  };
+
+  // Cálculo do tempo decorrido desde a postagem
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "1d";
+    return `${diffDays}d`;
+  };
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        if (!db) throw new Error("Firestore não está inicializado");
+
+        const jobCollection = collection(db, "jobs");
+        const jobSnapshot = await getDocs(jobCollection);
+        const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => {
+          const skillsString = doc.data().requiredSkills || "";
+          // Extrair tags tecnológicas automaticamente das habilidades
+          const techTags = extractTechTags(skillsString);
+          
+          return {
+            id: doc.id,
+            jobTitle: doc.data().title || "",
+            companyName: doc.data().company || "",
+            requiredSkills: skillsString,
+            jobDescription: doc.data().description || "",
+            applyLink: doc.data().applicationLink || "",
+            category: doc.data().category || "Other",
+            insertedDate: doc.data().insertedDate || new Date().toISOString(),
+            location: doc.data().location || "Remote",
+            jobType: doc.data().jobType || "Full-Time",
+            salaryRange: doc.data().salaryRange || "",
+            isFeatured: doc.data().isFeatured || false,
+            acceptsCryptoPay: doc.data().acceptsCryptoPay || false,
+            experienceLevel: doc.data().experienceLevel || "Mid-Level",
+            techTags: techTags, // Adicionar as tags extraídas
+          };
+        });
+        setJobs(fetchedJobs);
+      } catch (error) {
+        console.error("Erro ao buscar jobs no Firestore:", error);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
+  const filteredJobs = jobs.filter(
+    (job) => {
+      const matchesSearch = job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesLocation = job.location.toLowerCase().includes(locationQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "All" || job.category === selectedCategory;
+      const matchesJobType = selectedJobType === "All Types" || job.jobType === selectedJobType;
+      const matchesExperience = selectedExperienceLevel === "All Levels" || job.experienceLevel === selectedExperienceLevel;
+      const matchesCryptoPay = !showCryptoPayOnly || job.acceptsCryptoPay;
+      const matchesFeatured = !showFeaturedOnly || job.isFeatured;
+      
+      // Verificar se o job contém todas as tags de tecnologia selecionadas
+      const matchesTechTags = selectedTechTags.length === 0 || 
+        selectedTechTags.every(tag => job.techTags?.includes(tag));
+      
+      return matchesSearch && matchesLocation && matchesCategory && matchesJobType && 
+             matchesExperience && matchesCryptoPay && matchesFeatured && matchesTechTags;
+    }
+  );
+
+  return (
+    <Layout>
+      <div className="bg-black text-white min-h-screen">
+        {/* Header Section */}
+        <div className="border-b border-gray-800 py-20 px-4">
+          <div className="container mx-auto text-center">
+            <h1 className="text-5xl font-bold mb-4">Find Your Dream <span className="text-orange-400">Blockchain Job</span></h1>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              Discover the best crypto and blockchain job opportunities at the most innovative companies in Web3.
+            </p>
+          </div>
+        </div>
+
+        <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
+          {/* Categoria Tabs */}
+          <div className="mb-8 overflow-x-auto">
+            <div className="flex space-x-2 pb-2">
+              {JOB_CATEGORIES.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors 
+                    ${selectedCategory === category 
+                      ? "bg-orange-500 text-white" 
+                      : "bg-gray-900 text-gray-400 hover:bg-gray-800"}`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Search & Filter Row */}
+          <div className="mb-8 flex flex-col lg:flex-row gap-4">
+            <div className="w-full lg:w-2/5">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search for jobs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-5 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-gray-900 text-white pr-10"
+                />
+                <svg className="absolute right-3 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+            
+            <div className="w-full lg:w-2/5">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Filter by location..."
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  className="w-full px-5 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-gray-900 text-white pr-10"
+                />
+                <svg className="absolute right-3 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </div>
+            
+            <div className="w-full lg:w-1/5">
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setLocationQuery("");
+                  setSelectedCategory("All");
+                  setSelectedJobType("All Types");
+                  setSelectedExperienceLevel("All Levels");
+                  setShowCryptoPayOnly(false);
+                  setShowFeaturedOnly(false);
+                }}
+                className="w-full px-5 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-white transition-colors"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+
+          {/* Advanced Filters */}
+          <div className="mb-8 p-6 bg-gray-900 rounded-lg border border-gray-800">
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <div className="w-full sm:w-1/3">
+                <label className="block text-sm font-medium text-gray-400 mb-2">Job Type</label>
+                <select
+                  value={selectedJobType}
+                  onChange={(e) => setSelectedJobType(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400"
+                >
+                  {JOB_TYPES.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="w-full sm:w-1/3">
+                <label className="block text-sm font-medium text-gray-400 mb-2">Experience Level</label>
+                <select
+                  value={selectedExperienceLevel}
+                  onChange={(e) => setSelectedExperienceLevel(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400"
+                >
+                  {EXPERIENCE_LEVELS.map(level => (
+                    <option key={level} value={level}>{level}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="w-full sm:w-1/3 flex space-x-4 items-end">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showCryptoPayOnly}
+                    onChange={() => setShowCryptoPayOnly(!showCryptoPayOnly)}
+                    className="h-4 w-4 accent-orange-500"
+                  />
+                  <span className="text-sm text-gray-300">Crypto Pay</span>
+                </label>
+                
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showFeaturedOnly}
+                    onChange={() => setShowFeaturedOnly(!showFeaturedOnly)}
+                    className="h-4 w-4 accent-orange-500"
+                  />
+                  <span className="text-sm text-gray-300">Featured Only</span>
+                </label>
+              </div>
+            </div>
+            
+            {/* Tech Tags Filter */}
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium text-gray-400">Filter by Technologies</label>
+                <button 
+                  onClick={() => setShowTechTagsFilter(!showTechTagsFilter)}
+                  className="text-sm text-orange-400 hover:text-orange-300"
+                >
+                  {showTechTagsFilter ? 'Hide' : 'Show'} Technologies
+                </button>
+              </div>
+              
+              {showTechTagsFilter && (
+                <div className="mt-2 border border-gray-800 rounded-lg p-4 bg-gray-800">
+                  <div className="mb-2 text-sm text-gray-400">
+                    Select technologies to filter jobs:
+                  </div>
+                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                    {TECH_TAGS.map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => {
+                          if (selectedTechTags.includes(tag)) {
+                            setSelectedTechTags(selectedTechTags.filter(t => t !== tag));
+                          } else {
+                            setSelectedTechTags([...selectedTechTags, tag]);
+                          }
+                        }}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          selectedTechTags.includes(tag)
+                            ? "bg-orange-500 text-white"
+                            : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedTechTags.length > 0 && (
+                    <div className="mt-4 flex justify-between items-center">
+                      <span className="text-sm text-gray-400">
+                        {selectedTechTags.length} {selectedTechTags.length === 1 ? 'technology' : 'technologies'} selected
+                      </span>
+                      <button
+                        onClick={() => setSelectedTechTags([])}
+                        className="text-sm text-orange-400 hover:text-orange-300"
+                      >
+                        Clear selections
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {selectedTechTags.length > 0 && !showTechTagsFilter && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedTechTags.map(tag => (
+                    <div key={tag} className="bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center">
+                      {tag}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTechTags(selectedTechTags.filter(t => t !== tag));
+                        }}
+                        className="ml-2 hover:text-gray-200"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setSelectedTechTags([])}
+                    className="text-xs text-orange-400 hover:text-orange-300 underline"
+                  >
+                    Clear all
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Results Count */}
+          <div className="mb-6 text-gray-400">
+            Found {filteredJobs.length} job listings
+          </div>
+
+          {/* Job Listings */}
+          <div className="grid grid-cols-1 gap-6">
+            {filteredJobs.length === 0 ? (
+              <div className="bg-gray-900 rounded-lg p-8 text-center border border-gray-700">
+                <p className="text-gray-400 mb-4">No job listings match your search criteria.</p>
+                <Button 
+                  onClick={() => {
+                    setSearchQuery("");
+                    setLocationQuery("");
+                    setSelectedCategory("All");
+                    setSelectedJobType("All Types");
+                    setSelectedExperienceLevel("All Levels");
+                    setShowCryptoPayOnly(false);
+                    setShowFeaturedOnly(false);
+                  }}
+                  className="bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            ) : (
+              filteredJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className={`bg-gray-900 rounded-lg border border-gray-800 shadow-lg p-6 transition-all duration-300 hover:border-orange-400 relative ${
+                    expandedJobId === job.id ? "max-h-screen" : "max-h-48 overflow-hidden cursor-pointer"
+                  }`}
+                  onClick={() => setExpandedJobId(expandedJobId === job.id ? null : job.id)}
+                >
+                  {/* Featured Badge */}
+                  {job.isFeatured && (
+                    <div className="absolute -top-3 -right-3 bg-orange-500 text-white text-xs px-3 py-1 rounded-full font-medium">
+                      Featured
+                    </div>
+                  )}
+                  
+                  {/* Time Badge */}
+                  <div className="absolute top-6 right-6 bg-gray-800 text-gray-400 text-xs px-2 py-1 rounded-md">
+                    {getTimeAgo(job.insertedDate)}
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center mb-2">
+                    <h2 className="text-xl font-bold text-orange-400 mb-1 sm:mb-0">{job.jobTitle}</h2>
+                    
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center bg-gray-800 px-3 py-1 rounded-full">
+                        <svg className="h-4 w-4 text-gray-400 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <p className="text-gray-300 text-sm">{job.location}</p>
+                      </div>
+                      
+                      <div className="bg-gray-800 px-3 py-1 rounded-full text-xs text-gray-300">
+                        {job.jobType}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <p className="text-gray-400 flex items-center">
+                      <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      {job.companyName}
+                    </p>
+                    
+                    <div className="px-2 py-1 rounded-full text-xs text-gray-300 border border-gray-700">
+                      {job.category}
+                    </div>
+                    
+                    <div className="px-2 py-1 rounded-full text-xs text-gray-300 border border-gray-700">
+                      {job.experienceLevel}
+                    </div>
+                    
+                    {job.acceptsCryptoPay && (
+                      <div className="px-2 py-1 bg-gray-800 rounded-full text-xs text-orange-400 font-medium">
+                        Crypto Pay
+                      </div>
+                    )}
+
+                    {job.salaryRange && (
+                      <div className="px-2 py-1 bg-gray-800 rounded-full text-xs text-white">
+                        {job.salaryRange}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {expandedJobId === job.id && (
+                    <div className="mt-6 border-t border-gray-800 pt-4">
+                      <div className="mb-4">
+                        <h3 className="text-lg font-medium text-white mb-2">Description</h3>
+                        <p className="text-gray-300 whitespace-pre-line">{job.jobDescription}</p>
+                      </div>
+                      
+                      <div className="mb-4">
+                        <h3 className="text-lg font-medium text-white mb-2">Required Skills</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {job.requiredSkills.split(',').map((skill, index) => (
+                            <span key={index} className="bg-gray-800 text-orange-400 px-3 py-1 rounded-full text-sm">
+                              {skill.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Tech Tags Section */}
+                      {job.techTags && job.techTags.length > 0 && (
+                        <div className="mb-4">
+                          <h3 className="text-lg font-medium text-white mb-2">Technologies</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {job.techTags.map((tag, index) => (
+                              <span key={index} className="bg-gray-700 text-orange-400 border border-orange-500 px-3 py-1 rounded-full text-sm flex items-center">
+                                <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                  <path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center mb-4">
+                        <div className="mr-6">
+                          <span className="text-sm text-gray-400 block">Category</span>
+                          <span className="text-white">{job.category}</span>
+                        </div>
+                        <div className="mr-6">
+                          <span className="text-sm text-gray-400 block">Job Type</span>
+                          <span className="text-white">{job.jobType}</span>
+                        </div>
+                        <div>
+                          <span className="text-sm text-gray-400 block">Posted On</span>
+                          <span className="text-white">{new Date(job.insertedDate).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      
+                      <Button asChild className="mt-2 bg-orange-500 hover:bg-orange-600 text-white transition-colors">
+                        <a
+                          href={job.applyLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Apply Now
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {expandedJobId !== job.id && (
+                    <div className="absolute bottom-4 right-4 text-orange-400">
+                      <span className="text-sm">Click to expand</span>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Email Signup Section */}
+          <div className="mt-16 bg-gray-900 rounded-lg p-8 border border-gray-800">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-white">Subscribe to Job Alerts</h2>
+              <p className="text-gray-400 mt-2">Get the latest blockchain job opportunities delivered straight to your inbox.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="flex-grow px-5 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-gray-800 text-white"
+              />
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white transition-colors">
+                Subscribe
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+}

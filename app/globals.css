@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Existing custom styles */
+:root {
+  --w3m-accent-color: #FB923C;
+  --w3m-background-color: #000000;
+  --w3m-text-color: #FFFFFF;
+}

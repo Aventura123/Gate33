@@ -1,0 +1,303 @@
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { db } from '../../../../lib/firebase';
+import { collection, getDocs, query, where, doc, getDoc, Firestore } from 'firebase/firestore';
+import { AdminRole, AdminPermissions } from '../../../../hooks/useAdminPermissions';
+
+interface Admin {
+  id: string;
+  name?: string;
+  username?: string;
+  user?: string; // Caso especial para o documento no screenshot
+  password: string;
+  email?: string;
+  role?: AdminRole;
+  permissions?: AdminPermissions;
+  photoURL?: string;
+}
+
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
+
+// Mapeamento padrão de papéis para permissões
+const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
+  super_admin: {
+    canManageUsers: true,
+    canApproveCompanies: true,
+    canDeleteJobs: true,
+    canAccessSettings: true,
+    canViewAnalytics: true,
+    canEditContent: true
+  },
+  manager: {
+    canManageUsers: false,
+    canApproveCompanies: true,
+    canDeleteJobs: true,
+    canAccessSettings: false,
+    canViewAnalytics: true,
+    canEditContent: true
+  },
+  editor: {
+    canManageUsers: false,
+    canApproveCompanies: false,
+    canDeleteJobs: true,
+    canAccessSettings: false,
+    canViewAnalytics: true,
+    canEditContent: true
+  },
+  viewer: {
+    canManageUsers: false,
+    canApproveCompanies: false,
+    canDeleteJobs: false,
+    canAccessSettings: false,
+    canViewAnalytics: true,
+    canEditContent: false
+  }
+};
+
+// Logs mais detalhados para depuração
+function logInfo(message: string, data?: any) {
+  console.log(`[AUTH] ${message}`, data ? data : '');
+}
+
+function logError(message: string, error: any) {
+  console.error(`[AUTH ERROR] ${message}`, error);
+}
+
+async function findAdminByUsername(username: string): Promise<Admin | null> {
+  try {
+    logInfo('Iniciando busca por admin com username:', username);
+    
+    // Verificar se o Firestore está inicializado
+    if (!db) {
+      logError('Firebase não está inicializado', null);
+      throw new Error("Firebase não está inicializado");
+    }
+    
+    // 1. Tentar buscar diretamente na coleção "admin" (singular)
+    logInfo('Verificando a coleção "admin" (singular)');
+    try {
+      // Primeiro tenta buscar o ID específico
+      const adminDocRef = doc(db as Firestore, 'admin', 'bd8HjeKL12vDlhzOEQQg');
+      const adminDocSnapshot = await getDoc(adminDocRef);
+      
+      if (adminDocSnapshot.exists()) {
+        const adminData = adminDocSnapshot.data();
+        logInfo('Documento encontrado na coleção "admin" (ID específico):', adminData);
+        
+        // Verificar se o username ou user corresponde
+        if ((adminData.username === username) || (adminData.user === username)) {
+          logInfo('Username corresponde ao documento encontrado');
+          return {
+            id: adminDocSnapshot.id,
+            name: adminData.name || username,
+            username: adminData.username || adminData.user,
+            user: adminData.user,
+            password: adminData.password,
+            photoURL: adminData.photoURL,
+            role: 'super_admin' as AdminRole, // Admin direto é super_admin por padrão
+            permissions: defaultRolePermissions['super_admin'] // Permissões padrão de super_admin
+          };
+        } else {
+          logInfo('Username não corresponde ao documento encontrado');
+        }
+      } else {
+        logInfo('Documento específico não encontrado na coleção "admin"');
+      }
+      
+      // Buscar em toda a coleção "admin"
+      const adminCollection = collection(db as Firestore, 'admin');
+      const adminSnapshot = await getDocs(adminCollection);
+      
+      if (!adminSnapshot.empty) {
+        for (const doc of adminSnapshot.docs) {
+          const data = doc.data();
+          logInfo(`Verificando documento ${doc.id} na coleção "admin":`, data);
+          
+          if ((data.username === username) || (data.user === username)) {
+            logInfo('Username corresponde a um documento na coleção "admin"');
+            return {
+              id: doc.id,
+              name: data.name || username,
+              username: data.username || data.user,
+              user: data.user,
+              password: data.password,
+              photoURL: data.photoURL,
+              role: 'super_admin' as AdminRole, // Admin direto é super_admin por padrão
+              permissions: defaultRolePermissions['super_admin'] // Permissões padrão de super_admin
+            };
+          }
+        }
+      } else {
+        logInfo('Coleção "admin" está vazia');
+      }
+    } catch (error) {
+      logError('Erro ao buscar na coleção "admin":', error);
+    }
+    
+    // 2. Verificar na coleção "admins" (plural)
+    logInfo('Verificando a coleção "admins" (plural)');
+    try {
+      const adminsCollection = collection(db as Firestore, 'admins');
+      const adminsSnapshot = await getDocs(adminsCollection);
+      
+      if (!adminsSnapshot.empty) {
+        for (const doc of adminsSnapshot.docs) {
+          const data = doc.data();
+          logInfo(`Verificando documento ${doc.id} na coleção "admins":`, data);
+          
+          if ((data.username === username) || (data.user === username)) {
+            logInfo('Username corresponde a um documento na coleção "admins"');
+            
+            // Determinar o papel do admin
+            const adminRole = (data.role as AdminRole) || 'viewer';
+            
+            // Obter permissões do banco de dados, se existirem, ou usar padrão baseado no papel
+            const adminPermissions = data.permissions || defaultRolePermissions[adminRole];
+            
+            return {
+              id: doc.id,
+              name: data.name || '',
+              username: data.username || data.user,
+              user: data.user,
+              password: data.password,
+              email: data.email,
+              role: adminRole,
+              permissions: adminPermissions,
+              photoURL: data.photoURL
+            };
+          }
+        }
+        logInfo('Nenhum documento na coleção "admins" corresponde ao username');
+      } else {
+        logInfo('Coleção "admins" está vazia');
+      }
+    } catch (error) {
+      logError('Erro ao buscar na coleção "admins":', error);
+    }
+    
+    logInfo('Admin não encontrado em nenhuma coleção');
+    return null;
+  } catch (error) {
+    logError('Erro ao buscar admin:', error);
+    return null;
+  }
+}
+
+// Handler para método OPTIONS (necessário para CORS no Netlify)
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
+export async function POST(req: Request) {
+  // Adicionar headers CORS para compatibilidade com Netlify
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Content-Type': 'application/json',
+  };
+  
+  logInfo('POST /api/admin/auth chamado');
+  let username, password;
+  
+  try {
+    // Verificar se a requisição é um objeto válido
+    if (!req || !req.json) {
+      return NextResponse.json({ error: 'Invalid request object' }, { status: 400, headers });
+    }
+    
+    try {
+      const body = await req.json();
+      username = body.username;
+      password = body.password;
+      logInfo('Dados recebidos:', { username, password: password ? '***' : undefined });
+    } catch (e) {
+      logError('Erro ao ler JSON:', e);
+      return NextResponse.json({ error: 'Erro ao ler dados' }, { status: 400, headers });
+    }
+    
+    if (!username || !password) {
+      logInfo('Username ou password ausente');
+      return NextResponse.json({ error: 'Username e password obrigatórios' }, { status: 400, headers });
+    }
+    
+    const admin = await findAdminByUsername(username);
+    
+    if (!admin) {
+      logInfo('Usuário não encontrado:', username);
+      return NextResponse.json({ success: false, error: 'Credenciais inválidas' }, { status: 401, headers });
+    }
+    
+    logInfo('Usuário encontrado:', { id: admin.id, username: admin.username || admin.user });
+    logInfo('Comparando senhas:', { fornecida: password ? '***' : undefined, armazenada: admin.password ? '***' : undefined });
+    
+    // Lógica de verificação de senha (texto puro primeiro, depois bcrypt)
+    let senhaConfere = (admin.password === password);
+    logInfo('Resultado da comparação direta de senha:', senhaConfere);
+    
+    // Se a senha não corresponder diretamente, tentamos o bcrypt compare
+    if (!senhaConfere && admin.password && admin.password.startsWith('$2')) {
+      try {
+        senhaConfere = await bcrypt.compare(password, admin.password);
+        logInfo('Resultado bcrypt.compare:', senhaConfere);
+      } catch (e) {
+        logError('Erro no bcrypt.compare:', e);
+      }
+    }
+    
+    if (senhaConfere) {
+      let token;
+      try {
+        // Determinar papel e permissões do admin
+        const adminRole = admin.role || 'viewer';
+        const adminPermissions = admin.permissions || defaultRolePermissions[adminRole];
+        
+        const tokenData = { 
+          id: admin.id, 
+          username: admin.username || admin.user, 
+          name: admin.name,
+          role: adminRole,
+          permissions: adminPermissions,
+          photoURL: admin.photoURL 
+        };
+        
+        logInfo('Gerando token com dados:', tokenData);
+        token = jwt.sign(tokenData, JWT_SECRET, { expiresIn: '24h' });
+        logInfo('Token gerado com sucesso');
+      } catch (e) {
+        logError('Erro ao gerar token:', e);
+        return NextResponse.json({ error: 'Erro ao gerar token' }, { status: 500, headers });
+      }
+      
+      const responseData = { 
+        success: true, 
+        token, 
+        userData: { 
+          id: admin.id, 
+          name: admin.name || admin.username || admin.user, 
+          username: admin.username || admin.user, 
+          role: admin.role || 'viewer',
+          permissions: admin.permissions || defaultRolePermissions[admin.role as AdminRole || 'viewer'],
+          photoURL: admin.photoURL
+        } 
+      };
+      
+      logInfo('Resposta de sucesso:', responseData);
+      return NextResponse.json(responseData, { headers });
+    } else {
+      logInfo('Senha incorreta para:', username);
+      return NextResponse.json({ success: false, error: 'Credenciais inválidas' }, { status: 401, headers });
+    }
+  } catch (error) {
+    logError('Erro durante autenticação:', error);
+    return NextResponse.json({ error: 'Erro durante autenticação' }, { status: 500, headers });
+  }
+}

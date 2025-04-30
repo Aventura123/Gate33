@@ -1,0 +1,114 @@
+/*
+This CSS file uses Tailwind CSS directives.
+VS Code may show warnings about unknown at-rules, but they work correctly
+when processed by PostCSS and Tailwind during the build.
+*/
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global CSS Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #121212;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-black text-white;
+}
+
+/* Accessibility Improvements */
+:focus {
+  outline: 2px solid #ff9800;
+  outline-offset: 2px;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 0%; /* Black */
+    --foreground: 36 100% 50%; /* Orange #FFA500 */
+    --card: 0 0% 0%; /* Black */
+    --card-foreground: 36 100% 50%; /* Orange #FFA500 */
+    --popover: 0 0% 0%; /* Black */
+    --popover-foreground: 36 100% 50%; /* Orange #FFA500 */
+    --primary: 36 100% 50%; /* Orange #FFA500 */
+    --primary-foreground: 0 0% 0%; /* Black */
+    --secondary: 0 0% 100%; /* White */
+    --secondary-foreground: 0 0% 0%; /* Black */
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 36 40% 63.9%;
+    --accent: 187 100% 68%; /* Electric Blue #7DF9FF */
+    --accent-foreground: 0 0% 0%; /* Black */
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 36 100% 50%; /* Orange #FFA500 */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --background: 0 0% 0%; /* Black */
+    --foreground: 36 100% 50%; /* Orange #FFA500 */
+    --card: 0 0% 0%; /* Black */
+    --card-foreground: 36 100% 50%; /* Orange #FFA500 */
+    --popover: 0 0% 0%; /* Black */
+    --popover-foreground: 36 100% 50%; /* Orange #FFA500 */
+    --primary: 36 100% 50%; /* Orange #FFA500 */
+    --primary-foreground: 0 0% 0%; /* Black */
+    --secondary: 0 0% 100%; /* White */
+    --secondary-foreground: 0 0% 0%; /* Black */
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 36 40% 63.9%;
+    --accent: 187 100% 68%; /* Electric Blue #7DF9FF */
+    --accent-foreground: 0 0% 0%; /* Black */
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 36 100% 50%; /* Orange #FFA500 */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer utilities {
+  .border-border {
+    border-color: var(--border-color, #FFA500); /* Exemplo: cor laranja */
+  }
+}

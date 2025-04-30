@@ -1,0 +1,36 @@
+# Configuração para o Netlify
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# IMPORTANTE: Configuração de Node.js para Next.js
+[build.environment]
+  NODE_VERSION = "20.0.0"
+
+# Configuração de funções para Next.js
+[functions]
+  directory = "netlify/functions"
+
+# Configurações de Asset Optimization
+[build.processing]
+  skip_processing = false
+[build.processing.css]
+  bundle = false
+  minify = true
+[build.processing.js]
+  bundle = false
+  minify = true
+[build.processing.html]
+  pretty_urls = true
+[build.processing.images]
+  compress = true
+
+# Removido o redirecionamento para SPA tradicional que estava causando o erro 404
+# [[redirects]]
+#  from = "/*"
+#  to = "/index.html"
+#  status = 200

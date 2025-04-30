@@ -1,0 +1,57 @@
+/* PhoneInput custom styles */
+.PhoneInput {
+  display: flex;
+  align-items: center;
+  height: 24px; /* Reduced height */
+}
+
+.PhoneInputCountry {
+  margin-right: 0.3rem; /* Smaller margin */
+}
+
+.PhoneInputCountryIcon {
+  width: 1.25rem; /* Smaller icon */
+  height: 0.8rem;
+}
+
+.PhoneInputCountrySelectArrow {
+  border-top-color: rgba(249, 115, 22, 0.7);
+  opacity: 0.7;
+  width: 0.5em; /* Smaller arrow */
+  height: 0.25em;
+}
+
+.PhoneInputCountrySelect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.PhoneInputInput {
+  flex: 1;
+  min-width: 0;
+  background-color: transparent;
+  border: none;
+  color: white;
+  outline: none;
+  font-size: 0.75rem; /* Smaller text */
+  padding: 0.25rem 0; /* Smaller padding */
+}
+
+.PhoneInputInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem; /* Smaller placeholder text */
+}
+
+/* Custom dropdown styles */
+.PhoneInputCountrySelect option {
+  background-color: #111;
+  color: white;
+  font-size: 0.75rem; /* Smaller dropdown text */
+}
