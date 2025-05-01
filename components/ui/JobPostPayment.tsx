@@ -217,6 +217,16 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({
     if (paymentMethod === "smartContract") {
       await processContractPayment();
     } else if (paymentMethod === "usdtSmartContract") {
+      // Mostrar alerta informativo sobre o valor que aparecerá na MetaMask
+      const selectedPlan = getSelectedPlan();
+      if (selectedPlan) {
+        const isConfirmed = window.confirm(
+          `AVISO IMPORTANTE: Devido a questões técnicas do contrato, o valor que aparecerá na sua carteira poderá mostrar apenas 70% do valor total (${(selectedPlan.price * 0.7).toFixed(2)} USDT). Isto é normal e o valor total correto do plano é ${selectedPlan.price} USDT.\n\nDeseja continuar com o pagamento?`
+        );
+        if (!isConfirmed) {
+          return;
+        }
+      }
       await processUSDTContractPayment();
     }
   };
@@ -379,13 +389,16 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({
                     : "USDT Payment"}
                 </span>
               </div>
-              <div className="flex justify-between font-bold mt-2 pt-2 border-t">
-                <span>Total:</span>
-                <span>
+              <div className="flex justify-between font-bold mt-4 pt-3 border-t border-gray-300 dark:border-gray-600 text-lg">
+                <span>Total Amount to Approve:</span>
+                <span className="text-orange-500">
                   {getSelectedPlan() &&
                     formatCurrency(getSelectedPlan()!.price, getSelectedPlan()!.currency)}
                 </span>
               </div>
+              <p className="text-xs text-gray-500 mt-2 italic text-center">
+                This is the full amount that will be requested for approval in your wallet
+              </p>
             </div>
           )}
 

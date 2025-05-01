@@ -1290,18 +1290,21 @@ class SmartContractService {
       // 16. Criar instância do contrato de pagamento
       const paymentContract = new ethers.Contract(this.contractAddress, contractABI, this.signer);
       
-      // 17. Endereço do destinatário (admin para receber pagamento)
-      // Vamos obter do Firestore (a mesma lógica que já existe em loadContractAddress)
+      // 17. Endereço do destinatário principal (mainWallet)
+      // Vamos obter do Firestore, agora dependendo exclusivamente do mainWallet
       const settingsCollection = collection(db, "settings");
       const settingsDoc = await getDoc(doc(settingsCollection, "paymentConfig"));
       let recipientAddress = "";
       
-      if (settingsDoc.exists() && settingsDoc.data().receiverAddress) {
-        recipientAddress = settingsDoc.data().receiverAddress;
+      // Obter apenas o mainWallet, pois o receiverAddress foi removido
+      if (settingsDoc.exists() && settingsDoc.data().mainWallet) {
+        recipientAddress = settingsDoc.data().mainWallet;
+        console.log(`Usando mainWallet como destinatário principal: ${recipientAddress}`);
       } else {
-        // Usar o endereço padrão de PAYMENT_RECEIVER_ADDRESS se não encontrar nas configurações
+        // Se não encontrar, usar endereço padrão do arquivo de configuração
         const configModule = await import('../config/paymentConfig');
         recipientAddress = configModule.PAYMENT_RECEIVER_ADDRESS;
+        console.log(`Nenhuma carteira configurada no Firestore, usando endereço padrão: ${recipientAddress}`);
       }
       
       if (!recipientAddress) {
