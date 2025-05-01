@@ -82,13 +82,16 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
   
   // States for wallet updates
   const [updatingWallets, setUpdatingWallets] = useState(false);
+  const [updatingPercentages, setUpdatingPercentages] = useState(false);
   const [walletUpdateSuccess, setWalletUpdateSuccess] = useState(false);
+  const [percentageUpdateSuccess, setPercentageUpdateSuccess] = useState(false);
   const [walletUpdateError, setWalletUpdateError] = useState<string | null>(null);
-  
-  const [walletConnected, setWalletConnected] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Add state for wallet connection
+  const [walletConnected, setWalletConnected] = useState(false);
 
   // Add state to store the contract owner's address
   const [contractOwner, setContractOwner] = useState<string | null>(null);
@@ -498,8 +501,99 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         throw new Error("Evolution wallet address is invalid");
       }
 
+      console.log("Initializing contract...");
+      if (!smartContractService.isContractInitialized()) {
+        const walletInfo = web3Service.getWalletInfo();
+        const networkName = walletInfo?.networkName?.toLowerCase();
+        if (!networkName || !(networkName in CONTRACT_ADDRESSES)) {
+          throw new Error(`Contract address not found for the current network: ${walletInfo?.networkName}`);
+        }
+      
+        const contractAddress = CONTRACT_ADDRESSES[networkName as keyof typeof CONTRACT_ADDRESSES];
+        console.log(`Contract address for network ${networkName}: ${contractAddress}`);
+        await smartContractService.initializeContract(undefined, contractAddress);
+      }
+
+      console.log("Verifying ownership...");
+      const isOwner = await smartContractService.checkOwnership();
+      if (!isOwner) {
+        throw new Error("You are not the contract owner. Only the owner can update wallets.");
+      }
+
+      // Updating each wallet individually with error handling for each
+      // REMOVED ALL PERCENTAGE UPDATES - ONLY UPDATING ADDRESSES
+      try {
+        console.log("1. Updating Fee Collector wallet:", feeCollectorAddress);
+        await smartContractService.updateFeeCollector(feeCollectorAddress, {
+          gasLimit: 300000
+        });
+        console.log("✓ Fee collector updated successfully:", feeCollectorAddress);
+      } catch (err: any) {
+        console.error("Error updating Fee Collector wallet:", err);
+        throw new Error(`Failed to update Fee Collector wallet: ${err.message}`);
+      }
+
+      try {
+        console.log("2. Updating Development wallet:", developmentWalletAddress);
+        await smartContractService.updateDevelopmentWallet(developmentWalletAddress, {
+          gasLimit: 300000
+        });
+        console.log("✓ Development wallet updated successfully:", developmentWalletAddress);
+      } catch (err: any) {
+        console.error("Error updating Development wallet:", err);
+        throw new Error(`Failed to update Development wallet: ${err.message}`);
+      }
+
+      try {
+        console.log("3. Updating Charity wallet:", charityWalletAddress);
+        await smartContractService.updateCharityWallet(charityWalletAddress, {
+          gasLimit: 300000
+        });
+        console.log("✓ Charity wallet updated successfully:", charityWalletAddress);
+      } catch (err: any) {
+        console.error("Error updating Charity wallet:", err);
+        throw new Error(`Failed to update Charity wallet: ${err.message}`);
+      }
+
+      try {
+        console.log("4. Updating Evolution wallet:", evolutionWalletAddress);
+        await smartContractService.updateEvolutionWallet(evolutionWalletAddress, {
+          gasLimit: 300000
+        });
+        console.log("✓ Evolution wallet updated successfully:", evolutionWalletAddress);
+      } catch (err: any) {
+        console.error("Error updating Evolution wallet:", err);
+        throw new Error(`Failed to update Evolution wallet: ${err.message}`);
+      }
+
+      setWalletUpdateSuccess(true);
+      console.log("All wallet addresses updated successfully");
+      await fetchContractData(); // Refresh data after update
+    } catch (err: any) {
+      console.error("Error updating wallets:", err);
+      setWalletUpdateError(err.message || "Error updating wallets.");
+    } finally {
+      setUpdatingWallets(false);
+    }
+  };
+
+  // Function to update only the percentages
+  const handleUpdatePercentages = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdatingPercentages(true);
+    setWalletUpdateError(null);
+    setPercentageUpdateSuccess(false);
+
+    try {
+      if (!walletConnected) {
+        throw new Error("Connect your wallet first");
+      }
+
       console.log("Validating percentages...");
+      // Use os valores base 10 para validação na interface (feePercentage está em base 10)
       const total = feePercentage + developmentPercentage + charityPercentage + evolutionPercentage;
+      
+      // Total na interface não deve exceder 30
       if (total > 30) {
         throw new Error("The total sum of all percentages cannot exceed 30%");
       }
@@ -520,42 +614,85 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       console.log("Verifying ownership...");
       const isOwner = await smartContractService.checkOwnership();
       if (!isOwner) {
-        throw new Error("You are not the contract owner. Only the owner can update wallets.");
+        throw new Error("You are not the contract owner. Only the owner can update percentages.");
+      }
+      
+      console.log("Updating percentages one by one...");
+      
+      // Atualizando cada porcentagem individualmente com tratamento de erro para cada uma
+      
+      try {
+        // 1. Update Fee Percentage
+        const feeBase1000 = displayToContractPercentage(feePercentage);
+        console.log(`1. Updating Fee Percentage: ${feePercentage}% -> ${feeBase1000} (base 1000)`);
+        
+        // Aumentando o limite de gás para todas as transações
+        await smartContractService.updateFeePercentage(feeBase1000, {
+          gasLimit: 300000
+        });
+        console.log("✓ Fee percentage updated successfully");
+      } catch (err: any) {
+        console.error("Error updating Fee percentage:", err);
+        throw new Error(`Failed to update Fee percentage: ${err.message}`);
       }
 
-      console.log("Updating wallets and percentages...");
-      await smartContractService.updateFeeCollector(feeCollectorAddress);
-      console.log("Fee collector updated:", feeCollectorAddress);
+      try {
+        // 2. Update Development Percentage
+        const devBase1000 = displayToContractPercentage(developmentPercentage);
+        console.log(`2. Updating Development Percentage: ${developmentPercentage}% -> ${devBase1000} (base 1000)`);
+        
+        await smartContractService.updateDevelopmentPercentage(devBase1000, {
+          gasLimit: 300000
+        });
+        console.log("✓ Development percentage updated successfully");
+      } catch (err: any) {
+        console.error("Error updating Development percentage:", err);
+        throw new Error(`Failed to update Development percentage: ${err.message}`);
+      }
 
-      await smartContractService.updateDevelopmentWallet(developmentWalletAddress);
-      console.log("Development wallet updated:", developmentWalletAddress);
+      try {
+        // 3. Update Charity Percentage
+        const charityBase1000 = displayToContractPercentage(charityPercentage);
+        console.log(`3. Updating Charity Percentage: ${charityPercentage}% -> ${charityBase1000} (base 1000)`);
+        
+        await smartContractService.updateCharityPercentage(charityBase1000, {
+          gasLimit: 300000
+        });
+        console.log("✓ Charity percentage updated successfully");
+      } catch (err: any) {
+        console.error("Error updating Charity percentage:", err);
+        throw new Error(`Failed to update Charity percentage: ${err.message}`);
+      }
 
-      await smartContractService.updateCharityWallet(charityWalletAddress);
-      console.log("Charity wallet updated:", charityWalletAddress);
+      try {
+        // 4. Update Evolution Percentage
+        const evolutionBase1000 = displayToContractPercentage(evolutionPercentage);
+        console.log(`4. Updating Evolution Percentage: ${evolutionPercentage}% -> ${evolutionBase1000} (base 1000)`);
+        
+        // Usando o mesmo padrão das outras porcentagens, apenas com um limite de gás maior
+        await smartContractService.updateEvolutionPercentage(evolutionBase1000, {
+          gasLimit: 400000 // Um pouco mais de gás que as outras operações
+        });
+        console.log("✓ Evolution percentage updated successfully");
+      } catch (err: any) {
+        console.error("Error updating Evolution percentage:", err);
+        throw new Error(`Failed to update Evolution percentage: ${err.message}`);
+      }
 
-      await smartContractService.updateEvolutionWallet(evolutionWalletAddress);
-      console.log("Evolution wallet updated:", evolutionWalletAddress);
+      setPercentageUpdateSuccess(true);
+      console.log("All percentages updated successfully");
+      
+      // Espere um momento antes de atualizar os dados para garantir que a blockchain foi atualizada
+      setTimeout(async () => {
+        await fetchContractData();
+        console.log("Contract data refreshed after percentage update");
+      }, 2000);
 
-      await smartContractService.updateFeePercentage(displayToContractPercentage(feePercentage));
-      console.log("Fee percentage updated:", feePercentage);
-
-      await smartContractService.updateDevelopmentPercentage(displayToContractPercentage(developmentPercentage));
-      console.log("Development percentage updated:", developmentPercentage);
-
-      await smartContractService.updateCharityPercentage(displayToContractPercentage(charityPercentage));
-      console.log("Charity percentage updated:", charityPercentage);
-
-      await smartContractService.updateEvolutionPercentage(displayToContractPercentage(evolutionPercentage));
-      console.log("Evolution percentage updated:", evolutionPercentage);
-
-      setWalletUpdateSuccess(true);
-      console.log("Wallets and percentages updated successfully.");
-      await fetchContractData(); // Refresh data after update
     } catch (err: any) {
-      console.error("Error updating wallets:", err);
-      setWalletUpdateError(err.message || "Error updating wallets.");
+      console.error("Error updating percentages:", err);
+      setWalletUpdateError(err.message || "Error updating percentages.");
     } finally {
-      setUpdatingWallets(false);
+      setUpdatingPercentages(false);
     }
   };
 
@@ -923,6 +1060,12 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           </div>
         )}
         
+        {percentageUpdateSuccess && (
+          <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
+            <p>Percentages successfully updated on the blockchain!</p>
+          </div>
+        )}
+        
         {contractOwner && (
           <div className="bg-blue-800 border border-blue-900 text-white px-4 py-3 rounded mb-4">
             <p>
@@ -1124,24 +1267,41 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 </p>
               </div>
               
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleUpdateAdditionalWallets(e as any);
-                }}
-                disabled={updatingWallets}
-                className={`mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
-                  updatingWallets ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {updatingWallets ? 'Updating...' : 'Update Fee Distribution'}
-              </button>
+              <div className="flex gap-4 mt-4">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleUpdateAdditionalWallets(e as any);
+                  }}
+                  disabled={updatingWallets}
+                  className={`bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+                    updatingWallets ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {updatingWallets ? 'Updating Wallets...' : 'Update Wallets'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleUpdatePercentages(e as any);
+                  }}
+                  disabled={updatingPercentages}
+                  className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+                    updatingPercentages ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {updatingPercentages ? 'Updating Percentages...' : 'Update Percentages'}
+                </button>
+              </div>
             </div>
           )}
         </div>
-  {/* Payment Distribution Overview */}
-  <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
+
+        {/* Payment Distribution Overview - Única seção mantida */}
+        <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
           <h3 className="text-lg font-semibold mb-2 text-gray-300">Payment Distribution Overview</h3>
           <div className="bg-gray-800/50 p-4 rounded">
             <div className="flex flex-col space-y-2">
@@ -1159,6 +1319,25 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               </div>
               <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
                 <div className="h-full bg-orange-500 width-30"></div>
+              </div>
+              
+              <div className="grid grid-cols-4 gap-2 mt-2">
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Fee Collector</div>
+                  <div className="text-sm text-white">{(feePercentage / 10).toFixed(1)}%</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Development</div>
+                  <div className="text-sm text-white">{(developmentPercentage / 10).toFixed(1)}%</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Charity</div>
+                  <div className="text-sm text-white">{(charityPercentage / 10).toFixed(1)}%</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Evolution</div>
+                  <div className="text-sm text-white">{(evolutionPercentage / 10).toFixed(1)}%</div>
+                </div>
               </div>
             </div>
           </div>
@@ -1273,49 +1452,6 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               <span> Last update: {currentSystemConfig.updatedAt}</span>
             )}
           </p>
-        </div>
-        
-        {/* Payment Distribution Explanation */}
-        <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
-          <h3 className="text-lg font-semibold mb-2 text-gray-300">Payment Distribution Overview</h3>
-          <div className="bg-gray-800/50 p-4 rounded">
-            <div className="flex flex-col space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Main Recipient:</span>
-                <span className="text-green-400 font-bold">70%</span>
-              </div>
-              <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
-                <div className="h-full bg-green-500 width-70"></div>
-              </div>
-              
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-gray-300">Fee Distribution (total):</span>
-                <span className="text-orange-400 font-bold">30%</span>
-              </div>
-              <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
-                <div className="h-full bg-orange-500 width-30"></div>
-              </div>
-              
-              <div className="grid grid-cols-4 gap-2 mt-2">
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Fee Collector</div>
-                  <div className="text-sm text-white">{(feePercentage / 10).toFixed(1)}%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Development</div>
-                  <div className="text-sm text-white">{(developmentPercentage / 10).toFixed(1)}%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Charity</div>
-                  <div className="text-sm text-white">{(charityPercentage / 10).toFixed(1)}%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Evolution</div>
-                  <div className="text-sm text-white">{(evolutionPercentage / 10).toFixed(1)}%</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
         
         <div className="flex items-center justify-between pt-4">
