@@ -8,6 +8,7 @@ import { web3Service } from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
 import InstantJobsManager from "../admin/InstantJobsManager";
 import { NETWORK_CONFIG, CONTRACT_ADDRESSES } from "../../config/paymentConfig";
+import "../../styles/payment-settings.css"; // Importação do arquivo CSS externo
 
 interface PaymentConfigProps {
   hasPermission: boolean;
@@ -507,18 +508,13 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       if (!smartContractService.isContractInitialized()) {
         const walletInfo = web3Service.getWalletInfo();
         const networkName = walletInfo?.networkName?.toLowerCase();
-        let contractAddress: string | undefined;
-
-        if (networkName && networkName in CONTRACT_ADDRESSES) {
-          contractAddress = CONTRACT_ADDRESSES[networkName as keyof typeof CONTRACT_ADDRESSES];
-          console.log(`Contract address for network ${networkName}: ${contractAddress}`);
-        } else {
+        if (!networkName || !(networkName in CONTRACT_ADDRESSES)) {
           throw new Error(`Contract address not found for the current network: ${walletInfo?.networkName}`);
         }
-
-        if (contractAddress) {
-          await smartContractService.initializeContract(undefined, contractAddress);
-        }
+      
+        const contractAddress = CONTRACT_ADDRESSES[networkName as keyof typeof CONTRACT_ADDRESSES];
+        console.log(`Contract address for network ${networkName}: ${contractAddress}`);
+        await smartContractService.initializeContract(undefined, contractAddress);
       }
 
       console.log("Verifying ownership...");
@@ -771,6 +767,20 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
     }
   }, [walletUpdateSuccess]);
 
+  // Efeito para processar as larguras dinâmicas
+  useEffect(() => {
+    // Encontra todos os elementos com a classe 'dynamic-width'
+    const dynamicElements = document.querySelectorAll('.dynamic-width');
+    
+    // Para cada elemento, aplica o valor de width do atributo data-width
+    dynamicElements.forEach(element => {
+      const width = element.getAttribute('data-width');
+      if (width) {
+        (element as HTMLElement).style.width = width;
+      }
+    });
+  }, [feePercentage, developmentPercentage, charityPercentage, evolutionPercentage, totalPercentage]);
+
   // Function to update main wallet (70% recipient)
   const handleUpdateMainWallet = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -819,13 +829,11 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
   return (
     <div className="bg-black/30 shadow rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-6 text-orange-400">Web3 Payment Settings</h2>
-      
       {error && (
         <div className="bg-red-800 border border-red-900 text-white px-4 py-3 rounded mb-4">
           <p>{error}</p>
         </div>
       )}
-      
       {updateSuccess && (
         <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
           <p>Payment settings updated successfully!</p>
@@ -1108,7 +1116,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 <div className="w-full bg-gray-700 h-2 mt-2 rounded-full overflow-hidden">
                   <div 
                     className={`h-full ${totalPercentage > 300 ? 'bg-red-500' : 'bg-green-500'} progress-bar dynamic-width`} 
-                    style={{ width: `${Math.min((totalPercentage / 300) * 100, 100)}%` }}
+                    data-width={`${Math.min((totalPercentage / 300) * 100, 100)}%`}
                   ></div>
                 </div>
                 <p className="text-xs text-gray-400 mt-1">
@@ -1142,7 +1150,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 <span className="text-green-400 font-bold">70%</span>
               </div>
               <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
-                <div className="h-full bg-green-500" style={{ width: "70%" }}></div>
+                <div className="h-full bg-green-500 width-70"></div>
               </div>
               
               <div className="flex justify-between items-center mt-2">
@@ -1150,26 +1158,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 <span className="text-orange-400 font-bold">30%</span>
               </div>
               <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
-                <div className="h-full bg-orange-500" style={{ width: "30%" }}></div>
-              </div>
-              
-              <div className="grid grid-cols-4 gap-2 mt-2">
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Fee Collector</div>
-                  <div className="text-sm text-white">{(feePercentage / 10).toFixed(1)}%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Development</div>
-                  <div className="text-sm text-white">{(developmentPercentage / 10).toFixed(1)}%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Charity</div>
-                  <div className="text-sm text-white">{(charityPercentage / 10).toFixed(1)}%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Evolution</div>
-                  <div className="text-sm text-white">{(evolutionPercentage / 10).toFixed(1)}%</div>
-                </div>
+                <div className="h-full bg-orange-500 width-30"></div>
               </div>
             </div>
           </div>
@@ -1296,7 +1285,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 <span className="text-green-400 font-bold">70%</span>
               </div>
               <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
-                <div className="h-full bg-green-500" style={{ width: "70%" }}></div>
+                <div className="h-full bg-green-500 width-70"></div>
               </div>
               
               <div className="flex justify-between items-center mt-2">
@@ -1304,7 +1293,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 <span className="text-orange-400 font-bold">30%</span>
               </div>
               <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
-                <div className="h-full bg-orange-500" style={{ width: "30%" }}></div>
+                <div className="h-full bg-orange-500 width-30"></div>
               </div>
               
               <div className="grid grid-cols-4 gap-2 mt-2">

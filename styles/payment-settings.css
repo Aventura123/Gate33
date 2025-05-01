@@ -1,0 +1,38 @@
+/* Estilos para o componente PaymentSettings */
+.progress-bar {
+  transition: width 0.3s ease;
+}
+
+.progress-total {
+  width: 70%;
+}
+
+.progress-fee {
+  width: 30%;
+}
+
+.progress-fee-distribution {
+  display: flex;
+  height: 100%;
+}
+
+/* Estilos específicos para as barras de progresso de distribuição de porcentagem */
+.distribution-bar {
+  height: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Classe auxiliar para largura dinâmica (calculada via JavaScript) */
+.dynamic-width {
+  /* Esta classe será usada em conjunto com estilo inline width para compatibilidade */
+  transition: width 0.3s ease;
+}
+
+/* Classes para larguras fixas nas barras */
+.width-70 {
+  width: 70%;
+}
+
+.width-30 {
+  width: 30%;
+}

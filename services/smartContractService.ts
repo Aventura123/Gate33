@@ -18,7 +18,7 @@ class SmartContractService {
     binance: '0x55d398326f99059fF775485246999027B3197955',     // BSC Mainnet USDT
     binanceTestnet: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd', // BSC Testnet USDT (para testes)
     avalanche: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',   // Avalanche USDT
-    arbitrum: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',    // Arbitrum USDT
+    arbitrum: '0xFd086bC7CD5C481DCC9c85ebE478A1C0b69FCbb9',    // Arbitrum USDT
     optimism: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'     // Optimism USDT
   };
 
@@ -367,107 +367,716 @@ class SmartContractService {
 
   // Get fee collector address
   async getFeeCollector() {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    return "0x0000000000000000000000000000000000000000";
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      // Validate contract address explicitly
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function feeCollector() external view returns (address)"
+      ];
+
+      // Create contract instance with non-null contract address
+      // Uso do operador de coalescing para evitar passar null
+      const provider = this.provider || ethers.providers.getDefaultProvider();
+      const contract = new ethers.Contract(this.contractAddress, contractABI, provider);
+
+      // Call the view function to get the fee collector address
+      const feeCollectorAddress = await contract.feeCollector();
+      console.log(`Fee collector address read from contract: ${feeCollectorAddress}`);
+      
+      return feeCollectorAddress;
+    } catch (error: any) {
+      console.error("Error reading fee collector address:", error);
+      // Return a default address if there's an error
+      return "0x0000000000000000000000000000000000000000";
+    }
   }
 
   // Get development wallet address
   async getDevelopmentWallet() {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    return "0x0000000000000000000000000000000000000000";
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      // Validate contract address explicitly
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function developmentWallet() external view returns (address)"
+      ];
+
+      // Create contract instance with non-null contract address
+      // Uso do operador de coalescing para evitar passar null
+      const provider = this.provider || ethers.providers.getDefaultProvider();
+      const contract = new ethers.Contract(this.contractAddress, contractABI, provider);
+
+      // Call the view function to get the development wallet address
+      const developmentWalletAddress = await contract.developmentWallet();
+      console.log(`Development wallet address read from contract: ${developmentWalletAddress}`);
+      
+      return developmentWalletAddress;
+    } catch (error: any) {
+      console.error("Error reading development wallet address:", error);
+      // Return a default address if there's an error
+      return "0x0000000000000000000000000000000000000000";
+    }
   }
 
   // Get charity wallet address
   async getCharityWallet() {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    return "0x0000000000000000000000000000000000000000";
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      // Validate contract address explicitly
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function charityWallet() external view returns (address)"
+      ];
+
+      // Create contract instance with non-null contract address
+      // Uso do operador de coalescing para evitar passar null
+      const provider = this.provider || ethers.providers.getDefaultProvider();
+      const contract = new ethers.Contract(this.contractAddress, contractABI, provider);
+
+      // Call the view function to get the charity wallet address
+      const charityWalletAddress = await contract.charityWallet();
+      console.log(`Charity wallet address read from contract: ${charityWalletAddress}`);
+      
+      return charityWalletAddress;
+    } catch (error: any) {
+      console.error("Error reading charity wallet address:", error);
+      // Return a default address if there's an error
+      return "0x0000000000000000000000000000000000000000";
+    }
   }
 
   // Get evolution wallet address
   async getEvolutionWallet() {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    return "0x0000000000000000000000000000000000000000";
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      // Validate contract address explicitly
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function evolutionWallet() external view returns (address)"
+      ];
+
+      // Create contract instance with non-null contract address
+      // Uso do operador de coalescing para evitar passar null
+      const provider = this.provider || ethers.providers.getDefaultProvider();
+      const contract = new ethers.Contract(this.contractAddress, contractABI, provider);
+
+      // Call the view function to get the evolution wallet address
+      const evolutionWalletAddress = await contract.evolutionWallet();
+      console.log(`Evolution wallet address read from contract: ${evolutionWalletAddress}`);
+      
+      return evolutionWalletAddress;
+    } catch (error: any) {
+      console.error("Error reading evolution wallet address:", error);
+      // Return a default address if there's an error
+      return "0x0000000000000000000000000000000000000000";
+    }
   }
 
   // Get distribution percentages
   async getDistributionPercentages() {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    return {
-      feePercentage: 50, // 5.0%
-      developmentPercentage: 25, // 2.5%
-      charityPercentage: 25, // 2.5%
-      evolutionPercentage: 25, // 2.5%
-      totalPercentage: 125 // 12.5%
-    };
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      // Validate contract address explicitly
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function feePercentage() external view returns (uint256)",
+        "function developmentPercentage() external view returns (uint256)",
+        "function charityPercentage() external view returns (uint256)",
+        "function evolutionPercentage() external view returns (uint256)"
+      ];
+
+      // Create contract instance with non-null contract address
+      // Uso do operador de coalescing para evitar passar null
+      const provider = this.provider || ethers.providers.getDefaultProvider();
+      const contract = new ethers.Contract(this.contractAddress, contractABI, provider);
+
+      // Call the view functions to get the percentages
+      const feePercentage = parseInt(await contract.feePercentage());
+      const developmentPercentage = parseInt(await contract.developmentPercentage());
+      const charityPercentage = parseInt(await contract.charityPercentage());
+      const evolutionPercentage = parseInt(await contract.evolutionPercentage());
+      
+      // Calculate total
+      const totalPercentage = feePercentage + developmentPercentage + charityPercentage + evolutionPercentage;
+      
+      console.log(`Percentages read from contract: fee=${feePercentage}, dev=${developmentPercentage}, charity=${charityPercentage}, evolution=${evolutionPercentage}, total=${totalPercentage}`);
+      
+      return {
+        feePercentage,
+        developmentPercentage,
+        charityPercentage,
+        evolutionPercentage,
+        totalPercentage
+      };
+    } catch (error: any) {
+      console.error("Error reading distribution percentages:", error);
+      // Return some default values if there's an error
+      return {
+        feePercentage: 0,
+        developmentPercentage: 0,
+        charityPercentage: 0,
+        evolutionPercentage: 0,
+        totalPercentage: 0
+      };
+    }
   }
 
   // Update fee collector address
   async updateFeeCollector(address: string, options?: any) {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    console.log(`Would update fee collector to ${address} with options:`, options);
-    return { transactionHash: "0x0000000000000000000000000000000000000000" };
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      if (!this.signer) {
+        throw new Error("Wallet not connected or signer not available");
+      }
+
+      // Validate contract address explicitly
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Validate address
+      if (!address || !address.startsWith('0x') || address.length !== 42) {
+        throw new Error("Invalid wallet address format");
+      }
+
+      // Check if the user is the owner
+      const isOwner = await this.checkOwnership();
+      if (!isOwner) {
+        throw new Error("Only the contract owner can update the fee collector");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function updateFeeCollector(address newFeeCollector) external"
+      ];
+
+      // Create contract instance with non-null contract address
+      const contract = new ethers.Contract(this.contractAddress, contractABI, this.signer);
+
+      // Prepare transaction options
+      const txOptions = {
+        gasLimit: options?.gasLimit || ethers.utils.hexlify(200000),
+        ...(options || {})
+      };
+
+      console.log(`Sending transaction to update fee collector to ${address}`);
+      
+      // Call the contract function - this will trigger a wallet popup
+      const tx = await contract.updateFeeCollector(address, txOptions);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait(1); // Wait for 1 confirmation
+
+      console.log(`Fee collector updated successfully in tx: ${receipt.transactionHash}`);
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber
+      };
+    } catch (error: any) {
+      console.error("Error updating fee collector:", error);
+      throw new Error(`Failed to update fee collector: ${error.message || error}`);
+    }
   }
 
   // Update fee percentage
   async updateFeePercentage(percentage: number, options?: any) {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    console.log(`Would update fee percentage to ${percentage} with options:`, options);
-    return { transactionHash: "0x0000000000000000000000000000000000000000" };
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      if (!this.signer) {
+        throw new Error("Wallet not connected or signer not available");
+      }
+
+      // Validate contract address
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Check if the user is the owner
+      const isOwner = await this.checkOwnership();
+      if (!isOwner) {
+        throw new Error("Only the contract owner can update the fee percentage");
+      }
+
+      // Validate percentage (0-300 in base 1000, representing 0-30%)
+      if (percentage < 0 || percentage > 300) {
+        throw new Error("Fee percentage must be between 0 and 300 (0-30%)");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function updateFeePercentage(uint256 newPercentage) external"
+      ];
+
+      // Create contract instance
+      const contract = new ethers.Contract(this.contractAddress, contractABI, this.signer);
+
+      // Prepare transaction options
+      const txOptions = {
+        gasLimit: options?.gasLimit || ethers.utils.hexlify(200000),
+        ...(options || {})
+      };
+
+      console.log(`Sending transaction to update fee percentage to ${percentage}`);
+      
+      // Call the contract function - this will trigger a wallet popup
+      const tx = await contract.updateFeePercentage(percentage, txOptions);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait(1); // Wait for 1 confirmation
+
+      console.log(`Fee percentage updated successfully in tx: ${receipt.transactionHash}`);
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber
+      };
+    } catch (error: any) {
+      console.error("Error updating fee percentage:", error);
+      throw new Error(`Failed to update fee percentage: ${error.message || error}`);
+    }
   }
 
   // Update development wallet address
   async updateDevelopmentWallet(address: string, options?: any) {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    console.log(`Would update development wallet to ${address} with options:`, options);
-    return { transactionHash: "0x0000000000000000000000000000000000000000" };
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      if (!this.signer) {
+        throw new Error("Wallet not connected or signer not available");
+      }
+      
+      // Validate contract address explicitly
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Validate address
+      if (!address || !address.startsWith('0x') || address.length !== 42) {
+        throw new Error("Invalid wallet address format");
+      }
+
+      // Check if the user is the owner
+      const isOwner = await this.checkOwnership();
+      if (!isOwner) {
+        throw new Error("Only the contract owner can update the development wallet");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function updateDevelopmentWallet(address newAddress) external"
+      ];
+
+      // Create contract instance
+      const contract = new ethers.Contract(this.contractAddress, contractABI, this.signer);
+
+      // Prepare transaction options
+      const txOptions = {
+        gasLimit: options?.gasLimit || ethers.utils.hexlify(200000),
+        ...(options || {})
+      };
+
+      console.log(`Sending transaction to update development wallet to ${address}`);
+      
+      // Call the contract function - this will trigger a wallet popup
+      const tx = await contract.updateDevelopmentWallet(address, txOptions);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait(1); // Wait for 1 confirmation
+
+      console.log(`Development wallet updated successfully in tx: ${receipt.transactionHash}`);
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber
+      };
+    } catch (error: any) {
+      console.error("Error updating development wallet:", error);
+      throw new Error(`Failed to update development wallet: ${error.message || error}`);
+    }
   }
 
   // Update development percentage
   async updateDevelopmentPercentage(percentage: number, options?: any) {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    console.log(`Would update development percentage to ${percentage} with options:`, options);
-    return { transactionHash: "0x0000000000000000000000000000000000000000" };
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      if (!this.signer) {
+        throw new Error("Wallet not connected or signer not available");
+      }
+
+      // Validate contract address
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Check if the user is the owner
+      const isOwner = await this.checkOwnership();
+      if (!isOwner) {
+        throw new Error("Only the contract owner can update the development percentage");
+      }
+
+      // Validate percentage (0-300 in base 1000, representing 0-30%)
+      if (percentage < 0 || percentage > 300) {
+        throw new Error("Development percentage must be between 0 and 300 (0-30%)");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function updateDevelopmentPercentage(uint256 newPercentage) external"
+      ];
+
+      // Create contract instance
+      const contract = new ethers.Contract(this.contractAddress, contractABI, this.signer);
+
+      // Prepare transaction options
+      const txOptions = {
+        gasLimit: options?.gasLimit || ethers.utils.hexlify(200000),
+        ...(options || {})
+      };
+
+      console.log(`Sending transaction to update development percentage to ${percentage}`);
+      
+      // Call the contract function - this will trigger a wallet popup
+      const tx = await contract.updateDevelopmentPercentage(percentage, txOptions);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait(1); // Wait for 1 confirmation
+
+      console.log(`Development percentage updated successfully in tx: ${receipt.transactionHash}`);
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber
+      };
+    } catch (error: any) {
+      console.error("Error updating development percentage:", error);
+      throw new Error(`Failed to update development percentage: ${error.message || error}`);
+    }
   }
 
   // Update charity wallet address
   async updateCharityWallet(address: string, options?: any) {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    console.log(`Would update charity wallet to ${address} with options:`, options);
-    return { transactionHash: "0x0000000000000000000000000000000000000000" };
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      if (!this.signer) {
+        throw new Error("Wallet not connected or signer not available");
+      }
+      
+      // Validate contract address explicitly
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Validate address
+      if (!address || !address.startsWith('0x') || address.length !== 42) {
+        throw new Error("Invalid wallet address format");
+      }
+
+      // Check if the user is the owner
+      const isOwner = await this.checkOwnership();
+      if (!isOwner) {
+        throw new Error("Only the contract owner can update the charity wallet");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function updateCharityWallet(address newAddress) external"
+      ];
+
+      // Create contract instance
+      const contract = new ethers.Contract(this.contractAddress, contractABI, this.signer);
+
+      // Prepare transaction options
+      const txOptions = {
+        gasLimit: options?.gasLimit || ethers.utils.hexlify(200000),
+        ...(options || {})
+      };
+
+      console.log(`Sending transaction to update charity wallet to ${address}`);
+      
+      // Call the contract function - this will trigger a wallet popup
+      const tx = await contract.updateCharityWallet(address, txOptions);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait(1); // Wait for 1 confirmation
+
+      console.log(`Charity wallet updated successfully in tx: ${receipt.transactionHash}`);
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber
+      };
+    } catch (error: any) {
+      console.error("Error updating charity wallet:", error);
+      throw new Error(`Failed to update charity wallet: ${error.message || error}`);
+    }
   }
 
   // Update charity percentage
   async updateCharityPercentage(percentage: number, options?: any) {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    console.log(`Would update charity percentage to ${percentage} with options:`, options);
-    return { transactionHash: "0x0000000000000000000000000000000000000000" };
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      if (!this.signer) {
+        throw new Error("Wallet not connected or signer not available");
+      }
+      
+      // Validate contract address explicitly
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Check if the user is the owner
+      const isOwner = await this.checkOwnership();
+      if (!isOwner) {
+        throw new Error("Only the contract owner can update the charity percentage");
+      }
+
+      // Validate percentage (0-300 in base 1000, representing 0-30%)
+      if (percentage < 0 || percentage > 300) {
+        throw new Error("Charity percentage must be between 0 and 300 (0-30%)");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function updateCharityPercentage(uint256 newPercentage) external"
+      ];
+
+      // Create contract instance
+      const contract = new ethers.Contract(this.contractAddress, contractABI, this.signer);
+
+      // Prepare transaction options
+      const txOptions = {
+        gasLimit: options?.gasLimit || ethers.utils.hexlify(200000),
+        ...(options || {})
+      };
+
+      console.log(`Sending transaction to update charity percentage to ${percentage}`);
+      
+      // Call the contract function - this will trigger a wallet popup
+      const tx = await contract.updateCharityPercentage(percentage, txOptions);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait(1); // Wait for 1 confirmation
+
+      console.log(`Charity percentage updated successfully in tx: ${receipt.transactionHash}`);
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber
+      };
+    } catch (error: any) {
+      console.error("Error updating charity percentage:", error);
+      throw new Error(`Failed to update charity percentage: ${error.message || error}`);
+    }
   }
 
   // Update evolution wallet address
   async updateEvolutionWallet(address: string, options?: any) {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    console.log(`Would update evolution wallet to ${address} with options:`, options);
-    return { transactionHash: "0x0000000000000000000000000000000000000000" };
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      if (!this.signer) {
+        throw new Error("Wallet not connected or signer not available");
+      }
+      
+      // Validate contract address explicitly
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Validate address
+      if (!address || !address.startsWith('0x') || address.length !== 42) {
+        throw new Error("Invalid wallet address format");
+      }
+
+      // Check if the user is the owner
+      const isOwner = await this.checkOwnership();
+      if (!isOwner) {
+        throw new Error("Only the contract owner can update the evolution wallet");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function updateEvolutionWallet(address newAddress) external"
+      ];
+
+      // Create contract instance
+      const contract = new ethers.Contract(this.contractAddress, contractABI, this.signer);
+
+      // Prepare transaction options
+      const txOptions = {
+        gasLimit: options?.gasLimit || ethers.utils.hexlify(200000),
+        ...(options || {})
+      };
+
+      console.log(`Sending transaction to update evolution wallet to ${address}`);
+      
+      // Call the contract function - this will trigger a wallet popup
+      const tx = await contract.updateEvolutionWallet(address, txOptions);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait(1); // Wait for 1 confirmation
+
+      console.log(`Evolution wallet updated successfully in tx: ${receipt.transactionHash}`);
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber
+      };
+    } catch (error: any) {
+      console.error("Error updating evolution wallet:", error);
+      throw new Error(`Failed to update evolution wallet: ${error.message || error}`);
+    }
   }
 
   // Update evolution percentage
   async updateEvolutionPercentage(percentage: number, options?: any) {
-    // Implementation would depend on your contract ABI
-    // This is a stub - implement according to your contract
-    console.log(`Would update evolution percentage to ${percentage} with options:`, options);
-    return { transactionHash: "0x0000000000000000000000000000000000000000" };
+    try {
+      // Verify contract initialization
+      if (!this.provider || !this.signer || !this.contractAddress) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
+
+      if (!this.signer) {
+        throw new Error("Wallet not connected or signer not available");
+      }
+      
+      // Validate contract address explicitly
+      if (!this.contractAddress) {
+        throw new Error("Contract address not configured");
+      }
+
+      // Check if the user is the owner
+      const isOwner = await this.checkOwnership();
+      if (!isOwner) {
+        throw new Error("Only the contract owner can update the evolution percentage");
+      }
+
+      // Validate percentage (0-300 in base 1000, representing 0-30%)
+      if (percentage < 0 || percentage > 300) {
+        throw new Error("Evolution percentage must be between 0 and 300 (0-30%)");
+      }
+
+      // Define contract ABI for this specific operation
+      const contractABI = [
+        "function updateEvolutionPercentage(uint256 newPercentage) external"
+      ];
+
+      // Create contract instance
+      const contract = new ethers.Contract(this.contractAddress, contractABI, this.signer);
+
+      // Prepare transaction options
+      const txOptions = {
+        gasLimit: options?.gasLimit || ethers.utils.hexlify(200000),
+        ...(options || {})
+      };
+
+      console.log(`Sending transaction to update evolution percentage to ${percentage}`);
+      
+      // Call the contract function - this will trigger a wallet popup
+      const tx = await contract.updateEvolutionPercentage(percentage, txOptions);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait(1); // Wait for 1 confirmation
+
+      console.log(`Evolution percentage updated successfully in tx: ${receipt.transactionHash}`);
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber
+      };
+    } catch (error: any) {
+      console.error("Error updating evolution percentage:", error);
+      throw new Error(`Failed to update evolution percentage: ${error.message || error}`);
+    }
   }
 
   // Process payment for jobs using smart contract
