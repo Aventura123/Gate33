@@ -23,6 +23,7 @@ interface FirestorePaymentConfig {
     polygon: string;
     binance: string;
   };
+  mainWallet?: string; // Main wallet receiving 70% of payments
   updatedAt?: Date;
 }
 
@@ -31,6 +32,9 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
   const [walletAddress, setWalletAddress] = useState("");
   const [serviceFee, setServiceFee] = useState(0);
   const [transactionTimeout, setTransactionTimeout] = useState(0);
+  
+  // Add a state for the main wallet (70% recipient)
+  const [mainWallet, setMainWallet] = useState("");
   
   // States for contracts on different networks
   const [ethContract, setEthContract] = useState("");
@@ -93,6 +97,10 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
   const [ownerVerificationSuccess, setOwnerVerificationSuccess] = useState(false);
   const [ownerVerificationError, setOwnerVerificationError] = useState<string | null>(null);
 
+  // States for the main wallet update
+  const [mainWalletUpdateSuccess, setMainWalletUpdateSuccess] = useState(false);
+  const [mainWalletUpdateError, setMainWalletUpdateError] = useState<string | null>(null);
+
   // Function to convert percentages (user interface)
   // Converts contract percentage (base 1000) to display value (0-100)
   const contractToDisplayPercentage = (value: number): number => {
@@ -117,6 +125,9 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           if (data.serviceFee) setServiceFee(data.serviceFee);
           if (data.transactionTimeout) setTransactionTimeout(data.transactionTimeout);
           
+          // Load main wallet if exists
+          if (data.mainWallet) setMainWallet(data.mainWallet);
+          
           // Contract configuration
           if (data.contracts) {
             if (data.contracts.ethereum) setEthContract(data.contracts.ethereum);
@@ -127,6 +138,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           // Update the current system configuration to show Firestore values
           setCurrentSystemConfig({
             receiverAddress: data.receiverAddress || "",
+            mainWallet: data.mainWallet || "",
             contracts: {
               ethereum: data.contracts?.ethereum || "",
               polygon: data.contracts?.polygon || "",
@@ -369,6 +381,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             receiverAddress: walletAddress,
             serviceFee: serviceFee,
             transactionTimeout: transactionTimeout * 1000, // Converted to milliseconds
+            mainWallet: mainWallet, // Add main wallet to config
             contracts: {
                 ethereum: ethContract,
                 polygon: polygonContract,
@@ -388,6 +401,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         // Update the current system configuration
         setCurrentSystemConfig({
             receiverAddress: walletAddress,
+            mainWallet: mainWallet,
             contracts: {
                 ethereum: ethContract,
                 polygon: polygonContract,
@@ -463,200 +477,87 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
     setUpdatingWallets(true);
     setWalletUpdateError(null);
     setWalletUpdateSuccess(false);
-    
+
     try {
       if (!walletConnected) {
         throw new Error("Connect your wallet first");
       }
-      
-      // Validate addresses
+
+      console.log("Validating wallet addresses...");
       if (feeCollectorAddress && !validateEthereumAddress(feeCollectorAddress)) {
         throw new Error("Main fee collector (FeeCollector) address is invalid");
       }
-      
       if (developmentWalletAddress && !validateEthereumAddress(developmentWalletAddress)) {
         throw new Error("Development wallet address is invalid");
       }
-      
       if (charityWalletAddress && !validateEthereumAddress(charityWalletAddress)) {
         throw new Error("Charity wallet address is invalid");
       }
-      
       if (evolutionWalletAddress && !validateEthereumAddress(evolutionWalletAddress)) {
         throw new Error("Evolution wallet address is invalid");
       }
-      
-      // Validate percentages (contract base is 1000, i.e., 25 = 2.5%)
-      if (feePercentage < 0 || feePercentage > 100) {
-        throw new Error("Main fee percentage must be between 0 and 100 (0% and 10%)");
-      }
-      
-      if (developmentPercentage < 0 || developmentPercentage > 100) {
-        throw new Error("Development wallet percentage must be between 0 and 100 (0% and 10%)");
-      }
-      
-      if (charityPercentage < 0 || charityPercentage > 100) {
-        throw new Error("Charity wallet percentage must be between 0 and 100 (0% and 10%)");
-      }
-      
-      if (evolutionPercentage < 0 || evolutionPercentage > 100) {
-        throw new Error("Evolution wallet percentage must be between 0 and 100 (0% and 10%)");
-      }
-      
-      // Verify if the total does not exceed 30% (300 in base 1000)
+
+      console.log("Validating percentages...");
       const total = feePercentage + developmentPercentage + charityPercentage + evolutionPercentage;
       if (total > 30) {
         throw new Error("The total sum of all percentages cannot exceed 30%");
       }
-      
-      // Verify if the contract is initialized
+
+      console.log("Initializing contract...");
       if (!smartContractService.isContractInitialized()) {
-        await smartContractService.initializeContract();
-      }
+        const walletInfo = web3Service.getWalletInfo();
+        const networkName = walletInfo?.networkName?.toLowerCase();
+        let contractAddress: string | undefined;
 
-      // Verify if the current user is the contract owner with enhanced error handling
-      try {
-        const isOwner = await smartContractService.checkOwnership();
-        
-        if (!isOwner) {
-          // Improve error message to include helpful instructions
-          const walletInfo = web3Service.getWalletInfo();
-          const currentWallet = walletInfo?.address || "unknown";
-          const currentNetwork = walletInfo?.networkName || "unknown";
-          const currentChainId = walletInfo?.chainId || "unknown";
-          
-          throw new Error(
-            `You do not have permission to update the wallets (address ${currentWallet} on network ${currentNetwork}, ChainID: ${currentChainId}). ` +
-            `Only the contract owner can do this. ` +
-            `Check if you are connected with the correct wallet and on the BSC Testnet network (ChainID: 97).`
-          );
-        }
-      } catch (ownerError: any) {
-        console.error("Error verifying contract ownership:", ownerError);
-        
-        // If the error is from the checkOwnership method, show additional information
-        if (ownerError.message.includes("do not have permission")) {
-          throw ownerError; // Use the improved message we already created
+        if (networkName && networkName in CONTRACT_ADDRESSES) {
+          contractAddress = CONTRACT_ADDRESSES[networkName as keyof typeof CONTRACT_ADDRESSES];
+          console.log(`Contract address for network ${networkName}: ${contractAddress}`);
         } else {
-          // Get wallet information for diagnosis
-          const walletInfo = web3Service.getWalletInfo();
-          throw new Error(
-            `Could not verify if you are the contract owner: ${ownerError.message}. ` +
-            `This can happen for several reasons: the contract may not be accessible, ` +
-            `you may be on the wrong network (current: ${walletInfo?.networkName || 'unknown'}, ChainID: ${walletInfo?.chainId || 'unknown'}), ` +
-            `or the ownership verification method is not available in the contract. ` +
-            `Check if you are connected to the BSC Testnet network and try again.`
-          );
+          throw new Error(`Contract address not found for the current network: ${walletInfo?.networkName}`);
         }
-      }
-      
-      // Add gas limit verification in transactions
-      const gasOptions = { 
-        gasLimit: 300000  // Adding a manual gas limit to prevent estimation error
-      };
-      
-      // Update addresses in the contract with a retry mechanism
-      const updateWithRetry = async (updateFunction: Function, ...params: any[]) => {
-        try {
-          return await updateFunction(...params, gasOptions);
-        } catch (error: any) {
-          console.error(`Transaction error: ${error.message}`);
-          
-          // If it's a gas limit error, try increasing the gas
-          if (error.message.includes("UNPREDICTABLE_GAS_LIMIT")) {
-            console.log("Retrying with a higher gas limit...");
-            const higherGasOptions = { gasLimit: 500000 };
-            return await updateFunction(...params, higherGasOptions);
-          } else {
-            throw error;
-          }
-        }
-      };
 
-      // Update addresses in the contract
-      const updatePromises = [];
-      
-      // Update feeCollector address if necessary
-      if (feeCollectorAddress !== currentFeeCollector) {
-        updatePromises.push(updateWithRetry(smartContractService.updateFeeCollector, feeCollectorAddress));
+        if (contractAddress) {
+          await smartContractService.initializeContract(undefined, contractAddress);
+        }
       }
-      
-      // Get current percentages for comparison
-      const currentPercentages = await smartContractService.getDistributionPercentages();
-      
-      // Update main fee percentage if necessary
-      const contractFeePercentage = displayToContractPercentage(feePercentage);
-      if (contractFeePercentage !== currentPercentages.feePercentage) {
-        updatePromises.push(updateWithRetry(smartContractService.updateFeePercentage, contractFeePercentage));
+
+      console.log("Verifying ownership...");
+      const isOwner = await smartContractService.checkOwnership();
+      if (!isOwner) {
+        throw new Error("You are not the contract owner. Only the owner can update wallets.");
       }
-      
-      // Wallet updates with specific error handling for each
-      // Update development wallet
-      try {
-        await updateWithRetry(smartContractService.updateDevelopmentWallet, developmentWalletAddress);
-      } catch (err: any) {
-        console.error("Error updating development wallet:", err);
-        setWalletUpdateError(`Error updating development wallet: ${err.message || "Check permissions and contract"}`);
-        // Continue with other operations even if one fails
-      }
-      
-      // Update charity wallet
-      try {
-        await updateWithRetry(smartContractService.updateCharityWallet, charityWalletAddress);
-      } catch (err: any) {
-        console.error("Error updating charity wallet:", err);
-        setWalletUpdateError((prev) => 
-          prev ? `${prev}, Error in charity wallet` : `Error updating charity wallet: ${err.message}`);
-      }
-      
-      // Update evolution wallet
-      try {
-        await updateWithRetry(smartContractService.updateEvolutionWallet, evolutionWalletAddress);
-      } catch (err: any) {
-        console.error("Error updating evolution wallet:", err);
-        setWalletUpdateError((prev) => 
-          prev ? `${prev}, Error in evolution wallet` : `Error updating evolution wallet: ${err.message}`);
-      }
-      
-      // Update percentages with individual error handling
-      try {
-        await updateWithRetry(smartContractService.updateDevelopmentPercentage, displayToContractPercentage(developmentPercentage));
-        await updateWithRetry(smartContractService.updateCharityPercentage, displayToContractPercentage(charityPercentage));
-        await updateWithRetry(smartContractService.updateEvolutionPercentage, displayToContractPercentage(evolutionPercentage));
-      } catch (err: any) {
-        console.error("Error updating percentages:", err);
-        setWalletUpdateError((prev) => 
-          prev ? `${prev}, Error in percentages` : `Error updating percentages: ${err.message}`);
-      }
-      
-      // If we didn't have fatal errors, consider it a success even with warnings
-      if (!walletUpdateError) {
-        setWalletUpdateSuccess(true);
-      }
-      
-      // Update local data
-      await fetchContractData();
-      
-      // Also update the main wallet address in Firestore to maintain consistency
-      if (walletAddress !== feeCollectorAddress) {
-        setWalletAddress(feeCollectorAddress);
-        await updatePaymentConfig();
-      }
+
+      console.log("Updating wallets and percentages...");
+      await smartContractService.updateFeeCollector(feeCollectorAddress);
+      console.log("Fee collector updated:", feeCollectorAddress);
+
+      await smartContractService.updateDevelopmentWallet(developmentWalletAddress);
+      console.log("Development wallet updated:", developmentWalletAddress);
+
+      await smartContractService.updateCharityWallet(charityWalletAddress);
+      console.log("Charity wallet updated:", charityWalletAddress);
+
+      await smartContractService.updateEvolutionWallet(evolutionWalletAddress);
+      console.log("Evolution wallet updated:", evolutionWalletAddress);
+
+      await smartContractService.updateFeePercentage(displayToContractPercentage(feePercentage));
+      console.log("Fee percentage updated:", feePercentage);
+
+      await smartContractService.updateDevelopmentPercentage(displayToContractPercentage(developmentPercentage));
+      console.log("Development percentage updated:", developmentPercentage);
+
+      await smartContractService.updateCharityPercentage(displayToContractPercentage(charityPercentage));
+      console.log("Charity percentage updated:", charityPercentage);
+
+      await smartContractService.updateEvolutionPercentage(displayToContractPercentage(evolutionPercentage));
+      console.log("Evolution percentage updated:", evolutionPercentage);
+
+      setWalletUpdateSuccess(true);
+      console.log("Wallets and percentages updated successfully.");
+      await fetchContractData(); // Refresh data after update
     } catch (err: any) {
-      console.error("Error updating additional wallets:", err);
-      
-      // Specific messages for common errors
-      if (err.message.includes("UNPREDICTABLE_GAS_LIMIT")) {
-        setWalletUpdateError(
-          "Error estimating gas for the transaction. This can happen for several reasons: " +
-          "1. You do not have permissions to execute this function in the contract; " +
-          "2. The provided parameters are invalid or out of allowed limits; " +
-          "3. The contract has additional restrictions (such as pauses or time limits). " +
-          "Check if you are the contract owner."
-        );
-      } else {
-        setWalletUpdateError(err.message || "Error updating wallets and percentages in the contract.");
-      }
+      console.error("Error updating wallets:", err);
+      setWalletUpdateError(err.message || "Error updating wallets.");
     } finally {
       setUpdatingWallets(false);
     }
@@ -870,6 +771,30 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
     }
   }, [walletUpdateSuccess]);
 
+  // Function to update main wallet (70% recipient)
+  const handleUpdateMainWallet = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMainWalletUpdateError(null);
+    setMainWalletUpdateSuccess(false);
+
+    try {
+      if (!validateEthereumAddress(mainWallet)) {
+        throw new Error("Main wallet address is invalid. Must start with '0x' followed by 40 hexadecimal characters.");
+      }
+      
+      // Update only the main wallet in Firestore
+      const configRef = doc(db, "settings", "paymentConfig");
+      await setDoc(configRef, { mainWallet: mainWallet }, { merge: true });
+      
+      // Update local state
+      setMainWalletUpdateSuccess(true);
+      console.log("Main wallet updated successfully:", mainWallet);
+    } catch (err: any) {
+      console.error("Error updating main wallet:", err);
+      setMainWalletUpdateError(err.message || "Error updating main wallet.");
+    }
+  };
+
   // Render the success message for contract owner
   const renderOwnerSuccessMessage = () => {
     const ownerMessage = localStorage.getItem('ownerSuccessMessage');
@@ -914,320 +839,347 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         </div>
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Receiving Wallet */}
-        <div className="mb-4">
-          <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="walletAddress">
-            Receiving Wallet Address
-          </label>
-          <input
-            id="walletAddress"
-            type="text"
-            value={walletAddress}
-            onChange={(e) => setWalletAddress(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            placeholder="0x..."
-          />
-          <p className="text-gray-400 text-xs mt-1">
-            This address will receive all payments on the platform.
+      {/* Main wallet configuration section (70% of payments) */}
+      <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
+        <h3 className="text-xl font-bold mb-4 text-green-400">Primary Payment Wallet (70%)</h3>
+        
+        {mainWalletUpdateError && (
+          <div className="bg-red-800 border border-red-900 text-white px-4 py-3 rounded mb-4">
+            <p>{mainWalletUpdateError}</p>
+          </div>
+        )}
+        
+        {mainWalletUpdateSuccess && (
+          <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
+            <p>Main wallet updated successfully!</p>
+          </div>
+        )}
+        
+        <div className="p-3 mb-4 bg-green-900/20 border border-green-800/50 rounded">
+          <p className="text-sm text-gray-300">
+            This wallet will receive <span className="font-bold text-green-400">70%</span> of all job posting payments. 
+            This is separate from the fee distribution wallets below.
           </p>
         </div>
         
-        {/* Service Fee */}
-        <div className="mb-4">
-          <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="serviceFee">
-            Service Fee (%)
-          </label>
-          <input
-            id="serviceFee"
-            type="number"
-            min="0"
-            max="100"
-            step="0.1"
-            value={serviceFee}
-            onChange={(e) => setServiceFee(parseFloat(e.target.value))}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-          <p className="text-gray-400 text-xs mt-1">
-            Percentage charged as service fee on each transaction.
+        <form onSubmit={handleUpdateMainWallet} className="flex flex-col space-y-4">
+          <div>
+            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="mainWallet">
+              Main Recipient Wallet Address
+            </label>
+            <input
+              id="mainWallet"
+              type="text"
+              value={mainWallet}
+              onChange={(e) => setMainWallet(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              placeholder="0x..."
+            />
+            <p className="text-gray-400 text-xs mt-1">
+              This address will receive 70% of all job posting payments.
+            </p>
+          </div>
+          
+          <div>
+            <button
+              type="submit"
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+              Update Main Wallet
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      {/* Fee distribution section (30% split across wallets) */}
+      <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
+        <h3 className="text-xl font-bold mb-4 text-orange-400">Fee Distribution Wallets (30%)</h3>
+        
+        <div className="p-3 mb-4 bg-orange-900/20 border border-orange-800/50 rounded">
+          <p className="text-sm text-gray-300">
+            The remaining <span className="font-bold text-orange-400">30%</span> of each payment is distributed 
+            among the following wallets according to the percentages you set. 
+            <span className="block mt-2 font-bold">These settings are stored in the smart contract and require wallet connection to update.</span>
           </p>
         </div>
         
-        {/* Transaction Timeout */}
-        <div className="mb-4">
-          <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="transactionTimeout">
-            Transaction Timeout (seconds)
-          </label>
-          <input
-            id="transactionTimeout"
-            type="number"
-            min="10"
-            value={transactionTimeout}
-            onChange={(e) => setTransactionTimeout(parseInt(e.target.value))}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-          <p className="text-gray-400 text-xs mt-1">
-            Maximum time to wait for transaction confirmation.
-          </p>
-        </div>
+        {walletUpdateError && (
+          <div className="bg-red-800 border border-red-900 text-white px-4 py-3 rounded mb-4">
+            <p>{walletUpdateError}</p>
+          </div>
+        )}
         
-        {/* Multiple Wallets Payment Distribution Section */}
-        <div className="border-t border-gray-700 pt-6 mt-6">
-          <h3 className="text-xl font-semibold mb-4 text-orange-400">Multi-Wallet Payment Distribution</h3>
-          
-          {walletUpdateError && (
-            <div className="bg-red-800 border border-red-900 text-white px-4 py-3 rounded mb-4">
-              <p>{walletUpdateError}</p>
-            </div>
-          )}
-          
-          {walletUpdateSuccess && (
-            <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
-              <p>Wallet and percentage settings successfully updated in the contract!</p>
-            </div>
-          )}
-          
-          {contractOwner && (
-            <div className="bg-blue-800 border border-blue-900 text-white px-4 py-3 rounded mb-4">
-              <p>
-                <strong>Contract owner:</strong> {contractOwner}
-                {web3Service.getWalletInfo()?.address === contractOwner && (
-                  <span className="ml-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
-                    You are the owner!
-                  </span>
-                )}
+        {walletUpdateSuccess && (
+          <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
+            <p>Fee distribution wallets successfully updated in the contract!</p>
+          </div>
+        )}
+        
+        {contractOwner && (
+          <div className="bg-blue-800 border border-blue-900 text-white px-4 py-3 rounded mb-4">
+            <p>
+              <strong>Contract owner:</strong> {contractOwner}
+              {web3Service.getWalletInfo()?.address === contractOwner && (
+                <span className="ml-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                  You are the owner!
+                </span>
+              )}
+            </p>
+          </div>
+        )}
+        
+        <div className="mb-4">
+          {!walletConnected ? (
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={connectWallet}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                Connect Wallet to Manage Contract Settings
+              </button>
+              <p className="text-gray-400 text-xs mt-2">
+                You need to connect your wallet to interact with the smart contract.
               </p>
             </div>
-          )}
-          
-          <p className="text-gray-400 mb-4">
-            Configure up to four wallets to automatically distribute payments: 
-            main fee collector (FeeCollector), development, charity, and evolution.
-            The total sum of percentages cannot exceed 30%.
-          </p>
-
-          {/* Explanation about the remaining 70% */}
-          <div className="bg-gray-800 border border-gray-700 text-white px-4 py-3 rounded mb-4">
-            <h4 className="font-semibold mb-1">How fees work:</h4>
-            <p className="text-sm text-gray-300">
-              Of the total value of each transaction, a maximum of 30% is distributed among the wallets configured above.
-              The remaining 70% always goes directly to the main recipient of the payment (for example,
-              the seller of a product, the service provider, or the content creator).
-            </p>
-            <p className="text-sm text-gray-300 mt-2">
-              This 30% limitation is implemented in the smart contract to protect users and ensure
-              that most of the value always reaches the intended recipient.
-            </p>
-          </div>
-          
-          <div className="mb-4">
-            {!walletConnected ? (
-              <div className="mb-4">
+          ) : (
+            <div className="space-y-4">
+              <div className="mb-4 flex justify-between items-center">
+                <p className="text-green-400 text-sm">
+                  <span className="inline-block bg-green-900 rounded-full px-2 py-1 text-xs mr-2">Connected</span>
+                  Wallet connected - you can configure fee distribution
+                </p>
+                
                 <button
                   type="button"
-                  onClick={connectWallet}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  onClick={checkContractOwner}
+                  disabled={isCheckingOwner}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded"
                 >
-                  Connect Wallet to Manage Contracts
+                  {isCheckingOwner ? 'Checking...' : 'Verify Contract Owner'}
                 </button>
-                <p className="text-gray-400 text-xs mt-2">
-                  You need to connect your wallet to interact with the smart contract.
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Main Fee Collector */}
+                <div>
+                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="feeCollectorAddress">
+                    Fee Collector Wallet
+                  </label>
+                  <input
+                    id="feeCollectorAddress"
+                    type="text"
+                    value={feeCollectorAddress}
+                    onChange={(e) => setFeeCollectorAddress(e.target.value)}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    placeholder="0x..."
+                  />
+                  {currentFeeCollector && (
+                    <p className="text-gray-400 text-xs mt-1">
+                      Current address: <span className="font-mono">{currentFeeCollector}</span>
+                    </p>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="feePercentage">
+                    Fee Collector (%)
+                  </label>
+                  <input
+                    id="feePercentage"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={feePercentage}
+                    onChange={(e) => setFeePercentage(parseInt(e.target.value))}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  />
+                  <p className="text-gray-400 text-xs mt-1">
+                    Base 1000: {feePercentage} = {(feePercentage / 10).toFixed(1)}%
+                  </p>
+                </div>
+                
+                {/* Development Wallet */}
+                <div>
+                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="developmentWalletAddress">
+                    Development Wallet
+                  </label>
+                  <input
+                    id="developmentWalletAddress"
+                    type="text"
+                    value={developmentWalletAddress}
+                    onChange={(e) => setDevelopmentWalletAddress(e.target.value)}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    placeholder="0x..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="developmentPercentage">
+                    Development Percentage (%)
+                  </label>
+                  <input
+                    id="developmentPercentage"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={developmentPercentage}
+                    onChange={(e) => setDevelopmentPercentage(parseInt(e.target.value))}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  />
+                  <p className="text-gray-400 text-xs mt-1">
+                    Base 1000: {developmentPercentage} = {(developmentPercentage / 10).toFixed(1)}%
+                  </p>
+                </div>
+                
+                {/* Charity Wallet */}
+                <div>
+                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="charityWalletAddress">
+                    Charity Wallet
+                  </label>
+                  <input
+                    id="charityWalletAddress"
+                    type="text"
+                    value={charityWalletAddress}
+                    onChange={(e) => setCharityWalletAddress(e.target.value)}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    placeholder="0x..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="charityPercentage">
+                    Charity Percentage (%)
+                  </label>
+                  <input
+                    id="charityPercentage"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={charityPercentage}
+                    onChange={(e) => setCharityPercentage(parseInt(e.target.value))}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  />
+                  <p className="text-gray-400 text-xs mt-1">
+                    Base 1000: {charityPercentage} = {(charityPercentage / 10).toFixed(1)}%
+                  </p>
+                </div>
+                
+                {/* Evolution Wallet */}
+                <div>
+                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="evolutionWalletAddress">
+                    Evolution Wallet
+                  </label>
+                  <input
+                    id="evolutionWalletAddress"
+                    type="text"
+                    value={evolutionWalletAddress}
+                    onChange={(e) => setEvolutionWalletAddress(e.target.value)}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    placeholder="0x..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="evolutionPercentage">
+                    Evolution Percentage (%)
+                  </label>
+                  <input
+                    id="evolutionPercentage"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={evolutionPercentage}
+                    onChange={(e) => setEvolutionPercentage(parseInt(e.target.value))}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  />
+                  <p className="text-gray-400 text-xs mt-1">
+                    Base 1000: {evolutionPercentage} = {(evolutionPercentage / 10).toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+              
+              <div className="mt-4 p-3 bg-gray-800 rounded">
+                <p className="text-white font-semibold">Total fees: {(totalPercentage / 10).toFixed(1)}%</p>
+                <div className="w-full bg-gray-700 h-2 mt-2 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${totalPercentage > 300 ? 'bg-red-500' : 'bg-green-500'} progress-bar dynamic-width`} 
+                    style={{ width: `${Math.min((totalPercentage / 300) * 100, 100)}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  The total sum must not exceed 300 (30%)
                 </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="mb-4 flex justify-between items-center">
-                  <p className="text-green-400 text-sm">
-                    <span className="inline-block bg-green-900 rounded-full px-2 py-1 text-xs mr-2">Connected</span>
-                    Wallet connected - you can configure payment distribution
-                  </p>
-                  
-                  <button
-                    type="button"
-                    onClick={checkContractOwner}
-                    disabled={isCheckingOwner}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded"
-                  >
-                    {isCheckingOwner ? 'Checking...' : 'Verify Contract Owner'}
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Main Fee Collector */}
-                  <div>
-                    <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="feeCollectorAddress">
-                      Main Fee Collector
-                    </label>
-                    <input
-                      id="feeCollectorAddress"
-                      type="text"
-                      value={feeCollectorAddress}
-                      onChange={(e) => setFeeCollectorAddress(e.target.value)}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      placeholder="0x..."
-                    />
-                    {currentFeeCollector && (
-                      <p className="text-gray-400 text-xs mt-1">
-                        Current address: <span className="font-mono">{currentFeeCollector}</span>
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="feePercentage">
-                      Main Fee (%)
-                    </label>
-                    <input
-                      id="feePercentage"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={feePercentage}
-                      onChange={(e) => setFeePercentage(parseInt(e.target.value))}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                    <p className="text-gray-400 text-xs mt-1">
-                      Base 1000: {feePercentage} = {(feePercentage / 10).toFixed(1)}%
-                    </p>
-                  </div>
-                  
-                  {/* Development Wallet */}
-                  <div>
-                    <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="developmentWalletAddress">
-                      Development Wallet
-                    </label>
-                    <input
-                      id="developmentWalletAddress"
-                      type="text"
-                      value={developmentWalletAddress}
-                      onChange={(e) => setDevelopmentWalletAddress(e.target.value)}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      placeholder="0x..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="developmentPercentage">
-                      Development Percentage (%)
-                    </label>
-                    <input
-                      id="developmentPercentage"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={developmentPercentage}
-                      onChange={(e) => setDevelopmentPercentage(parseInt(e.target.value))}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                    <p className="text-gray-400 text-xs mt-1">
-                      Base 1000: {developmentPercentage} = {(developmentPercentage / 10).toFixed(1)}%
-                    </p>
-                  </div>
-                  
-                  {/* Charity Wallet */}
-                  <div>
-                    <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="charityWalletAddress">
-                      Charity Wallet
-                    </label>
-                    <input
-                      id="charityWalletAddress"
-                      type="text"
-                      value={charityWalletAddress}
-                      onChange={(e) => setCharityWalletAddress(e.target.value)}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      placeholder="0x..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="charityPercentage">
-                      Charity Percentage (%)
-                    </label>
-                    <input
-                      id="charityPercentage"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={charityPercentage}
-                      onChange={(e) => setCharityPercentage(parseInt(e.target.value))}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                    <p className="text-gray-400 text-xs mt-1">
-                      Base 1000: {charityPercentage} = {(charityPercentage / 10).toFixed(1)}%
-                    </p>
-                  </div>
-                  
-                  {/* Evolution Wallet */}
-                  <div>
-                    <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="evolutionWalletAddress">
-                      Evolution Wallet
-                    </label>
-                    <input
-                      id="evolutionWalletAddress"
-                      type="text"
-                      value={evolutionWalletAddress}
-                      onChange={(e) => setEvolutionWalletAddress(e.target.value)}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      placeholder="0x..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="evolutionPercentage">
-                      Evolution Percentage (%)
-                    </label>
-                    <input
-                      id="evolutionPercentage"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={evolutionPercentage}
-                      onChange={(e) => setEvolutionPercentage(parseInt(e.target.value))}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                    <p className="text-gray-400 text-xs mt-1">
-                      Base 1000: {evolutionPercentage} = {(evolutionPercentage / 10).toFixed(1)}%
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="mt-4 p-3 bg-gray-800 rounded">
-                  <p className="text-white font-semibold">Total fees: {(totalPercentage / 10).toFixed(1)}%</p>
-                  <div className="w-full bg-gray-700 h-2 mt-2 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${totalPercentage > 300 ? 'bg-red-500' : 'bg-green-500'} progress-bar dynamic-width`} 
-                    ></div>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    The total sum must not exceed 300 (30%)
-                  </p>
-                </div>
-                
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleUpdateAdditionalWallets(e as any);
-                  }}
-                  disabled={updatingWallets}
-                  className={`mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
-                    updatingWallets ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {updatingWallets ? 'Updating...' : 'Update Wallets and Percentages'}
-                </button>
+              
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleUpdateAdditionalWallets(e as any);
+                }}
+                disabled={updatingWallets}
+                className={`mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+                  updatingWallets ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {updatingWallets ? 'Updating...' : 'Update Fee Distribution'}
+              </button>
+            </div>
+          )}
+        </div>
+  {/* Payment Distribution Overview */}
+  <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
+          <h3 className="text-lg font-semibold mb-2 text-gray-300">Payment Distribution Overview</h3>
+          <div className="bg-gray-800/50 p-4 rounded">
+            <div className="flex flex-col space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Main Recipient:</span>
+                <span className="text-green-400 font-bold">70%</span>
               </div>
-            )}
+              <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
+                <div className="h-full bg-green-500" style={{ width: "70%" }}></div>
+              </div>
+              
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-gray-300">Fee Distribution (total):</span>
+                <span className="text-orange-400 font-bold">30%</span>
+              </div>
+              <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
+                <div className="h-full bg-orange-500" style={{ width: "30%" }}></div>
+              </div>
+              
+              <div className="grid grid-cols-4 gap-2 mt-2">
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Fee Collector</div>
+                  <div className="text-sm text-white">{(feePercentage / 10).toFixed(1)}%</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Development</div>
+                  <div className="text-sm text-white">{(developmentPercentage / 10).toFixed(1)}%</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Charity</div>
+                  <div className="text-sm text-white">{(charityPercentage / 10).toFixed(1)}%</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Evolution</div>
+                  <div className="text-sm text-white">{(evolutionPercentage / 10).toFixed(1)}%</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        
+      </div>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Contract Section */}
-        <div className="border-t border-gray-700 pt-4">
-          <h3 className="text-xl font-semibold mb-4 text-orange-400">Contract Addresses</h3>
+        <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
+          <h3 className="text-xl font-bold mb-4 text-purple-400">Contract Addresses</h3>
           
           {/* Ethereum Contract */}
           <div className="mb-4">
@@ -1319,7 +1271,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         </div>
         
         {/* Current Configuration Information */}
-        <div className="border-t border-gray-700 pt-4">
+        <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
           <h3 className="text-lg font-semibold mb-2 text-gray-300">Current System Configuration</h3>
           <div className="bg-black p-3 rounded overflow-auto">
             <pre className="text-sm text-gray-400 whitespace-pre-wrap">
@@ -1334,6 +1286,49 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           </p>
         </div>
         
+        {/* Payment Distribution Explanation */}
+        <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
+          <h3 className="text-lg font-semibold mb-2 text-gray-300">Payment Distribution Overview</h3>
+          <div className="bg-gray-800/50 p-4 rounded">
+            <div className="flex flex-col space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Main Recipient:</span>
+                <span className="text-green-400 font-bold">70%</span>
+              </div>
+              <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
+                <div className="h-full bg-green-500" style={{ width: "70%" }}></div>
+              </div>
+              
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-gray-300">Fee Distribution (total):</span>
+                <span className="text-orange-400 font-bold">30%</span>
+              </div>
+              <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
+                <div className="h-full bg-orange-500" style={{ width: "30%" }}></div>
+              </div>
+              
+              <div className="grid grid-cols-4 gap-2 mt-2">
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Fee Collector</div>
+                  <div className="text-sm text-white">{(feePercentage / 10).toFixed(1)}%</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Development</div>
+                  <div className="text-sm text-white">{(developmentPercentage / 10).toFixed(1)}%</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Charity</div>
+                  <div className="text-sm text-white">{(charityPercentage / 10).toFixed(1)}%</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-400">Evolution</div>
+                  <div className="text-sm text-white">{(evolutionPercentage / 10).toFixed(1)}%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <div className="flex items-center justify-between pt-4">
           <button
             type="submit"
@@ -1342,7 +1337,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               isUpdating ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {isUpdating ? 'Updating...' : 'Save Settings'}
+            {isUpdating ? 'Updating...' : 'Save System Settings'}
           </button>
         </div>
       </form>
