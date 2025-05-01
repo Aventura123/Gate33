@@ -2,6 +2,22 @@
 pragma solidity ^0.8.17;
 
 /**
+ * @title IERC20
+ * @dev Interface do padrão ERC20 para tokens fungíveis
+ */
+interface IERC20 {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+/**
  * @title Gate33PaymentProcessor
  * @dev Contrato para processamento de pagamentos em criptomoedas para o projeto Gate33
  */
@@ -25,6 +41,13 @@ contract Gate33PaymentProcessor {
     mapping(address => uint256) public payments;
     mapping(bytes32 => bool) public processedPaymentIds;
     
+    // Mapeamento para armazenar balances de tokens ERC-20
+    mapping(address => mapping(address => uint256)) public tokenPayments; // token => beneficiario => montante
+    
+    // Lista de tokens suportados
+    mapping(address => bool) public supportedTokens;
+    address[] public supportedTokensList;
+    
     // Eventos
     event PaymentProcessed(address indexed from, address indexed to, uint256 amount, uint256 fee, bytes32 indexed paymentId);
     event PaymentReleased(address indexed to, uint256 amount, bytes32 paymentId);
@@ -37,6 +60,13 @@ contract Gate33PaymentProcessor {
     event PercentageUpdated(string percentageType, uint256 previousPercentage, uint256 newPercentage);
     event Paused(address by);
     event Unpaused(address by);
+    
+    // Eventos adicionais para tokens ERC-20
+    event TokenPaymentProcessed(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 fee, bytes32 paymentId);
+    event TokenFeeCollected(address indexed token, address indexed collector, uint256 amount, bytes32 paymentId);
+    event TokenPaymentReleased(address indexed token, address indexed to, uint256 amount, bytes32 paymentId);
+    event TokenAdded(address indexed token);
+    event TokenRemoved(address indexed token);
     
     // Modificadores
     modifier onlyOwner() {
@@ -75,6 +105,27 @@ contract Gate33PaymentProcessor {
         developmentPercentage = 0;
         charityPercentage = 0;
         evolutionPercentage = 0;
+        
+        // Adicionar automaticamente os endereços do USDT das principais redes
+        // Ethereum Mainnet USDT
+        supportedTokens[0xdAC17F958D2ee523a2206206994597C13D831ec7] = true;
+        supportedTokensList.push(0xdAC17F958D2ee523a2206206994597C13D831ec7);
+        
+        // BSC Mainnet USDT
+        supportedTokens[0x55d398326f99059fF775485246999027B3197955] = true;
+        supportedTokensList.push(0x55d398326f99059fF775485246999027B3197955);
+        
+        // Polygon USDT
+        supportedTokens[0xc2132D05D31c914a87C6611C10748AEb04B58e8F] = true;
+        supportedTokensList.push(0xc2132D05D31c914a87C6611C10748AEb04B58e8F);
+        
+        // Avalanche USDT
+        supportedTokens[0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7] = true;
+        supportedTokensList.push(0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7);
+        
+        // BSC Testnet USDT (para testes)
+        supportedTokens[0x337610d27c682E347C9cD60BD4b3b107C9d34dDd] = true;
+        supportedTokensList.push(0x337610d27c682E347C9cD60BD4b3b107C9d34dDd);
     }
     
     /**
@@ -438,5 +489,312 @@ contract Gate33PaymentProcessor {
      */
     fallback() external payable {
         revert("Gate33: function not found");
+    }
+
+    /**
+     * @dev Adiciona um token à lista de tokens suportados
+     * @param tokenAddress Endereço do contrato do token ERC-20
+     */
+    function addSupportedToken(address tokenAddress) external onlyOwner {
+        require(tokenAddress != address(0), "Gate33: invalid token address");
+        require(!supportedTokens[tokenAddress], "Gate33: token already supported");
+        
+        supportedTokens[tokenAddress] = true;
+        supportedTokensList.push(tokenAddress);
+        
+        emit TokenAdded(tokenAddress);
+    }
+    
+    /**
+     * @dev Remove um token da lista de tokens suportados
+     * @param tokenAddress Endereço do contrato do token ERC-20
+     */
+    function removeSupportedToken(address tokenAddress) external onlyOwner {
+        require(supportedTokens[tokenAddress], "Gate33: token not supported");
+        
+        supportedTokens[tokenAddress] = false;
+        
+        // Remover da lista de tokens
+        for (uint i = 0; i < supportedTokensList.length; i++) {
+            if (supportedTokensList[i] == tokenAddress) {
+                supportedTokensList[i] = supportedTokensList[supportedTokensList.length - 1];
+                supportedTokensList.pop();
+                break;
+            }
+        }
+        
+        emit TokenRemoved(tokenAddress);
+    }
+    
+    /**
+     * @dev Verifica se um token é suportado
+     * @param tokenAddress Endereço do contrato do token ERC-20
+     */
+    function isTokenSupported(address tokenAddress) public view returns (bool) {
+        return supportedTokens[tokenAddress];
+    }
+    
+    /**
+     * @dev Retorna o número de tokens suportados
+     */
+    function getSupportedTokensCount() external view returns (uint256) {
+        return supportedTokensList.length;
+    }
+    
+    /**
+     * @dev Processa um pagamento em token ERC-20 sem taxa
+     * @param tokenAddress Endereço do token ERC-20
+     * @param recipient Endereço do destinatário
+     * @param amount Valor do pagamento em tokens
+     * @return Verdadeiro se o processamento foi bem-sucedido
+     */
+    function processTokenPayment(
+        address tokenAddress,
+        address recipient,
+        uint256 amount
+    ) external whenNotPaused returns (bool) {
+        require(supportedTokens[tokenAddress], "Gate33: token not supported");
+        require(recipient != address(0), "Gate33: invalid recipient");
+        require(amount > 0, "Gate33: payment amount must be > 0");
+        
+        IERC20 token = IERC20(tokenAddress);
+        
+        // Verificar se o contrato tem permissão para transferir os tokens
+        uint256 allowance = token.allowance(msg.sender, address(this));
+        require(allowance >= amount, "Gate33: insufficient token allowance");
+        
+        // Transferir tokens do remetente para o destinatário
+        bool success = token.transferFrom(msg.sender, recipient, amount);
+        require(success, "Gate33: token transfer failed");
+        
+        // Gerar um paymentId baseado no remetente, destinatário, valor e timestamp
+        // Dividido em duas partes para evitar erro "stack too deep"
+        bytes32 hash1 = keccak256(abi.encodePacked(msg.sender, recipient, amount));
+        bytes32 paymentId = keccak256(abi.encodePacked(hash1, block.timestamp, tokenAddress));
+        
+        // Registrar como processado
+        processedPaymentIds[paymentId] = true;
+        
+        // Emitir evento (taxa zero neste caso)
+        emit TokenPaymentProcessed(tokenAddress, msg.sender, recipient, amount, 0, paymentId);
+        
+        return true;
+    }
+    
+    /**
+     * @dev Processa um pagamento em token ERC-20 com taxa e distribuição para múltiplas carteiras
+     * @param tokenAddress Endereço do token ERC-20
+     * @param recipient Endereço do destinatário principal
+     * @param amount Valor do pagamento em tokens
+     * @return Verdadeiro se o processamento foi bem-sucedido
+     */
+    function processTokenPaymentWithFee(
+        address tokenAddress,
+        address recipient,
+        uint256 amount
+    ) external whenNotPaused returns (bool) {
+        require(supportedTokens[tokenAddress], "Gate33: token not supported");
+        require(recipient != address(0), "Gate33: invalid recipient");
+        require(amount > 0, "Gate33: payment amount must be > 0");
+        
+        // Chamar função auxiliar para reduzir uso da pilha
+        return _processTokenPaymentWithFee(tokenAddress, recipient, amount);
+    }
+    
+    /**
+     * @dev Função auxiliar para processar pagamento em token com taxas
+     * (Dividido para evitar erro "stack too deep")
+     */
+    function _processTokenPaymentWithFee(
+        address tokenAddress,
+        address recipient,
+        uint256 amount
+    ) private returns (bool) {
+        IERC20 token = IERC20(tokenAddress);
+        
+        // Verificar se o contrato tem permissão para transferir os tokens
+        uint256 allowance = token.allowance(msg.sender, address(this));
+        require(allowance >= amount, "Gate33: insufficient token allowance");
+        
+        // Calcular taxa principal
+        uint256 feeAmount = (amount * feePercentage) / 1000;
+        
+        // Calcular taxas adicionais para cada carteira
+        uint256 devAmount = (amount * developmentPercentage) / 1000;
+        uint256 charityAmount = (amount * charityPercentage) / 1000;
+        uint256 evolutionAmount = (amount * evolutionPercentage) / 1000;
+        
+        // Calcular o valor líquido após todas as taxas
+        uint256 totalFees = feeAmount + devAmount + charityAmount + evolutionAmount;
+        uint256 netAmount = amount - totalFees;
+        
+        // Verificar que a soma de todas as taxas não excede o valor total
+        require(totalFees <= amount, "Gate33: total fees exceed payment amount");
+        
+        // Transferir tokens para o contrato primeiro
+        bool success = token.transferFrom(msg.sender, address(this), amount);
+        require(success, "Gate33: token transfer to contract failed");
+        
+        // Transferir valor líquido para o destinatário principal
+        success = token.transfer(recipient, netAmount);
+        require(success, "Gate33: payment to recipient failed");
+        
+        // Transferir taxa principal para o coletor de taxas
+        if (feeAmount > 0) {
+            success = token.transfer(feeCollector, feeAmount);
+            require(success, "Gate33: fee transfer failed");
+        }
+        
+        // Transferir para as carteiras adicionais
+        _distributeAdditionalFees(token, devAmount, charityAmount, evolutionAmount);
+        
+        // Gerar um paymentId baseado no remetente, destinatário, valor e timestamp
+        bytes32 hash1 = keccak256(abi.encodePacked(msg.sender, recipient, amount));
+        bytes32 paymentId = keccak256(abi.encodePacked(hash1, block.timestamp, tokenAddress));
+        
+        // Registrar como processado
+        processedPaymentIds[paymentId] = true;
+        
+        // Emitir eventos
+        emit TokenPaymentProcessed(tokenAddress, msg.sender, recipient, netAmount, totalFees, paymentId);
+        emit TokenFeeCollected(tokenAddress, feeCollector, feeAmount, paymentId);
+        
+        return true;
+    }
+    
+    /**
+     * @dev Função auxiliar para distribuir taxas adicionais
+     * (Dividido para evitar erro "stack too deep")
+     */
+    function _distributeAdditionalFees(
+        IERC20 token,
+        uint256 devAmount,
+        uint256 charityAmount,
+        uint256 evolutionAmount
+    ) private {
+        bool success;
+        
+        // Transferir para a carteira de desenvolvimento
+        if (devAmount > 0 && developmentWallet != address(0)) {
+            success = token.transfer(developmentWallet, devAmount);
+            require(success, "Gate33: development wallet transfer failed");
+        }
+        
+        // Transferir para a carteira de caridade
+        if (charityAmount > 0 && charityWallet != address(0)) {
+            success = token.transfer(charityWallet, charityAmount);
+            require(success, "Gate33: charity wallet transfer failed");
+        }
+        
+        // Transferir para a carteira de evolução
+        if (evolutionAmount > 0 && evolutionWallet != address(0)) {
+            success = token.transfer(evolutionWallet, evolutionAmount);
+            require(success, "Gate33: evolution wallet transfer failed");
+        }
+    }
+    
+    /**
+     * @dev Processa um pagamento em token ERC-20 com retenção (similar à função processPaymentWithHold)
+     * @param tokenAddress Endereço do token ERC-20
+     * @param amount Valor a ser retido
+     * @param paymentId ID único para o pagamento
+     */
+    function processTokenPaymentWithHold(
+        address tokenAddress,
+        uint256 amount,
+        bytes32 paymentId
+    ) external whenNotPaused {
+        require(supportedTokens[tokenAddress], "Gate33: token not supported");
+        require(amount > 0, "Gate33: payment amount must be > 0");
+        require(!processedPaymentIds[paymentId], "Gate33: payment ID already processed");
+        
+        IERC20 token = IERC20(tokenAddress);
+        
+        // Verificar se o contrato tem permissão para transferir os tokens
+        uint256 allowance = token.allowance(msg.sender, address(this));
+        require(allowance >= amount, "Gate33: insufficient token allowance");
+        
+        // Calcular taxa
+        uint256 feeAmount = (amount * feePercentage) / 1000;
+        uint256 netAmount = amount - feeAmount;
+        
+        // Transferir tokens para o contrato
+        bool success = token.transferFrom(msg.sender, address(this), amount);
+        require(success, "Gate33: token transfer to contract failed");
+        
+        // Registrar o valor retido
+        tokenPayments[tokenAddress][msg.sender] += netAmount;
+        
+        // Registrar ID de pagamento como processado
+        processedPaymentIds[paymentId] = true;
+        
+        // Transferir taxa para o coletor de taxas
+        if (feeAmount > 0) {
+            success = token.transfer(feeCollector, feeAmount);
+            require(success, "Gate33: fee transfer failed");
+            emit TokenFeeCollected(tokenAddress, feeCollector, feeAmount, paymentId);
+        }
+        
+        emit TokenPaymentProcessed(tokenAddress, msg.sender, address(this), netAmount, feeAmount, paymentId);
+    }
+    
+    /**
+     * @dev Liberar um pagamento em token ERC-20 retido
+     * @param tokenAddress Endereço do token ERC-20
+     * @param from Endereço do remetente original (de quem os tokens foram retidos)
+     * @param to Endereço do destinatário
+     * @param amount Valor a ser liberado
+     * @param paymentId ID único para o pagamento
+     */
+    function releaseTokenPayment(
+        address tokenAddress,
+        address from,
+        address to,
+        uint256 amount,
+        bytes32 paymentId
+    ) external onlyAuthorized whenNotPaused {
+        require(supportedTokens[tokenAddress], "Gate33: token not supported");
+        require(to != address(0), "Gate33: invalid recipient");
+        require(amount > 0, "Gate33: amount must be > 0");
+        require(tokenPayments[tokenAddress][from] >= amount, "Gate33: insufficient held tokens");
+        
+        // Atualizar saldo retido
+        tokenPayments[tokenAddress][from] -= amount;
+        
+        // Transferir tokens para o destinatário
+        IERC20 token = IERC20(tokenAddress);
+        bool success = token.transfer(to, amount);
+        require(success, "Gate33: token transfer failed");
+        
+        emit TokenPaymentReleased(tokenAddress, to, amount, paymentId);
+    }
+    
+    /**
+     * @dev Obter saldo de um token ERC-20 no contrato
+     * @param tokenAddress Endereço do token ERC-20
+     */
+    function getTokenBalance(address tokenAddress) external view returns (uint256) {
+        return IERC20(tokenAddress).balanceOf(address(this));
+    }
+    
+    /**
+     * @dev Sacar tokens do contrato (apenas o proprietário pode fazer isso)
+     * @param tokenAddress Endereço do token ERC-20
+     * @param to Endereço para receber os tokens
+     * @param amount Quantidade a sacar
+     */
+    function withdrawTokens(
+        address tokenAddress,
+        address to,
+        uint256 amount
+    ) external onlyOwner {
+        require(to != address(0), "Gate33: invalid address");
+        require(amount > 0, "Gate33: amount must be > 0");
+        
+        IERC20 token = IERC20(tokenAddress);
+        require(token.balanceOf(address(this)) >= amount, "Gate33: insufficient token balance");
+        
+        bool success = token.transfer(to, amount);
+        require(success, "Gate33: token withdrawal failed");
     }
 }

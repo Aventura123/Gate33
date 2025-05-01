@@ -38,7 +38,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"direct" | "smartContract">("direct");
+  const [paymentMethod, setPaymentMethod] = useState<"smartContract" | "usdtSmartContract">("smartContract");
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [updatingJob, setUpdatingJob] = useState(false);
@@ -109,44 +109,6 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({
     return map[networkName.toLowerCase()];
   };
 
-  // Process direct payment
-  const processDirectPayment = async () => {
-    if (!selectedPlanId || !jobId) {
-      setError("Select a plan before continuing.");
-      return;
-    }
-    // Validação de moeda
-    const plan = getSelectedPlan();
-    const walletInfo = web3Service.getWalletInfo ? web3Service.getWalletInfo() : null;
-    const networkCurrency = getNetworkCurrency(walletInfo?.networkName);
-    if (plan && networkCurrency && plan.currency.toUpperCase() !== networkCurrency.toUpperCase()) {
-      setError(`Para este plano, conecte sua carteira à rede correta para pagar em ${plan.currency}. Rede atual: ${walletInfo?.networkName || 'desconhecida'}`);
-      return;
-    }
-    setProcessingPayment(true);
-    setError(null);
-
-    try {
-      const transaction = await web3Service.processJobPostPayment(selectedPlanId, jobId);
-      setTransactionHash(transaction.hash);
-      
-      // Update job status
-      await updateJobStatus(selectedPlanId, transaction.hash);
-      
-      if (onPaymentSuccess) {
-        onPaymentSuccess(selectedPlanId, transaction.hash);
-      }
-    } catch (err: any) {
-      console.error("Error processing payment:", err);
-      setError(err.message || "Error processing payment");
-      if (onPaymentError) {
-        onPaymentError(err.message || "Error processing payment");
-      }
-    } finally {
-      setProcessingPayment(false);
-    }
-  };
-
   // Process payment via smart contract
   const processContractPayment = async () => {
     if (!selectedPlanId || !jobId) {
@@ -187,6 +149,46 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({
     }
   };
 
+  // Process payment via USDT smart contract
+  const processUSDTContractPayment = async () => {
+    if (!selectedPlanId || !jobId) {
+      setError("Select a plan before continuing.");
+      return;
+    }
+
+    setProcessingPayment(true);
+    setError(null);
+
+    try {
+      // Initialize the contract if needed
+      await smartContractService.init();
+      
+      // Use the USDT payment method from smartContractService
+      const result = await smartContractService.processJobPaymentWithUSDT(
+        selectedPlanId,
+        parseFloat(getSelectedPlan()?.price.toString() || "0"),
+        jobId
+      );
+      
+      setTransactionHash(result.transactionHash);
+      
+      // Update job status
+      await updateJobStatus(selectedPlanId, result.transactionHash);
+      
+      if (onPaymentSuccess) {
+        onPaymentSuccess(selectedPlanId, result.transactionHash);
+      }
+    } catch (err: any) {
+      console.error("Error processing payment via USDT contract:", err);
+      setError(err.message || "Error processing payment via USDT contract");
+      if (onPaymentError) {
+        onPaymentError(err.message || "Error processing payment via USDT contract");
+      }
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
   // New function to update job status after payment
   const updateJobStatus = async (planId: string, transactionHash: string) => {
     setUpdatingJob(true);
@@ -212,10 +214,10 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({
       return;
     }
 
-    if (paymentMethod === "direct") {
-      await processDirectPayment();
-    } else {
+    if (paymentMethod === "smartContract") {
       await processContractPayment();
+    } else if (paymentMethod === "usdtSmartContract") {
+      await processUSDTContractPayment();
     }
   };
 
@@ -325,18 +327,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({
           {selectedPlanId && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-2">Payment Method</h3>
-              <div className="flex flex-col md:flex-row gap-3">
-                <button
-                  type="button"
-                  className={`flex-1 py-3 px-4 rounded-md text-center ${
-                    paymentMethod === "direct"
-                      ? "bg-orange-500 text-white"
-                      : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white"
-                  }`}
-                  onClick={() => setPaymentMethod("direct")}
-                >
-                  Direct Payment
-                </button>
+              <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
                   className={`flex-1 py-3 px-4 rounded-md text-center ${
@@ -346,13 +337,24 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({
                   }`}
                   onClick={() => setPaymentMethod("smartContract")}
                 >
-                  Smart Contract (Secure Payment)
+                  Smart Contract Payment
+                </button>
+                <button
+                  type="button"
+                  className={`flex-1 py-3 px-4 rounded-md text-center ${
+                    paymentMethod === "usdtSmartContract"
+                      ? "bg-orange-500 text-white"
+                      : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white"
+                  }`}
+                  onClick={() => setPaymentMethod("usdtSmartContract")}
+                >
+                  Pay with USDT
                 </button>
               </div>
               <p className="text-sm text-gray-500 mt-2">
-                {paymentMethod === "direct"
-                  ? "Direct cryptocurrency payment to our wallet."
-                  : "Payment processed and verified by our smart contract on the blockchain."}
+                {paymentMethod === "smartContract"
+                  ? "Payment processed and verified by our smart contract on the blockchain using native token."
+                  : "Pay with USDT stablecoin using our smart contract. Available on multiple networks."}
               </p>
             </div>
           )}
@@ -372,7 +374,9 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({
               <div className="flex justify-between mb-1">
                 <span>Method:</span>
                 <span>
-                  {paymentMethod === "direct" ? "Direct Payment" : "Smart Contract"}
+                  {paymentMethod === "smartContract"
+                    ? "Smart Contract"
+                    : "USDT Payment"}
                 </span>
               </div>
               <div className="flex justify-between font-bold mt-2 pt-2 border-t">

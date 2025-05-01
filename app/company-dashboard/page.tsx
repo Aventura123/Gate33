@@ -547,11 +547,32 @@ const PostJobPage = (): JSX.Element => {
       // 2. Executar pagamento via smart contract
       let transaction;
       try {
-        transaction = await smartContractService.processJobPayment(
-          selectedPlan.id,
-          selectedPlan.price,
-          companyId
-        );
+        // Check if the plan requires USDT payment
+        const planDoc = await getDoc(doc(db, "jobPlans", selectedPlan.id));
+        if (!planDoc.exists()) {
+          throw new Error(`Job plan with ID ${selectedPlan.id} not found`);
+        }
+        
+        const planData = planDoc.data();
+        const planCurrency = planData.currency?.toUpperCase();
+        
+        // Use the appropriate payment method based on currency
+        if (planCurrency === 'USDT') {
+          console.log("[processPayment] Detected USDT payment, using USDT payment method");
+          transaction = await smartContractService.processJobPaymentWithUSDT(
+            selectedPlan.id,
+            selectedPlan.price,
+            companyId
+          );
+        } else {
+          console.log("[processPayment] Using native token payment method");
+          transaction = await smartContractService.processJobPayment(
+            selectedPlan.id,
+            selectedPlan.price,
+            companyId
+          );
+        }
+        
         console.log("[processPayment] Transação recebida:", transaction);
       } catch (error: any) {
         console.error("[processPayment] Erro ao processar pagamento no contrato:", error);
