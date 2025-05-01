@@ -32,9 +32,54 @@ class SmartContractService {
     return false;
   }
 
-  // Alias for init() to maintain compatibility
-  async initializeContract() {
-    return this.init();
+  // Initialize contract with optional specific address
+  async initializeContract(network?: string, contractAddress?: string) {
+    const initialized = await this.init();
+    
+    if (initialized && contractAddress) {
+      // Se um endereço de contrato é fornecido, use-o diretamente
+      this.contractAddress = contractAddress;
+      console.log(`Using provided contract address: ${contractAddress}`);
+    } else if (initialized) {
+      // Caso contrário, carregue do Firebase normalmente
+      await this.loadContractAddress();
+    }
+    
+    return initialized;
+  }
+  
+  // Switch to a different contract network without reinitializing everything
+  async switchContractNetwork(chainId: number, contractAddress?: string) {
+    // Reset contract instance to force rebuilding
+    this.contract = null;
+    
+    // If a specific contract address is provided, use it
+    if (contractAddress) {
+      this.contractAddress = contractAddress;
+      console.log(`Switched to contract address: ${contractAddress} for chainId: ${chainId}`);
+      return true;
+    }
+    
+    // Otherwise load from Firebase for the new chainId
+    try {
+      const networkName = this.getNetworkName(chainId);
+      console.log(`Switching to network: ${networkName} (ChainId: ${chainId})`);
+      
+      // Force refresh from Firebase by resetting timestamp
+      this.lastNetworkCheck = 0;
+      await this.loadContractAddress();
+      
+      if (this.contractAddress) {
+        console.log(`Loaded contract address: ${this.contractAddress} for network: ${networkName}`);
+        return true;
+      } else {
+        console.error(`No contract address found for network: ${networkName}`);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error switching contract network:", error);
+      return false;
+    }
   }
 
   // Check if contract is initialized
@@ -42,7 +87,51 @@ class SmartContractService {
     return this.provider !== null && this.signer !== null;
   }
 
-  // Get contract owner address
+  // Get current network information
+  async getCurrentNetwork() {
+    if (!this.provider) {
+      const initialized = await this.init();
+      if (!initialized) throw new Error("Web3 not available");
+    }
+
+    try {
+      const network = await this.provider!.getNetwork();
+      const networkName = this.getNetworkName(network.chainId);
+      
+      return {
+        chainId: network.chainId,
+        networkName,
+        networkDisplayName: this.getNetworkDisplayName(network.chainId),
+        currency: this.getNetworkCurrency(networkName),
+      };
+    } catch (error) {
+      console.error("Error getting current network:", error);
+      throw new Error("Failed to get current network information");
+    }
+  }
+  
+  // Get network display name (user-friendly name)
+  private getNetworkDisplayName(chainId: number): string {
+    const displayNameMap: Record<number, string> = {
+      1: 'Ethereum Mainnet',
+      3: 'Ropsten Testnet',
+      4: 'Rinkeby Testnet',
+      5: 'Goerli Testnet',
+      42: 'Kovan Testnet',
+      56: 'Binance Smart Chain',
+      97: 'BSC Testnet',
+      137: 'Polygon (Matic)',
+      80001: 'Mumbai Testnet (Polygon)',
+      42161: 'Arbitrum One',
+      10: 'Optimism',
+      43114: 'Avalanche C-Chain',
+      250: 'Fantom Opera',
+    };
+    
+    return displayNameMap[chainId] || `Chain ID ${chainId}`;
+  }
+
+  // Get contract owner address with improved network handling
   async getContractOwner() {
     // Ensure contract is initialized
     if (!this.provider || !this.signer) {
@@ -50,47 +139,143 @@ class SmartContractService {
       if (!initialized) throw new Error("Web3 not available");
     }
 
-    if (!this.contract) {
-      await this.loadContractAddress();
-      // Simple ABI just for the owner function
-      const abiFragment = [
-        "function owner() public view returns (address)"
-      ];
-      
-      if (!this.contractAddress) {
-        throw new Error("Contract address not configured");
-      }
-      
-      if (!this.signer) {
-        throw new Error("Wallet not connected");
-      }
-      
-      this.contract = new ethers.Contract(this.contractAddress, abiFragment, this.signer);
-    }
-
     try {
-      return await this.contract.owner();
+      // 1. First, verify the current network
+      const networkInfo = await this.getCurrentNetwork();
+      console.log(`Current network: ${networkInfo.networkDisplayName} (${networkInfo.chainId})`);
+      
+      // 2. Check if there's a contract for this network in Firebase
+      const contractAddress = await this.getContractAddressForNetwork(networkInfo.networkName);
+      
+      if (!contractAddress) {
+        throw new Error(`No contract configured for network: ${networkInfo.networkDisplayName} (${networkInfo.chainId}). Please configure a contract for this network or switch to a supported network.`);
+      }
+      
+      console.log(`Found contract for ${networkInfo.networkDisplayName}: ${contractAddress}`);
+      
+      // 3. Check if the contract address has code (is a valid contract)
+      const bytecode = await this.provider!.getCode(contractAddress);
+      if (bytecode === '0x' || bytecode === '0x0') {
+        throw new Error(`No contract found at address ${contractAddress} on network ${networkInfo.networkDisplayName}. Please verify the contract is deployed.`);
+      }
+      
+      // 4. Update this.contractAddress and reset contract instance to force rebuild
+      this.contractAddress = contractAddress;
+      this.contract = null;
+      
+      // 5. Create contract instance with owner methods
+      if (!this.contract) {
+        // ABI expandido com múltiplas possíveis implementações da função owner
+        const abiFragment = [
+          "function owner() public view returns (address)",
+          "function getOwner() public view returns (address)",  // Alternativa em alguns contratos
+          "function OWNER() public view returns (address)",     // Outra alternativa possível
+          "function admin() public view returns (address)",     // Usado em alguns contratos OpenZeppelin
+          "function getAdmin() public view returns (address)"   // Outra variação comum
+        ];
+        
+        if (!this.signer) {
+          throw new Error("Wallet not connected");
+        }
+        
+        this.contract = new ethers.Contract(this.contractAddress, abiFragment, this.signer);
+      }
+
+      // 6. Try different owner implementation methods
+      const methods = ['owner', 'getOwner', 'OWNER', 'admin', 'getAdmin'];
+      
+      for (const method of methods) {
+        try {
+          console.log(`Tentando chamar método ${method}() no contrato ${this.contractAddress}...`);
+          if (typeof this.contract[method] === 'function') {
+            const result = await this.contract[method]();
+            console.log(`Método ${method}() bem-sucedido, proprietário: ${result}`);
+            return result;
+          }
+        } catch (methodError: any) {
+          console.log(`Método ${method}() falhou:`, methodError.message);
+          // Continuar tentando outros métodos
+        }
+      }
+      
+      // If we got here, none of the methods worked
+      console.error(`Nenhum método de obtenção de proprietário funcionou no contrato ${this.contractAddress} na rede ${networkInfo.networkDisplayName}`);
+      throw new Error(`Não foi possível determinar o proprietário do contrato - contrato incompatível na rede ${networkInfo.networkDisplayName}`);
     } catch (error) {
       console.error("Error getting contract owner:", error);
-      throw new Error("Failed to get contract owner");
+      throw error;
+    }
+  }
+
+  // Get contract address for a specific network from Firebase
+  async getContractAddressForNetwork(networkName: string | null): Promise<string | null> {
+    if (!networkName) return null;
+    
+    try {
+      // First try to load from settings/paymentConfig
+      const settingsCollection = collection(db, "settings");
+      const settingsDoc = await getDoc(doc(settingsCollection, "paymentConfig"));
+      
+      if (settingsDoc.exists() && settingsDoc.data().contracts) {
+        const contracts = settingsDoc.data().contracts;
+        
+        // 1. Try exact network name match
+        if (contracts[networkName] && typeof contracts[networkName] === 'string') {
+          return contracts[networkName];
+        }
+        
+        // 2. Try lowercase network name
+        if (contracts[networkName.toLowerCase()] && typeof contracts[networkName.toLowerCase()] === 'string') {
+          return contracts[networkName.toLowerCase()];
+        }
+        
+        // 3. For binanceTestnet, try special case
+        if (networkName === 'binanceTestnet' && contracts.binanceTestnet) {
+          return contracts.binanceTestnet;
+        }
+        
+        // 4. Fallback to default if available
+        if (contracts.default && typeof contracts.default === 'string') {
+          console.log(`No specific contract for ${networkName}, using default contract address: ${contracts.default}`);
+          return contracts.default;
+        }
+      }
+      
+      // If we reach here, we didn't find a contract address for this network
+      console.warn(`No contract address found for network: ${networkName}`);
+      return null;
+      
+    } catch (error) {
+      console.error(`Error getting contract address for network ${networkName}:`, error);
+      return null;
     }
   }
 
   // Check if current wallet is the contract owner
   async checkOwnership() {
-    if (!this.provider || !this.signer) {
-      const initialized = await this.init();
-      if (!initialized) throw new Error("Web3 not available");
-    }
+    try {
+      if (!this.provider || !this.signer) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 not available");
+      }
 
-    if (!this.signer) {
-      throw new Error("Wallet not connected");
-    }
+      if (!this.signer) {
+        throw new Error("Wallet not connected");
+      }
 
-    const ownerAddress = await this.getContractOwner();
-    const currentAddress = await this.signer.getAddress();
-    
-    return ownerAddress.toLowerCase() === currentAddress.toLowerCase();
+      try {
+        const ownerAddress = await this.getContractOwner();
+        const currentAddress = await this.signer.getAddress();
+        
+        return ownerAddress.toLowerCase() === currentAddress.toLowerCase();
+      } catch (error) {
+        console.error("Error checking owner:", error);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error checking ownership:", error);
+      return false; // Em caso de erro, assumir que não é o dono por segurança
+    }
   }
 
   // Load contract addresses from Firestore

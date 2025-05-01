@@ -13,7 +13,7 @@ interface PaymentConfigProps {
   hasPermission: boolean;
 }
 
-// Estado para armazenar as configurações carregadas do Firestore
+// State to store the configurations loaded from Firestore
 interface FirestorePaymentConfig {
   receiverAddress: string;
   serviceFee: number;
@@ -27,55 +27,55 @@ interface FirestorePaymentConfig {
 }
 
 const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
-  // Estados para armazenar os valores de configuração
+  // States to store configuration values
   const [walletAddress, setWalletAddress] = useState("");
   const [serviceFee, setServiceFee] = useState(0);
   const [transactionTimeout, setTransactionTimeout] = useState(0);
   
-  // Estados para contratos em diferentes redes
+  // States for contracts on different networks
   const [ethContract, setEthContract] = useState("");
   const [polygonContract, setPolygonContract] = useState("");
   const [binanceContract, setBinanceContract] = useState("");
 
-  // Novo estado para o contrato da Binance Testnet
+  // New state for Binance Testnet contract
   const [binanceTestnetContract, setBinanceTestnetContract] = useState("");
   const [binanceTestnetSaveStatus, setBinanceTestnetSaveStatus] = useState<string | null>(null);
 
-  // Função para salvar apenas o contrato da Binance Testnet no Firestore
+  // Function to save only the Binance Testnet contract in Firestore
   const handleSaveBinanceTestnetContract = async () => {
     setBinanceTestnetSaveStatus(null);
     try {
       if (!validateEthereumAddress(binanceTestnetContract)) {
-        setBinanceTestnetSaveStatus("Endereço inválido. Deve começar com '0x' e ter 40 caracteres hexadecimais.");
+        setBinanceTestnetSaveStatus("Invalid address. Must start with '0x' and have 40 hexadecimal characters.");
         return;
       }
-      // Atualiza apenas o campo binanceTestnet em contracts
+      // Update only the binanceTestnet field in contracts
       const configRef = doc(db, "settings", "paymentConfig");
       await setDoc(configRef, { contracts: { binanceTestnet: binanceTestnetContract } }, { merge: true });
-      setBinanceTestnetSaveStatus("Endereço salvo com sucesso!");
+      setBinanceTestnetSaveStatus("Address saved successfully!");
     } catch (err: any) {
-      setBinanceTestnetSaveStatus("Erro ao salvar: " + (err.message || "Erro desconhecido"));
+      setBinanceTestnetSaveStatus("Error saving: " + (err.message || "Unknown error"));
     }
   };
 
-  // Estado para armazenar a configuração atual do sistema (Firestore ou config)
+  // State to store the current system configuration (Firestore or config)
   const [currentSystemConfig, setCurrentSystemConfig] = useState<any>(null);
 
-  // Estados para carteiras adicionais
+  // States for additional wallets
   const [feeCollectorAddress, setFeeCollectorAddress] = useState("");
   const [currentFeeCollector, setCurrentFeeCollector] = useState("");
   const [developmentWalletAddress, setDevelopmentWalletAddress] = useState("");
   const [charityWalletAddress, setCharityWalletAddress] = useState("");
   const [evolutionWalletAddress, setEvolutionWalletAddress] = useState("");
   
-  // Estados para percentuais de distribuição
+  // States for distribution percentages
   const [feePercentage, setFeePercentage] = useState(0);
   const [developmentPercentage, setDevelopmentPercentage] = useState(0);
   const [charityPercentage, setCharityPercentage] = useState(0);
   const [evolutionPercentage, setEvolutionPercentage] = useState(0);
   const [totalPercentage, setTotalPercentage] = useState(0);
   
-  // Estados para atualização das carteiras
+  // States for wallet updates
   const [updatingWallets, setUpdatingWallets] = useState(false);
   const [walletUpdateSuccess, setWalletUpdateSuccess] = useState(false);
   const [walletUpdateError, setWalletUpdateError] = useState<string | null>(null);
@@ -85,42 +85,46 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Adicionar estado para armazenar o endereço do proprietário do contrato
+  // Add state to store the contract owner's address
   const [contractOwner, setContractOwner] = useState<string | null>(null);
   const [isCheckingOwner, setIsCheckingOwner] = useState(false);
 
-  // Função para converter percentuais (interface para usuário)
-  // Converte o percentual do contrato (base 1000) para valor de exibição (0-100)
+  // Additional states specific to owner verification
+  const [ownerVerificationSuccess, setOwnerVerificationSuccess] = useState(false);
+  const [ownerVerificationError, setOwnerVerificationError] = useState<string | null>(null);
+
+  // Function to convert percentages (user interface)
+  // Converts contract percentage (base 1000) to display value (0-100)
   const contractToDisplayPercentage = (value: number): number => {
-    return value / 10; // Converte base 1000 para percentual real (ex: 950 -> 95)
+    return value / 10; // Converts base 1000 to real percentage (e.g., 950 -> 95)
   };
 
-  // Converte o percentual de exibição (0-100) para valor do contrato (base 1000)
+  // Converts display percentage (0-100) to contract value (base 1000)
   const displayToContractPercentage = (value: number): number => {
-    return Math.round(value * 10); // Converte percentual para base 1000 (ex: 95 -> 950)
+    return Math.round(value * 10); // Converts percentage to base 1000 (e.g., 95 -> 950)
   };
 
-  // Carregar configurações do Firestore
+  // Load settings from Firestore
   const fetchCurrentSettings = useCallback(async () => {
     try {
-      // Verifica se existe um documento de configurações
+      // Check if there is a settings document
       const configDoc = await getDocs(collection(db, "settings"));
       if (!configDoc.empty) {
         configDoc.forEach((doc) => {
           const data = doc.data() as FirestorePaymentConfig;
-          // Atualizar os estados do componente
+          // Update component states
           if (data.receiverAddress) setWalletAddress(data.receiverAddress);
           if (data.serviceFee) setServiceFee(data.serviceFee);
           if (data.transactionTimeout) setTransactionTimeout(data.transactionTimeout);
           
-          // Configuração de contratos
+          // Contract configuration
           if (data.contracts) {
             if (data.contracts.ethereum) setEthContract(data.contracts.ethereum);
             if (data.contracts.polygon) setPolygonContract(data.contracts.polygon);
             if (data.contracts.binance) setBinanceContract(data.contracts.binance);
           }
           
-          // Atualizar a configuração atual do sistema para mostrar os valores do Firestore
+          // Update the current system configuration to show Firestore values
           setCurrentSystemConfig({
             receiverAddress: data.receiverAddress || "",
             contracts: {
@@ -129,25 +133,25 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               binance: data.contracts?.binance || ""
             },
             serviceFee: (data.serviceFee || 0) + "%",
-            transactionTimeout: (data.transactionTimeout || 0) + " segundos",
+            transactionTimeout: (data.transactionTimeout || 0) + " seconds",
             updatedAt: data.updatedAt ? (
               // Ensure Firestore timestamp compatibility
               typeof data.updatedAt === 'object' && 'seconds' in data.updatedAt
                 ? new Date((data.updatedAt as { seconds: number }).seconds * 1000).toLocaleString()
                 : new Date(data.updatedAt).toLocaleString()
-            ) : "Não disponível"
+            ) : "Not available"
           });
           
-          console.log("Configurações carregadas do Firestore:", data);
+          console.log("Settings loaded from Firestore:", data);
         });
       } else {
-        // Se não existir, cria um novo documento com os valores padrão
+        // If not, create a new document with default values
         await updatePaymentConfig();
-        console.log("Configurações padrão salvas no Firestore");
+        console.log("Default settings saved to Firestore");
       }
     } catch (err) {
-      console.error("Erro ao carregar configurações de pagamento:", err);
-      setError("Não foi possível carregar as configurações de pagamento.");
+      console.error("Error loading payment settings:", err);
+      setError("Could not load payment settings.");
     }
   }, []);
 
@@ -158,7 +162,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
     }
   }, [hasPermission, fetchCurrentSettings]);
 
-  // Verificar conexão da carteira
+  // Check wallet connection
   const checkWalletConnection = () => {
     try {
       const connected = web3Service.isWalletConnected();
@@ -167,60 +171,91 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         fetchContractData();
       }
     } catch (err) {
-      console.error("Erro ao verificar conexão da carteira:", err);
+      console.error("Error checking wallet connection:", err);
     }
   };
 
-  // Buscar dados do contrato (endereços e percentuais) com tratamento de erros mais robusto
+  // Fetch contract data (addresses and percentages) with more robust error handling
   const fetchContractData = async () => {
     try {
       setWalletUpdateError(null);
 
-      // Verificar se estamos na rede BSC Testnet
-      const walletInfo = web3Service.getWalletInfo(); // Get wallet info which includes network details
+      // Check the current network
+      const walletInfo = web3Service.getWalletInfo();
       if (!walletInfo) {
-        setWalletUpdateError("Informações da carteira não disponíveis. Conecte a carteira primeiro.");
+        setWalletUpdateError("Wallet information not available. Connect the wallet first.");
         return;
       }
       
-      const isBscTestnet = walletInfo.chainId === 97; // 97 é o chainId da BSC Testnet
+      // Identify the network and load the correct contract from Firestore
+      const currentChainId = walletInfo.chainId;
+      const currentNetworkName = walletInfo.networkName;
       
-      if (!isBscTestnet) {
-        setWalletUpdateError("Por favor, conecte-se à rede BSC Testnet (ChainID: 97) para interagir com o contrato");
+      console.log(`Checking contract on network: ${currentNetworkName} (ChainID: ${currentChainId})`);
+      
+      // Fetch Firebase settings to find the correct contract for the current network
+      let contractAddress: string | null = null;
+      
+      try {
+        const configDoc = await getDocs(query(collection(db, "settings"), where("__name__", "==", "paymentConfig")));
         
-        // Tentar mudar para a BSC Testnet
-        try {
-          // Assuming 'binance' corresponds to BSC Testnet in your NETWORK_CONFIG
-          await web3Service.switchNetwork('binance'); 
-          console.log("Rede alterada para BSC Testnet");
-          // Re-fetch wallet info after switching network
-          const updatedWalletInfo = web3Service.getWalletInfo();
-          if (!updatedWalletInfo || updatedWalletInfo.chainId !== 97) {
-             console.error("Falha ao confirmar a mudança para BSC Testnet.");
-             setWalletUpdateError("Falha ao mudar para BSC Testnet. Verifique sua carteira.");
-             return;
+        if (!configDoc.empty) {
+          const configData = configDoc.docs[0].data();
+          const contracts = configData.contracts || {};
+          
+          // Determine which contract field corresponds to the current network
+          let contractField: string | null = null;
+          
+          switch (currentChainId) {
+            case 1: contractField = "ethereum"; break;
+            case 137: contractField = "polygon"; break;
+            case 56: contractField = "binance"; break;
+            case 97: contractField = "binanceTestnet"; break;
+            case 80001: contractField = "mumbai"; break; 
+            case 42161: contractField = "arbitrum"; break;
+            case 10: contractField = "optimism"; break;
+            case 43114: contractField = "avalanche"; break;
           }
-        } catch (switchError: any) {
-          console.error("Erro ao tentar mudar para BSC Testnet:", switchError);
-          setWalletUpdateError(`Erro ao mudar para BSC Testnet: ${switchError.message}. Por favor, mude manualmente.`);
-          return; // Stop execution if switching fails
+          
+          // Get the contract address for the current network
+          if (contractField && contracts[contractField]) {
+            contractAddress = contracts[contractField];
+            console.log(`Contract found for ${currentNetworkName}: ${contractAddress}`);
+          } else {
+            console.log(`No specific contract found for ${currentNetworkName}`);
+            
+            // Check if we have a default contract that can be used
+            if (contracts.default) {
+              contractAddress = contracts.default;
+              console.log(`Using default contract: ${contractAddress}`);
+            }
+          }
         }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      }
+      
+      if (!contractAddress) {
+        setWalletUpdateError(
+          `No contract configured for network ${currentNetworkName} (ChainID: ${currentChainId}). ` +
+          `Please add a contract for this network in the settings or connect to a supported network.`
+        );
+        return;
       }
 
-      // Verificar se o contrato está inicializado antes de fazer chamadas
+      // Verify if the contract is initialized before making calls
       if (!smartContractService.isContractInitialized()) {
         try {
-          // Passar explicitamente a rede BSC Testnet para inicialização
-          await smartContractService.initializeContract();
+          await smartContractService.initializeContract(undefined, contractAddress);
         } catch (initError: any) {
-          console.error("Erro ao inicializar contrato na BSC Testnet:", initError);
-          setWalletUpdateError(`Não foi possível inicializar o contrato na BSC Testnet: ${initError.message || "verifique sua conexão de rede"}`);
+          console.error(`Error initializing contract on ${currentNetworkName}:`, initError);
+          setWalletUpdateError(`Could not initialize contract on ${currentNetworkName}: ${initError.message || "check your network connection"}`);
           return;
         }
       }
       
       if (smartContractService.isContractInitialized()) {
-        // Criar um array para armazenar todos os erros encontrados durante as chamadas
+        // Create an array to store all errors encountered during calls
         const errors: string[] = [];
         
         // 1. Fee Collector Address
@@ -229,9 +264,8 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           setCurrentFeeCollector(feeCollector);
           setFeeCollectorAddress(feeCollector);
         } catch (e: any) {
-          console.warn("Erro ao obter feeCollector:", e);
-          errors.push(`Erro ao obter endereço do coletor de taxas: ${e.message || e}`);
-          // Não falhar completamente, apenas registrar o erro e continuar
+          console.warn("Error getting feeCollector:", e);
+          errors.push(`Error getting fee collector address: ${e.message || e}`);
         }
         
         // 2. Development Wallet
@@ -239,8 +273,8 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           const developmentWallet = await smartContractService.getDevelopmentWallet();
           setDevelopmentWalletAddress(developmentWallet);
         } catch (e: any) {
-          console.warn("Erro ao obter developmentWallet:", e);
-          errors.push(`Erro ao obter carteira de desenvolvimento: ${e.message || e}`);
+          console.warn("Error getting developmentWallet:", e);
+          errors.push(`Error getting development wallet: ${e.message || e}`);
         }
         
         // 3. Charity Wallet
@@ -248,8 +282,8 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           const charityWallet = await smartContractService.getCharityWallet();
           setCharityWalletAddress(charityWallet);
         } catch (e: any) {
-          console.warn("Erro ao obter charityWallet:", e);
-          errors.push(`Erro ao obter carteira de caridade: ${e.message || e}`);
+          console.warn("Error getting charityWallet:", e);
+          errors.push(`Error getting charity wallet: ${e.message || e}`);
         }
         
         // 4. Evolution Wallet
@@ -257,8 +291,8 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           const evolutionWallet = await smartContractService.getEvolutionWallet();
           setEvolutionWalletAddress(evolutionWallet);
         } catch (e: any) {
-          console.warn("Erro ao obter evolutionWallet:", e);
-          errors.push(`Erro ao obter carteira de evolução: ${e.message || e}`);
+          console.warn("Error getting evolutionWallet:", e);
+          errors.push(`Error getting evolution wallet: ${e.message || e}`);
         }
         
         // 5. Distribution Percentages
@@ -270,33 +304,34 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           setEvolutionPercentage(contractToDisplayPercentage(percentages.evolutionPercentage));
           setTotalPercentage(contractToDisplayPercentage(percentages.totalPercentage));
         } catch (e: any) {
-          console.warn("Erro ao obter percentuais:", e);
-          errors.push(`Erro ao obter percentuais de distribuição: ${e.message || e}`);
-          // Se não conseguir obter os percentuais, pelo menos tentar calcular o total com base nos valores atuais
+          console.warn("Error getting percentages:", e);
+          errors.push(`Error getting distribution percentages: ${e.message || e}`);
+          // If unable to get percentages, at least try to calculate the total based on current values
           const tempTotal = feePercentage + developmentPercentage + charityPercentage + evolutionPercentage;
           setTotalPercentage(tempTotal);
         }
         
-        // Se houver erros, exibir apenas o primeiro para não sobrecarregar a interface
+        // If there are errors, display only the first one to avoid overloading the interface
         if (errors.length > 0) {
-          setWalletUpdateError(`Alguns dados não puderam ser carregados: ${errors[0]} ${errors.length > 1 ? `(+${errors.length - 1} erros)` : ''}`);
+          setWalletUpdateError(`Some data could not be loaded: ${errors[0]} ${errors.length > 1 ? `(+${errors.length - 1} errors)` : ''}`);
         }
       }
 
-      // Tentar obter o proprietário do contrato
+      // Try to get the contract owner
       try {
         const ownerAddress = await smartContractService.getContractOwner();
         setContractOwner(ownerAddress);
       } catch (e: any) {
-        console.warn("Erro ao obter proprietário do contrato:", e);
+        console.warn("Error getting contract owner:", e);
+        setWalletUpdateError(`Error verifying contract owner: ${e.message || e}`);
       }
     } catch (err: any) {
-      console.error("Erro ao obter dados do contrato:", err);
-      setWalletUpdateError(`Erro ao obter dados do contrato na BSC Testnet: ${err.message || "verifique sua conexão"}`);
+      console.error("Error getting contract data:", err);
+      setWalletUpdateError(`Error getting contract data on ${web3Service.getWalletInfo()?.networkName || "current network"}: ${err.message || "check your connection"}`);
     }
   };
 
-  // Conectar carteira
+  // Connect wallet
   const connectWallet = async () => {
     try {
       setWalletUpdateError(null);
@@ -304,46 +339,27 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       await web3Service.connectWallet();
       setWalletConnected(true);
       
-      // Verificar se está na rede BSC Testnet após conectar
-      const walletInfo = web3Service.getWalletInfo(); // Get wallet info after connection
+      // Check the current connected network after connecting
+      const walletInfo = web3Service.getWalletInfo();
       if (!walletInfo) {
-         setWalletUpdateError("Não foi possível obter informações da carteira após conectar.");
+         setWalletUpdateError("Could not get wallet information after connecting.");
          return;
       }
 
-      if (walletInfo.chainId !== 97) { // 97 é o chainId da BSC Testnet
-        try {
-          // Assuming 'binance' corresponds to BSC Testnet in your NETWORK_CONFIG
-          await web3Service.switchNetwork('binance');
-          console.log("Rede alterada para BSC Testnet");
-          // Re-check network after switching
-          const updatedWalletInfo = web3Service.getWalletInfo();
-          if (!updatedWalletInfo || updatedWalletInfo.chainId !== 97) {
-             console.error("Falha ao confirmar a mudança para BSC Testnet após switch.");
-             setWalletUpdateError("Falha ao mudar para BSC Testnet. Verifique sua carteira.");
-             // Don't necessarily return here, maybe let initialization proceed but show error
-          }
-        } catch (switchError: any) {
-          console.error("Erro ao tentar mudar para BSC Testnet:", switchError);
-          setWalletUpdateError(`Por favor, mude manualmente para a rede BSC Testnet (ChainID: 97). Erro: ${switchError.message}`);
-          // Potentially stop further contract interaction if network switch failed critically
-          // return; 
-        }
-      }
+      // Just display the current connected network without forcing change to BSC Testnet
+      const currentChainId = walletInfo.chainId;
+      console.log(`Wallet connected to network: ${walletInfo.networkName} (ChainID: ${currentChainId})`);
       
-      // Tentar inicializar o contrato depois da conexão
-      try {
-        // Ensure initialization uses the correct network context if needed
-        await smartContractService.initializeContract(); 
-        await fetchContractData(); // Fetch data after ensuring correct network and initialization
-      } catch (contractError: any) {
-        console.error("Erro ao inicializar contrato após conexão:", contractError);
-        setWalletUpdateError(`Erro ao inicializar contrato na BSC Testnet: ${contractError.message || "Verifique se você está na rede correta"}`);
-      }
+      // Try to fetch contract data on the current network
+      await fetchContractData();
+      
+      // Verify the contract owner on the current network
+      await checkContractOwner();
+      
     } catch (err: any) {
-      console.error("Erro ao conectar carteira:", err);
-      setWalletUpdateError(err.message || "Erro ao conectar carteira. Verifique se o MetaMask está instalado.");
-      setWalletConnected(false); // Ensure state reflects connection failure
+      console.error("Error connecting wallet:", err);
+      setWalletUpdateError(err.message || "Error connecting wallet. Check if MetaMask is installed.");
+      setWalletConnected(false);
     }
   };
 
@@ -352,7 +368,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         const configData = {
             receiverAddress: walletAddress,
             serviceFee: serviceFee,
-            transactionTimeout: transactionTimeout * 1000, // Convertido para milissegundos
+            transactionTimeout: transactionTimeout * 1000, // Converted to milliseconds
             contracts: {
                 ethereum: ethContract,
                 polygon: polygonContract,
@@ -378,7 +394,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 binance: binanceContract
             },
             serviceFee: serviceFee + "%",
-            transactionTimeout: transactionTimeout + " segundos",
+            transactionTimeout: transactionTimeout + " seconds",
             networks: Object.keys(NETWORK_CONFIG).map(net => ({
                 name: NETWORK_CONFIG[net as keyof typeof NETWORK_CONFIG].name,
                 chainId: NETWORK_CONFIG[net as keyof typeof NETWORK_CONFIG].chainId,
@@ -386,10 +402,10 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             updatedAt: new Date().toLocaleString()
         });
 
-        console.log("Configurações de pagamento atualizadas no Firestore e na configuração local:", configData);
+        console.log("Payment settings updated in Firestore and local configuration:", configData);
         return true;
     } catch (err) {
-        console.error("Erro ao atualizar configurações de pagamento:", err);
+        console.error("Error updating payment settings:", err);
         throw err;
     }
 };
@@ -406,42 +422,42 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
     
     try {
       if (!validateEthereumAddress(walletAddress)) {
-        throw new Error("Endereço da carteira é inválido. Deve começar com '0x' seguido por 40 caracteres hexadecimais.");
+        throw new Error("Wallet address is invalid. Must start with '0x' followed by 40 hexadecimal characters.");
       }
       
-      // Validar contratos (se fornecidos)
+      // Validate contracts (if provided)
       if (ethContract && !validateEthereumAddress(ethContract)) {
-        throw new Error("Endereço do contrato Ethereum é inválido.");
+        throw new Error("Ethereum contract address is invalid.");
       }
       
       if (polygonContract && !validateEthereumAddress(polygonContract)) {
-        throw new Error("Endereço do contrato Polygon é inválido.");
+        throw new Error("Polygon contract address is invalid.");
       }
       
       if (binanceContract && !validateEthereumAddress(binanceContract)) {
-        throw new Error("Endereço do contrato Binance é inválido.");
+        throw new Error("Binance contract address is invalid.");
       }
       
-      // Validar taxa de serviço
+      // Validate service fee
       if (serviceFee < 0 || serviceFee > 100) {
-        throw new Error("Taxa de serviço deve estar entre 0 e 100%.");
+        throw new Error("Service fee must be between 0 and 100%.");
       }
       
-      // Validar timeout de transação
+      // Validate transaction timeout
       if (transactionTimeout < 10) {
-        throw new Error("Timeout de transação não pode ser menor que 10 segundos.");
+        throw new Error("Transaction timeout cannot be less than 10 seconds.");
       }
       
       await updatePaymentConfig();
       setUpdateSuccess(true);
     } catch (err: any) {
-      setError(err.message || "Erro ao atualizar configurações de pagamento.");
+      setError(err.message || "Error updating payment settings.");
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // Função para atualizar as carteiras adicionais e percentuais
+  // Function to update additional wallets and percentages
   const handleUpdateAdditionalWallets = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdatingWallets(true);
@@ -450,105 +466,105 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
     
     try {
       if (!walletConnected) {
-        throw new Error("Conecte sua carteira primeiro");
+        throw new Error("Connect your wallet first");
       }
       
-      // Validar endereços
+      // Validate addresses
       if (feeCollectorAddress && !validateEthereumAddress(feeCollectorAddress)) {
-        throw new Error("Endereço do coletor principal (FeeCollector) é inválido");
+        throw new Error("Main fee collector (FeeCollector) address is invalid");
       }
       
       if (developmentWalletAddress && !validateEthereumAddress(developmentWalletAddress)) {
-        throw new Error("Endereço da carteira de desenvolvimento é inválido");
+        throw new Error("Development wallet address is invalid");
       }
       
       if (charityWalletAddress && !validateEthereumAddress(charityWalletAddress)) {
-        throw new Error("Endereço da carteira de caridade é inválido");
+        throw new Error("Charity wallet address is invalid");
       }
       
       if (evolutionWalletAddress && !validateEthereumAddress(evolutionWalletAddress)) {
-        throw new Error("Endereço da carteira de evolução é inválido");
+        throw new Error("Evolution wallet address is invalid");
       }
       
-      // Validar percentuais (a base no contrato é 1000, ou seja, 25 = 2.5%)
+      // Validate percentages (contract base is 1000, i.e., 25 = 2.5%)
       if (feePercentage < 0 || feePercentage > 100) {
-        throw new Error("Percentual da taxa principal deve estar entre 0 e 100 (0% e 10%)");
+        throw new Error("Main fee percentage must be between 0 and 100 (0% and 10%)");
       }
       
       if (developmentPercentage < 0 || developmentPercentage > 100) {
-        throw new Error("Percentual da carteira de desenvolvimento deve estar entre 0 e 100 (0% e 10%)");
+        throw new Error("Development wallet percentage must be between 0 and 100 (0% and 10%)");
       }
       
       if (charityPercentage < 0 || charityPercentage > 100) {
-        throw new Error("Percentual da carteira de caridade deve estar entre 0 e 100 (0% e 10%)");
+        throw new Error("Charity wallet percentage must be between 0 and 100 (0% and 10%)");
       }
       
       if (evolutionPercentage < 0 || evolutionPercentage > 100) {
-        throw new Error("Percentual da carteira de evolução deve estar entre 0 e 100 (0% e 10%)");
+        throw new Error("Evolution wallet percentage must be between 0 and 100 (0% and 10%)");
       }
       
-      // Verificar se o total não ultrapassa 30% (300 na base 1000)
+      // Verify if the total does not exceed 30% (300 in base 1000)
       const total = feePercentage + developmentPercentage + charityPercentage + evolutionPercentage;
       if (total > 30) {
-        throw new Error("A soma total de todos os percentuais não pode ultrapassar 30%");
+        throw new Error("The total sum of all percentages cannot exceed 30%");
       }
       
-      // Verificar se o contrato está inicializado
+      // Verify if the contract is initialized
       if (!smartContractService.isContractInitialized()) {
         await smartContractService.initializeContract();
       }
 
-      // Verificar se o usuário atual é o owner do contrato com tratamento de erro aprimorado
+      // Verify if the current user is the contract owner with enhanced error handling
       try {
         const isOwner = await smartContractService.checkOwnership();
         
         if (!isOwner) {
-          // Melhorar a mensagem de erro para incluir instruções úteis
+          // Improve error message to include helpful instructions
           const walletInfo = web3Service.getWalletInfo();
-          const currentWallet = walletInfo?.address || "desconhecido";
-          const currentNetwork = walletInfo?.networkName || "desconhecida";
-          const currentChainId = walletInfo?.chainId || "desconhecido";
+          const currentWallet = walletInfo?.address || "unknown";
+          const currentNetwork = walletInfo?.networkName || "unknown";
+          const currentChainId = walletInfo?.chainId || "unknown";
           
           throw new Error(
-            `Você não tem permissão para atualizar as carteiras (endereço ${currentWallet} na rede ${currentNetwork}, ChainID: ${currentChainId}). ` +
-            `Apenas o proprietário do contrato pode fazer isso. ` +
-            `Verifique se você está conectado com a carteira correta e na rede BSC Testnet (ChainID: 97).`
+            `You do not have permission to update the wallets (address ${currentWallet} on network ${currentNetwork}, ChainID: ${currentChainId}). ` +
+            `Only the contract owner can do this. ` +
+            `Check if you are connected with the correct wallet and on the BSC Testnet network (ChainID: 97).`
           );
         }
       } catch (ownerError: any) {
-        console.error("Erro ao verificar propriedade do contrato:", ownerError);
+        console.error("Error verifying contract ownership:", ownerError);
         
-        // Se o erro for do método checkOwnership, mostrar informações adicionais
-        if (ownerError.message.includes("não tem permissão")) {
-          throw ownerError; // Use a mensagem melhorada que já criamos
+        // If the error is from the checkOwnership method, show additional information
+        if (ownerError.message.includes("do not have permission")) {
+          throw ownerError; // Use the improved message we already created
         } else {
-          // Obter informações da carteira para diagnóstico
+          // Get wallet information for diagnosis
           const walletInfo = web3Service.getWalletInfo();
           throw new Error(
-            `Não foi possível verificar se você é o proprietário do contrato: ${ownerError.message}. ` +
-            `Isso pode acontecer por várias razões: o contrato pode não estar acessível, ` +
-            `você pode estar na rede errada (atual: ${walletInfo?.networkName || 'desconhecida'}, ChainID: ${walletInfo?.chainId || 'desconhecido'}), ` +
-            `ou o método de verificação de propriedade não está disponível no contrato. ` +
-            `Verifique se está conectado à rede BSC Testnet e tente novamente.`
+            `Could not verify if you are the contract owner: ${ownerError.message}. ` +
+            `This can happen for several reasons: the contract may not be accessible, ` +
+            `you may be on the wrong network (current: ${walletInfo?.networkName || 'unknown'}, ChainID: ${walletInfo?.chainId || 'unknown'}), ` +
+            `or the ownership verification method is not available in the contract. ` +
+            `Check if you are connected to the BSC Testnet network and try again.`
           );
         }
       }
       
-      // Adicionar verificação do gas limit nas transações
+      // Add gas limit verification in transactions
       const gasOptions = { 
-        gasLimit: 300000  // Adicionando um gas limit manual para prevenir erro de estimativa
+        gasLimit: 300000  // Adding a manual gas limit to prevent estimation error
       };
       
-      // Atualizar endereços no contrato com um mecanismo de retry
+      // Update addresses in the contract with a retry mechanism
       const updateWithRetry = async (updateFunction: Function, ...params: any[]) => {
         try {
           return await updateFunction(...params, gasOptions);
         } catch (error: any) {
-          console.error(`Erro na transação: ${error.message}`);
+          console.error(`Transaction error: ${error.message}`);
           
-          // Se for um erro de gas limit, tentar aumentar o gas
+          // If it's a gas limit error, try increasing the gas
           if (error.message.includes("UNPREDICTABLE_GAS_LIMIT")) {
-            console.log("Tentando novamente com um gas limit maior...");
+            console.log("Retrying with a higher gas limit...");
             const higherGasOptions = { gasLimit: 500000 };
             return await updateFunction(...params, higherGasOptions);
           } else {
@@ -557,156 +573,320 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         }
       };
 
-      // Atualizar endereços no contrato
+      // Update addresses in the contract
       const updatePromises = [];
       
-      // Atualizar endereço do feeCollector, se necessário
+      // Update feeCollector address if necessary
       if (feeCollectorAddress !== currentFeeCollector) {
         updatePromises.push(updateWithRetry(smartContractService.updateFeeCollector, feeCollectorAddress));
       }
       
-      // Obter percentuais atuais para comparação
+      // Get current percentages for comparison
       const currentPercentages = await smartContractService.getDistributionPercentages();
       
-      // Atualizar percentual da taxa principal, se necessário
+      // Update main fee percentage if necessary
       const contractFeePercentage = displayToContractPercentage(feePercentage);
       if (contractFeePercentage !== currentPercentages.feePercentage) {
         updatePromises.push(updateWithRetry(smartContractService.updateFeePercentage, contractFeePercentage));
       }
       
-      // Atualizações de carteiras com tratamento específico para cada erro
-      // Atualizar carteira de desenvolvimento
+      // Wallet updates with specific error handling for each
+      // Update development wallet
       try {
         await updateWithRetry(smartContractService.updateDevelopmentWallet, developmentWalletAddress);
       } catch (err: any) {
-        console.error("Erro ao atualizar carteira de desenvolvimento:", err);
-        setWalletUpdateError(`Erro ao atualizar carteira de desenvolvimento: ${err.message || "Verifique permissões e contrato"}`);
-        // Continuamos com as outras operações mesmo se uma falhar
+        console.error("Error updating development wallet:", err);
+        setWalletUpdateError(`Error updating development wallet: ${err.message || "Check permissions and contract"}`);
+        // Continue with other operations even if one fails
       }
       
-      // Atualizar carteira de caridade
+      // Update charity wallet
       try {
         await updateWithRetry(smartContractService.updateCharityWallet, charityWalletAddress);
       } catch (err: any) {
-        console.error("Erro ao atualizar carteira de caridade:", err);
+        console.error("Error updating charity wallet:", err);
         setWalletUpdateError((prev) => 
-          prev ? `${prev}, Erro na carteira de caridade` : `Erro ao atualizar carteira de caridade: ${err.message}`);
+          prev ? `${prev}, Error in charity wallet` : `Error updating charity wallet: ${err.message}`);
       }
       
-      // Atualizar carteira de evolução
+      // Update evolution wallet
       try {
         await updateWithRetry(smartContractService.updateEvolutionWallet, evolutionWalletAddress);
       } catch (err: any) {
-        console.error("Erro ao atualizar carteira de evolução:", err);
+        console.error("Error updating evolution wallet:", err);
         setWalletUpdateError((prev) => 
-          prev ? `${prev}, Erro na carteira de evolução` : `Erro ao atualizar carteira de evolução: ${err.message}`);
+          prev ? `${prev}, Error in evolution wallet` : `Error updating evolution wallet: ${err.message}`);
       }
       
-      // Atualizar percentuais com tratamento de erro individual
+      // Update percentages with individual error handling
       try {
         await updateWithRetry(smartContractService.updateDevelopmentPercentage, displayToContractPercentage(developmentPercentage));
         await updateWithRetry(smartContractService.updateCharityPercentage, displayToContractPercentage(charityPercentage));
         await updateWithRetry(smartContractService.updateEvolutionPercentage, displayToContractPercentage(evolutionPercentage));
       } catch (err: any) {
-        console.error("Erro ao atualizar percentuais:", err);
+        console.error("Error updating percentages:", err);
         setWalletUpdateError((prev) => 
-          prev ? `${prev}, Erro nos percentuais` : `Erro ao atualizar percentuais: ${err.message}`);
+          prev ? `${prev}, Error in percentages` : `Error updating percentages: ${err.message}`);
       }
       
-      // Se não tivemos erros fatais, considerar como sucesso mesmo com avisos
+      // If we didn't have fatal errors, consider it a success even with warnings
       if (!walletUpdateError) {
         setWalletUpdateSuccess(true);
       }
       
-      // Atualizar dados locais
+      // Update local data
       await fetchContractData();
       
-      // Atualizar também o endereço da carteira principal no Firestore para manter consistência
+      // Also update the main wallet address in Firestore to maintain consistency
       if (walletAddress !== feeCollectorAddress) {
         setWalletAddress(feeCollectorAddress);
         await updatePaymentConfig();
       }
     } catch (err: any) {
-      console.error("Erro ao atualizar carteiras adicionais:", err);
+      console.error("Error updating additional wallets:", err);
       
-      // Mensagens específicas para erros comuns
+      // Specific messages for common errors
       if (err.message.includes("UNPREDICTABLE_GAS_LIMIT")) {
         setWalletUpdateError(
-          "Erro ao estimar gas para a transação. Isso pode acontecer por várias razões: " +
-          "1. Você não tem permissões para executar esta função no contrato; " +
-          "2. Os parâmetros fornecidos são inválidos ou fora dos limites permitidos; " +
-          "3. O contrato tem restrições adicionais (como pausas ou limites de tempo). " +
-          "Verifique se você é o proprietário do contrato."
+          "Error estimating gas for the transaction. This can happen for several reasons: " +
+          "1. You do not have permissions to execute this function in the contract; " +
+          "2. The provided parameters are invalid or out of allowed limits; " +
+          "3. The contract has additional restrictions (such as pauses or time limits). " +
+          "Check if you are the contract owner."
         );
       } else {
-        setWalletUpdateError(err.message || "Erro ao atualizar carteiras e percentuais no contrato.");
+        setWalletUpdateError(err.message || "Error updating wallets and percentages in the contract.");
       }
     } finally {
       setUpdatingWallets(false);
     }
   };
 
-  // Função para verificar quem é o proprietário atual do contrato
+  // Function to verify who the current contract owner is
   const checkContractOwner = async () => {
     try {
       setIsCheckingOwner(true);
-      setWalletUpdateError(null);
+      // Clear owner verification specific states
+      setOwnerVerificationSuccess(false);
+      setOwnerVerificationError(null);
+      
+      // DO NOT interfere with wallet update states
+      // setWalletUpdateError(null);
+      // setWalletUpdateSuccess(false);
       
       if (!walletConnected) {
-        throw new Error("Conecte sua carteira primeiro para verificar o proprietário do contrato");
+        // Use owner verification specific states
+        setOwnerVerificationError("Connect your wallet first to verify the contract owner");
+        return;
       }
       
-      // Verificar se estamos na rede BSC Testnet
+      // 1. Get information about the current connected network
       const walletInfo = web3Service.getWalletInfo();
-      if (!walletInfo || walletInfo.chainId !== 97) {
-        throw new Error("Por favor, conecte-se à rede BSC Testnet (ChainID: 97) para verificar o proprietário do contrato");
+      if (!walletInfo || !walletInfo.chainId) {
+        setOwnerVerificationError("Could not determine the current network. Please check if your wallet is properly connected.");
+        return;
+      }
+
+      // 2. Identify the current network
+      const currentChainId = walletInfo.chainId;
+      const currentAddress = walletInfo.address;
+      let networkName: string = "unknown";
+      let contractAddress: string | undefined;
+      
+      // 3. Map the network ID to a more user-friendly name
+      switch (currentChainId) {
+        case 1: networkName = "Ethereum Mainnet"; break;
+        case 137: networkName = "Polygon"; break;
+        case 56: networkName = "Binance Smart Chain"; break;
+        case 97: networkName = "BSC Testnet"; break;
+        case 80001: networkName = "Mumbai Testnet (Polygon)"; break;
+        case 42161: networkName = "Arbitrum"; break;
+        case 10: networkName = "Optimism"; break;
+        case 43114: networkName = "Avalanche"; break;
+        default: networkName = `Network ${currentChainId}`;
       }
       
-      // Inicializar contrato se necessário
-      if (!smartContractService.isContractInitialized()) {
-        await smartContractService.initializeContract();
+      console.log(`Wallet connected to network: ${networkName} (ChainID: ${currentChainId})`);
+      
+      // 4. Fetch settings from Firebase to find the correct contract for the current network
+      try {
+        const configDoc = await getDocs(query(collection(db, "settings"), where("__name__", "==", "paymentConfig")));
+        
+        if (!configDoc.empty) {
+          const configData = configDoc.docs[0].data();
+          const contracts = configData.contracts || {};
+          
+          // 5. Determine which contract field corresponds to the current network
+          let contractField: string | null = null;
+          
+          switch (currentChainId) {
+            case 1: contractField = "ethereum"; break;
+            case 137: contractField = "polygon"; break;
+            case 56: contractField = "binance"; break;
+            case 97: contractField = "binanceTestnet"; break;
+            case 80001: contractField = "mumbai"; break; 
+            case 42161: contractField = "arbitrum"; break;
+            case 10: contractField = "optimism"; break;
+            case 43114: contractField = "avalanche"; break;
+            // Add more mappings as needed
+          }
+          
+          // 6. Get the contract address for the current network
+          if (contractField && contracts[contractField]) {
+            contractAddress = contracts[contractField];
+            console.log(`Contract found for ${networkName}: ${contractAddress}`);
+          } else {
+            console.log(`No specific contract found for ${networkName} (field: ${contractField})`);
+            
+            // Check if we have a default contract that can be used
+            if (contracts.default) {
+              contractAddress = contracts.default;
+              console.log(`Using default contract: ${contractAddress}`);
+            }
+          }
+        } else {
+          console.warn("Settings not found in Firestore");
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
       }
-      
-      // Obter endereço do proprietário diretamente do contrato
-      const ownerAddress = await smartContractService.getContractOwner();
-      setContractOwner(ownerAddress);
-      
-      // Verificar se o usuário atual é o proprietário
-      const isOwner = await smartContractService.checkOwnership();
-      
-      if (isOwner) {
-        setWalletUpdateSuccess(true);
-        setWalletUpdateError(null);
-      } else {
-        setWalletUpdateError(
-          `Você não é o proprietário do contrato. O proprietário atual é: ${ownerAddress}`
+
+      // 7. If we don't find a contract in Firebase for the current network
+      if (!contractAddress) {
+        setOwnerVerificationError(
+          `Could not locate a configured contract for ${networkName} (ChainID: ${currentChainId}). ` +
+          `Please add a contract for this network in the settings or connect to a supported network.`
         );
+        return;
+      }
+
+      // 8. Verify if the contract address is valid before attempting to interact with it
+      if (!validateEthereumAddress(contractAddress)) {
+        setOwnerVerificationError(
+          `The contract address configured for ${networkName} is invalid: ${contractAddress}. ` +
+          `Please configure a valid address in the settings.`
+        );
+        return;
+      }
+
+      console.log(`Verifying contract on network ${networkName} at address ${contractAddress}`);
+      
+      try {
+        // 9. Check if there is code at the address (contract)
+        // Get the provider directly from web3Service, not from walletInfo
+        const provider = web3Service.getProvider();
+        const bytecode = await provider.getCode(contractAddress);
+        
+        if (bytecode === '0x' || bytecode === '0x0') {
+          setOwnerVerificationError(
+            `There is no smart contract at address ${contractAddress} on network ${networkName}. ` +
+            `Please verify that the contract is properly deployed on this network.`
+          );
+          return;
+        }
+        
+        // 10. Initialize contract for the correct network
+        if (!smartContractService.isContractInitialized()) {
+          await smartContractService.initializeContract(undefined, contractAddress);
+        } else {
+          await smartContractService.switchContractNetwork(currentChainId, contractAddress);
+        }
+        
+        try {
+          // 11. Try to get the contract owner
+          const ownerAddress = await smartContractService.getContractOwner();
+          setContractOwner(ownerAddress);
+          
+          // 12. Verify if the current user is the owner
+          const isCurrentAddressOwner = ownerAddress.toLowerCase() === currentAddress.toLowerCase();
+          
+          if (isCurrentAddressOwner) {
+            // Now we use only the specific states for owner verification
+            setOwnerVerificationSuccess(true);
+            setOwnerVerificationError(null);
+          } else {
+            console.log(`You are not the owner of the contract on network ${networkName}. The current owner is: ${ownerAddress}`);
+            setOwnerVerificationSuccess(false);
+            setOwnerVerificationError(
+              `You are not the owner of the contract on network ${networkName}. ` +
+              `The current owner is: ${ownerAddress}`
+            );
+          }
+        } catch (err: any) {
+          // Specifically check for call exception error (contract doesn't implement owner())
+          if (err.message.includes('missing revert data') || err.message.includes('call exception') || 
+              err.message.includes('execution reverted')) {
+            setOwnerVerificationError(
+              `The contract at address ${contractAddress} on network ${networkName} does not implement a ` +
+              `compatible owner function (owner, getOwner, OWNER, admin or getAdmin). ` +
+              `This may not be a contract compatible with the expected interface.`
+            );
+          } else if (err.message.includes('Could not determine the owner')) {
+            setOwnerVerificationError(
+              `The contract at address ${contractAddress} on network ${networkName} does not implement ` +
+              `any recognized standard owner function. It may not be a contract with ownership features.`
+            );
+          } else {
+            setOwnerVerificationError(`Error verifying owner: ${err.message}`);
+          }
+        }
+      } catch (err: any) {
+        console.error("Error interacting with the contract:", err);
+        setOwnerVerificationError(`Error interacting with the contract: ${err.message}`);
       }
     } catch (err: any) {
-      console.error("Erro ao verificar proprietário do contrato:", err);
-      setWalletUpdateError(`Não foi possível verificar o proprietário do contrato: ${err.message}`);
+      console.error("Error verifying contract owner:", err);
+      setOwnerVerificationError(`Error verifying contract owner: ${err.message}`);
     } finally {
       setIsCheckingOwner(false);
     }
   };
 
-  // Verificar a soma total dos percentuais sempre que eles mudarem
+  // Verify the total sum of percentages whenever they change
   useEffect(() => {
     const total = feePercentage + developmentPercentage + charityPercentage + evolutionPercentage;
     setTotalPercentage(total);
     
-    // Verificar e alertar se ultrapassar 30%
+    // Check and alert if it exceeds 30%
     if (total > 30) {
-      setWalletUpdateError("Aviso: A soma total dos percentuais não deve ultrapassar 30%");
-    } else if (walletUpdateError === "Aviso: A soma total dos percentuais não deve ultrapassar 30%") {
+      setWalletUpdateError("Warning: The total sum of percentages should not exceed 30%");
+    } else if (walletUpdateError === "Warning: The total sum of percentages should not exceed 30%") {
       setWalletUpdateError(null);
     }
   }, [feePercentage, developmentPercentage, charityPercentage, evolutionPercentage]);
 
+  // Effect to show the success message about contract ownership
+  useEffect(() => {
+    const ownerMessage = localStorage.getItem('ownerSuccessMessage');
+    if (walletUpdateSuccess && ownerMessage) {
+      setWalletUpdateError(null); // Clear any previous error
+      
+      // Instead of creating a DOM element, let's simply set a state
+      // that will be displayed in the JSX correctly
+      setWalletUpdateSuccess(true);
+      
+      // Remove the message from localStorage after using it
+      localStorage.removeItem('ownerSuccessMessage');
+    }
+  }, [walletUpdateSuccess]);
+
+  // Render the success message for contract owner
+  const renderOwnerSuccessMessage = () => {
+    const ownerMessage = localStorage.getItem('ownerSuccessMessage');
+    if (ownerMessage) {
+      return (
+        <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
+          <p>{ownerMessage}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (!hasPermission) {
     return (
       <div className="bg-red-800 border border-red-900 text-white px-4 py-3 rounded">
-        <p>Você não tem permissão para acessar esta seção.</p>
+        <p>You do not have permission to access this section.</p>
       </div>
     );
   }
@@ -724,6 +904,13 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       {updateSuccess && (
         <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
           <p>Payment settings updated successfully!</p>
+        </div>
+      )}
+      
+      {/* Display the owner success message if it exists in localStorage */}
+      {localStorage.getItem('ownerSuccessMessage') && (
+        <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
+          <p>{localStorage.getItem('ownerSuccessMessage')}</p>
         </div>
       )}
       
@@ -1038,11 +1225,11 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           </div>
         </div>
         
-        {/* Seção de contratos */}
+        {/* Contract Section */}
         <div className="border-t border-gray-700 pt-4">
           <h3 className="text-xl font-semibold mb-4 text-orange-400">Contract Addresses</h3>
           
-          {/* Contrato Ethereum */}
+          {/* Ethereum Contract */}
           <div className="mb-4">
             <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="ethContract">
               Ethereum Contract
@@ -1057,7 +1244,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             />
           </div>
           
-          {/* Contrato Polygon */}
+          {/* Polygon Contract */}
           <div className="mb-4">
             <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="polygonContract">
               Polygon Contract
@@ -1072,7 +1259,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             />
           </div>
           
-          {/* Contrato BSC */}
+          {/* Binance Smart Chain Contract */}
           <div className="mb-4">
             <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="binanceContract">
               Binance Smart Chain Contract
@@ -1090,17 +1277,17 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 type="button"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
                 onClick={() => setBinanceContract("0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B")}
-                title="Preencher com endereço de teste BSC Testnet (Chain 97)"
+                title="Fill with BSC Testnet address (Chain 97)"
               >
-                Usar Testnet
+                Use Testnet
               </button>
             </div>
             <p className="text-gray-400 text-xs mt-1">
-              Use o botão para preencher automaticamente com um endereço de teste da BSC Testnet (Chain 97).
+              Use the button to automatically fill with a BSC Testnet address (Chain 97).
             </p>
           </div>
 
-          {/* Contrato BSC Testnet */}
+          {/* Binance Testnet Contract */}
           <div className="mb-4">
             <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="binanceTestnetContract">
               Binance Testnet Contract (Chain 97)
@@ -1119,19 +1306,19 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs"
                 onClick={handleSaveBinanceTestnetContract}
               >
-                Salvar
+                Save
               </button>
             </div>
             <p className="text-gray-400 text-xs mt-1">
-              Endereço salvo em <code>contracts.binanceTestnet</code> no Firestore. Use para testes na BSC Testnet (Chain 97).
+              Address saved in <code>contracts.binanceTestnet</code> in Firestore. Use for testing on BSC Testnet (Chain 97).
             </p>
             {binanceTestnetSaveStatus && (
-              <div className={`mt-1 text-xs ${binanceTestnetSaveStatus.includes('sucesso') ? 'text-green-400' : 'text-red-400'}`}>{binanceTestnetSaveStatus}</div>
+              <div className={`mt-1 text-xs ${binanceTestnetSaveStatus.includes('success') ? 'text-green-400' : 'text-red-400'}`}>{binanceTestnetSaveStatus}</div>
             )}
           </div>
         </div>
         
-        {/* Informações das configurações atuais */}
+        {/* Current Configuration Information */}
         <div className="border-t border-gray-700 pt-4">
           <h3 className="text-lg font-semibold mb-2 text-gray-300">Current System Configuration</h3>
           <div className="bg-black p-3 rounded overflow-auto">

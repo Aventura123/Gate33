@@ -153,9 +153,14 @@ class Web3Service {
         console.warn("Error getting chainId before creating provider:", e);
       }
       
-      // Initialize the provider directly specifying the detected chainId
+      // Initialize the provider with detected chainId, without forcing any specific network
+      const networkName = chainId === 97 ? "bnbt" : 
+                          chainId === 56 ? "bnb" : 
+                          chainId === 1 ? "homestead" : 
+                          chainId === 137 ? "matic" : "any";
+                          
       this.provider = new ethers.providers.Web3Provider(window.ethereum, {
-        name: chainId === 97 ? "bnbt" : (chainId === 56 ? "bnb" : "any"),
+        name: networkName,
         chainId: chainId || 0
       });
 
