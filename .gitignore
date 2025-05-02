@@ -23,12 +23,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
-.env
+# environment files - exclude all .env files
+.env*
 
 # vercel
 .vercel
+.vercelignore
+vercel-*.json
+.vercel-*
 
 # typescript
 *.tsbuildinfo
@@ -41,3 +43,22 @@ next-env.d.ts
 # IDE
 .vscode/
 .idea/
+
+# build artifacts
+dist/
+.cache/
+
+# logs
+*.log
+
+# deployment specific files
+netlify.toml
+netlify.toml.bak
+
+# Firebase configuration files that contain sensitive information
+firebase-service-account*.json
+firebaseConfig.json
+serviceAccountKey.json
+
+# Local deployment files
+.netlify/
