@@ -105,7 +105,7 @@ export default function InstantJobsPage() {
   // Handle job application
   const handleApply = async (jobId: string) => {
     if (!userId) {
-      router.push("/seeker-login?redirect=/instant-jobs");
+      router.push("/login?redirect=/instant-jobs");
       return;
     }
     

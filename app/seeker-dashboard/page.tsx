@@ -297,7 +297,7 @@ const SeekerDashboard = () => {
   // Handle seeker logout
   const handleLogout = () => {
     localStorage.removeItem("seekerToken"); // Remove seekerToken
-    router.replace("/admin-login"); // Updated to redirect to the new login page
+    router.replace("/login");
   };
 
   // Handle profile update submission

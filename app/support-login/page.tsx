@@ -18,46 +18,46 @@ const SupportLogin: React.FC = () => {
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const router = useRouter();
 
-  // Verificar se usuário já está logado
+  // Check if the user is already logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("userRole");
-    
+
     if (token) {
-      // Se já estiver logado e for suporte ou super_admin, redirecionar para o dashboard
+      // If already logged in and is support or super_admin, redirect to the dashboard
       if (role === "support" || role === "super_admin") {
         router.replace("/support-dashboard");
       }
     }
   }, [router]);
 
-  // Função para resetar a senha de um usuário (apenas para desenvolvimento)
+  // Function to reset a user's password (development only)
   const handleResetPassword = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Verificar primeiro se o usuário existe
+
+      // First, check if the user exists
       const usersRef = collection(db, "admins");
       const q = query(usersRef, where("username", "==", username));
       let querySnapshot = await getDocs(q);
-      
-      // Se não achar pelo username, tente pelo email
+
+      // If not found by username, try by email
       if (querySnapshot.empty) {
         const q2 = query(usersRef, where("email", "==", username));
         querySnapshot = await getDocs(q2);
       }
-      
+
       if (querySnapshot.empty) {
-        setError("Usuário não encontrado. Verifique o nome de usuário ou email.");
+        setError("User not found. Please check the username or email.");
         setLoading(false);
         return;
       }
-      
+
       const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data();
-      
-      // Exibir informações de debug (apenas para desenvolvimento)
+
+      // Display debug information (development only)
       setDebugInfo({
         id: userDoc.id,
         username: userData.username || 'N/A',
@@ -66,21 +66,21 @@ const SupportLogin: React.FC = () => {
         currentPassword: userData.password || 'N/A'
       });
       setShowDebugInfo(true);
-      
-      // Atualizar a senha (para '123456' - somente para desenvolvimento)
+
+      // Update the password (to '123456' - development only)
       const hashedPassword = await bcrypt.hash("123456", 10);
       await updateDoc(doc(db, "admins", userDoc.id), {
         password: hashedPassword
       });
-      
-      setPassword("123456"); // Auto-preencher o campo de senha
+
+      setPassword("123456"); // Auto-fill the password field
       setError(null);
-      alert(`Senha redefinida para '123456' com sucesso! Agora você pode fazer login.`);
+      alert(`Password reset to '123456' successfully! You can now log in.`);
       setResetMode(false);
-      
+
     } catch (err: any) {
-      console.error("Erro ao resetar senha:", err);
-      setError(err.message || "Ocorreu um erro ao resetar a senha.");
+      console.error("Error resetting password:", err);
+      setError(err.message || "An error occurred while resetting the password.");
     } finally {
       setLoading(false);
     }
@@ -94,61 +94,60 @@ const SupportLogin: React.FC = () => {
     setDebugInfo(null);
 
     try {
-      // Exibir dados para depuração
-      console.log(`Tentando fazer login com usuário: ${username}`);
-      
+      // Display data for debugging
+      console.log(`Attempting to log in with username: ${username}`);
+
       if (!db) {
-        throw new Error("Banco de dados Firestore não está disponível");
+        throw new Error("Firestore database is not available");
       }
-      
-      // Primeiro, tente encontrar o usuário pelo campo 'username'
+
+      // First, try to find the user by the 'username' field
       let usersRef = collection(db, "admins");
       let q = query(usersRef, where("username", "==", username));
       let querySnapshot = await getDocs(q);
-      
-      // Se não encontrar pelo username, tente pelo email
+
+      // If not found by username, try by email
       if (querySnapshot.empty) {
-        console.log("Usuário não encontrado pelo campo 'username', tentando campo 'email'");
+        console.log("User not found by 'username', trying 'email'");
         q = query(usersRef, where("email", "==", username));
         querySnapshot = await getDocs(q);
       }
-      
-      // Se ainda não encontrar, tente por user_id (caso exista esse campo)
+
+      // If still not found, try by user_id (if this field exists)
       if (querySnapshot.empty) {
-        console.log("Usuário não encontrado pelo campo 'email', tentando campo 'user_id'");
+        console.log("User not found by 'email', trying 'user_id'");
         q = query(usersRef, where("user_id", "==", username));
         querySnapshot = await getDocs(q);
       }
-      
-      // Se ainda não encontrar, verifica se o login é com o email@teste.com ou support@teste.com
+
+      // If still not found, check if the login is with email@teste.com or support@teste.com
       if (querySnapshot.empty && (username === "email@teste.com" || username === "support@teste.com")) {
-        console.log("Email de teste detectado, buscando por qualquer usuário de suporte");
+        console.log("Test email detected, searching for any support user");
         q = query(usersRef, where("role", "==", "support"));
         querySnapshot = await getDocs(q);
       }
-      
+
       if (querySnapshot.empty) {
-        console.log("Nenhum usuário encontrado após todas as tentativas");
-        throw new Error("Nome de usuário ou senha incorretos.");
+        console.log("No user found after all attempts");
+        throw new Error("Incorrect username or password.");
       }
-      
-      // Obter o documento do usuário
+
+      // Get the user document
       const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data();
-      
-      console.log("Documento de usuário encontrado:", {
+
+      console.log("User document found:", {
         id: userDoc.id,
         role: userData.role,
         hasPasswordField: !!userData.password
       });
-      
-      // Verificar a senha
-      // Note: Em um ambiente de produção, a senha deve ser armazenada com hash e comparada com segurança
+
+      // Verify the password
       const passwordMatch = await bcrypt.compare(password, userData.password);
       if (!passwordMatch) {
-        console.log("Senha incorreta");
-        
-        // Armazenar informações para modo debug (APENAS DESENVOLVIMENTO)
+        console.log("Incorrect password");
+
+        // Store information for debug mode (DEVELOPMENT ONLY)
         if (process.env.NODE_ENV !== 'production') {
           setDebugInfo({
             id: userDoc.id,
@@ -158,31 +157,31 @@ const SupportLogin: React.FC = () => {
             currentPassword: userData.password || 'N/A'
           });
         }
-        
-        throw new Error("Nome de usuário ou senha incorretos.");
+
+        throw new Error("Incorrect username or password.");
       }
-      
+
       const userRole = userData.role;
       const userId = userDoc.id;
-      
-      // Verificar se o usuário tem permissão de suporte
+
+      // Check if the user has support permissions
       if (userRole !== "support" && userRole !== "super_admin") {
-        console.log(`Papel incompatível: ${userRole}`);
-        throw new Error(`Você não tem permissão para acessar o painel de suporte. Papel atual: ${userRole}`);
+        console.log(`Incompatible role: ${userRole}`);
+        throw new Error(`You do not have permission to access the support panel. Current role: ${userRole}`);
       }
-      
-      console.log("Login bem-sucedido! Papel:", userRole);
-      
-      // Gerar um token simples (em produção, use um método mais seguro como JWT)
+
+      console.log("Login successful! Role:", userRole);
+
+      // Generate a simple token (in production, use a more secure method like JWT)
       const simpleToken = btoa(`${userId}:${Date.now()}`);
-      
-      // Salvar dados no localStorage
+
+      // Save data in localStorage
       localStorage.setItem("token", simpleToken);
       localStorage.setItem("userId", userId);
       localStorage.setItem("userName", userData.name || username);
       localStorage.setItem("userRole", userRole);
-      
-      // Registrar acesso no log de atividades usando o utilitário de logs
+
+      // Log access in the activity log using the logging utility
       await logSystemActivity(
         "login",
         userData.name || username,
@@ -195,30 +194,30 @@ const SupportLogin: React.FC = () => {
           browser: navigator.userAgent
         }
       );
-      
-      console.log("Login registrado no sistema de logs");
-      
-      // Redirecionar para o dashboard
+
+      console.log("Login recorded in the system logs");
+
+      // Redirect to the dashboard
       router.push("/support-dashboard");
     } catch (err: any) {
-      console.error("Erro de login:", err);
-      
-      setError(err.message || "Ocorreu um erro durante o login.");
-      
-      // Registrar tentativa de login malsucedida
+      console.error("Login error:", err);
+
+      setError(err.message || "An error occurred during login.");
+
+      // Log unsuccessful login attempt
       try {
         await logSystemActivity(
           "login",
           username,
           {
             success: false,
-            error: err.message || "Erro desconhecido",
+            error: err.message || "Unknown error",
             loginType: "support-portal",
             timestamp: new Date().toISOString()
           }
         );
       } catch (logError) {
-        console.error("Erro ao registrar falha de login:", logError);
+        console.error("Error logging login failure:", logError);
       }
     } finally {
       setLoading(false);
@@ -236,24 +235,24 @@ const SupportLogin: React.FC = () => {
         <div className="w-full max-w-md">
           <div className="bg-black/70 rounded-lg shadow-xl p-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-blue-500">Painel de Suporte</h1>
+              <h1 className="text-3xl font-bold text-blue-500">Support Panel</h1>
               <p className="text-gray-400 mt-2">
-                {resetMode ? "Redefina sua senha" : "Entre com suas credenciais de suporte"}
+                {resetMode ? "Reset your password" : "Log in with your support credentials"}
               </p>
             </div>
-            
+
             {error && (
               <div className="bg-red-900/50 border border-red-600 text-white px-4 py-3 rounded mb-4">
                 <p>{error}</p>
               </div>
             )}
-            
-            {/* Formulário de Login ou Reset */}
+
+            {/* Login or Reset Form */}
             {resetMode ? (
               <form onSubmit={(e) => { e.preventDefault(); handleResetPassword(); }} className="space-y-6">
                 <div>
                   <label htmlFor="username" className="block text-gray-300 mb-2">
-                    Nome de Usuário ou Email
+                    Username or Email
                   </label>
                   <input
                     type="text"
@@ -264,7 +263,7 @@ const SupportLogin: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <button
                   type="submit"
                   className={`w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg transition-colors ${
@@ -272,23 +271,23 @@ const SupportLogin: React.FC = () => {
                   }`}
                   disabled={loading}
                 >
-                  {loading ? "Processando..." : "Redefinir Senha"}
+                  {loading ? "Processing..." : "Reset Password"}
                 </button>
-                
+
                 <div className="text-center mt-4">
                   <button 
                     type="button" 
                     onClick={toggleResetMode}
                     className="text-blue-400 hover:underline text-sm"
                   >
-                    Voltar ao Login
+                    Back to Login
                   </button>
                 </div>
               </form>
             ) : (
               <form onSubmit={handleLogin} className="space-y-6">
                 <div>
-                  <label htmlFor="username" className="block text-gray-300 mb-2">Nome de Usuário</label>
+                  <label htmlFor="username" className="block text-gray-300 mb-2">Username</label>
                   <input
                     type="text"
                     id="username"
@@ -298,9 +297,9 @@ const SupportLogin: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="password" className="block text-gray-300 mb-2">Senha</label>
+                  <label htmlFor="password" className="block text-gray-300 mb-2">Password</label>
                   <input
                     type="password"
                     id="password"
@@ -310,7 +309,7 @@ const SupportLogin: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <button
                   type="submit"
                   className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors ${
@@ -318,10 +317,10 @@ const SupportLogin: React.FC = () => {
                   }`}
                   disabled={loading}
                 >
-                  {loading ? "Entrando..." : "Entrar"}
+                  {loading ? "Logging in..." : "Log In"}
                 </button>
-                
-                {/* Link para recuperação de senha - apenas ambiente de desenvolvimento */}
+
+                {/* Password recovery link - development environment only */}
                 {process.env.NODE_ENV !== 'production' && (
                   <div className="text-center mt-4">
                     <button 
@@ -329,17 +328,17 @@ const SupportLogin: React.FC = () => {
                       onClick={toggleResetMode}
                       className="text-blue-400 hover:underline text-sm"
                     >
-                      Esqueceu a senha?
+                      Forgot your password?
                     </button>
                   </div>
                 )}
               </form>
             )}
-            
-            {/* Informações de debug - apenas para desenvolvimento */}
+
+            {/* Debug information - development only */}
             {showDebugInfo && debugInfo && process.env.NODE_ENV !== 'production' && (
               <div className="mt-6 p-4 bg-gray-900 rounded-md border border-gray-700 text-sm">
-                <h4 className="text-yellow-500 font-medium mb-2">Informações de Debug:</h4>
+                <h4 className="text-yellow-500 font-medium mb-2">Debug Information:</h4>
                 <pre className="text-gray-300 text-xs overflow-x-auto">
                   {JSON.stringify(debugInfo, null, 2)}
                 </pre>
