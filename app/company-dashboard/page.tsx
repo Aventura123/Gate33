@@ -8,8 +8,7 @@ import { db } from "../../lib/firebase";
 // Import payment related services
 import { connectWallet, getCurrentAddress, getWeb3Provider } from "../../services/crypto";
 import smartContractService from "../../services/smartContractService";
-// Import WalletInfoCard component
-import WalletInfoCard from "../../components/WalletInfoCard";
+// Import learn2earnContractService
 // Import learn2earnContractService
 import learn2earnContractService from "../../services/learn2earnContractService";
 // Import the Learn2Earn interfaces
@@ -180,6 +179,7 @@ const PostJobPage = (): JSX.Element => {
 
   const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
   const [depositError, setDepositError] = useState<string | null>(null);
+  const [isDepositConfirmed, setIsDepositConfirmed] = useState(false);
 
   // Função para buscar os planos de preços do Firebase
   const fetchPricingPlans = useCallback(async () => {
@@ -515,13 +515,20 @@ const PostJobPage = (): JSX.Element => {
       setIsConnectingWallet(true);
       setWalletError(null);
       
-      // Use your existing connectWallet function from crypto.ts
-      await connectWallet();
-      const address = await getCurrentAddress();
+      // Importar o web3Service diretamente para garantir que estamos usando a mesma instância
+      const { web3Service } = await import('../../services/web3Service');
       
-      if (address) {
-        setWalletAddress(address);
-        console.log("Wallet connected:", address);
+      // Usar o web3Service para conectar a carteira
+      const walletInfo = await web3Service.connectWallet();
+      
+      if (walletInfo && walletInfo.address) {
+        setWalletAddress(walletInfo.address);
+        console.log("Wallet connected successfully:", walletInfo);
+        
+        // Disparar evento para outros componentes saberem que a carteira foi conectada
+        window.dispatchEvent(new CustomEvent('web3Connected', { 
+          detail: { address: walletInfo.address, chainId: walletInfo.chainId } 
+        }));
       } else {
         throw new Error("Could not get wallet address");
       }
@@ -2607,7 +2614,7 @@ const renderNewLearn2Earn = () => {
         </div>
         
         {currentTask.type === 'content' ? (
-          <div className="mb-4">
+          <div className="mb-6">
             <label className="block text-gray-300 mb-2">Educational Content</label>
             <textarea
               name="contentText"
@@ -2631,7 +2638,7 @@ const renderNewLearn2Earn = () => {
               />
             </div>
             
-            <div className="mb-4">
+            <div className="mb-6">
               <label className="block text-gray-300 mb-2">Options</label>
               {currentQuestionOptions.map((option, index) => (
                 <div key={index} className="flex items-center mb-2">
@@ -2660,6 +2667,73 @@ const renderNewLearn2Earn = () => {
           </>
         )}
         
+        {/* New deposit information card - more compact */}
+        <div className="mb-4 bg-black/30 border border-orange-500/30 p-3 rounded-lg">
+          <h4 className="text-lg font-medium text-white mb-2">Deposit Information</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <div className="bg-black/50 p-2 rounded-md">
+              <div className="text-xs text-gray-400">Token</div>
+              <div className="text-sm font-medium text-white">
+                {learn2earnData.tokenAmount} {learn2earnData.tokenSymbol}
+              </div>
+              <div className="text-xs text-gray-500 break-all">
+                {learn2earnData.tokenAddress?.substring(0, 8)}...{learn2earnData.tokenAddress?.substring(learn2earnData.tokenAddress.length - 6)}
+              </div>
+            </div>
+            <div className="bg-black/50 p-2 rounded-md">
+              <div className="text-xs text-gray-400">Participants</div>
+              <div className="text-sm font-medium text-white">
+                {learn2earnData.maxParticipants || 'Unlimited'}
+                <span className="text-xs text-gray-400 ml-1">({learn2earnData.tokenPerParticipant} {learn2earnData.tokenSymbol}/user)</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="bg-black/50 p-2 rounded-md">
+              <div className="text-xs text-gray-400">Start</div>
+              <div className="text-sm font-medium text-white">
+                {learn2earnData.startDate ? new Date(learn2earnData.startDate as any).toLocaleDateString() : 'Not set'}
+              </div>
+            </div>
+            <div className="bg-black/50 p-2 rounded-md">
+              <div className="text-xs text-gray-400">End</div>
+              <div className="text-sm font-medium text-white">
+                {learn2earnData.endDate ? new Date(learn2earnData.endDate as any).toLocaleDateString() : 'Not set'}
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="bg-black/50 p-2 rounded-md">
+              <div className="text-xs text-gray-400">Fee ({feePercent}%)</div>
+              <div className="text-sm font-medium text-white">
+                {(learn2earnData.tokenAmount * feePercent / 100).toFixed(6)}
+              </div>
+            </div>
+            <div className="bg-black/50 p-2 rounded-md">
+              <div className="text-xs text-gray-400 font-bold">Total Deposit</div>
+              <div className="text-sm font-medium text-orange-400">
+                {(learn2earnData.tokenAmount + (learn2earnData.tokenAmount * feePercent / 100)).toFixed(6)}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center mt-2">
+            <input
+              type="checkbox"
+              id="deposit-confirmation"
+              className="mr-2 h-4 w-4"
+              checked={isDepositConfirmed}
+              onChange={(e) => setIsDepositConfirmed(e.target.checked)}
+            />
+            <label htmlFor="deposit-confirmation" className="text-white text-xs">
+              I confirm the deposit information and understand that tokens will be transferred from my wallet
+            </label>
+          </div>
+        </div>
+        
         <div className="mt-4 flex justify-between">
           <button
             onClick={() => addTask()}
@@ -2678,8 +2752,12 @@ const renderNewLearn2Earn = () => {
             
             <button
               onClick={() => createLearn2Earn()}
-              disabled={learn2earnData.tasks.length === 0}
-              className={`bg-orange-500 text-white py-2 px-6 rounded transition-colors ${learn2earnData.tasks.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-600'}`}
+              disabled={learn2earnData.tasks.length === 0 || !isDepositConfirmed}
+              className={`bg-orange-500 text-white py-2 px-6 rounded transition-colors ${
+                learn2earnData.tasks.length === 0 || !isDepositConfirmed
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : 'hover:bg-orange-600'
+              }`}
             >
               Create Learn2Earn
             </button>
@@ -2955,83 +3033,60 @@ const renderMyLearn2Earn = () => {
               {companyProfile.name || "Company Dashboard"}
             </h2>
             
-            {/* Pass wallet address and connection handler to WalletInfoCard */}
-            <WalletInfoCard 
-              className="w-full mt-3" 
-              walletAddress={walletAddress} 
-              isConnecting={isConnectingWallet}
-              onConnect={handleConnectWallet}
-              error={walletError}
-            />
-            {walletAddress && (
-              <button
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    import('../../services/web3Service').then((module) => {
-                      const web3Service = module.default;
-                      web3Service.disconnectWallet();
-                    });
-                  }
-                }}
-                className="w-full mt-2 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-semibold"
-              >
-                Logout Wallet
-              </button>
-            )}
+            {/* Navigation */}
+            <ul className="space-y-4 flex-grow w-full mt-6">
+              <li>
+                <button
+                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "notifications" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
+                  onClick={() => setActiveTab("notifications")}
+                >
+                  Notifications
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "myJobs" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
+                  onClick={() => setActiveTab("myJobs")}
+                >
+                  My Jobs
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "newJob" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
+                  onClick={() => setActiveTab("newJob")}
+                >
+                  New Jobs
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
+                  onClick={() => setActiveTab("instantJobs")}
+                >
+                  Instant Jobs
+                </button>
+              </li>
+              {/* Add new Learn2Earn tab */}
+              <li>
+                <button
+                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
+                  onClick={() => setActiveTab("learn2earn")}
+                >
+                  Learn2Earn
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "settings" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
+                  onClick={() => setActiveTab("settings")}
+                >
+                  Settings
+                </button>
+              </li>
+            </ul>
           </div>
           
-          {/* Navigation */}
-          <ul className="space-y-4 flex-grow">
-            <li>
-              <button
-                className={`w-full text-left p-3 rounded-lg transition-colors ${activeTab === "notifications" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
-                onClick={() => setActiveTab("notifications")}
-              >
-                Notifications
-              </button>
-            </li>
-            <li>
-              <button
-                className={`w-full text-left p-3 rounded-lg transition-colors ${activeTab === "myJobs" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
-                onClick={() => setActiveTab("myJobs")}
-              >
-                My Jobs
-              </button>
-            </li>
-            <li>
-              <button
-                className={`w-full text-left p-3 rounded-lg transition-colors ${activeTab === "newJob" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
-                onClick={() => setActiveTab("newJob")}
-              >
-                New Jobs
-              </button>
-            </li>
-            <li>
-              <button
-                className={`w-full text-left p-3 rounded-lg transition-colors ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
-                onClick={() => setActiveTab("instantJobs")}
-              >
-                Instant Jobs
-              </button>
-            </li>
-            {/* Add new Learn2Earn tab */}
-            <li>
-              <button
-                className={`w-full text-left p-3 rounded-lg transition-colors ${activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
-                onClick={() => setActiveTab("learn2earn")}
-              >
-                Learn2Earn
-              </button>
-            </li>
-            <li>
-              <button
-                className={`w-full text-left p-3 rounded-lg transition-colors ${activeTab === "settings" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
-                onClick={() => setActiveTab("settings")}
-              >
-                Settings
-              </button>
-            </li>
-          </ul>
           {/* Logout Button */}
           <button
             onClick={handleLogout}
