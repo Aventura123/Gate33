@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../../lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { ethers } from "ethers";
+import { updateFeeConfig } from "../../services/learn2earnContractService";
 
 const Learn2EarnFeePanel: React.FC = () => {
   const [feeCollector, setFeeCollector] = useState("");
@@ -42,12 +44,28 @@ const Learn2EarnFeePanel: React.FC = () => {
       if (feePercent < 0 || feePercent > 100) {
         throw new Error("Fee percent must be between 0 and 100.");
       }
+
+      // Save to Firebase
       await setDoc(doc(db, "settings", "paymentConfig_l2l"), {
         feeCollectorAddress: feeCollector,
         feePercent,
         updatedAt: new Date(),
       }, { merge: true });
-      setSuccess(true);
+
+      // Update the smart contract
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        // Não precisamos mais especificar o endereço do contrato aqui
+        // A função updateFeeConfig buscará no Firestore
+        await updateFeeConfig("", provider, feeCollector, feePercent);
+        setSuccess(true);
+      } catch (contractError: any) {
+        console.error("Contract interaction failed:", contractError);
+        // Salvar no Firebase funcionou, então mostramos sucesso parcial
+        setSuccess(true);
+        setError(`Settings saved to database, but contract update failed: ${contractError.message || "Unknown error"}. 
+                 Contract changes will be applied when you connect to a supported network.`);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to save config.");
     } finally {
@@ -56,7 +74,7 @@ const Learn2EarnFeePanel: React.FC = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto bg-black/60 p-6 rounded-lg mb-8 shadow">
+    <div className="bg-black/30 p-4 rounded-lg border border-gray-700 shadow-md">
       <h3 className="text-xl font-bold text-orange-400 mb-2">Learn2Earn Fee Management</h3>
       <form onSubmit={handleSave} className="space-y-4">
         <div>

@@ -16,7 +16,8 @@ const LEARN2EARN_ABI = [
   "function createLearn2Earn(string memory id, address tokenAddress, uint256 amount, uint256 startTime, uint256 endTime, uint256 maxParticipants) returns (uint256)",
   "function depositTokens(uint256 learn2earnId, uint256 amount) returns (bool)",
   "function getAllowance(address tokenAddress) view returns (uint256)",
-  "function claimTokens(string memory learn2earnId) returns (bool)"
+  "function claimTokens(string memory learn2earnId) returns (bool)",
+  "function updateFeeConfig(address feeCollector, uint256 feePercent) external"
 ];
 
 // Define network contract address interface
@@ -430,6 +431,46 @@ class Learn2EarnContractService {
   }
 }
 
+/**
+ * Updates the fee configuration on the Learn2Earn smart contract.
+ * @param contractAddress The address of the Learn2Earn contract.
+ * @param provider The Web3 provider instance.
+ * @param feeCollector The address of the fee collector.
+ * @param feePercent The percentage of the fee (0-100).
+ */
+export const updateFeeConfig = async (
+  contractAddress: string,
+  provider: ethers.providers.Web3Provider,
+  feeCollector: string,
+  feePercent: number
+): Promise<void> => {
+  try {
+    const signer = provider.getSigner();
+    const network = await provider.getNetwork();
+
+    // Buscar o contrato correspondente no Firestore
+    const normalizedNetwork = network.name.trim().toLowerCase();
+    const contractData = await loadContractAddresses(normalizedNetwork);
+
+    if (!contractData || !contractData.contractAddress) {
+      console.error(`No contract found for network: ${normalizedNetwork}`);
+      throw new Error(`No contract configuration available for the current network: ${normalizedNetwork}`);
+    }
+
+    console.log(`Using contract address: ${contractData.contractAddress} for network: ${normalizedNetwork}`);
+
+    const contract = new ethers.Contract(contractData.contractAddress, LEARN2EARN_ABI, signer);
+
+    const tx = await contract.updateFeeConfig(feeCollector, feePercent);
+    await tx.wait();
+
+    console.log("Fee configuration updated successfully.");
+  } catch (error) {
+    console.error("Error updating fee configuration:", error);
+    throw new Error("Failed to update fee configuration. Check console for details.");
+  }
+};
+
 async function loadContractAddresses(network: string) {
   try {
     if (!db) {
@@ -437,24 +478,75 @@ async function loadContractAddresses(network: string) {
       return null;
     }
     
+    // Normalizar o nome da rede e criar mapeamento para compatibilidade
     const normalizedNetwork = network.trim().toLowerCase();
+    console.log(`Looking for contract config for network: ${normalizedNetwork}`);
     
-    // Look for a contract config for this network
-    const configsCollection = collection(db, "contractConfigs");
-    const q = query(configsCollection, where("network", "==", normalizedNetwork));
-    const querySnapshot = await getDocs(q);
+    // Mapeamento de nomes de rede para compatibilidade
+    const networkMappings: Record<string, string[]> = {
+      "bnbt": ["bsctestnet", "binance smart chain testnet", "bsc testnet"],
+      "bsctestnet": ["bnbt"],
+      "matic": ["polygon", "polygon mainnet"],
+      "maticmum": ["mumbai", "polygon mumbai"],
+      // Adicione mais mapeamentos conforme necessário
+    };
     
-    if (!querySnapshot.empty) {
-      const data = querySnapshot.docs[0].data();
-      console.log(`Found contract config for ${normalizedNetwork}:`, data);
-      
-      return {
-        contractAddress: data.contractAddress,
-        tokenAddress: data.tokenAddress || ""
-      };
+    // Criar uma lista de nomes possíveis para procurar
+    let possibleNetworkNames = [normalizedNetwork];
+    
+    // Adicionar nomes alternativos baseados no mapeamento
+    if (networkMappings[normalizedNetwork]) {
+      possibleNetworkNames = [...possibleNetworkNames, ...networkMappings[normalizedNetwork]];
     }
     
-    console.warn(`No contract config found for network: ${normalizedNetwork}`);
+    console.log("Searching for network with possible names:", possibleNetworkNames);
+    
+    // MÉTODO 1: Buscar na coleção contractConfigs
+    const configsCollection = collection(db, "contractConfigs");
+    
+    // Tentar todas as variantes de nome possíveis
+    for (const netName of possibleNetworkNames) {
+      const q = query(configsCollection, where("network", "==", netName));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const data = querySnapshot.docs[0].data();
+        console.log(`Found contract config for ${netName} in contractConfigs:`, data);
+        
+        return {
+          contractAddress: data.contractAddress,
+          tokenAddress: data.tokenAddress || ""
+        };
+      }
+    }
+    
+    // MÉTODO 2: Buscar na coleção settings/learn2earn
+    console.log(`Searching in settings/learn2earn for possible network names:`, possibleNetworkNames);
+    const settingsDoc = doc(db, "settings", "learn2earn");
+    const settingsSnapshot = await getDoc(settingsDoc);
+    
+    if (settingsSnapshot.exists()) {
+      const data = settingsSnapshot.data();
+      const contracts = data.contracts || [];
+      
+      // Procurar contrato para qualquer uma das possíveis variantes do nome da rede
+      const contractForNetwork = contracts.find(
+        (contract: any) => {
+          const contractNetwork = contract.network?.trim().toLowerCase();
+          return possibleNetworkNames.includes(contractNetwork);
+        }
+      );
+      
+      if (contractForNetwork) {
+        console.log(`Found contract in settings/learn2earn for network variant:`, contractForNetwork);
+        return {
+          contractAddress: contractForNetwork.contractAddress,
+          tokenAddress: contractForNetwork.tokenAddress || ""
+        };
+      }
+    }
+    
+    console.warn(`No contract config found for network: ${normalizedNetwork} or any of its variants in any location`);
     return null;
   } catch (error) {
     console.error(`Error loading contract addresses for ${network}:`, error);
