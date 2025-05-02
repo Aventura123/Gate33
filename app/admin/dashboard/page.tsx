@@ -1810,6 +1810,7 @@ const fetchEmployersList = async () => {
   const [networkContract, setNetworkContract] = useState({
     network: "sepolia",
     contractAddress: "",
+    type: "", // Added type field
   });
   const [networkContracts, setNetworkContracts] = useState<any[]>([]);
   const [isAddingContract, setIsAddingContract] = useState(false);
@@ -1862,26 +1863,16 @@ const fetchEmployersList = async () => {
 
       console.log("Fetching network contracts from Firestore...");
       
-      const contractsCollection = collection(db, "contractConfigs");
-      const querySnapshot = await getDocs(contractsCollection);
+      const settingsDoc = doc(db, "settings", "learn2earn");
+      const settingsSnapshot = await getDoc(settingsDoc);
 
-      if (querySnapshot.empty) {
+      if (!settingsSnapshot.exists()) {
         console.log("No network contracts found in Firestore");
         setNetworkContracts([]);
         return;
       }
 
-      const contracts = querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          // Set defaults for missing fields
-          network: data.network || 'unknown',
-          contractAddress: data.contractAddress || '',
-          createdAt: data.createdAt || new Date().toISOString()
-        };
-      });
+      const contracts = settingsSnapshot.data().contracts || [];
 
       console.log("Fetched network contracts:", contracts.length);
       setNetworkContracts(contracts);
@@ -1940,8 +1931,13 @@ const fetchEmployersList = async () => {
   const handleAddNetworkContract = async (e: React.FormEvent) => {
     e.preventDefault();
   
-    if (!networkContract.network || !networkContract.contractAddress) {
-      alert("Please fill in all fields");
+    if (!networkContract.network || !networkContract.contractAddress || !networkContract.type) {
+      alert("Please fill in all fields.");
+      return;
+    }
+  
+    const isValid = await validateContract(networkContract.network, networkContract.contractAddress);
+    if (!isValid) {
       return;
     }
   
@@ -1949,47 +1945,48 @@ const fetchEmployersList = async () => {
     setContractActionError(null);
   
     try {
-      // Validate the contract before adding
-      const isValid = await validateContract(networkContract.network, networkContract.contractAddress);
-      if (!isValid) {
-        setIsAddingContract(false);
-        return;
+      const settingsDoc = doc(db, "settings", "learn2earn");
+      const settingsSnapshot = await getDoc(settingsDoc);
+  
+      let existingContracts = [];
+      if (settingsSnapshot.exists()) {
+        existingContracts = settingsSnapshot.data().contracts || [];
       }
   
-      if (!db) {
-        throw new Error("Firestore is not initialized.");
+      const isDuplicate = existingContracts.some(
+        (contract: any) => contract.network === networkContract.network
+      );
+  
+      if (isDuplicate) {
+        const confirmReplace = window.confirm("A contract for this network already exists. Do you want to replace it?");
+        if (!confirmReplace) {
+          return;
+        }
+
+        // Remove the existing contract for this network
+        existingContracts = existingContracts.filter(
+          (contract: any) => contract.network !== networkContract.network
+        );
       }
   
-      // Check if contract already exists for this network
-      const contractsCollection = collection(db, "contractConfigs");
-      const q = query(contractsCollection, where("network", "==", networkContract.network));
-      const querySnapshot = await getDocs(q);
+      const newContract = {
+        network: networkContract.network,
+        contractAddress: networkContract.contractAddress,
+        type: networkContract.type,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
   
-      if (!querySnapshot.empty) {
-        // Update existing contract
-        const docId = querySnapshot.docs[0].id;
-        await updateDoc(doc(db, "contractConfigs", docId), {
-          contractAddress: networkContract.contractAddress,
-          updatedAt: new Date().toISOString(),
-        });
-      } else {
-        // Add new contract
-        await addDoc(contractsCollection, {
-          ...networkContract,
-          createdAt: new Date().toISOString(),
-        });
-      }
+      existingContracts.push(newContract);
   
-      alert("Network contract added successfully!");
-      setNetworkContract({
-        network: "sepolia",
-        contractAddress: "",
-      });
+      await setDoc(settingsDoc, { contracts: existingContracts }, { merge: true });
   
+      setNetworkContract({ network: "", contractAddress: "", type: "" });
+      alert("Network contract added successfully.");
       fetchNetworkContracts();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error adding network contract:", error);
-      setContractActionError(error.message || "Failed to add network contract");
+      setContractActionError("Failed to add network contract. Please try again.");
     } finally {
       setIsAddingContract(false);
     }
@@ -3374,6 +3371,18 @@ const fetchEmployersList = async () => {
                             required
                           />
                         </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
+                          <input
+                            type="text"
+                            name="type"
+                            value={networkContract.type}
+                            onChange={handleNetworkContractChange}
+                            placeholder="Contract Type"
+                            className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                            required
+                          />
+                        </div>
                         {contractActionError && (
                           <p className="text-red-500 text-sm">{contractActionError}</p>
                         )}
@@ -3403,6 +3412,9 @@ const fetchEmployersList = async () => {
                                   </h4>
                                   <p className="text-sm text-gray-300 break-all">
                                     Address: {contract.contractAddress}
+                                  </p>
+                                  <p className="text-sm text-gray-300 break-all">
+                                    Type: {contract.type}
                                   </p>
                                   <p className="text-xs text-gray-400">
                                     Added: {formatFirestoreTimestamp(contract.createdAt)}

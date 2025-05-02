@@ -48,14 +48,13 @@ class Learn2EarnContractService {
       
       // Record the time of the query
       this.lastFirebaseCheck = Date.now();
+      const addresses: Record<string, NetworkContractAddress> = {};
       
-      // Fetch contract configurations directly from collection
+      // MÉTODO 1: Buscar na coleção contractConfigs
       const contractConfigsCollection = collection(db, "contractConfigs");
       const querySnapshot = await getDocs(contractConfigsCollection);
       
       if (!querySnapshot.empty) {
-        const addresses: Record<string, NetworkContractAddress> = {};
-        
         // Process all contract configs
         querySnapshot.forEach(doc => {
           const data = doc.data();
@@ -67,13 +66,36 @@ class Learn2EarnContractService {
             };
           }
         });
+      }
+      
+      // MÉTODO 2: Buscar também no documento settings/learn2earn
+      console.log("Searching in settings/learn2earn for contract configurations");
+      const settingsDoc = doc(db, "settings", "learn2earn");
+      const settingsSnapshot = await getDoc(settingsDoc);
+      
+      if (settingsSnapshot.exists()) {
+        const data = settingsSnapshot.data();
+        const contracts = data.contracts || [];
         
-        if (Object.keys(addresses).length > 0) {
-          this.contractAddresses = addresses;
-          this.initialized = true;
-          console.log("Learn2Earn contract addresses loaded from Firebase:", this.contractAddresses);
-          return;
-        }
+        // Processar todos os contratos do array
+        contracts.forEach((contract: any) => {
+          if (contract.network && contract.contractAddress) {
+            const normalizedNetwork = contract.network.trim().toLowerCase();
+            console.log(`Found contract in settings/learn2earn for ${normalizedNetwork}`);
+            
+            addresses[normalizedNetwork] = {
+              contractAddress: contract.contractAddress,
+              tokenAddress: contract.tokenAddress || ""
+            };
+          }
+        });
+      }
+      
+      if (Object.keys(addresses).length > 0) {
+        this.contractAddresses = addresses;
+        this.initialized = true;
+        console.log("Learn2Earn contract addresses loaded from Firebase:", this.contractAddresses);
+        return;
       }
       
       console.warn("No contract configurations found in Firestore.");

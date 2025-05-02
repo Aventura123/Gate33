@@ -123,6 +123,8 @@ const PostJobPage = (): JSX.Element => {
   // Add state for learn2earn
   const [learn2earn, setLearn2Earn] = useState<Learn2Earn[]>([]);
   const [isLoadingLearn2Earn, setIsLoadingLearn2Earn] = useState(false);
+  // Add state for fee percentage
+  const [feePercent, setFeePercent] = useState<number>(5); // Default to 5% if not loaded from Firebase
 
   // Instant Jobs states
   const [instantJobs, setInstantJobs] = useState<InstantJob[]>([]);
@@ -197,6 +199,29 @@ const PostJobPage = (): JSX.Element => {
       console.error("Error fetching pricing plans:", error);
     }
   }, []);
+
+  // Fetch fee percentage from Firebase
+  const fetchFeePercentage = useCallback(async () => {
+    try {
+      if (!db) return;
+      const settingsCollection = collection(db, "settings");
+      const settingsSnapshot = await getDocs(settingsCollection);
+      
+      if (!settingsSnapshot.empty) {
+        // Find the document containing feePercent
+        const settingsDoc = settingsSnapshot.docs.find(doc => doc.data().feePercent !== undefined);
+        if (settingsDoc) {
+          const data = settingsDoc.data();
+          setFeePercent(data.feePercent || 5);
+          console.log("Fee percentage loaded from Firebase:", data.feePercent);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching fee percentage:", error);
+      // Default to 5% if there's an error
+      setFeePercent(5);
+    }
+  }, [db]);
 
   // Buscar os planos de preços ao montar o componente
   useEffect(() => {
@@ -1912,17 +1937,35 @@ const PostJobPage = (): JSX.Element => {
   useEffect(() => {
     if (activeTab === "learn2earn") {
       fetchLearn2Earn();
+      fetchFeePercentage(); // Now this reference is valid
     }
-  }, [activeTab, fetchLearn2Earn]);
+  }, [activeTab, fetchLearn2Earn, fetchFeePercentage]);
 
   // Handle changes in learn2earn form
   const handleLearn2EarnChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
     // Handle number inputs
-    if (name === 'tokenAmount' || name === 'totalParticipants' || name === 'maxParticipants' || name === 'tokenPerParticipant') {
-      setLearn2EarnData({...learn2earnData, [name]: value ? Number(value) : 0 });
+    if (name === 'tokenAmount' || name === 'totalParticipants' || name === 'tokenPerParticipant') {
+      const numValue = value ? Number(value) : 0;
+      
+      // Criar um novo objeto com os valores atualizados
+      const updatedData = {...learn2earnData, [name]: numValue};
+      
+      // Calcular automaticamente o maxParticipants quando tokenAmount ou tokenPerParticipant são alterados
+      if ((name === 'tokenAmount' || name === 'tokenPerParticipant') && 
+          updatedData.tokenAmount > 0 && updatedData.tokenPerParticipant > 0) {
+        // Cálculo do máximo de participantes
+        const calculatedMaxParticipants = Math.floor(updatedData.tokenAmount / updatedData.tokenPerParticipant);
+        updatedData.maxParticipants = calculatedMaxParticipants;
+      }
+      
+      setLearn2EarnData(updatedData);
+    } else if (name === 'maxParticipants') {
+      // Tratamento especial para maxParticipants para permitir que seja undefined
+      setLearn2EarnData({...learn2earnData, [name]: value ? Number(value) : undefined});
     } else {
-      setLearn2EarnData({ ...learn2earnData, [name]: value ?? "" });
+      setLearn2EarnData({...learn2earnData, [name]: value ?? ""});
     }
   };
 
@@ -2083,6 +2126,15 @@ const PostJobPage = (): JSX.Element => {
         startDate = new Date(Date.now() + 5 * 60 * 1000);
       }
       
+      // Ensure the start date is at least 5 minutes in the future to avoid blockchain timestamp issues
+      const now = new Date();
+      const minStartTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes in the future
+      
+      if (startDate <= now) {
+        console.log("Start date adjusted to be 5 minutes in the future");
+        startDate = minStartTime;
+      }
+      
       // Handle endDate
       if (learn2earnData.endDate) {
         if (typeof learn2earnData.endDate === 'object') {
@@ -2147,8 +2199,11 @@ const PostJobPage = (): JSX.Element => {
         blockNumber: depositResult.blockNumber,
         firebaseId: learn2earnFirebaseId,
         network: normalizedNetwork,
-        createdAt: new Date
-      }
+        createdAt: new Date()
+      };
+      
+      // Adicionar o documento ao Firestore - ESSE COMANDO ESTAVA FALTANDO
+      await addDoc(learn2earnCollection, newLearn2Earn);
       
       // Add admin notification
       const notificationsCollection = collection(db, "adminNotifications");
@@ -2236,401 +2291,598 @@ const PostJobPage = (): JSX.Element => {
   };
 
   // Add rendering for the Learn2Earn tab (changed from "Add rendering for the Airdrops tab")
+// Adicionando um novo estado para controlar as subfunções do Learn2Earn
+const [learn2EarnSubTab, setLearn2EarnSubTab] = useState<'new' | 'my'>('my');
+
+// Função para renderizar o Learn2Earn com subfunções
 const renderLearn2Earn = () => {
-    if (isLoadingLearn2Earn) {
-      return <p className="text-gray-300 py-4">Loading Learn2Earn opportunities...</p>;
-    }
+  return (
+    <div>
+      {/* Guias para mudar entre "My L2L" e "New L2L" */}
+      <div className="flex mb-6">
+        <button
+          onClick={() => setLearn2EarnSubTab('my')}
+          className={`py-2 px-6 font-medium ${
+            learn2EarnSubTab === 'my'
+              ? 'text-orange-500 border-b-2 border-orange-500'
+              : 'text-gray-400 hover:text-orange-300'
+          }`}
+        >
+          My Learn2Earn
+        </button>
+        <button
+          onClick={() => setLearn2EarnSubTab('new')}
+          className={`py-2 px-6 font-medium ${
+            learn2EarnSubTab === 'new'
+              ? 'text-orange-500 border-b-2 border-orange-500'
+              : 'text-gray-400 hover:text-orange-300'
+          }`}
+        >
+          New Learn2Earn
+        </button>
+      </div>
 
-    if (learn2EarnStep === 'info') {
-      return (
-        <div className="bg-black/50 p-6 rounded-lg">
-          <h3 className="text-2xl font-semibold text-orange-500 mb-4">Create New Learn2Earn</h3>
-          
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            setLearn2EarnStep('tasks');
-          }}>
-            <div className="mb-4">
-              <label className="block text-gray-300 mb-2">Blockchain Network</label>
-              <select 
-                name="network"
-                value={learn2earnData.network}
-                onChange={handleLearn2EarnChange}
-                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                required
-              >
-                <option value="">Select Network</option>
-                <option value="ethereum">Ethereum Mainnet</option>
-                <option value="polygon">Polygon</option>
-                <option value="bsc">Binance Smart Chain</option>
-                <option value="sepolia">Sepolia Testnet</option>
-              </select>
-            </div>
+      {/* Renderizar o subcomponente apropriado baseado no subtab selecionado */}
+      {learn2EarnSubTab === 'new' ? renderNewLearn2Earn() : renderMyLearn2Earn()}
+    </div>
+  );
+}
 
-            <div className="mb-4">
-              <label className="block text-gray-300 mb-2">Learn2Earn Title</label>
-              <input 
-                type="text"
-                name="title"
-                value={learn2earnData.title}
-                onChange={handleLearn2EarnChange}
-                placeholder="e.g., Community Token Distribution"
-                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                required
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-gray-300 mb-2">Description</label>
-              <textarea 
-                name="description"
-                value={learn2earnData.description}
-                onChange={handleLearn2EarnChange}
-                placeholder="Describe your learn2earn opportunity and what users can get"
-                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white h-32"
-                required
-              ></textarea>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-300 mb-2">Token Symbol</label>
-                <input 
-                  type="text"
-                  name="tokenSymbol"
-                  value={learn2earnData.tokenSymbol}
-                  onChange={handleLearn2EarnChange}
-                  placeholder="e.g., ETH, USDT"
-                  className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-gray-300 mb-2">Token Contract Address</label>
-                <input 
-                  type="text"
-                  name="tokenAddress"
-                  value={learn2earnData.tokenAddress}
-                  onChange={handleLearn2EarnChange}
-                  placeholder="e.g., 0x1234..."
-                  className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-300 mb-2">Total Token Amount</label>
-                <input 
-                  type="number"
-                  name="tokenAmount"
-                  value={learn2earnData.tokenAmount || ''}
-                  onChange={handleLearn2EarnChange}
-                  placeholder="Total amount of tokens to distribute"
-                  className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                  required
-                  min="0"
-                  step="0.000001"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-300 mb-2">Tokens Per Participant</label>
-                <input 
-                  type="number"
-                  name="tokenPerParticipant"
-                  value={learn2earnData.tokenPerParticipant || ''}
-                  onChange={handleLearn2EarnChange}
-                  placeholder="Amount each participant will receive"
-                  className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                  required
-                  min="0"
-                  step="0.000001"
-                />
-              </div>
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-gray-300 mb-2">Start Date</label>
-              <input 
-                type="date"
-                name="startDate"
-                value={learn2earnData.startDate ? 
-                  (learn2earnData.startDate instanceof Date ? 
-                    learn2earnData.startDate.toISOString().split('T')[0] : 
-                    new Date(learn2earnData.startDate as any).toISOString().split('T')[0]) 
-                  : ''}
-                onChange={(e) => handleDateChange('startDate', new Date(e.target.value))}
-                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-300 mb-2">End Date</label>
-              <input 
-                type="date"
-                name="endDate"
-                value={learn2earnData.endDate ? 
-                  (learn2earnData.endDate instanceof Date ? 
-                    learn2earnData.endDate.toISOString().split('T')[0] : 
-                    new Date(learn2earnData.endDate as any).toISOString().split('T')[0]) 
-                  : ''}
-                onChange={(e) => handleDateChange('endDate', new Date(e.target.value))}
-                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                required
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-gray-300 mb-2">Max Participants (optional)</label>
-              <input 
-                type="number"
-                name="maxParticipants"
-                value={learn2earnData.maxParticipants || ''}
-                onChange={handleLearn2EarnChange}
-                placeholder="Leave empty for unlimited"
-                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                min="1"
-              />
-            </div>
-            
-            <div className="mt-4 flex justify-end">
-              <button
-                type="submit"
-                className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 transition-colors"
-              >
-                Next: Add Tasks
-              </button>
-            </div>
-          </form>
-        </div>
-      );
-    }
-    
-    if (learn2EarnStep === 'tasks') {
-      return (
-        <div className="bg-black/50 p-6 rounded-lg">
-          <h3 className="text-2xl font-semibold text-orange-500 mb-4">Add Learning Tasks</h3>
-          
-          {learn2earnData.tasks.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-xl font-medium text-white mb-2">Current Tasks</h4>
-              <ul className="space-y-2">
-                {learn2earnData.tasks.map((task, index) => (
-                  <li key={index} className="bg-black/30 p-3 rounded-lg border border-gray-700 flex justify-between items-center">
-                    <div>
-                      <p className="text-white font-medium">{task.title}</p>
-                      <p className="text-sm text-gray-400">{task.type === 'content' ? 'Educational Content' : 'Quiz Question'}</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const newTasks = [...learn2earnData.tasks];
-                        newTasks.splice(index, 1);
-                        setLearn2EarnData({...learn2earnData, tasks: newTasks});
-                      }}
-                      className="text-red-500 hover:text-red-400"
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
+// Função para renderizar a criação de novo Learn2Earn
+const renderNewLearn2Earn = () => {
+  if (isLoadingLearn2Earn) {
+    return <p className="text-gray-300 py-4">Loading...</p>;
+  }
+
+  if (learn2EarnStep === 'info') {
+    return (
+      <div className="bg-black/50 p-6 rounded-lg">
+        <h3 className="text-2xl font-semibold text-orange-500 mb-4">Create New Learn2Earn</h3>
+        
+        {/* ... conteúdo existente para o step 'info' ... */}
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          setLearn2EarnStep('tasks');
+        }}>
           <div className="mb-4">
-            <label className="block text-gray-300 mb-2">Task Type</label>
-            <select
-              value={currentTask.type}
-              onChange={(e) => setCurrentTask({...currentTask, type: e.target.value as 'content' | 'question'})}
+            <label className="block text-gray-300 mb-2">Blockchain Network</label>
+            <select 
+              name="network"
+              value={learn2earnData.network}
+              onChange={handleLearn2EarnChange}
               className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+              required
+              disabled={isLoadingNetworks}
             >
-              <option value="content">Educational Content</option>
-              <option value="question">Quiz Question</option>
+              <option value="">Select Network</option>
+              {isLoadingNetworks ? (
+                <option value="" disabled>Loading networks...</option>
+              ) : availableNetworks.length > 0 ? (
+                availableNetworks.map((network) => (
+                  <option key={network} value={network}>
+                    {network.charAt(0).toUpperCase() + network.slice(1)}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>No networks available</option>
+              )}
             </select>
+            {availableNetworks.length === 0 && !isLoadingNetworks && (
+              <div className="text-red-500 text-sm mt-1">
+                <p>No blockchain networks with configured contracts available.</p>
+                <button 
+                  onClick={() => {
+                    setIsLoadingNetworks(true);
+                    learn2earnContractService.resetService().then(() => {
+                      fetchAvailableNetworks();
+                    }).catch(error => {
+                      console.error("Error resetting service:", error);
+                    }).finally(() => {
+                      setIsLoadingNetworks(false);
+                    });
+                  }}
+                  className="mt-2 text-white bg-blue-600 hover:bg-blue-700 py-1 px-3 rounded text-xs"
+                  disabled={isLoadingNetworks}
+                >
+                  {isLoadingNetworks ? 'Loading...' : 'Reload Networks'}
+                </button>
+              </div>
+            )}
           </div>
-          
+
+          {/* ... resto do formulário existente ... */}
           <div className="mb-4">
-            <label className="block text-gray-300 mb-2">Task Title</label>
-            <input
+            <label className="block text-gray-300 mb-2">Learn2Earn Title</label>
+            <input 
               type="text"
               name="title"
-              value={currentTask.title}
-              onChange={handleTaskChange}
-              placeholder="e.g., Learn About Blockchain"
+              value={learn2earnData.title}
+              onChange={handleLearn2EarnChange}
+              placeholder="e.g., Community Token Distribution"
               className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+              required
             />
           </div>
           
           <div className="mb-4">
-            <label className="block text-gray-300 mb-2">Task Description</label>
-            <input
-              type="text"
+            <label className="block text-gray-300 mb-2">Description</label>
+            <textarea 
               name="description"
-              value={currentTask.description}
-              onChange={handleTaskChange}
-              placeholder="Brief description of what the user will learn"
+              value={learn2earnData.description}
+              onChange={handleLearn2EarnChange}
+              placeholder="Describe your learn2earn opportunity and what users can get"
+              className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white h-32"
+              required
+            ></textarea>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-300 mb-2">Token Symbol</label>
+              <input 
+                type="text"
+                name="tokenSymbol"
+                value={learn2earnData.tokenSymbol}
+                onChange={handleLearn2EarnChange}
+                placeholder="e.g., ETH, USDT"
+                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-gray-300 mb-2">Token Contract Address</label>
+              <input 
+                type="text"
+                name="tokenAddress"
+                value={learn2earnData.tokenAddress}
+                onChange={handleLearn2EarnChange}
+                placeholder="e.g., 0x1234..."
+                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-300 mb-2">Total Token Amount</label>
+              <input 
+                type="number"
+                name="tokenAmount"
+                value={learn2earnData.tokenAmount || ''}
+                onChange={handleLearn2EarnChange}
+                placeholder="Total amount of tokens to distribute"
+                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+                required
+                min="0"
+                step="0.000001"
+              />
+              <p className="text-xs text-gray-400 mt-1">Fee: {feePercent}% of total tokens</p>
+            </div>
+            <div>
+              <label className="block text-gray-300 mb-2">Tokens Per Participant</label>
+              <input 
+                type="number"
+                name="tokenPerParticipant"
+                value={learn2earnData.tokenPerParticipant || ''}
+                onChange={handleLearn2EarnChange}
+                placeholder="Amount each participant will receive"
+                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+                required
+                min="0"
+                step="0.000001"
+              />
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-gray-300 mb-2">Start Date</label>
+            <input 
+              type="date"
+              name="startDate"
+              value={learn2earnData.startDate ? 
+                (learn2earnData.startDate instanceof Date ? 
+                  learn2earnData.startDate.toISOString().split('T')[0] : 
+                  new Date(learn2earnData.startDate as any).toISOString().split('T')[0]) 
+                : ''}
+              onChange={(e) => handleDateChange('startDate', new Date(e.target.value))}
               className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-300 mb-2">End Date</label>
+            <input 
+              type="date"
+              name="endDate"
+              value={learn2earnData.endDate ? 
+                (learn2earnData.endDate instanceof Date ? 
+                  learn2earnData.endDate.toISOString().split('T')[0] : 
+                  new Date(learn2earnData.endDate as any).toISOString().split('T')[0]) 
+                : ''}
+              onChange={(e) => handleDateChange('endDate', new Date(e.target.value))}
+              className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+              required
             />
           </div>
           
-          {currentTask.type === 'content' ? (
-            <div className="mb-4">
-              <label className="block text-gray-300 mb-2">Educational Content</label>
-              <textarea
-                name="contentText"
-                value={currentTask.contentText}
-                onChange={handleTaskChange}
-                placeholder="Enter educational content or paste a video URL"
-                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white h-32"
-              ></textarea>
-            </div>
-          ) : (
-            <>
-              <div className="mb-4">
-                <label className="block text-gray-300 mb-2">Question</label>
-                <input
-                  type="text"
-                  name="question"
-                  value={currentTask.question || ''}
-                  onChange={handleTaskChange}
-                  placeholder="Enter your quiz question"
-                  className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label className="block text-gray-300 mb-2">Options</label>
-                {currentQuestionOptions.map((option, index) => (
-                  <div key={index} className="flex items-center mb-2">
-                    <input
-                      type="radio"
-                      id={`option-${index}`}
-                      name="correctOption"
-                      checked={correctOptionIndex === index}
-                      onChange={() => setCorrectOptionIndex(index)}
-                      className="mr-2"
-                    />
-                    <input
-                      type="text"
-                      value={option}
-                      onChange={(e) => {
-                        const newOptions = [...currentQuestionOptions];
-                        newOptions[index] = e.target.value;
-                        setCurrentQuestionOptions(newOptions);
-                      }}
-                      placeholder={`Option ${index + 1}`}
-                      className="flex-1 bg-black/50 border border-gray-700 rounded p-2 text-white"
-                    />
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+          <div className="mb-4">
+            <label className="block text-gray-300 mb-2">Max Participants (calculated automatically)</label>
+            <input 
+              type="number"
+              name="maxParticipants"
+              value={learn2earnData.maxParticipants || ''}
+              onChange={handleLearn2EarnChange}
+              placeholder="Leave empty for unlimited"
+              className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+              min="1"
+              readOnly
+            />
+            {learn2earnData.tokenAmount > 0 && learn2earnData.tokenPerParticipant > 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                Maximum of {Math.floor(learn2earnData.tokenAmount / learn2earnData.tokenPerParticipant)} participants based on token distribution
+              </p>
+            )}
+          </div>
           
-          <div className="mt-4 flex justify-between">
+          <div className="mt-4 flex justify-end">
             <button
-              onClick={() => addTask()}
-              className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors"
+              type="submit"
+              className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 transition-colors"
             >
-              Add Task
+              Next: Add Tasks
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+  
+  if (learn2EarnStep === 'tasks') {
+    return (
+      <div className="bg-black/50 p-6 rounded-lg">
+        <h3 className="text-2xl font-semibold text-orange-500 mb-4">Add Learning Tasks</h3>
+        
+        {/* ... conteúdo existente para o step 'tasks' ... */}
+        {learn2earnData.tasks.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-xl font-medium text-white mb-2">Current Tasks</h4>
+            <ul className="space-y-2">
+              {learn2earnData.tasks.map((task, index) => (
+                <li key={index} className="bg-black/30 p-3 rounded-lg border border-gray-700 flex justify-between items-center">
+                  <div>
+                    <p className="text-white font-medium">{task.title}</p>
+                    <p className="text-sm text-gray-400">{task.type === 'content' ? 'Educational Content' : 'Quiz Question'}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const newTasks = [...learn2earnData.tasks];
+                      newTasks.splice(index, 1);
+                      setLearn2EarnData({...learn2earnData, tasks: newTasks});
+                    }}
+                    className="text-red-500 hover:text-red-400"
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
+        <div className="mb-4">
+          <label className="block text-gray-300 mb-2">Task Type</label>
+          <select
+            value={currentTask.type}
+            onChange={(e) => setCurrentTask({...currentTask, type: e.target.value as 'content' | 'question'})}
+            className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+          >
+            <option value="content">Educational Content</option>
+            <option value="question">Quiz Question</option>
+          </select>
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-gray-300 mb-2">Task Title</label>
+          <input
+            type="text"
+            name="title"
+            value={currentTask.title}
+            onChange={handleTaskChange}
+            placeholder="e.g., Learn About Blockchain"
+            className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+          />
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-gray-300 mb-2">Task Description</label>
+          <input
+            type="text"
+            name="description"
+            value={currentTask.description}
+            onChange={handleTaskChange}
+            placeholder="Brief description of what the user will learn"
+            className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+          />
+        </div>
+        
+        {currentTask.type === 'content' ? (
+          <div className="mb-4">
+            <label className="block text-gray-300 mb-2">Educational Content</label>
+            <textarea
+              name="contentText"
+              value={currentTask.contentText}
+              onChange={handleTaskChange}
+              placeholder="Enter educational content or paste a video URL"
+              className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white h-32"
+            ></textarea>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4">
+              <label className="block text-gray-300 mb-2">Question</label>
+              <input
+                type="text"
+                name="question"
+                value={currentTask.question || ''}
+                onChange={handleTaskChange}
+                placeholder="Enter your quiz question"
+                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-gray-300 mb-2">Options</label>
+              {currentQuestionOptions.map((option, index) => (
+                <div key={index} className="flex items-center mb-2">
+                  <input
+                    type="radio"
+                    id={`option-${index}`}
+                    name="correctOption"
+                    checked={correctOptionIndex === index}
+                    onChange={() => setCorrectOptionIndex(index)}
+                    className="mr-2"
+                  />
+                  <input
+                    type="text"
+                    value={option}
+                    onChange={(e) => {
+                      const newOptions = [...currentQuestionOptions];
+                      newOptions[index] = e.target.value;
+                      setCurrentQuestionOptions(newOptions);
+                    }}
+                    placeholder={`Option ${index + 1}`}
+                    className="flex-1 bg-black/50 border border-gray-700 rounded p-2 text-white"
+                  />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        
+        <div className="mt-4 flex justify-between">
+          <button
+            onClick={() => addTask()}
+            className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors"
+          >
+            Add Task
+          </button>
+          
+          <div>
+            <button
+              onClick={() => setLearn2EarnStep('info')}
+              className="bg-gray-700 text-white py-2 px-4 mr-2 rounded hover:bg-gray-600 transition-colors"
+            >
+              Back
             </button>
             
-            <div>
-              <button
-                onClick={() => setLearn2EarnStep('info')}
-                className="bg-gray-700 text-white py-2 px-4 mr-2 rounded hover:bg-gray-600 transition-colors"
-              >
-                Back
-              </button>
-              
-              <button
-                onClick={() => createLearn2Earn()}
-                disabled={learn2earnData.tasks.length === 0}
-                className={`bg-orange-500 text-white py-2 px-6 rounded transition-colors ${learn2earnData.tasks.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-600'}`}
-              >
-                Create Learn2Earn
-              </button>
-            </div>
+            <button
+              onClick={() => createLearn2Earn()}
+              disabled={learn2earnData.tasks.length === 0}
+              className={`bg-orange-500 text-white py-2 px-6 rounded transition-colors ${learn2earnData.tasks.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-600'}`}
+            >
+              Create Learn2Earn
+            </button>
           </div>
         </div>
-      );
-    }
-    
-    if (learn2EarnStep === 'confirmation') {
-      return (
-        <div className="bg-black/50 p-6 rounded-lg text-center">
-          <div className="text-green-500 text-5xl mb-4">✓</div>
-          <h3 className="text-2xl font-semibold text-white mb-2">Learn2Earn Created Successfully!</h3>
-          <p className="text-gray-300 mb-6">Your Learn2Earn opportunity is now live and ready for participants.</p>
+      </div>
+    );
+  }
+  
+  if (learn2EarnStep === 'confirmation') {
+    return (
+      <div className="bg-black/50 p-6 rounded-lg text-center">
+        <div className="text-green-500 text-5xl mb-4">✓</div>
+        <h3 className="text-2xl font-semibold text-white mb-2">Learn2Earn Created Successfully!</h3>
+        <p className="text-gray-300 mb-6">Your Learn2Earn opportunity is now live and ready for participants.</p>
+        <div className="flex justify-center space-x-4">
+          <button
+            onClick={() => {
+              setLearn2EarnStep('info');
+              setLearn2EarnSubTab('my');
+              fetchLearn2Earn();
+            }}
+            className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 transition-colors"
+          >
+            View My Learn2Earn
+          </button>
           <button
             onClick={() => {
               setLearn2EarnStep('info');
               fetchLearn2Earn();
             }}
-            className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 transition-colors"
+            className="bg-gray-700 text-white py-2 px-6 rounded hover:bg-gray-600 transition-colors"
           >
             Create Another
           </button>
         </div>
-      );
-    }
-
-    // Display existing Learn2Earn opportunities
-    return (
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-semibold text-orange-500">Your Learn2Earn Opportunities</h3>
-          <button
-            onClick={() => setLearn2EarnStep('info')}
-            className="bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600"
-          >
-            Create New Learn2Earn
-          </button>
-        </div>
-        
-        {learn2earn.length === 0 ? (
-          <p className="text-gray-300 py-4">You haven't created any Learn2Earn opportunities yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {learn2earn.map((item) => (
-              <div key={item.id} className="bg-black/30 p-4 rounded-lg border border-gray-700">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="text-lg font-medium text-orange-300">{item.title}</h4>
-                    <p className="text-sm text-gray-400">Status: {item.status}</p>
-                    <p className="text-sm text-gray-400">Created: {formatDate(item.startDate)}</p>
-                  </div>
-                  <div className="flex">
-                    {item.status === 'draft' ? (
-                      <button 
-                        onClick={() => toggle(item, 'active')}
-                        className="bg-green-600 text-white text-sm px-3 py-1 rounded-md mr-2"
-                      >
-                        Activate
-                      </button>
-                    ) : item.status === 'active' ? (
-                      <button 
-                        onClick={() => toggle(item, 'completed')}
-                        className="bg-red-600 text-white text-sm px-3 py-1 rounded-md mr-2"
-                      >
-                        End
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <p className="text-xs text-gray-500">
-                    {item.tokenAmount} {item.tokenSymbol} • {item.totalParticipants || 0} participants
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     );
+  }
+
+  // Fallback
+  return <div>Loading...</div>;
+};
+
+// Função para renderizar a lista de Learn2Earn da empresa
+const renderMyLearn2Earn = () => {
+  if (isLoadingLearn2Earn) {
+    return <p className="text-gray-300 py-4">Loading Learn2Earn opportunities...</p>;
+  }
+
+  // Função para buscar estatísticas de um Learn2Earn
+  const fetchL2LStats = async (l2lId: string) => {
+    try {
+      // Implementação futura: buscar estatísticas reais do contrato
+      console.log(`Fetching stats for Learn2Earn: ${l2lId}`);
+    } catch (error) {
+      console.error(`Error fetching stats for Learn2Earn ${l2lId}:`, error);
+    }
   };
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-2xl font-semibold text-orange-500">Your Learn2Earn Opportunities</h3>
+        <button
+          onClick={() => {
+            setLearn2EarnSubTab('new');
+            setLearn2EarnStep('info');
+          }}
+          className="bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600"
+        >
+          Create New Learn2Earn
+        </button>
+      </div>
+      
+      {learn2earn.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-300">You haven't created any Learn2Earn opportunities yet.</p>
+          <button
+            onClick={() => {
+              setLearn2EarnSubTab('new');
+              setLearn2EarnStep('info');
+            }}
+            className="mt-4 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
+          >
+            Create Your First Learn2Earn
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {learn2earn.map((item) => (
+            <div key={item.id} className="bg-black/30 p-6 rounded-lg border border-gray-700">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="text-xl font-medium text-orange-300">{item.title}</h4>
+                  <div className="mt-2">
+                    <p className="text-gray-300">{item.description}</p>
+                  </div>
+                </div>
+                <div className="flex">
+                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                    item.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                    item.status === 'completed' ? 'bg-orange-500/20 text-orange-400' :
+                    'bg-gray-500/20 text-gray-400'
+                  }`}>
+                    {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-black/20 p-3 rounded-md">
+                  <div className="text-sm text-gray-400">Token</div>
+                  <div className="text-lg font-medium text-white">
+                    {item.tokenAmount} {item.tokenSymbol}
+                  </div>
+                </div>
+                <div className="bg-black/20 p-3 rounded-md">
+                  <div className="text-sm text-gray-400">Reward Per User</div>
+                  <div className="text-lg font-medium text-white">
+                    {item.tokenPerParticipant} {item.tokenSymbol}
+                  </div>
+                </div>
+                <div className="bg-black/20 p-3 rounded-md">
+                  <div className="text-sm text-gray-400">Participants</div>
+                  <div className="text-lg font-medium text-white">
+                    {item.totalParticipants || 0} / {item.maxParticipants || '∞'}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-black/20 p-3 rounded-md">
+                  <div className="text-sm text-gray-400">Start Date</div>
+                  <div className="text-white">
+                    {formatDate(item.startDate)}
+                  </div>
+                </div>
+                <div className="bg-black/20 p-3 rounded-md">
+                  <div className="text-sm text-gray-400">End Date</div>
+                  <div className="text-white">
+                    {formatDate(item.endDate)}
+                  </div>
+                </div>
+                <div className="bg-black/20 p-3 rounded-md col-span-1 md:col-span-2">
+                  <div className="text-sm text-gray-400">Network</div>
+                  <div className="flex items-center">
+                    <span className="bg-gray-700 text-xs px-2 py-1 rounded mr-2">
+                      {(item.network ?? "N/A").toUpperCase()}
+                    </span>
+                    {item.contractAddress && (
+                      <span className="text-xs text-gray-400 truncate">
+                        Contract: {item.contractAddress.substring(0, 8)}...{item.contractAddress.substring(item.contractAddress.length - 6)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 flex space-x-2 justify-end">
+                {item.status === 'draft' ? (
+                  <button 
+                    onClick={() => toggle(item, 'active')}
+                    className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
+                  >
+                    Activate
+                  </button>
+                ) : item.status === 'active' ? (
+                  <button 
+                    onClick={() => toggle(item, 'completed')}
+                    className="bg-orange-600 text-white px-3 py-1 rounded-md hover:bg-orange-700"
+                  >
+                    End Campaign
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => fetchL2LStats(item.id)}
+                  className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                >
+                  View Details
+                </button>
+              </div>
+              
+              {/* Progress bar para tokens distribuídos */}
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                  <span>Token Distribution Progress</span>
+                  <span>{Math.min(100, Math.round((item.totalParticipants || 0) * item.tokenPerParticipant / item.tokenAmount * 100))}%</span>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2.5">
+                  <div 
+                    className="bg-orange-500 h-2.5 rounded-full progress-bar" 
+                    data-progress-width={`${Math.min(100, Math.round((item.totalParticipants || 0) * item.tokenPerParticipant / item.tokenAmount * 100))}%`}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
   // Adicionar nova aba para Instant Jobs
   const tabs = [
@@ -2640,6 +2892,34 @@ const renderLearn2Earn = () => {
     { id: "settings", label: "Settings" },
     // Outras tabs existentes...
   ];
+
+  // Adicionar estado para armazenar as redes disponíveis
+  const [availableNetworks, setAvailableNetworks] = useState<string[]>([]);
+  const [isLoadingNetworks, setIsLoadingNetworks] = useState(false);
+
+  // Função para buscar redes disponíveis do Firestore
+  const fetchAvailableNetworks = useCallback(async () => {
+    setIsLoadingNetworks(true);
+    try {
+      // Buscar as redes disponíveis usando o serviço do contrato
+      const networks = await learn2earnContractService.getSupportedNetworks();
+      console.log("Redes disponíveis encontradas:", networks);
+      setAvailableNetworks(networks);
+    } catch (error) {
+      console.error("Erro ao buscar redes disponíveis:", error);
+      setAvailableNetworks([]);
+    } finally {
+      setIsLoadingNetworks(false);
+    }
+  }, []);
+
+  // Buscar redes disponíveis quando o componente for montado ou quando a aba Learn2Earn for selecionada
+  useEffect(() => {
+    if (activeTab === "learn2earn") {
+      fetchAvailableNetworks();
+      fetchFeePercentage(); // Now this reference is valid
+    }
+  }, [activeTab, fetchAvailableNetworks, fetchFeePercentage]);
 
   return (
     <Layout>

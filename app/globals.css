@@ -8,3 +8,7 @@
   --w3m-background-color: #000000;
   --w3m-text-color: #FFFFFF;
 }
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}

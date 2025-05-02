@@ -11,8 +11,9 @@ interface Learn2EarnTestButtonProps {
 const Learn2EarnTestButton: React.FC<Learn2EarnTestButtonProps> = ({ contractAddress, network }) => {
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  
-  // Helper function to get network params
+
+  const supportedNetworks = ['ethereum', 'bsc', 'sepolia', 'mumbai', 'bscTestnet'];
+
   const getNetworkParams = (network: string) => {
     switch(network.toLowerCase()) {
       case 'ethereum': return { 
@@ -35,13 +36,26 @@ const Learn2EarnTestButton: React.FC<Learn2EarnTestButtonProps> = ({ contractAdd
         chainName: 'Mumbai Testnet',
         rpcUrls: ['https://rpc-mumbai.maticvigil.com']
       };
-      default: return { 
-        chainId: '0xaa36a7', 
-        chainName: 'Sepolia Testnet',
-        rpcUrls: ['https://rpc.sepolia.org']
+      case 'bsctestnet': return { 
+        chainId: '0x61', 
+        chainName: 'BSC Testnet',
+        rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/']
       };
+      default: throw new Error(`Unsupported network: ${network}`);
     }
   };
+
+  const handleNetworkChange = () => {
+    window.ethereum.on('chainChanged', () => {
+      window.location.reload();
+    });
+  };
+
+  React.useEffect(() => {
+    if (window.ethereum) {
+      handleNetworkChange();
+    }
+  }, []);
 
   const handleTest = async () => {
     setTesting(true);

@@ -13,3 +13,8 @@ a {
 button {
   cursor: pointer;
 }
+
+/* Add better styling for the progress bar */
+.progress-bar {
+  transition: width 0.5s ease-in-out;
+}

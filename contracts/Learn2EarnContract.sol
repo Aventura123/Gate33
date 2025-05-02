@@ -28,16 +28,36 @@ contract Learn2EarnContract is Ownable, ReentrancyGuard {
     // Separate mapping to track who has claimed
     mapping(uint256 => mapping(address => bool)) public hasClaimed;
 
+    // Fee configuration
+    address public feeCollector;
+    uint256 public feePercent; // Fee percentage (e.g., 5 for 5%)
+
     // Events
     event Learn2EarnCreated(uint256 indexed learn2earnId, address indexed creator, address tokenAddress, uint256 tokenAmount);
     event Learn2EarnClaimed(uint256 indexed learn2earnId, address indexed user, uint256 amount);
     event Learn2EarnEnded(uint256 indexed learn2earnId);
     event Learn2EarnReactivated(uint256 indexed learn2earnId);
+    event FeeUpdated(address indexed feeCollector, uint256 feePercent);
 
     /**
      * @dev Constructor that sets the initial owner of the contract
      */
     constructor(address initialOwner) Ownable(initialOwner) {}
+
+    /**
+     * @dev Updates the fee collector and fee percentage
+     * @param _feeCollector The address to collect fees
+     * @param _feePercent The percentage of fees to collect (0-100)
+     */
+    function updateFeeConfig(address _feeCollector, uint256 _feePercent) external onlyOwner {
+        require(_feeCollector != address(0), "Invalid fee collector address");
+        require(_feePercent <= 100, "Fee percent must be between 0 and 100");
+
+        feeCollector = _feeCollector;
+        feePercent = _feePercent;
+
+        emit FeeUpdated(_feeCollector, _feePercent);
+    }
 
     /**
      * @dev Creates a new learn2earn opportunity
@@ -62,14 +82,20 @@ contract Learn2EarnContract is Ownable, ReentrancyGuard {
         require(_startTime >= block.timestamp, "Start time must be in the future");
 
         IERC20 token = IERC20(_tokenAddress);
-        require(token.transferFrom(msg.sender, address(this), _tokenAmount), "Token transfer failed");
+
+        // Calculate fee and remaining amount
+        uint256 feeAmount = (_tokenAmount * feePercent) / 100;
+        uint256 remainingAmount = _tokenAmount - feeAmount;
+
+        require(token.transferFrom(msg.sender, feeCollector, feeAmount), "Fee transfer failed");
+        require(token.transferFrom(msg.sender, address(this), remainingAmount), "Token transfer failed");
 
         uint256 learn2earnId = learn2earnCount;
         Learn2Earn storage newLearn2Earn = learn2earns[learn2earnId];
 
         newLearn2Earn.id = _firebaseId;
         newLearn2Earn.tokenAddress = _tokenAddress;
-        newLearn2Earn.tokenAmount = _tokenAmount;
+        newLearn2Earn.tokenAmount = remainingAmount;
         newLearn2Earn.startTime = _startTime;
         newLearn2Earn.endTime = _endTime;
         newLearn2Earn.maxParticipants = _maxParticipants;
@@ -77,7 +103,7 @@ contract Learn2EarnContract is Ownable, ReentrancyGuard {
         newLearn2Earn.active = true;
 
         learn2earnCount++;
-        emit Learn2EarnCreated(learn2earnId, msg.sender, _tokenAddress, _tokenAmount);
+        emit Learn2EarnCreated(learn2earnId, msg.sender, _tokenAddress, remainingAmount);
     }
 
     /**
