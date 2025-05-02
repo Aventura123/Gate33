@@ -115,24 +115,50 @@ function UnifiedLoginPage() {
         if (data.token) {
           localStorage.setItem("token", data.token);
           console.log("Token salvo no localStorage");
-        } else {
-          console.warn("Token não encontrado na resposta");
+          
+          // Extract company ID from token if possible (it's often base64 encoded)
+          try {
+            const decodedToken = atob(data.token);
+            localStorage.setItem("companyId", decodedToken);
+            console.log("CompanyId extraído do token:", decodedToken);
+          } catch (err) {
+            console.warn("Couldn't decode token to extract companyId:", err);
+          }
         }
 
-        // Salvar dados do usuário no localStorage
-        if (data.userData) {
-          console.log("Dados da empresa:", data.userData);
+        // CORREÇÃO: Procurar dados na propriedade 'company' em vez de 'userData'
+        if (data.company) {
+          console.log("Dados da empresa encontrados:", data.company);
+          localStorage.setItem("companyId", data.company.id);
+          localStorage.setItem("companyName", data.company.name || companyUsername);
+          
+          if (data.company.photo) {
+            localStorage.setItem("companyPhoto", data.company.photo);
+          }
+        } 
+        // Verificar também o formato antigo userData (para compatibilidade)
+        else if (data.userData) {
+          console.log("Dados da empresa encontrados em userData:", data.userData);
           localStorage.setItem("companyId", data.userData.id);
-          localStorage.setItem("companyName", data.userData.name || data.userData.username);
-
+          localStorage.setItem("companyName", data.userData.name || data.userData.username || companyUsername);
+          
           if (data.userData.photoURL) {
             localStorage.setItem("companyPhoto", data.userData.photoURL);
           } else if (data.userData.photo) {
             localStorage.setItem("companyPhoto", data.userData.photo);
           }
-        } else {
-          console.warn("Dados do usuário não encontrados na resposta");
+        } 
+        else {
+          console.warn("Dados do usuário não encontrados na resposta - usando username como fallback");
+          // If we can't find structured data, at least save the username
+          localStorage.setItem("companyName", companyUsername);
         }
+
+        console.log("Dados salvos no localStorage:", {
+          companyId: localStorage.getItem("companyId"),
+          companyName: localStorage.getItem("companyName"),
+          companyPhoto: localStorage.getItem("companyPhoto"),
+        });
 
         document.cookie = "isAuthenticated=true; path=/; max-age=86400"; // 24 horas
         console.log("Cookie de autenticação definido, redirecionando para dashboard");

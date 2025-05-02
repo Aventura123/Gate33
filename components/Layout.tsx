@@ -10,13 +10,37 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Verificar se o usuário está logado para decidir quais botões mostrar
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Add debugging to see what's in localStorage
+      console.log("Login check - seekerToken:", localStorage.getItem("seekerToken"));
+      console.log("Login check - token:", localStorage.getItem("token"));
+      console.log("Login check - companyId:", localStorage.getItem("companyId"));
+      console.log("Login check - companyName:", localStorage.getItem("companyName"));
+      
+      const hasToken = Boolean(
+        localStorage.getItem("seekerToken") || 
+        localStorage.getItem("token") || 
+        localStorage.getItem("companyId")
+      );
+      console.log("Login check - isLoggedIn:", hasToken);
+      setIsLoggedIn(hasToken);
+    }
+  }, []);
+
+  // Force component re-render when localStorage changes
+  useEffect(() => {
+    const handleStorageChange = () => {
       const hasToken = Boolean(
         localStorage.getItem("seekerToken") || 
         localStorage.getItem("token") || 
         localStorage.getItem("companyId")
       );
       setIsLoggedIn(hasToken);
-    }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   return (
