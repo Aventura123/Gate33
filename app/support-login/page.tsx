@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import Layout from "../../components/Layout";
 import { logSystemActivity } from "../../utils/logSystem";
+import bcrypt from "bcryptjs";
 
 const SupportLogin: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -67,8 +68,9 @@ const SupportLogin: React.FC = () => {
       setShowDebugInfo(true);
       
       // Atualizar a senha (para '123456' - somente para desenvolvimento)
+      const hashedPassword = await bcrypt.hash("123456", 10);
       await updateDoc(doc(db, "admins", userDoc.id), {
-        password: "123456"
+        password: hashedPassword
       });
       
       setPassword("123456"); // Auto-preencher o campo de senha
@@ -142,7 +144,8 @@ const SupportLogin: React.FC = () => {
       
       // Verificar a senha
       // Note: Em um ambiente de produção, a senha deve ser armazenada com hash e comparada com segurança
-      if (userData.password !== password) {
+      const passwordMatch = await bcrypt.compare(password, userData.password);
+      if (!passwordMatch) {
         console.log("Senha incorreta");
         
         // Armazenar informações para modo debug (APENAS DESENVOLVIMENTO)
