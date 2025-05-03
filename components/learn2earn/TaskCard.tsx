@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Learn2EarnTask } from '../../types/learn2earn';
 
+// Define correct prop interface
 interface TaskCardProps {
   task: Learn2EarnTask;
   isReadOnly?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, isReadOnly = false }) => {
+const TaskCard = ({ task, isReadOnly = false }: TaskCardProps) => {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   
