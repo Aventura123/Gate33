@@ -14,7 +14,10 @@ export type SystemLogAction =
   | "reject" 
   | "payment" 
   | "admin_action" 
-  | "system";
+  | "system"
+  | "contract_activity"   // Adicionado para monitoramento de contratos
+  | "token_distribution" // Adicionado para distribuição de tokens
+  | "wallet_alert";      // Adicionado para alertas da carteira
 
 /**
  * Interface para os dados de log do sistema
@@ -89,3 +92,87 @@ export async function logAdminAction(
     }
   );
 }
+
+/**
+ * Registra atividade relacionada a contratos inteligentes
+ * @param contractName Nome do contrato (ex: "Learn2EarnContract")
+ * @param activityType Tipo de atividade (ex: "claim", "distribution", "transaction")
+ * @param details Detalhes da atividade
+ * @returns Promise com o ID do log criado ou null em caso de erro
+ */
+export async function logContractActivity(
+  contractName: string,
+  activityType: string,
+  details: Record<string, any> = {}
+): Promise<string | null> {
+  return logSystemActivity(
+    "contract_activity",
+    contractName,
+    {
+      activityType,
+      ...details
+    }
+  );
+}
+
+/**
+ * Registra atividade de distribuição de tokens G33
+ * @param recipient Endereço que recebeu os tokens
+ * @param amount Quantidade de tokens distribuídos
+ * @param details Detalhes adicionais sobre a distribuição
+ * @returns Promise com o ID do log criado ou null em caso de erro 
+ */
+export async function logTokenDistribution(
+  recipient: string,
+  amount: number,
+  details: Record<string, any> = {}
+): Promise<string | null> {
+  return logSystemActivity(
+    "token_distribution",
+    "G33TokenDistributor",
+    {
+      recipient,
+      amount,
+      ...details
+    }
+  );
+}
+
+/**
+ * Registra um alerta relacionado à carteira de serviço
+ * @param walletAddress Endereço da carteira
+ * @param alertType Tipo de alerta (ex: "low_balance", "high_gas", "suspicious_tx")
+ * @param details Detalhes do alerta
+ * @returns Promise com o ID do log criado ou null em caso de erro
+ */
+export async function logWalletAlert(
+  walletAddress: string,
+  alertType: string,
+  details: Record<string, any> = {}
+): Promise<string | null> {
+  return logSystemActivity(
+    "wallet_alert",
+    walletAddress,
+    {
+      alertType,
+      ...details
+    }
+  );
+}
+
+// Exportação de utility para uso em outros módulos
+export const logSystem = {
+  info: async (message: string, details: Record<string, any> = {}) => {
+    return logSystemActivity("system", "SYSTEM", { message, level: "info", ...details });
+  },
+  warn: async (message: string, details: Record<string, any> = {}) => {
+    return logSystemActivity("system", "SYSTEM", { message, level: "warn", ...details });
+  },
+  error: async (message: string, details: Record<string, any> = {}) => {
+    return logSystemActivity("system", "SYSTEM", { message, level: "error", ...details });
+  },
+  contractActivity: logContractActivity,
+  tokenDistribution: logTokenDistribution,
+  walletAlert: logWalletAlert,
+  adminAction: logAdminAction
+};

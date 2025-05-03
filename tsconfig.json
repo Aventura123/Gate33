@@ -46,7 +46,8 @@
     "app/**/*",
     "components/**/*",
     "lib/**/*",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "services/**/*" // Inclui o diretório 'services/' para reconhecimento pelo TypeScript
   ],
   "exclude": [
     "node_modules"

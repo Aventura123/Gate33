@@ -23,3 +23,8 @@ interface SmartContractService {
   checkOwnership(): Promise<boolean>;
   getContractOwner(): Promise<string>;
 }
+
+declare module "g33TokenContractService" {
+  export const g33TokenContractService: any;
+  export default g33TokenContractService;
+}

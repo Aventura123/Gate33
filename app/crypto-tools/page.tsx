@@ -654,6 +654,36 @@ function FlexCard({ address, isConnected, className }: { address: `0x${string}` 
     age: number;
   } | null>(null);
   
+  // Fun wallet nicknames based on score
+  const getWalletNickname = (score: number) => {
+    if (score >= 90) return "Crypto Whale Legend 🐳";
+    if (score >= 80) return "Diamond Hands King 💎";
+    if (score >= 70) return "NFT Conquistador 🏆";
+    if (score >= 60) return "Memecoin Wizard 🧙‍♂️";
+    if (score >= 50) return "Blockchain Adventurer 🌍";
+    if (score >= 40) return "Crypto Enthusiast ⚡";
+    if (score >= 30) return "Web3 Explorer 🔍";
+    if (score >= 20) return "HODL Apprentice 👶";
+    return "Crypto Newbie 🥚";
+  };
+  
+  // Fun emoji for NFT count
+  const getNftEmoji = (count: number) => {
+    if (count > 15) return "🖼️🖼️🖼️";
+    if (count > 10) return "🖼️🖼️";
+    if (count > 5) return "🖼️";
+    return "📝";
+  };
+  
+  // Fun wallet age description
+  const getAgeDescription = (days: number) => {
+    if (days > 300) return "Crypto Dinosaur 🦖";
+    if (days > 200) return "Veteran Hodler 👴";
+    if (days > 100) return "Experienced Trader 🧠";
+    if (days > 50) return "Getting Comfortable 🛋️";
+    return "Fresh Wallet 🌱";
+  };
+  
   // Automatically use the connected wallet address
   React.useEffect(() => {
     if (address) {
@@ -683,6 +713,26 @@ function FlexCard({ address, isConnected, className }: { address: `0x${string}` 
     return { score, nftCount, age };
   };
   
+  // Generate a fun "wallet mood" based on the wallet address
+  const getWalletMood = (address: string) => {
+    const moods = [
+      "ready to moon! 🚀", 
+      "looking for alpha 👀", 
+      "avoiding rugpulls 🧠", 
+      "feeling bullish 📈",
+      "HODL mode activated 🔒",
+      "fading FUD 🙉",
+      "degen mode: ON 🔥",
+      "stacking sats 💰",
+      "touching grass today 🌱",
+      "buying high, selling low 🤦‍♂️"
+    ];
+    
+    // Use the address to deterministically choose a mood
+    const moodIndex = parseInt(address.slice(2, 4), 16) % moods.length;
+    return moods[moodIndex];
+  };
+  
   const saveFlex = async () => {
     if (!input) return setMsg('Enter your wallet address');
     setIsLoading(true);
@@ -702,10 +752,10 @@ function FlexCard({ address, isConnected, className }: { address: `0x${string}` 
       });
       
       setCardGenerated(true);
-      setMsg('Flex card created successfully!');
+      setMsg('Awesome flex card created! Your friends will be sooo jealous! 😎');
     } catch (error) {
       console.error('Error saving flex card:', error);
-      setMsg('Error saving flex card');
+      setMsg('Oops! The blockchain gods denied your flex card 😅');
       setCardGenerated(false);
     } finally {
       setIsLoading(false);
@@ -713,16 +763,17 @@ function FlexCard({ address, isConnected, className }: { address: `0x${string}` 
   };
   
   return (
-    <div className="bg-black/40 border border-[#fb923c]/20 rounded-lg p-4 flex flex-col gap-2 shadow-lg transition-all">
+    <div className={`bg-black/40 border border-[#fb923c]/20 rounded-lg p-4 flex flex-col gap-2 shadow-lg transition-all ${className}`}>
       <h3 className="font-bold text-orange-400 mb-1 flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z" clipRule="evenodd" />
         </svg>
-        Wallet Flex Card
+        Super Awesome Wallet Flex Card ✨
       </h3>
+      <p className="text-xs text-gray-400 -mt-1 ml-7">Show off your crypto swag to the world!</p>
       <input 
         className="p-2 rounded bg-gray-800 text-white border border-gray-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none" 
-        placeholder={isConnected ? "Using connected wallet" : "Wallet address"} 
+        placeholder={isConnected ? "Using connected wallet" : "Drop your wallet address here"} 
         value={isConnected ? formatWalletAddress(input) : input} 
         onChange={e => setInput(e.target.value)} 
       />
@@ -737,64 +788,123 @@ function FlexCard({ address, isConnected, className }: { address: `0x${string}` 
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            Creating...
+            Generating Awesomeness...
           </>
-        ) : "Generate Flex Card"}
+        ) : "Create Epic Flex Card 🔥"}
       </button>
       
       {isLoading ? (
-        <SkeletonLoader />
+        <div className="animate-pulse">
+          <div className="h-40 bg-gray-700 rounded w-full mb-2"></div>
+          <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+        </div>
       ) : cardGenerated && cardData ? (
-        <div className="mt-3">
-          <div className="bg-gradient-to-br from-orange-500 to-yellow-600 p-0.5 rounded-lg">
+        <div className="mt-3 animate-fadeIn">
+          <div className="bg-gradient-to-br from-orange-500 to-yellow-600 p-0.5 rounded-lg drop-shadow-glow">
             <div className="bg-gray-900 p-4 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
                     {input.substring(2, 4).toUpperCase()}
                   </div>
                   <div className="ml-3">
-                    <div className="text-white font-bold">Crypto Explorer</div>
-                    <div className="text-xs text-gray-400">{formatWalletAddress(input)}</div>
+                    <div className="text-white font-bold text-lg">{getWalletNickname(cardData.score)}</div>
+                    <div className="text-xs text-gray-400 flex items-center">
+                      <span>{formatWalletAddress(input)}</span>
+                      <span className="ml-1 bg-gray-800 px-1.5 py-0.5 rounded text-gray-300 text-[10px]">
+                        {getWalletMood(input)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="bg-orange-500/20 px-2 py-1 rounded text-orange-300 text-xs font-medium">
-                  {cardData.score >= 80 ? "Elite" : cardData.score >= 60 ? "Advanced" : cardData.score >= 40 ? "Regular" : "Beginner"}
+                <div className="bg-orange-500 px-3 py-2 rounded text-white text-xs font-bold transform rotate-3 animate-pulse">
+                  {cardData.score >= 80 ? "LEGENDARY" : 
+                   cardData.score >= 60 ? "BASED" : 
+                   cardData.score >= 40 ? "RISING STAR" : "NOOB"}
                 </div>
               </div>
               
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <div className="bg-gray-800/50 p-2 rounded">
-                  <div className="text-lg font-bold text-white">{cardData.score}</div>
-                  <div className="text-xs text-gray-400">Score</div>
+                <div className="bg-gray-800/50 p-2 rounded hover:bg-gray-700/50 transition-colors group">
+                  <div className="text-lg font-bold text-white group-hover:scale-110 transition-transform">{cardData.score}</div>
+                  <div className="text-xs text-gray-400 group-hover:text-orange-300 transition-colors">Crypto Score</div>
+                  <div className="text-[10px] text-orange-500 mt-1">
+                    {cardData.score > 70 ? "Top Degen" : cardData.score > 40 ? "Average Chad" : "Needs Work"}
+                  </div>
                 </div>
-                <div className="bg-gray-800/50 p-2 rounded">
-                  <div className="text-lg font-bold text-white">{cardData.nftCount}</div>
-                  <div className="text-xs text-gray-400">NFTs</div>
+                <div className="bg-gray-800/50 p-2 rounded hover:bg-gray-700/50 transition-colors group">
+                  <div className="text-lg font-bold text-white group-hover:scale-110 transition-transform flex justify-center">
+                    <span>{cardData.nftCount}</span>
+                    <span className="text-xs ml-1 text-orange-400">{getNftEmoji(cardData.nftCount)}</span>
+                  </div>
+                  <div className="text-xs text-gray-400 group-hover:text-orange-300 transition-colors">NFT Collection</div>
+                  <div className="text-[10px] text-orange-500 mt-1">
+                    {cardData.nftCount > 15 ? "NFT Whale" : cardData.nftCount > 8 ? "Collector" : "Starting Out"}
+                  </div>
                 </div>
-                <div className="bg-gray-800/50 p-2 rounded">
-                  <div className="text-lg font-bold text-white">{cardData.age}</div>
-                  <div className="text-xs text-gray-400">Age</div>
+                <div className="bg-gray-800/50 p-2 rounded hover:bg-gray-700/50 transition-colors group">
+                  <div className="text-lg font-bold text-white group-hover:scale-110 transition-transform">{cardData.age}</div>
+                  <div className="text-xs text-gray-400 group-hover:text-orange-300 transition-colors">Wallet Age (days)</div>
+                  <div className="text-[10px] text-orange-500 mt-1">{getAgeDescription(cardData.age)}</div>
                 </div>
               </div>
               
-              <div className="mt-4 flex justify-center">
-                <button className="text-xs bg-orange-500/20 text-orange-300 rounded-full px-3 py-1 flex items-center">
+              <div className="mt-4 flex justify-between items-center">
+                <div className="text-[10px] italic text-gray-500">
+                  "{cardData.score > 70 ? "Fortune favors the brave" : 
+                    cardData.score > 40 ? "DYOR and HODL" : "Buy high, sell low"}"
+                </div>
+                <button className="text-xs bg-orange-500 text-white rounded-full px-3 py-1 flex items-center hover:bg-orange-600 transition-colors transform hover:scale-105">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
                   </svg>
-                  Share Card
+                  Share the Flex
                 </button>
               </div>
             </div>
           </div>
-          <div className="text-xs text-gray-400 mt-2 text-center">Card saved! You can share it with others soon.</div>
+          <div className="text-center mt-3">
+            <div className="text-sm text-orange-300 font-medium">🎉 Your flex card is ready to impress! 🎉</div>
+            <div className="text-xs text-gray-400 mt-1">Share it with your fren that has a 9-5 job 😎</div>
+          </div>
         </div>
       ) : msg ? (
-        <div className="text-sm text-gray-300 mt-1 p-2 bg-gray-800/50 rounded">{msg}</div>
+        <div className="text-sm text-gray-300 mt-1 p-2 bg-gray-800/50 rounded text-center">
+          {msg}
+        </div>
       ) : (
-        <div className="text-xs text-gray-400 mt-2">Generate a flex card to show off your crypto status!</div>
+        <div className="bg-gray-800/30 p-3 rounded border border-gray-700/50 mt-2">
+          <div className="flex items-center justify-center mb-2">
+            <span className="text-yellow-500 text-lg mr-2">✨</span>
+            <span className="text-sm text-gray-300 font-medium">What's a Flex Card?</span>
+            <span className="text-yellow-500 text-lg ml-2">✨</span>
+          </div>
+          <p className="text-xs text-gray-400 text-center">
+            A fun way to show off your crypto reputation, wallet age, and overall awesomeness in the Web3 space! Generate yours now and become the envy of your crypto friends!
+          </p>
+          <div className="flex justify-center mt-3">
+            <div className="animate-bounce bg-orange-500 p-1 w-8 h-8 rounded-full flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+        </div>
       )}
+
+      {/* Add custom animation keyframes using style tag */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.6s ease-out forwards;
+        }
+        .drop-shadow-glow {
+          filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.5));
+        }
+      `}</style>
     </div>
   );
 }
@@ -1156,16 +1266,22 @@ export default function CryptoToolsPage() {
           <div className="text-center mb-10">
             <h1 className="text-4xl font-bold text-orange-500 mb-4">Crypto Tools</h1>
             <p className="text-gray-400 max-w-2xl mx-auto">
-            Useful tools for exploring wallet addresses, checking on-chain data and more.
+              Useful tools for exploring wallet addresses, checking on-chain data and more.
             </p>
             
             {/* Warning message about tools under development */}
-            <div className="mt-4 bg-orange-900/30 border border-orange-500/50 rounded-lg p-3 max-w-2xl mx-auto">
-              <p className="text-sm text-orange-200 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <div className="mt-4 bg-orange-900/30 border border-orange-500/50 rounded-lg p-4 max-w-2xl mx-auto">
+              <p className="text-sm text-orange-200 flex items-center mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 8a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
-                Please note: These tools are still under development and may contain flaws. Some features may have limited or experimental functionality.
+                <span>Please note: These tools are still under development and may contain flaws. Some features may have limited or experimental functionality.</span>
+              </p>
+              <p className="text-sm text-orange-200 ml-7 mb-2">
+                Currently, we're using free API tiers which have limitations, so most wallet-related information is simulated for demonstration purposes.
+              </p>
+              <p className="text-sm text-orange-200 ml-7">
+                If you'd like to help this project grow and support the implementation of advanced features with premium APIs, please <a href="#" className="text-orange-400 font-medium hover:text-orange-300 underline">donate here</a>. Your contribution will help us provide more accurate and reliable blockchain data!
               </p>
             </div>
           </div>
