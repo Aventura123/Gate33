@@ -231,8 +231,22 @@ export function initializeContractMonitoring(): void {
     // Filtrar URLs vazias ou nulas
     const validRpcUrls = rpcUrls.filter(url => url);
     
-    // Função para criar um provider com retry
-    const createReliableProvider = async (): Promise<ethers.providers.Provider> => {
+    // Variável para controlar o estado de execução
+    let isMonitoringInitialized = false;
+    let providerInitRetries = 0;
+    const MAX_PROVIDER_RETRIES = 2; // Máximo de tentativas para inicializar o provider
+    
+    // Função para criar um provider com retry e limites
+    const createReliableProvider = async (): Promise<ethers.providers.Provider | null> => {
+      // Se já atingimos o número máximo de tentativas, não tentar novamente
+      if (providerInitRetries >= MAX_PROVIDER_RETRIES) {
+        console.warn(`Atingido o máximo de ${MAX_PROVIDER_RETRIES} tentativas para inicializar o provider. O monitoramento será desativado.`);
+        return null;
+      }
+      
+      providerInitRetries++;
+      console.log(`Tentativa ${providerInitRetries}/${MAX_PROVIDER_RETRIES} para inicializar o provider`);
+      
       for (const url of validRpcUrls) {
         try {
           console.log(`Tentando conectar ao RPC para monitoramento: ${url}`);
@@ -254,19 +268,43 @@ export function initializeContractMonitoring(): void {
         }
       }
       
-      // Se todos falharem, tente um provider default como último recurso
-      console.warn('Todas as tentativas de conexão RPC falharam, tentando provider padrão');
-      return ethers.providers.getDefaultProvider('homestead', {
-        infura: 'da1aa71d421944c69d9be9e699a29d1d', // Chave pública do Infura
-        alchemy: 'aBnESsQTECl5REQ7cDPdp1gDDOSg_SzE', // Chave pública do Alchemy
-        etherscan: 'YKRAU1FG8JI7T52VNHPVE6NQRPD7SHZ8FB', // Chave pública do Etherscan
-        pocket: '5a99b4765204e6f2e8ebe3fe', // Chave pública do Pocket
-        quorum: 1
-      });
+      try {
+        // Se todos falharem, tente um provider default como último recurso
+        console.warn('Todas as tentativas de conexão RPC falharam, tentando provider padrão');
+        const defaultProvider = ethers.providers.getDefaultProvider('homestead', {
+          infura: process.env.INFURA_KEY || 'da1aa71d421944c69d9be9e699a29d1d',
+          alchemy: process.env.ALCHEMY_KEY || 'aBnESsQTECl5REQ7cDPdp1gDDOSg_SzE',
+          etherscan: process.env.ETHERSCAN_KEY || 'YKRAU1FG8JI7T52VNHPVE6NQRPD7SHZ8FB',
+          pocket: process.env.POCKET_KEY || '5a99b4765204e6f2e8ebe3fe',
+          quorum: 1
+        });
+        
+        // Teste o provider padrão antes de retornar
+        const blockNumber = await Promise.race([
+          defaultProvider.getBlockNumber(),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout ao conectar ao provider padrão')), 5000)
+          ),
+        ]);
+        
+        console.log(`✅ Conexão com provider padrão bem-sucedida, bloco atual: ${blockNumber}`);
+        return defaultProvider;
+      } catch (error) {
+        console.error(`❌ Falha ao conectar ao provider padrão:`, error);
+        return null;
+      }
     };
     
-    // Crie um provider confiável
+    // Tente criar um provider confiável
     createReliableProvider().then(provider => {
+      // Se não conseguimos um provider, não continue
+      if (!provider) {
+        logSystem.error('Não foi possível estabelecer conexão com nenhum provider. O monitoramento de contratos não será iniciado.');
+        return;
+      }
+      
+      isMonitoringInitialized = true;
+      
       // Obter configurações do ambiente
       const learn2earnAddress = process.env.LEARN2EARN_CONTRACT_ADDRESS;
       const serviceWalletAddress = process.env.SERVICE_WALLET_ADDRESS;
@@ -295,6 +333,14 @@ export function initializeContractMonitoring(): void {
     }).catch(error => {
       logSystem.error(`Falha ao criar provider para monitoramento: ${error.message}`);
     });
+    
+    // Define um tempo limite geral para o processo de inicialização
+    setTimeout(() => {
+      if (!isMonitoringInitialized) {
+        logSystem.error(`Tempo limite excedido para inicializar o monitoramento de contratos. O processo foi cancelado.`);
+      }
+    }, 30000); // 30 segundos para o timeout geral
+    
   } catch (error: any) {
     logSystem.error(`Erro ao inicializar monitoramento de contratos: ${error.message}`);
   }

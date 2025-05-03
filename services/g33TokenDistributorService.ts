@@ -200,6 +200,11 @@ class G33TokenDistributorService {
         this.distributorAddress = config.tokenDistributorAddress;
         console.log(`Endereço do distribuidor obtido: ${this.distributorAddress}`);
         
+        // Verificar se o endereço do distribuidor está configurado
+        if (!this.distributorAddress) {
+          throw new Error("Distributor address is not configured");
+        }
+        
         // Verificar a chave privada
         let privateKey = process.env.DISTRIBUTOR_PRIVATE_KEY;
         
@@ -230,7 +235,8 @@ class G33TokenDistributorService {
         const walletAddress = await this.wallet.getAddress();
         console.log(`Carteira do distribuidor configurada: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`);
         
-        // Conectar ao contrato
+        // Conectar ao contrato (aqui é onde estava o erro)
+        // Garantimos que this.distributorAddress não é null pois já verificamos acima
         this.contract = new ethers.Contract(this.distributorAddress, DISTRIBUTOR_ABI, this.wallet);
         
         // Verificar se o contrato está acessível
