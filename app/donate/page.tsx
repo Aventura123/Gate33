@@ -10,6 +10,7 @@ import { ethers } from 'ethers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { USDT_ADDRESSES, TOKEN_DECIMALS } from '../../config/tokenConfig';
+import DonationThankYouCard from '../../components/ui/DonationThankYouCard';
 
 // Donation options
 interface CryptoCurrency {
@@ -30,19 +31,19 @@ const cryptocurrencies: CryptoCurrency[] = [
   {
     name: "Ethereum",
     symbol: "ETH",
-    icon: "/images/crypto/eth.svg", // Será substituído por texto
+    icon: "/images/crypto/eth.svg", // Will be replaced by text
     networks: ["ethereum", "polygon", "bsc"]
   },
   {
     name: "Bitcoin",
     symbol: "BTC",
-    icon: "/images/crypto/btc.svg", // Será substituído por texto
+    icon: "/images/crypto/btc.svg", // Will be replaced by text
     networks: ["bitcoin"]
   },
   {
     name: "Tether",
     symbol: "USDT",
-    icon: "/images/crypto/usdt.svg", // Será substituído por texto
+    icon: "/images/crypto/usdt.svg", // Will be replaced by text
     networks: ["ethereum", "polygon", "bsc"]
   }
 ];
@@ -74,21 +75,21 @@ const networks: Network[] = [
   }
 ];
 
-// Endereços de carteiras atualizados para reais
+// Updated wallet addresses
 const DONATION_ADDRESSES = {
   ethereum: {
-    ETH: "0xC5669da4aF25d78382683a69f3E13364894c756D", // Endereço real da Gate33
-    USDT: "0xC5669da4aF25d78382683a69f3E13364894c756D" // Mesmo endereço para simplicidade
+    ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382", // Updated wallet address
+    USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382" // Same address for simplicity
   },
   polygon: {
-    ETH: "0xC5669da4aF25d78382683a69f3E13364894c756D",
-    USDT: "0xC5669da4aF25d78382683a69f3E13364894c756D"
+    ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382"
   },
   bsc: {
-    USDT: "0xC5669da4aF25d78382683a69f3E13364894c756D"
+    USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382"
   },
   bitcoin: {
-    BTC: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" // Manter esse, pois é um formato válido para endereço BTC
+    BTC: "18kWTqh8o8Tzj4Qbekr5FY6AuikLS5zsKJ" // New Bitcoin address
   }
 };
 
@@ -194,7 +195,7 @@ export default function DonatePage() {
     const value = e.target.value.replace(/[^0-9.]/g, '');
     setDonationAmount(value);
     
-    // Calcular estimativa de tokens se o valor for válido
+    // Calculate estimated tokens if the value is valid
     if (value && parseFloat(value) > 0 && selectedCrypto) {
       calculateEstimatedTokens(value, selectedCrypto.symbol);
     } else {
@@ -203,18 +204,18 @@ export default function DonatePage() {
     }
   };
   
-  // Calcular estimativa de tokens G33 com base no valor da doação
+  // Calculate estimated G33 tokens based on donation amount
   const calculateEstimatedTokens = async (amount: string, cryptoSymbol: string) => {
     try {
-      // Usar o tokenService para calcular o valor em USD
+      // Use tokenService to calculate USD value
       const usdAmount = await tokenService.calculateUSDValue(amount, cryptoSymbol);
       setUsdValue(usdAmount);
       
-      // Calcular quantidade de tokens (1 token por $1 USD)
+      // Calculate token amount (1 token per $1 USD)
       const tokenAmount = tokenService.calculateG33TokenAmount(usdAmount);
       setEstimatedTokens(tokenAmount);
     } catch (error) {
-      console.error("Erro ao calcular tokens:", error);
+      console.error("Error calculating tokens:", error);
       setEstimatedTokens(null);
       setUsdValue(null);
     }
@@ -234,10 +235,10 @@ export default function DonatePage() {
   const switchNetwork = async (networkId: string): Promise<boolean> => {
     try {
       if (!walletConnected) {
-        throw new Error("Por favor conecte sua carteira primeiro");
+        throw new Error("Please connect your wallet first");
       }
       
-      setError(null); // Limpar qualquer erro anterior
+      setError(null); // Clear any previous error
       
       const networkTypeMap: Record<string, NetworkType> = {
         'ethereum': 'ethereum',
@@ -247,25 +248,25 @@ export default function DonatePage() {
       
       const networkType = networkTypeMap[networkId];
       if (!networkType) {
-        throw new Error(`Rede ${networkId} não é suportada para transações diretas na carteira`);
+        throw new Error(`Network ${networkId} is not supported for direct wallet transactions`);
       }
       
-      // Mostrar mensagem de processamento
-      setError("Solicitando mudança de rede... Por favor, confirme na sua carteira.");
+      // Show processing message
+      setError("Requesting network switch... Please confirm in your wallet.");
       
       try {
         await web3Service.switchNetwork(networkType);
         setCurrentNetwork(networkId);
-        setError(null); // Limpar a mensagem após sucesso
+        setError(null); // Clear message after success
         return true;
       } catch (switchError: any) {
-        console.error("Erro ao trocar de rede:", switchError);
-        setError(`Não foi possível mudar para ${selectedNetwork?.name}: ${switchError.message}`);
+        console.error("Error switching network:", switchError);
+        setError(`Unable to switch to ${selectedNetwork?.name}: ${switchError.message}`);
         return false;
       }
     } catch (error: any) {
-      console.error("Erro ao preparar mudança de rede:", error);
-      setError(error.message || "Erro ao tentar mudar de rede");
+      console.error("Error preparing network switch:", error);
+      setError(error.message || "Error attempting to switch network");
       return false;
     }
   };
@@ -320,7 +321,7 @@ export default function DonatePage() {
         
         setTransactionHash(transaction.hash);
         
-        // Registrar a doação em ETH para distribuição de tokens G33
+        // Register the ETH donation for G33 token distribution
         try {
           await tokenService.registerTokenDonation(
             walletAddress,
@@ -330,8 +331,8 @@ export default function DonatePage() {
             selectedNetwork.id
           );
         } catch (tokenError) {
-          console.error("Erro ao registrar tokens (a transação foi concluída):", tokenError);
-          // Não falhar a transação principal se o registro de tokens falhar
+          console.error("Error registering tokens (transaction completed):", tokenError);
+          // Do not fail the main transaction if token registration fails
         }
         
         setDonationStep('success');
@@ -385,7 +386,7 @@ export default function DonatePage() {
         
         setTransactionHash(tx.hash);
         
-        // Registrar a doação para distribuição futura de tokens G33
+        // Register the donation for future G33 token distribution
         try {
           const donorAddress = await signer.getAddress();
           await tokenService.registerTokenDonation(
@@ -396,8 +397,8 @@ export default function DonatePage() {
             selectedNetwork.id
           );
         } catch (tokenError) {
-          console.error("Erro ao registrar tokens (a transação foi concluída):", tokenError);
-          // Não falhar a transação principal se o registro de tokens falhar
+          console.error("Error registering tokens (transaction completed):", tokenError);
+          // Do not fail the main transaction if token registration fails
         }
         
         setDonationStep('success');
@@ -478,14 +479,14 @@ export default function DonatePage() {
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold mb-8 text-center">Make a Donation</h2>
             
-            {/* Explicação sobre o token de recompensa */}
+            {/* Token reward explanation */}
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg mb-8">
-              <h3 className="text-xl font-semibold mb-4">Token de Lembrança</h3>
+              <h3 className="text-xl font-semibold mb-4">Souvenir Token</h3>
               <p className="text-gray-300 mb-4">
-                Como agradecimento pela sua doação, você receberá tokens G33 como lembrança. Estes tokens servem como um souvenir digital da sua contribuição para o projeto Gate33.
+                As a thank you for your donation, you will receive G33 tokens as a memento. These tokens serve as a digital souvenir of your contribution to the Gate33 project.
               </p>
               <p className="text-gray-300">
-                Embora atualmente não tenhamos planos específicos para utilidade destes tokens, eles podem eventualmente trazer vantagens na plataforma como forma de reconhecimento pelo seu apoio inicial.
+                While we currently don't have specific plans for the utility of these tokens, they may eventually bring advantages on the platform as a form of recognition for your early support.
               </p>
             </div>
             
@@ -610,18 +611,18 @@ export default function DonatePage() {
                     </div>
                   </div>
                   
-                  {/* Exibir valor em USD e tokens estimados */}
+                  {/* Display USD value and estimated tokens */}
                   {usdValue !== null && estimatedTokens !== null && (
                     <div className="mt-4 p-4 bg-gray-800/60 border border-orange-500/20 rounded-lg text-center">
-                      <p className="text-sm text-gray-300 mb-2">Valor estimado da sua doação:</p>
+                      <p className="text-sm text-gray-300 mb-2">Estimated value of your donation:</p>
                       <p className="text-xl font-bold text-white mb-1">
                         ${usdValue.toFixed(2)} <span className="text-gray-400">USD</span>
                       </p>
-                      <p className="text-sm text-gray-400 mb-2">Você receberá aproximadamente:</p>
+                      <p className="text-sm text-gray-400 mb-2">You will receive approximately:</p>
                       <p className="text-2xl font-bold text-orange-500 mb-1">
                         {Math.floor(estimatedTokens)} <span className="text-gray-300">G33 Tokens</span>
                       </p>
-                      <p className="text-xs text-gray-400 mt-2">1 G33 Token por cada $1 USD doado</p>
+                      <p className="text-xs text-gray-400 mt-2">1 G33 Token for each $1 USD donated</p>
                     </div>
                   )}
                   
@@ -685,14 +686,14 @@ export default function DonatePage() {
                             {currentNetwork !== selectedNetwork.id && (
                               <div className="p-3 bg-yellow-900/30 border border-yellow-800/50 rounded-lg mb-4">
                                 <p className="text-sm mb-3">
-                                  Você precisa mudar para a rede {selectedNetwork.name} para continuar.
+                                  You need to switch to {selectedNetwork.name} network to continue.
                                 </p>
                                 <button
                                   type="button"
                                   className="w-full px-4 py-2 text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                                   onClick={() => switchNetwork(selectedNetwork.id)}
                                 >
-                                  Mudar para {selectedNetwork.name}
+                                  Switch to {selectedNetwork.name}
                                 </button>
                               </div>
                             )}
@@ -740,33 +741,12 @@ export default function DonatePage() {
               )}
 
               {donationStep === 'success' && (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                  </div>
-                  
-                  <h3 className="text-xl font-semibold mb-2">Thank You for Your Support!</h3>
-                  <p className="text-gray-400 mb-4">Your contribution will help us improve Gate33 for everyone</p>
-                  
-                  {transactionHash && (
-                    <div className="mt-4 p-3 bg-gray-800 rounded-lg text-left">
-                      <p className="text-sm text-gray-400 mb-1">Transaction Hash:</p>
-                      <p className="font-mono text-xs break-all">{transactionHash}</p>
-                    </div>
-                  )}
-                  
-                  <div className="mt-6">
-                    <button
-                      type="button"
-                      className="px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                      onClick={resetDonation}
-                    >
-                      Make Another Donation
-                    </button>
-                  </div>
-                </div>
+                <DonationThankYouCard
+                  tokenAmount={estimatedTokens || 0}
+                  transactionHash={transactionHash || undefined}
+                  networkName={selectedNetwork?.name || 'Polygon'}
+                  onNewDonation={resetDonation}
+                />
               )}
 
               {donationStep === 'error' && error && (
