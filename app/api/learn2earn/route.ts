@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '../../../lib/firebase';
-import { collection, doc, getDoc, getDocs, query, where, updateDoc, increment } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, updateDoc, increment, setDoc } from 'firebase/firestore';
 
 // Handle GET requests to fetch all learn2earn opportunities or a specific one
 export async function GET(request: Request) {
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     const participantQuery = query(
       participantsCollection, 
       where("learn2earnId", "==", learn2earnId),
-      where("walletAddress", "==", walletAddress)
+      where("walletAddress", "==", walletAddress.toLowerCase()) // Normalize wallet address
     );
     const participantSnapshot = await getDocs(participantQuery);
 
@@ -105,15 +105,16 @@ export async function POST(request: Request) {
     // At this point, everything is valid. We can record the participation
     // and update the totalParticipants count
 
-    // Add participant entry
+    // Add participant entry - fixed to use setDoc instead of updateDoc
     const participantRef = doc(collection(db, "learn2earnParticipants"));
-    await updateDoc(participantRef, {
+    await setDoc(participantRef, {
       learn2earnId,
-      walletAddress,
+      walletAddress: walletAddress.toLowerCase(), // Store normalized wallet address
       answers: answers || [],
       timestamp: new Date(),
       status: 'pending', // Initially pending until tokens are transferred
-      rewarded: false
+      rewarded: false,
+      claimed: false // Add claimed field for tracking
     });
 
     // Increment the total participants count

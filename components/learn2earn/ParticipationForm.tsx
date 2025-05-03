@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { connectWallet, getCurrentAddress } from '../../services/crypto';
 import learn2earnContractService from '../../services/learn2earnContractService';
-import { collection, addDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, updateDoc, doc, increment, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
 interface ParticipationFormProps {
@@ -63,7 +63,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
       const participantsRef = collection(db, "learn2earnParticipants");
       const q = query(
         participantsRef, 
-        where("walletAddress", "==", address),
+        where("walletAddress", "==", address.toLowerCase()),
         where("learn2earnId", "==", learn2earnId)
       );
       const querySnapshot = await getDocs(q);
@@ -93,18 +93,36 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
     setError(null);
     
     try {
-      // Register the user's participation in Firebase
-      const participantsRef = collection(db, "learn2earnParticipants");
-      await addDoc(participantsRef, {
-        walletAddress,
-        learn2earnId,
-        network,
-        completedTasks: true, // In a real app this would be based on task completion
-        createdAt: new Date(),
-        claimed: false
+      // Register the user's participation
+      // Instead of directly writing to Firestore, use the API for better validation
+      const response = await fetch('/api/learn2earn', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          learn2earnId,
+          walletAddress,
+          completedTasks: true,
+        }),
       });
       
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to register participation');
+      }
+      
+      // If successful, set as registered
       setIsRegistered(true);
+      
+      // Sync the blockchain data with Firestore to ensure accurate participant count
+      try {
+        await learn2earnContractService.syncLearn2EarnStatus(learn2earnId);
+      } catch (syncErr) {
+        // Don't block the user from continuing if sync fails
+        console.warn("Failed to sync Learn2Earn status after registration:", syncErr);
+      }
     } catch (err: any) {
       console.error('Error registering participation:', err);
       setError(err.message || 'Failed to register participation');
@@ -151,7 +169,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
           const participantsRef = collection(db, "learn2earnParticipants");
           const q = query(
             participantsRef, 
-            where("walletAddress", "==", walletAddress),
+            where("walletAddress", "==", walletAddress.toLowerCase()),
             where("learn2earnId", "==", learn2earnId)
           );
           const querySnapshot = await getDocs(q);
@@ -191,27 +209,15 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
         // Se a rede não é suportada
         setNetworkMismatch(true);
         setError(`This network (${network}) is not currently supported for Learn2Earn.`);
-      } else if (result.message && result.message.includes("transaction failed")) {
-        // Caso específico de CALL_EXCEPTION
-        setError("Transaction was rejected by the contract. This could be due to:"+
-                "\n• You haven't completed all the required tasks"+
-                "\n• You've already claimed your tokens"+
-                "\n• The Learn2Earn opportunity has ended or not started yet"+
-                "\n• You're connected to the wrong network");
-        
-        // Se temos um hash de transação, vamos mostrá-lo para referência
-        if (result.transactionHash) {
-          setTransactionHash(result.transactionHash);
-        }
       } else {
-        // Outro erro
-        throw new Error(result.message || 'Failed to claim tokens');
+        // Set generic error
+        setError(result.message || 'Failed to claim tokens');
       }
     } catch (err: any) {
-      console.error('Error submitting participation:', err);
+      console.error('Error claiming tokens:', err);
+      const errorMsg = err.message || 'Failed to claim tokens';
       
-      // Verificar se é erro de rede (wrong network)
-      const errorMsg = err.message || 'Failed to submit participation';
+      // Check if this is a network mismatch error
       if (errorMsg.toLowerCase().includes("network") || 
           errorMsg.toLowerCase().includes("chain") || 
           errorMsg.toLowerCase().includes("wrong")) {
@@ -326,22 +332,6 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
           <h3 className="text-xl font-semibold text-white mb-2">Configuration Issue</h3>
           <p className="text-gray-300 mb-4">
             This Learn2Earn opportunity has an invalid or missing contract ID. Please contact support for assistance.
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-lg"
-          >
-            Close
-          </button>
-        </div>
-      ) : invalidSignature ? (
-        <div className="bg-purple-500/20 border border-purple-500 rounded-lg p-6 text-center">
-          <div className="text-purple-500 text-5xl mb-4">🔐</div>
-          <h3 className="text-xl font-semibold text-white mb-2">Authentication Required</h3>
-          <p className="text-gray-300 mb-4">
-            Token claiming requires authentication from the backend to verify you've completed all tasks.
-            <br/><br/>
-            <span className="text-purple-300">This is a development environment. In production, you'll need a signature service to verify completed tasks.</span>
           </p>
           <button
             onClick={() => window.location.reload()}

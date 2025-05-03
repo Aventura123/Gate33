@@ -30,6 +30,53 @@ interface NetworkContractAddress {
   tokenAddress: string;
 }
 
+// Network RPC URLs for different blockchains
+const NETWORK_RPC_URLS: Record<string, string> = {
+  'ethereum': 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
+  'polygon': 'https://polygon-rpc.com',
+  'binance': 'https://bsc-dataseed.binance.org/',
+  'bnb': 'https://bsc-dataseed.binance.org/',
+  'bsc': 'https://bsc-dataseed.binance.org/',
+  'arbitrum': 'https://arb1.arbitrum.io/rpc',
+  'optimism': 'https://mainnet.optimism.io',
+  'avalanche': 'https://api.avax.network/ext/bc/C/rpc',
+  'sepolia': 'https://rpc.sepolia.org',
+  'mumbai': 'https://rpc-mumbai.maticvigil.com',
+  'bsctestnet': 'https://data-seed-prebsc-1-s1.binance.org:8545/',
+  'bnbt': 'https://data-seed-prebsc-1-s1.binance.org:8545/',
+  'goerli': 'https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
+  'matic': 'https://polygon-rpc.com',
+  'maticmum': 'https://rpc-mumbai.maticvigil.com'
+};
+
+/**
+ * Gets the RPC URL for a specified network
+ * @param network The network name
+ * @returns The RPC URL for the network
+ */
+function getNetworkRPC(network: string): string {
+  const normalizedNetwork = network.trim().toLowerCase();
+  
+  // Map network name variations to standard names
+  const networkMapping: Record<string, string> = {
+    'bsc testnet': 'bsctestnet',
+    'binance smart chain testnet': 'bsctestnet',
+    'binance testnet': 'bsctestnet',
+    'binance smart chain': 'binance',
+    'polygon mainnet': 'polygon',
+    'polygon mumbai': 'mumbai',
+    'eth mainnet': 'ethereum',
+    'ethereum mainnet': 'ethereum'
+  };
+  
+  // Use mapped name if it exists
+  const mappedNetwork = networkMapping[normalizedNetwork];
+  const networkKey = mappedNetwork || normalizedNetwork;
+  
+  // Return the RPC URL if it exists, otherwise return a default
+  return NETWORK_RPC_URLS[networkKey] || 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161';
+}
+
 class Learn2EarnContractService {
   private contractAddresses: Record<string, NetworkContractAddress> = {};
   private initialized = false;
@@ -1014,144 +1061,164 @@ class Learn2EarnContractService {
    */
   async syncLearn2EarnStatus(firebaseId: string): Promise<any> {
     try {
-      console.log(`Sincronizando status do Learn2Earn ${firebaseId}...`);
+      console.log(`Sincronizando Learn2Earn ${firebaseId}...`);
       
-      // Buscar o documento Learn2Earn no Firestore
+      // Buscar documento no Firestore
       const docRef = doc(db, "learn2earn", firebaseId);
       const docSnap = await getDoc(docRef);
       
       if (!docSnap.exists()) {
         return {
           success: false,
-          message: `Learn2Earn com ID ${firebaseId} não encontrado no Firestore.`
+          error: `Learn2Earn com ID ${firebaseId} não encontrado no Firestore`
         };
       }
       
       const learn2EarnData = docSnap.data();
-      const previousStatus = learn2EarnData.status;
-      let newStatus = previousStatus;
       
-      // Verificar se temos todas as informações necessárias para sincronizar
-      if (!learn2EarnData.network || learn2EarnData.learn2earnId === undefined) {
+      // Verificar se temos um ID numérico para blockchain
+      if (!learn2EarnData.learn2earnId) {
         return {
           success: false,
-          previousStatus,
-          newStatus,
-          message: `Não foi possível sincronizar: informações de rede ou ID do contrato ausentes.`
+          error: `Learn2Earn não possui um ID de contrato válido`
         };
       }
       
-      // Verificar status na blockchain
-      try {
-        // Usar provider somente leitura para não precisar de assinatura
-        const provider = ethers.getDefaultProvider(learn2EarnData.network);
-        if (!provider) throw new Error("Web3 provider não disponível");
-        
-        const contractAddress = await this.getContractAddress(learn2EarnData.network);
-        if (!contractAddress) {
-          return {
-            success: false,
-            previousStatus,
-            newStatus,
-            message: `Rede ${learn2EarnData.network} não suportada.`
-          };
-        }
-        
-        // Obter informações do contrato na blockchain
-        // Usar o ABI completo e chamar o método learn2earns() 
-        const contract = new ethers.Contract(contractAddress, LEARN2EARN_ABI, provider);
-        
-        // Converter o contractId para número
-        const numericContractId = Number(learn2EarnData.learn2earnId);
-        
-        // Chamar o contrato para obter informações reais da oportunidade
-        const [
-          id, 
-          tokenAddress, 
-          tokenAmount, 
-          startTime, 
-          endTime, 
-          maxParticipants,
-          participantCount,
-          active
-        ] = await contract.learn2earns(numericContractId);
-        
-        console.log("Dados do blockchain:", {
-          id,
-          tokenAddress,
-          tokenAmount: tokenAmount.toString(),
-          startTime: startTime.toString(),
-          endTime: endTime.toString(),
-          maxParticipants: maxParticipants.toString(),
-          participantCount: participantCount.toString(),
-          active
-        });
-        
-        const currentTime = Math.floor(Date.now() / 1000);
-        
-        // Verificar se Learn2Earn expirou pelo tempo
-        if (endTime.toNumber() < currentTime) {
-          newStatus = "completed";
-        } 
-        // Verificar se Learn2Earn está cheio
-        else if (maxParticipants.toNumber() > 0 && participantCount.toNumber() >= maxParticipants.toNumber()) {
-          newStatus = "completed";
-        }
-        // Verificar se Learn2Earn foi pausado na blockchain
-        else if (!active) {
-          newStatus = "paused";
-        }
-        // Caso contrário, mantém-se ativo
-        else {
-          newStatus = "active";
-        }
-        
-        // Atualizar o documento no Firestore
-        const updateData: Record<string, any> = {
-          lastSyncedAt: new Date(),
-          participantCount: participantCount.toNumber(),
-          active,
-          tokenAddress,
-          tokenAmount: ethers.utils.formatUnits(tokenAmount, 18) // Assumindo token com 18 casas decimais
+      // Pegar o ID numérico do contrato
+      const numericContractId = Number(learn2EarnData.learn2earnId);
+      
+      // Verificar se a rede é suportada
+      if (!learn2EarnData.network) {
+        return {
+          success: false,
+          error: `Learn2Earn não tem uma rede blockchain definida`
         };
-        
-        // Atualizar status apenas se mudou
-        if (newStatus !== previousStatus) {
-          updateData.status = newStatus;
-          updateData.statusChangedAt = new Date();
+      }
+      
+      // Obter o endereço do contrato para a rede especificada
+      const contractAddress = await this.getContractAddress(learn2EarnData.network);
+      if (!contractAddress) {
+        return {
+          success: false, 
+          error: `Rede ${learn2EarnData.network} não suportada`
+        };
+      }
+      
+      // Conectar ao provider
+      const provider = new ethers.providers.JsonRpcProvider(
+        getNetworkRPC(learn2EarnData.network)
+      );
+      
+      // Criar uma instância do contrato
+      const contract = new ethers.Contract(
+        contractAddress,
+        LEARN2EARN_ABI,
+        provider
+      );
+      
+      // Buscar dados do Learn2Earn na blockchain
+      const onChainData = await contract.learn2earns(numericContractId);
+      console.log("Dados da blockchain:", onChainData);
+      
+      // Extrair valores relevantes
+      const active = onChainData.active;
+      const maxParticipants = onChainData.maxParticipants;
+      const participantCount = onChainData.participantCount;
+      const startTime = onChainData.startTime;
+      const endTime = onChainData.endTime;
+      
+      console.log("Dados extraídos:", {
+        active,
+        maxParticipants: maxParticipants.toString(),
+        participantCount: participantCount.toString(),
+        startTime: startTime.toString(),
+        endTime: endTime.toString()
+      });
+      
+      // Determinar o novo status com base nos dados da blockchain
+      let newStatus = learn2EarnData.status;
+      let needsUpdate = false;
+      let updates: Record<string, any> = {};
+      
+      // IMPORTANTE: Atualizar contagem de participantes para corresponder à blockchain
+      // Para garantir consistência, sempre use o número do blockchain como fonte da verdade
+      const blockchainParticipantCount = participantCount.toNumber();
+      if (learn2EarnData.totalParticipants !== blockchainParticipantCount) {
+        updates.totalParticipants = blockchainParticipantCount;
+        needsUpdate = true;
+        console.log(`Atualizando contagem de participantes: ${learn2EarnData.totalParticipants || 0} -> ${blockchainParticipantCount}`);
+      }
+      
+      // Atualizar maxParticipants se for diferente
+      if (maxParticipants.toNumber() > 0 && 
+          (!learn2EarnData.maxParticipants || 
+           Number(learn2EarnData.maxParticipants) !== maxParticipants.toNumber())) {
+        updates.maxParticipants = maxParticipants.toNumber();
+        needsUpdate = true;
+        console.log(`Atualizando máximo de participantes: ${learn2EarnData.maxParticipants || 0} -> ${maxParticipants.toString()}`);
+      }
+      
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      // Verificar se Learn2Earn expirou pelo tempo
+      if (endTime.toNumber() < currentTime) {
+        newStatus = "completed";
+        if (learn2EarnData.status !== "completed") {
+          needsUpdate = true;
+          updates.status = newStatus;
+          console.log(`Learn2Earn expirou pelo tempo. Novo status: ${newStatus}`);
         }
-        
-        // Sempre atualizamos o documento para manter os valores sincronizados
-        await updateDoc(docRef, updateData);
-        
-        console.log(`Learn2Earn ${firebaseId} sincronizado: ${previousStatus} -> ${newStatus}`);
+      } 
+      // Verificar se Learn2Earn está cheio
+      else if (maxParticipants.toNumber() > 0 && blockchainParticipantCount >= maxParticipants.toNumber()) {
+        newStatus = "completed";
+        if (learn2EarnData.status !== "completed") {
+          needsUpdate = true;
+          updates.status = newStatus;
+          console.log(`Learn2Earn atingiu o máximo de participantes. Novo status: ${newStatus}`);
+        }
+      }
+      // Verificar se Learn2Earn foi pausado na blockchain
+      else if (!active && learn2EarnData.status === "active") {
+        newStatus = "paused";
+        needsUpdate = true;
+        updates.status = newStatus;
+        console.log(`Learn2Earn foi pausado na blockchain. Novo status: ${newStatus}`);
+      }
+      // Verificar se Learn2Earn foi reativado na blockchain
+      else if (active && learn2EarnData.status === "paused") {
+        newStatus = "active";
+        needsUpdate = true;
+        updates.status = newStatus;
+        console.log(`Learn2Earn foi reativado na blockchain. Novo status: ${newStatus}`);
+      }
+      
+      // Atualizar documento no Firestore se necessário
+      if (needsUpdate) {
+        await updateDoc(docRef, {
+          ...updates,
+          lastSynced: new Date()
+        });
         
         return {
           success: true,
-          previousStatus,
+          message: `Learn2Earn ${firebaseId} sincronizado com sucesso`,
+          updates,
           newStatus,
-          participantCount: participantCount.toNumber(),
-          active,
-          message: newStatus !== previousStatus 
-            ? `Status atualizado: ${previousStatus} -> ${newStatus}` 
-            : `Status não mudou (${newStatus})`
-        };
-        
-      } catch (blockchainError: any) {
-        console.error(`Erro ao verificar Learn2Earn na blockchain:`, blockchainError);
-        return {
-          success: false,
-          previousStatus,
-          newStatus,
-          message: `Erro ao verificar na blockchain: ${blockchainError.message || "Erro desconhecido"}`
+          previousStatus: learn2EarnData.status
         };
       }
       
+      return {
+        success: true,
+        message: "Nenhuma atualização necessária",
+        status: learn2EarnData.status
+      };
     } catch (error: any) {
       console.error(`Erro ao sincronizar Learn2Earn ${firebaseId}:`, error);
       return {
         success: false,
-        message: `Erro ao sincronizar: ${error.message || "Erro desconhecido"}`
+        error: error.message || "Erro desconhecido durante a sincronização"
       };
     }
   }
