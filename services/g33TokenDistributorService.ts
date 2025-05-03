@@ -12,6 +12,30 @@ const DISTRIBUTOR_ABI = [
   "function totalDonationsUsd() external view returns (uint256)"
 ];
 
+// Lista de URLs RPC confiáveis para a rede Polygon
+const POLYGON_RPC_URLS = [
+  // Endpoints WebSockets (WS) - podem contornar certas restrições de rede
+  "wss://polygon-mainnet.g.alchemy.com/v2/demo", // Alchemy WS público
+  "wss://ws-matic-mainnet.chainstacklabs.com",  // ChainStack WS
+  
+  // Endpoints HTTP padrão
+  "https://polygon-rpc.com",
+  "https://polygon.llamarpc.com",
+  "https://rpc-mainnet.maticvigil.com",
+  "https://polygon-mainnet.public.blastapi.io",
+  "https://polygon-bor.publicnode.com",
+  "https://polygon.meowrpc.com"
+];
+
+// Endpoints locais para desenvolvimento
+const LOCAL_RPC_URLS = [
+  "http://127.0.0.1:8545", // Ganache / Hardhat padrão
+  "http://localhost:8545"  // Alternativo
+];
+
+// Configurações para o Infura (usando chave pública para teste)
+const INFURA_POLYGON_RPC = "https://polygon-mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161";
+
 // Interface para registro de doações
 interface TokenDonation {
   donorAddress: string;
@@ -28,21 +52,128 @@ interface TokenDonation {
 }
 
 /**
+ * Verifica se a aplicação está em uma rede com acesso à internet limitado
+ * e que precisa usar fallbacks especiais
+ */
+async function isRestrictedNetwork(): Promise<boolean> {
+  try {
+    // Tenta acessar uma URL externa conhecida
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    const response = await fetch('https://cloudflare.com', { 
+      signal: controller.signal,
+      method: 'HEAD'
+    });
+    clearTimeout(timeoutId);
+    
+    return !response.ok;
+  } catch (error) {
+    console.log('Detectada possível restrição de rede');
+    return true;
+  }
+}
+
+/**
  * Serviço para interagir com o contrato G33TokenDistributor
  * Este serviço gerencia a distribuição automática de tokens G33 para doadores
  */
 class G33TokenDistributorService {
-  private provider: ethers.providers.JsonRpcProvider | null = null;
+  private provider: ethers.providers.Provider | null = null;
   private wallet: ethers.Wallet | null = null;
   private contract: ethers.Contract | null = null;
   private distributorAddress: string | null = null;
   private isInitialized: boolean = false;
   private initializationError: string | null = null;
   private lastInitAttempt: number = 0;
+  private isDevMode: boolean = process.env.NODE_ENV === 'development';
+  private networkRestricted: boolean = false;
 
   constructor() {
     // Inicialização assíncrona
     this.init();
+  }
+
+  /**
+   * Tenta criar um provider confiável para a rede Polygon com múltiplas tentativas
+   * @returns Um provider conectado ou null se falhar
+   */
+  private async createReliablePolygonProvider(): Promise<ethers.providers.Provider | null> {
+    try {
+      // Verificar se estamos em uma rede restrita
+      this.networkRestricted = await isRestrictedNetwork();
+      
+      // Lista final de URLs para tentar
+      let urlsToTry = [...POLYGON_RPC_URLS];
+      
+      // Em redes restritas ou ambiente de desenvolvimento, adiciona endpoints locais
+      if (this.networkRestricted || this.isDevMode) {
+        console.log('Usando também endpoints locais (desenvolvimento/rede restrita)');
+        urlsToTry = [...urlsToTry, ...LOCAL_RPC_URLS];
+      }
+      
+      // Tentar cada URL RPC até encontrar uma que funcione
+      for (const url of urlsToTry) {
+        try {
+          console.log(`Tentando conectar ao RPC: ${url}`);
+          
+          let provider: ethers.providers.Provider;
+          
+          // Diferentes tipos de conexão baseados na URL
+          if (url.startsWith('wss://')) {
+            // WebSockets provider
+            provider = new ethers.providers.WebSocketProvider(url);
+          } else {
+            // JsonRpc provider padrão
+            provider = new ethers.providers.JsonRpcProvider(url);
+          }
+          
+          // Teste a conexão com o provider obtendo o número do bloco atual
+          const blockNumber = await Promise.race([
+            provider.getBlockNumber(),
+            new Promise<number>((_, reject) => {
+              setTimeout(() => reject(new Error('Timeout ao conectar ao RPC')), 5000);
+            })
+          ]);
+          
+          console.log(`✅ Conexão com RPC bem-sucedida via ${url}, bloco atual: ${blockNumber}`);
+          return provider;
+        } catch (error) {
+          console.warn(`❌ Falha ao conectar ao RPC ${url}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+          // Continuar para o próximo URL
+        }
+      }
+      
+      // Se estamos em modo de desenvolvimento, criar um provider simulado
+      if (this.isDevMode) {
+        console.log('📝 Criando provider simulado para desenvolvimento...');
+        
+        // Este provider não fará conexões reais, mas permitirá testes em ambientes sem blockchain
+        const mockProvider = new ethers.providers.FallbackProvider([
+          new ethers.providers.JsonRpcProvider('http://localhost:8545')
+        ], 1);
+        
+        // Override do getBlockNumber para desenvolvimento
+        const originalGetBlockNumber = mockProvider.getBlockNumber.bind(mockProvider);
+        mockProvider.getBlockNumber = async function() {
+          try {
+            return await originalGetBlockNumber();
+          } catch (error) {
+            console.warn('Usando bloco simulado para desenvolvimento');
+            return Promise.resolve(0);
+          }
+        };
+        
+        return mockProvider;
+      }
+      
+      console.error('❌ Todas as tentativas de conexão à rede Polygon falharam');
+      return null;
+      
+    } catch (error) {
+      console.error('❌ Erro crítico ao criar provider:', error);
+      return null;
+    }
   }
 
   /**
@@ -61,7 +192,7 @@ class G33TokenDistributorService {
       this.initializationError = null;
       console.log("Iniciando G33TokenDistributorService...");
       
-      // Buscar configurações do contrato no Firebase
+      // Buscar configurações do contrato no Firebase (apenas o endereço do contrato)
       const configDoc = await getDoc(doc(db, "settings", "contractConfig"));
       
       if (configDoc.exists()) {
@@ -69,43 +200,60 @@ class G33TokenDistributorService {
         this.distributorAddress = config.tokenDistributorAddress;
         console.log(`Endereço do distribuidor obtido: ${this.distributorAddress}`);
         
-        // Verificar a chave privada de duas formas: como variável de ambiente direta ou dentro de process.env
+        // Verificar a chave privada
         let privateKey = process.env.DISTRIBUTOR_PRIVATE_KEY;
         
-        // Verificação da presença da chave privada
-        if (!privateKey) {
+        // No modo de desenvolvimento, podemos usar uma chave privada simulada se não houver uma real
+        if (!privateKey && this.isDevMode) {
+          privateKey = "0x0000000000000000000000000000000000000000000000000000000000000001"; // Chave simulada
+          console.log("🔑 Usando chave privada simulada para desenvolvimento");
+        } else if (!privateKey) {
           throw new Error("Chave privada do distribuidor não encontrada nas variáveis de ambiente");
         }
         
-        const rpcUrl = config.rpcUrl || process.env.RPC_URL || "https://polygon-rpc.com";
-        console.log(`URL RPC a ser usada: ${rpcUrl}`);
+        // Configurar provider com mecanismo de retry para a rede Polygon
+        const provider = await this.createReliablePolygonProvider();
         
-        if (this.distributorAddress && privateKey) {
-          // Configurar provider e wallet
-          this.provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-          this.wallet = new ethers.Wallet(privateKey, this.provider);
-          const walletAddress = await this.wallet.getAddress();
-          console.log(`Carteira do distribuidor configurada: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`);
-          
-          // Conectar ao contrato
-          this.contract = new ethers.Contract(this.distributorAddress, DISTRIBUTOR_ABI, this.wallet);
-          
-          // Verificar se o contrato está acessível
-          try {
-            const availableTokens = await this.contract.getAvailableTokens();
-            console.log(`Contrato do distribuidor conectado com sucesso. Tokens disponíveis: ${ethers.utils.formatEther(availableTokens)}`);
+        if (!provider) {
+          if (this.isDevMode) {
+            console.log("⚠️ Não foi possível conectar à blockchain. Operando em modo de desenvolvimento limitado.");
+            this.isInitialized = true; // Em desenvolvimento, permitimos inicialização mesmo sem provider
+            return;
+          } else {
+            throw new Error("Não foi possível estabelecer conexão com a rede Polygon. Verifique sua conexão com a internet.");
+          }
+        }
+        
+        this.provider = provider;
+        // Adicionar operador '!' para garantir que TypeScript entenda que privateKey é uma string
+        this.wallet = new ethers.Wallet(privateKey!, provider);
+        const walletAddress = await this.wallet.getAddress();
+        console.log(`Carteira do distribuidor configurada: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`);
+        
+        // Conectar ao contrato
+        this.contract = new ethers.Contract(this.distributorAddress, DISTRIBUTOR_ABI, this.wallet);
+        
+        // Verificar se o contrato está acessível
+        try {
+          const availableTokens = await this.contract.getAvailableTokens();
+          console.log(`Contrato do distribuidor conectado com sucesso. Tokens disponíveis: ${ethers.utils.formatEther(availableTokens)}`);
+          this.isInitialized = true;
+        } catch (contractError: unknown) {
+          const errorMessage = contractError instanceof Error 
+            ? contractError.message
+            : "Erro desconhecido ao acessar funções do contrato";
+            
+          // Em desenvolvimento, permitir inicialização mesmo com erro no contrato
+          if (this.isDevMode) {
+            console.warn(`⚠️ Erro ao acessar funções do contrato: ${errorMessage}`);
+            console.log("⚠️ Continuando em modo de desenvolvimento limitado");
             this.isInitialized = true;
-          } catch (contractError: unknown) {
-            const errorMessage = contractError instanceof Error 
-              ? contractError.message
-              : "Erro desconhecido ao acessar funções do contrato";
+          } else {
             throw new Error(`Erro ao acessar funções do contrato: ${errorMessage}`);
           }
-          
-          return;
-        } else {
-          throw new Error(`Configurações incompletas: distribuidor=${!!this.distributorAddress}, chavePrivada=${!!privateKey}`);
         }
+        
+        return;
       } else {
         throw new Error("Documento de configuração do contrato não encontrado no Firebase");
       }
@@ -139,6 +287,12 @@ class G33TokenDistributorService {
     try {
       if (!(await this.ensureInitialized())) {
         throw new Error(`Serviço não inicializado. Erro: ${this.initializationError || "Desconhecido"}`);
+      }
+      
+      // No modo de desenvolvimento sem contrato real, simular distribuição
+      if (this.isDevMode && (!this.contract || !this.provider)) {
+        console.log(`🔶 [SIMULAÇÃO] Distribuindo ${usdValue} tokens G33 para ${donorAddress}`);
+        return "0x" + [...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
       }
       
       // Verificar se há tokens disponíveis

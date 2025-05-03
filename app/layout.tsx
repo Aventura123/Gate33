@@ -4,8 +4,9 @@ import { metadata } from "./metadata";
 // Importar apenas no lado do servidor
 import { initializeContractMonitoring } from '../utils/contractMonitor';
 
-// Inicializar monitoramento apenas quando estiver executando no servidor e não for desenvolvimento
-if (typeof window === 'undefined' && process.env.NODE_ENV === 'production') {
+// Inicializar monitoramento sempre que estiver executando no servidor
+if (typeof window === 'undefined') {
+  console.log("Iniciando monitoramento de contratos...");
   initializeContractMonitoring();
 }
 

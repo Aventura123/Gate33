@@ -19,8 +19,8 @@ const ContractMonitor: React.FC = () => {
         setMonitoringState(state);
         setError(null);
       } catch (err: any) {
-        setError(err.message || "Erro ao obter estado de monitoramento");
-        console.error("Erro ao obter estado de monitoramento:", err);
+        setError(err.message || "Error fetching monitoring state");
+        console.error("Error fetching monitoring state:", err);
       } finally {
         setLoading(false);
       }
@@ -28,7 +28,7 @@ const ContractMonitor: React.FC = () => {
 
     fetchMonitoringState();
     
-    // Atualizar a cada 30 segundos
+    // Update every 30 seconds
     const interval = setInterval(fetchMonitoringState, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -44,7 +44,7 @@ const ContractMonitor: React.FC = () => {
   if (error) {
     return (
       <div className="bg-red-900/30 border border-red-600/30 rounded-lg p-4">
-        <h3 className="text-red-400 font-medium mb-2">Erro no monitor de contratos</h3>
+        <h3 className="text-red-400 font-medium mb-2">Contract Monitor Error</h3>
         <p className="text-red-200 text-sm">{error}</p>
       </div>
     );
@@ -53,7 +53,7 @@ const ContractMonitor: React.FC = () => {
   if (!monitoringState) {
     return (
       <div className="bg-blue-900/30 border border-blue-600/30 rounded-lg p-4">
-        <p className="text-blue-300">Dados de monitoramento indisponíveis</p>
+        <p className="text-blue-300">Monitoring data unavailable</p>
       </div>
     );
   }
@@ -61,8 +61,8 @@ const ContractMonitor: React.FC = () => {
   return (
     <div className="bg-gray-900/70 border border-blue-900/50 rounded-lg overflow-hidden">
       <div className="bg-blue-900/50 p-4">
-        <h3 className="text-xl font-medium text-white">Monitor de Contratos Inteligentes</h3>
-        <p className="text-blue-200 text-sm">Status dos contratos e eventos monitorados</p>
+        <h3 className="text-xl font-medium text-white">Smart Contract Monitor</h3>
+        <p className="text-blue-200 text-sm">Status of contracts and monitored events</p>
       </div>
 
       <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -74,12 +74,12 @@ const ContractMonitor: React.FC = () => {
           </div>
           
           <div className="text-sm text-gray-300">
-            <p>Status: {monitoringState.isLearn2EarnMonitoring ? 'Monitorando' : 'Inativo'}</p>
+            <p>Status: {monitoringState.isLearn2EarnMonitoring ? 'Monitoring' : 'Inactive'}</p>
             
             {monitoringState.lastLearn2EarnEvent && (
               <div className="mt-2 bg-black/20 p-2 rounded">
-                <p className="text-xs text-gray-400">Último evento:</p>
-                <p>Usuário: {monitoringState.lastLearn2EarnEvent.user.substring(0, 8)}...</p>
+                <p className="text-xs text-gray-400">Last event:</p>
+                <p>User: {monitoringState.lastLearn2EarnEvent.user.substring(0, 8)}...</p>
                 <p>Tokens: {monitoringState.lastLearn2EarnEvent.amount}</p>
               </div>
             )}
@@ -90,15 +90,15 @@ const ContractMonitor: React.FC = () => {
         <div className={`rounded-lg p-4 ${monitoringState.isWalletMonitoring ? 'bg-green-900/20 border border-green-700/30' : 'bg-gray-800/50 border border-gray-700/30'}`}>
           <div className="flex items-center mb-3">
             <div className={`w-3 h-3 rounded-full mr-2 ${monitoringState.isWalletMonitoring ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-            <h4 className="font-medium">Carteira de Serviço</h4>
+            <h4 className="font-medium">Service Wallet</h4>
           </div>
           
           <div className="text-sm text-gray-300">
-            <p>Status: {monitoringState.isWalletMonitoring ? 'Monitorando' : 'Inativo'}</p>
+            <p>Status: {monitoringState.isWalletMonitoring ? 'Monitoring' : 'Inactive'}</p>
             
             {monitoringState.walletBalance && (
               <div className="mt-2 bg-black/20 p-2 rounded">
-                <p className="text-xs text-gray-400">Saldo atual:</p>
+                <p className="text-xs text-gray-400">Current balance:</p>
                 <p className="text-xl font-bold">{monitoringState.walletBalance}</p>
               </div>
             )}
@@ -109,17 +109,17 @@ const ContractMonitor: React.FC = () => {
         <div className={`rounded-lg p-4 ${monitoringState.isTokenDistributionMonitoring ? 'bg-green-900/20 border border-green-700/30' : 'bg-gray-800/50 border border-gray-700/30'}`}>
           <div className="flex items-center mb-3">
             <div className={`w-3 h-3 rounded-full mr-2 ${monitoringState.isTokenDistributionMonitoring ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-            <h4 className="font-medium">Distribuição de Tokens G33</h4>
+            <h4 className="font-medium">G33 Token Distribution</h4>
           </div>
           
           <div className="text-sm text-gray-300">
-            <p>Status: {monitoringState.isTokenDistributionMonitoring ? 'Monitorando' : 'Inativo'}</p>
+            <p>Status: {monitoringState.isTokenDistributionMonitoring ? 'Monitoring' : 'Inactive'}</p>
             
             {monitoringState.tokenDistributions && (
               <div className="mt-2 bg-black/20 p-2 rounded">
-                <p className="text-xs text-gray-400">Total distribuído:</p>
+                <p className="text-xs text-gray-400">Total distributed:</p>
                 <p className="text-xl font-bold">{monitoringState.tokenDistributions.totalTokens} G33</p>
-                <p className="text-xs mt-1">Para {monitoringState.tokenDistributions.count} doadores</p>
+                <p className="text-xs mt-1">To {monitoringState.tokenDistributions.count} donors</p>
               </div>
             )}
           </div>
@@ -128,7 +128,7 @@ const ContractMonitor: React.FC = () => {
 
       {monitoringState.errors.length > 0 && (
         <div className="p-4 border-t border-red-900/30 bg-red-900/10">
-          <h4 className="text-red-400 font-medium mb-2">Alertas</h4>
+          <h4 className="text-red-400 font-medium mb-2">Alerts</h4>
           <ul className="text-sm">
             {monitoringState.errors.map((error, index) => (
               <li key={index} className="py-1 text-red-300">• {error}</li>
@@ -138,7 +138,7 @@ const ContractMonitor: React.FC = () => {
       )}
 
       <div className="p-4 bg-blue-900/10 border-t border-blue-900/30 text-right">
-        <p className="text-xs text-blue-300">Última atualização: {new Date().toLocaleTimeString()}</p>
+        <p className="text-xs text-blue-300">Last update: {new Date().toLocaleTimeString()}</p>
       </div>
     </div>
   );
@@ -165,14 +165,14 @@ const SystemActivity: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'system' | 'contracts'>('system');
 
   useEffect(() => {
-    // Aguardar o carregamento das permissões antes de verificar o role
+    // Wait for permissions to load before checking the role
     if (!loading && role !== "super_admin") {
-      console.log("Acesso negado. Role atual:", role);
+      console.log("Access denied. Current role:", role);
       router.replace("/admin/access-denied");
       return;
     }
     
-    // Se for super_admin, continua carregando os logs
+    // If super_admin, continue loading logs
     if (!loading && role === "super_admin") {
       fetchLogs();
     }
@@ -182,7 +182,7 @@ const SystemActivity: React.FC = () => {
     setLoadingLogs(true);
     setError(null);
     try {
-      console.log("Buscando logs do sistema...");
+      console.log("Fetching system logs...");
       const res = await fetch("/api/support/logs");
       if (!res.ok) {
         const data = await res.json();
@@ -190,20 +190,20 @@ const SystemActivity: React.FC = () => {
       }
       const data = await res.json();
       setLogs(data);
-      console.log(`Recebidos ${data.length} logs do sistema`);
+      console.log(`Received ${data.length} system logs`);
     } catch (err: any) {
-      console.error("Erro ao buscar logs:", err);
+      console.error("Error fetching logs:", err);
       setError(err.message);
     } finally {
       setLoadingLogs(false);
     }
   };
 
-  // Formatar data para exibição
+  // Format date for display
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleString('pt-BR', {
+      return date.toLocaleString('en-US', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -212,29 +212,29 @@ const SystemActivity: React.FC = () => {
         second: '2-digit'
       });
     } catch (e) {
-      return dateString || 'Data desconhecida';
+      return dateString || 'Unknown date';
     }
   };
 
-  // Filtrar logs por tipo de ação
+  // Filter logs by action type
   const filteredLogs = filter === "all" 
     ? logs 
     : logs.filter(log => log.action === filter);
 
-  // Obter tipos de ações disponíveis para filtro
+  // Get available action types for filtering
   const actionTypes = Array.from(new Set(logs.map(log => log.action)));
 
-  // Formatar detalhes do log
+  // Format log details
   const formatDetails = (details: Record<string, any> | undefined) => {
-    if (!details) return "Sem detalhes";
+    if (!details) return "No details";
     
     return Object.entries(details)
-      .filter(([key]) => key !== 'timestamp') // Excluir timestamp que já é mostrado
+      .filter(([key]) => key !== 'timestamp') // Exclude timestamp which is already shown
       .map(([key, value]) => {
-        // Formatar valores especiais
+        // Format special values
         let formattedValue = value;
         if (typeof value === 'boolean') {
-          formattedValue = value ? 'Sim' : 'Não';
+          formattedValue = value ? 'Yes' : 'No';
         } else if (typeof value === 'object' && value !== null) {
           formattedValue = JSON.stringify(value);
         }
@@ -248,12 +248,12 @@ const SystemActivity: React.FC = () => {
       });
   };
 
-  // Mostrar indicador de carregamento enquanto verificamos as permissões
+  // Show loading indicator while checking permissions
   if (loading) {
     return (
       <Layout>
         <div className="min-h-screen bg-gradient-to-br from-blue-900 to-black text-white p-6">
-          <p>Verificando permissões...</p>
+          <p>Checking permissions...</p>
         </div>
       </Layout>
     );
@@ -267,13 +267,13 @@ const SystemActivity: React.FC = () => {
           <div className="flex space-x-4 items-center">
             {activeTab === 'system' && (
               <>
-                <label className="text-sm text-gray-300">Filtrar por:</label>
+                <label className="text-sm text-gray-300">Filter by:</label>
                 <select 
                   className="bg-black/50 border border-blue-500 text-white px-3 py-2 rounded"
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
                 >
-                  <option value="all">Todos</option>
+                  <option value="all">All</option>
                   {actionTypes.map(type => (
                     <option key={type} value={type}>{type}</option>
                   ))}
@@ -287,7 +287,7 @@ const SystemActivity: React.FC = () => {
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Atualizar
+              Refresh
             </button>
           </div>
         </div>
@@ -299,13 +299,13 @@ const SystemActivity: React.FC = () => {
               className={`py-2 px-4 ${activeTab === 'system' ? 'text-blue-400 border-b-2 border-blue-400 font-medium' : 'text-gray-400 hover:text-gray-300'}`}
               onClick={() => setActiveTab('system')}
             >
-              Logs do Sistema
+              System Logs
             </button>
             <button
               className={`py-2 px-4 ${activeTab === 'contracts' ? 'text-blue-400 border-b-2 border-blue-400 font-medium' : 'text-gray-400 hover:text-gray-300'}`}
               onClick={() => setActiveTab('contracts')}
             >
-              Monitoramento de Contratos
+              Contract Monitoring
             </button>
           </div>
         </div>
@@ -321,14 +321,14 @@ const SystemActivity: React.FC = () => {
             
             {error && (
               <div className="bg-red-900/50 border border-red-500 text-white p-4 rounded-lg mb-6">
-                <p className="text-red-300 font-bold">Erro ao carregar logs:</p>
+                <p className="text-red-300 font-bold">Error loading logs:</p>
                 <p>{error}</p>
               </div>
             )}
             
             {!loadingLogs && !error && filteredLogs.length === 0 && (
               <div className="bg-blue-900/50 border border-blue-500 text-white p-4 rounded-lg">
-                <p>Nenhum registro de atividade encontrado.</p>
+                <p>No activity records found.</p>
               </div>
             )}
             
@@ -338,9 +338,9 @@ const SystemActivity: React.FC = () => {
                   <thead>
                     <tr className="bg-blue-800 text-white">
                       <th className="p-3 text-left">Timestamp</th>
-                      <th className="p-3 text-left">Ação</th>
-                      <th className="p-3 text-left">Usuário</th>
-                      <th className="p-3 text-left">Detalhes</th>
+                      <th className="p-3 text-left">Action</th>
+                      <th className="p-3 text-left">User</th>
+                      <th className="p-3 text-left">Details</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -358,7 +358,7 @@ const SystemActivity: React.FC = () => {
                           <td className="p-3 border-b border-blue-900/30">{log.user}</td>
                           <td className="p-3 border-b border-blue-900/30">
                             <button className="text-blue-400 hover:text-blue-300 flex items-center">
-                              <span>Ver detalhes</span>
+                              <span>View details</span>
                               <svg className={`w-4 h-4 ml-1 transform ${expandedLog === (log.id || String(index)) ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                               </svg>
@@ -369,7 +369,7 @@ const SystemActivity: React.FC = () => {
                           <tr className="bg-black/90">
                             <td colSpan={4} className="p-4 border-b border-blue-900/30">
                               <div className="bg-blue-900/20 p-3 rounded">
-                                <h4 className="text-lg font-medium text-blue-400 mb-2">Detalhes Completos:</h4>
+                                <h4 className="text-lg font-medium text-blue-400 mb-2">Complete Details:</h4>
                                 <div className="ml-2 text-sm">
                                   {formatDetails(log.details)}
                                 </div>
