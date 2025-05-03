@@ -3,9 +3,10 @@ import { Learn2EarnTask } from '../../types/learn2earn';
 
 interface TaskCardProps {
   task: Learn2EarnTask;
+  isReadOnly?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, isReadOnly = false }) => {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   
@@ -55,7 +56,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
         </div>
       )}
       
-      {task.type === 'question' && task.options && (
+      {task.type === 'question' && task.options && !isReadOnly && (
         <div className="mt-4">
           <h4 className="text-lg font-medium text-white mb-3 break-words whitespace-normal">{task.question}</h4>
           

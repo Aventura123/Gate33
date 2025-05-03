@@ -35,3 +35,10 @@
 .progress-bar-fill-100 {
   width: 100%;
 }
+
+/* Progress bar styles */
+.progress-step-0 { width: 20%; }
+.progress-step-1 { width: 40%; }
+.progress-step-2 { width: 60%; }
+.progress-step-3 { width: 80%; }
+.progress-step-4 { width: 100%; }

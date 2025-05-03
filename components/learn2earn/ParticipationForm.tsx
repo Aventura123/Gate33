@@ -8,9 +8,15 @@ interface ParticipationFormProps {
   learn2earnId: string;  // This is the Firestore document ID
   tokenSymbol: string;
   network?: string;
+  onRegistrationComplete?: () => void; // New callback for registration completion
 }
 
-const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tokenSymbol, network }) => {
+const ParticipationForm: React.FC<ParticipationFormProps> = ({ 
+  learn2earnId, 
+  tokenSymbol, 
+  network,
+  onRegistrationComplete 
+}) => {
   const [walletAddress, setWalletAddress] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -72,6 +78,8 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
         // User has already registered
         setIsRegistered(true);
         console.log("User has already registered participation");
+        // Call the registration complete callback if provided
+        if (onRegistrationComplete) onRegistrationComplete();
       }
       
       setParticipationChecked(true);
@@ -115,6 +123,9 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
       
       // If successful, set as registered
       setIsRegistered(true);
+      
+      // Call the registration complete callback if provided
+      if (onRegistrationComplete) onRegistrationComplete();
       
       // Sync the blockchain data with Firestore to ensure accurate participant count
       try {

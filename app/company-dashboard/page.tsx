@@ -239,7 +239,7 @@ const PostJobPage = (): JSX.Element => {
       fetchCompanyPhoto(decodedToken);
     } catch (error) {
       console.error("Error decoding token:", error);
-      router.replace("/admin-login");
+      router.replace("/login");
     }
   };
 
@@ -354,10 +354,10 @@ const PostJobPage = (): JSX.Element => {
         fetchInitialJobs();
       } catch (error) {
         console.error("Error decoding token or fetching initial data:", error);
-        router.replace("/admin-login");
+        router.replace("/login");
       }
     } else {
-      router.replace("/admin-login");
+      router.replace("/login");
     }
   }, [router, fetchCompanyProfile]); // Add fetchCompanyProfile dependency
 

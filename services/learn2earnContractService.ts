@@ -881,27 +881,86 @@ class Learn2EarnContractService {
         // Continue anyway, contract will revert if already claimed
       }
 
-      // Check if the Learn2Earn campaign has started
+      // Check blockchain status of the learn2earn to compare with Firebase data
       try {
-        // Get current time in seconds
-        const currentTime = Math.floor(Date.now() / 1000);
+        // Get learn2earn data from blockchain
+        const onChainData = await learn2earnContract.learn2earns(numericContractId);
         
-        // Get start time from database
-        const startTime = learn2EarnData.startDate?.seconds || 0;
+        const blockchainStartTime = onChainData.startTime.toNumber();
+        const blockchainEndTime = onChainData.endTime.toNumber();
+        const blockchainActive = onChainData.active;
         
-        if (startTime > currentTime) {
-          const startDate = new Date(startTime * 1000);
+        // Get current blockchain time
+        const currentBlock = await provider.getBlock("latest");
+        const blockchainTime = currentBlock.timestamp;
+        
+        // Get Firebase times
+        const firebaseStartTime = learn2EarnData.startDate?.seconds || 0;
+        const firebaseEndTime = learn2EarnData.endDate?.seconds || 0;
+        const localTime = Math.floor(Date.now() / 1000);
+        
+        console.log("Time comparison:", {
+          blockchainTime,
+          blockchainStartTime,
+          blockchainEndTime,
+          firebaseStartTime,
+          firebaseEndTime,
+          localTime,
+          timeDiff: blockchainTime - localTime
+        });
+        
+        // Check if the Learn2Earn has not started yet according to blockchain
+        if (blockchainTime < blockchainStartTime) {
+          const startDate = new Date(blockchainStartTime * 1000);
+          
+          // Check if there's a significant time discrepancy
+          const blockchainFirebaseTimeDiff = Math.abs(blockchainStartTime - firebaseStartTime);
+          
+          if (blockchainFirebaseTimeDiff > 900) { // More than 15 minutes difference
+            console.warn(`Time discrepancy detected: Blockchain start time ${blockchainStartTime} vs Firebase ${firebaseStartTime}`);
+            
+            return {
+              success: false,
+              message: `There appears to be a time synchronization issue. According to the blockchain, this campaign starts at ${startDate.toLocaleString()}.`,
+              specificError: "timeSync",
+              blockchainStartTime,
+              firebaseStartTime,
+              blockchainTime,
+              localTime
+            };
+          }
+          
           return {
             success: false,
             message: `This Learn2Earn campaign has not started yet. It will start on ${startDate.toLocaleString()}.`,
-            notStarted: true,
-            startTime: startTime,
-            currentTime: currentTime
+            specificError: "notStarted",
+            startTime: blockchainStartTime,
+            currentTime: blockchainTime,
+            startDate: startDate.toLocaleString()
           };
         }
-      } catch (timeCheckError) {
-        console.error("Error checking campaign start time:", timeCheckError);
-        // Continue anyway, contract will revert if not started
+        
+        // Check if the Learn2Earn has ended according to blockchain
+        if (blockchainTime > blockchainEndTime) {
+          return {
+            success: false,
+            message: "This Learn2Earn campaign has already ended.",
+            specificError: "ended"
+          };
+        }
+        
+        // Check if the Learn2Earn is active
+        if (!blockchainActive) {
+          return {
+            success: false,
+            message: "This Learn2Earn campaign is currently paused.",
+            specificError: "paused"
+          };
+        }
+      } catch (statusCheckError) {
+        console.error("Error checking blockchain status:", statusCheckError);
+        // Continue anyway, but with a warning
+        console.warn("Proceeding with claim despite status check failure");
       }
       
       // Get signature from API endpoint
@@ -991,6 +1050,14 @@ class Learn2EarnContractService {
         console.error("Error updating participation status:", updateErr);
       }
       
+      // Update the Learn2Earn document to ensure participant count is in sync
+      try {
+        await this.syncLearn2EarnStatus(firebaseId);
+      } catch (syncErr) {
+        console.warn("Error syncing Learn2Earn status after claiming:", syncErr);
+        // Don't block success for this error
+      }
+      
       return {
         success: true,
         transactionHash: receipt.transactionHash,
@@ -1015,7 +1082,65 @@ class Learn2EarnContractService {
           
           if (docSnap.exists()) {
             const data = docSnap.data();
-            const startDate = data.startDate?.seconds ? new Date(data.startDate.seconds * 1000) : new Date();
+            
+            // Get start time from both Firebase and blockchain
+            const firebaseStartTime = data.startDate?.seconds || 0;
+            
+            // Create a non-null provider
+            const web3Provider = await getWeb3Provider();
+            if (!web3Provider) {
+              return {
+                success: false,
+                message: "Failed to connect to blockchain. Please check your wallet connection.",
+                specificError: "providerError"
+              };
+            }
+            
+            const blockchainTime = (await web3Provider.getBlock("latest")).timestamp;
+            const localTime = Math.floor(Date.now() / 1000);
+            
+            // Get contract-specific data
+            const contractAddress = await this.getContractAddress(network);
+            const learn2earnContract = new ethers.Contract(contractAddress, LEARN2EARN_ABI, web3Provider);
+            const numericContractId = Number(data.learn2earnId);
+            let blockchainStartTime = 0;
+            
+            try {
+              const onChainData = await learn2earnContract.learn2earns(numericContractId);
+              blockchainStartTime = onChainData.startTime.toNumber();
+            } catch (e) {
+              console.error("Failed to get blockchain start time:", e);
+            }
+            
+            // Calculate time difference
+            const blockchainFirebaseTimeDiff = Math.abs(blockchainStartTime - firebaseStartTime);
+            const blockchainLocalTimeDiff = Math.abs(blockchainTime - localTime);
+            
+            // If there's a significant time discrepancy
+            if (blockchainFirebaseTimeDiff > 900 || blockchainLocalTimeDiff > 300) { // More than 15min/5min difference
+              console.warn("Time synchronization issue detected:", {
+                firebaseStartTime,
+                blockchainStartTime,
+                blockchainTime,
+                localTime,
+                blockchainFirebaseTimeDiff,
+                blockchainLocalTimeDiff
+              });
+              
+              return {
+                success: false,
+                message: "There's a time synchronization issue between the blockchain and our servers.",
+                specificError: "timeSync",
+                timeData: {
+                  firebaseStartTime,
+                  blockchainStartTime,
+                  blockchainTime,
+                  localTime
+                }
+              };
+            }
+            
+            const startDate = new Date((blockchainStartTime || firebaseStartTime) * 1000);
             
             specificError = "notStarted";
             errorMessage = `This Learn2Earn campaign has not started yet. It will start on ${startDate.toLocaleString()}.`;
@@ -1025,8 +1150,8 @@ class Learn2EarnContractService {
               message: errorMessage,
               specificError: specificError,
               notStarted: true,
-              startTime: data.startDate?.seconds,
-              currentTime: Math.floor(Date.now() / 1000),
+              startTime: blockchainStartTime || firebaseStartTime,
+              currentTime: blockchainTime,
               startDate: startDate.toLocaleString()
             };
           }
