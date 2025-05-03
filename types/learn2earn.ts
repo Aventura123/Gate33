@@ -15,7 +15,7 @@ export interface Learn2EarnTask {
 
 // Define the main Learn2Earn interface
 export interface Learn2Earn {
-  id: string;
+  id: string; // The Firestore document ID
   title: string;
   description: string;
   tokenSymbol: string; // e.g., "ETH", "USDT"
@@ -32,7 +32,9 @@ export interface Learn2Earn {
   contractAddress?: string;
   transactionHash?: string;
   createdAt?: Date | Timestamp | string;
-  learn2earnId?: string;
+  learn2earnId?: string | number;
+  firebaseId?: string; // The ID passed to the contract during creation for reference
+  contractId?: number; // The numeric ID in the blockchain contract (replacing learn2earnId)
   network?: string;
   socialLinks?: {
     discord?: string;

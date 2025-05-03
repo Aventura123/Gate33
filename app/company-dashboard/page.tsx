@@ -2108,7 +2108,7 @@ const PostJobPage = (): JSX.Element => {
       // Convert Firestore timestamp to JavaScript Date for contract interaction safely
       let startDate: Date, endDate: Date;
       
-      // Handle startDate
+      // Handle startDate first, before using it
       if (learn2earnData.startDate) {
         if (typeof learn2earnData.startDate === 'object') {
           if ('toDate' in learn2earnData.startDate && typeof learn2earnData.startDate.toDate === 'function') {
@@ -2133,16 +2133,7 @@ const PostJobPage = (): JSX.Element => {
         startDate = new Date(Date.now() + 5 * 60 * 1000);
       }
       
-      // Ensure the start date is at least 5 minutes in the future to avoid blockchain timestamp issues
-      const now = new Date();
-      const minStartTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes in the future
-      
-      if (startDate <= now) {
-        console.log("Start date adjusted to be 5 minutes in the future");
-        startDate = minStartTime;
-      }
-      
-      // Handle endDate
+      // Handle endDate first, before using it
       if (learn2earnData.endDate) {
         if (typeof learn2earnData.endDate === 'object') {
           if ('toDate' in learn2earnData.endDate && typeof learn2earnData.endDate.toDate === 'function') {
@@ -2170,9 +2161,26 @@ const PostJobPage = (): JSX.Element => {
         endDate.setDate(endDate.getDate() + 30);
       }
       
+      // Ensure the start date is at least 5 minutes in the future to avoid blockchain timestamp issues
+      const now = new Date();
+      const minStartTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes in the future
+      
+      if (startDate < now) {
+        console.log("Start date adjusted to be 5 minutes in the future from", startDate, "to", minStartTime);
+        startDate = minStartTime;
+      }
+      
+      // Add buffer time to end date to prevent early expiration on blockchain
+      // Some blockchains have block time variance that can cause end times to process earlier than expected
+      const endBuffer = 1 * 60 * 60 * 1000; // 1 hour buffer
+      const adjustedEndDate = new Date(endDate.getTime() + endBuffer);
+      
       console.log("Creating learn2earn with dates:", {
         start: startDate.toISOString(),
-        end: endDate.toISOString()
+        end: endDate.toISOString(),
+        adjustedEnd: adjustedEndDate.toISOString(),
+        startTimestamp: Math.floor(startDate.getTime() / 1000),
+        endTimestamp: Math.floor(adjustedEndDate.getTime() / 1000)
       });
       
       // Use the learn2earnContractService to create the learn2earn
@@ -2187,9 +2195,27 @@ const PostJobPage = (): JSX.Element => {
         learn2earnData.maxParticipants || 0
       );
       
-      // Se o resultado contiver notSupported, exibe uma mensagem mais amigável
-      if (depositResult && depositResult.notSupported) {
-        throw new Error(`The selected network (${normalizedNetwork}) is not currently supported for learn2earn opportunities.`);
+      // Check if the result has an error flag
+      if (!depositResult.success) {
+        // Handle specific error types
+        if (depositResult.notSupported) {
+          throw new Error(`The selected network (${normalizedNetwork}) is not currently supported for learn2earn opportunities.`);
+        }
+        else if (depositResult.insufficientBalance) {
+          throw new Error(`You don't have enough tokens. You have ${depositResult.currentBalance} but need ${depositResult.requiredAmount} ${learn2earnData.tokenSymbol}.`);
+        }
+        else if (depositResult.insufficientAllowance) {
+          throw new Error(`The contract doesn't have permission to use your tokens. Please try approving the tokens again.`);
+        }
+        else if (depositResult.insufficientFee) {
+          // If we have the fee amount from the error, display it
+          const feeAmount = depositResult.feeAmount ? depositResult.feeAmount : (learn2earnData.tokenAmount * feePercent / 100);
+          throw new Error(`You need additional ${feeAmount} ${learn2earnData.tokenSymbol} to cover the platform fee.`);
+        }
+        else if (depositResult.executionReverted) {
+          throw new Error(`Transaction would fail: ${depositResult.message || "Unknown contract error"}. Please check your wallet and try again.`);
+        }
+        throw new Error(depositResult.message || "Failed to create learn2earn opportunity. Please check your wallet and try again.");
       }
       
       console.log("Learn2Earn created successfully:", depositResult);
@@ -2209,7 +2235,7 @@ const PostJobPage = (): JSX.Element => {
         createdAt: new Date()
       };
       
-      // Adicionar o documento ao Firestore - ESSE COMANDO ESTAVA FALTANDO
+      // Add the document to Firestore
       await addDoc(learn2earnCollection, newLearn2Earn);
       
       // Add admin notification

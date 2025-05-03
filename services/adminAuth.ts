@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 import { db } from '../lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { compare } from 'bcrypt';
-import { cookies } from 'next/headers';
+ import { cookies } from 'next/headers';
 
 // Função de login do administrador
 export async function loginAdmin(email: string, password: string) {

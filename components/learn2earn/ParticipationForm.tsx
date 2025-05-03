@@ -5,7 +5,7 @@ import { collection, addDoc, query, where, getDocs, updateDoc } from 'firebase/f
 import { db } from '../../lib/firebase';
 
 interface ParticipationFormProps {
-  learn2earnId: string;
+  learn2earnId: string;  // This is the Firestore document ID
   tokenSymbol: string;
   network?: string;
 }
@@ -26,6 +26,10 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
   const [isRegistered, setIsRegistered] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [participationChecked, setParticipationChecked] = useState(false);
+  
+  // Add new state for tracking if the opportunity has ended
+  const [hasEnded, setHasEnded] = useState(false);
+  const [hasTimeSyncIssue, setHasTimeSyncIssue] = useState(false);
   
   const handleConnectWallet = async () => {
     setIsConnecting(true);
@@ -135,7 +139,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
     setInvalidSignature(false);
     
     try {
-      // Usa apenas learn2earnId, pois firebaseId não está disponível
+      // The learn2earnId prop is the Firestore document ID which we use as the firebaseId for the contract
       const result = await learn2earnContractService.claimLearn2Earn(network, learn2earnId);
       
       if (result.success) {
@@ -174,6 +178,12 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
       } else if (result.invalidSignature) {
         // Se a assinatura é inválida
         setInvalidSignature(true);
+      } else if (result.specificError === "ended") {
+        // The Learn2Earn opportunity has ended
+        setHasEnded(true);
+      } else if (result.specificError === "timeSync") {
+        // There's a time synchronization issue between the blockchain and our database
+        setHasTimeSyncIssue(true);
       } else if (result.notEligible) {
         // Se o usuário não é elegível para reivindicar tokens
         setError("You are not eligible to claim tokens for this Learn2Earn opportunity. Make sure you've completed all tasks.");
@@ -253,6 +263,48 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
           >
             Complete
           </button>
+        </div>
+      ) : hasEnded ? (
+        <div className="bg-red-500/20 border border-red-500 rounded-lg p-6 text-center">
+          <div className="text-red-500 text-5xl mb-4">⏱</div>
+          <h3 className="text-xl font-semibold text-white mb-2">Campaign Has Ended</h3>
+          <p className="text-gray-300 mb-4">
+            This Learn2Earn opportunity has already ended and is no longer accepting claims. 
+            <br/>
+            <span className="text-sm text-gray-400 mt-2 block">The campaign has reached its end date or maximum participant limit.</span>
+          </p>
+          <button
+            onClick={() => window.location.href = '/learn2earn'}
+            className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-6 rounded-lg"
+          >
+            Browse Other Campaigns
+          </button>
+        </div>
+      ) : hasTimeSyncIssue ? (
+        <div className="bg-amber-500/20 border border-amber-500 rounded-lg p-6 text-center">
+          <div className="text-amber-500 text-5xl mb-4">⚠️</div>
+          <h3 className="text-xl font-semibold text-white mb-2">Time Synchronization Issue</h3>
+          <p className="text-gray-300 mb-4">
+            There's a time synchronization issue between the blockchain and our servers. 
+            <br/>
+            <span className="text-sm text-gray-400 mt-2 block">
+              Our records show this campaign is still active, but the blockchain is reporting it has ended.
+            </span>
+          </p>
+          <div className="flex flex-col md:flex-row justify-center gap-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-amber-600 hover:bg-amber-700 text-white py-2 px-6 rounded-lg"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => window.location.href = '/learn2earn'}
+              className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-6 rounded-lg"
+            >
+              Browse Other Campaigns
+            </button>
+          </div>
         </div>
       ) : alreadyClaimed ? (
         <div className="bg-blue-500/20 border border-blue-500 rounded-lg p-6 text-center">

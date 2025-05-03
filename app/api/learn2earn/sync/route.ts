@@ -26,7 +26,8 @@ export async function POST(request: Request) {
 
     // Sincronização individual se um ID foi fornecido
     if (id) {
-      console.log(`Iniciando sincronização do Learn2Earn com ID: ${id}`);
+      console.log(`Iniciando sincronização do Learn2Earn com Firebase ID: ${id}`);
+      // O parâmetro id aqui é o firebaseId (ID do documento no Firestore)
       const result = await learn2earnContractService.syncLearn2EarnStatus(id);
       
       return NextResponse.json({
