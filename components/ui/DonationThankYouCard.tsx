@@ -93,21 +93,15 @@ const DonationThankYouCard: React.FC<DonationThankYouCardProps> = ({
         </div>
         
         {/* Action buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 mt-6">
+        <div className="flex justify-center mt-6">
           {onNewDonation && (
             <button 
               onClick={onNewDonation} 
-              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-md transition-colors"
+              className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-md transition-colors"
             >
               Make Another Donation
             </button>
           )}
-          <Link 
-            href="/system-activity" 
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-md text-center transition-colors"
-          >
-            Monitor Activity
-          </Link>
         </div>
       </div>
     </div>

@@ -24,7 +24,9 @@ interface TokenDonation {
   network: string;
   cryptoSymbol: string;
   createdAt: Date;
-  status: 'pending' | 'minted';
+  status: 'pending' | 'distributed' | 'failed';
+  distributionTxHash?: string;
+  error?: string;
 }
 
 // Solicitar preços atuais das criptomoedas da API interna
@@ -91,7 +93,10 @@ export function calculateG33TokenAmount(usdValue: number): number {
   return usdValue * TOKEN_RATE;
 }
 
-// Registrar uma doação e processar distribuição de tokens G33
+/**
+ * Registrar uma doação e processar distribuição de tokens G33
+ * Nova implementação que usa a API serverless para distribuição
+ */
 export async function registerTokenDonation(
   donorAddress: string,
   donationAmount: number,
@@ -100,22 +105,97 @@ export async function registerTokenDonation(
   network: string
 ): Promise<string> {
   try {
+    console.log(`Iniciando registro de doação: ${donationAmount} ${cryptoSymbol} de ${donorAddress}`);
+    
     // Calcular valor em USD
     const usdValue = await calculateUSDValue(donationAmount.toString(), cryptoSymbol);
+    console.log(`Valor em USD calculado: $${usdValue.toFixed(2)}`);
     
     // Calcular quantidade de tokens G33
     const tokenAmount = calculateG33TokenAmount(usdValue);
+    console.log(`Tokens G33 a distribuir: ${tokenAmount}`);
     
-    // Usar o distribuidor para processar a doação e enviar tokens automaticamente
-    const donationId = await g33TokenDistributorService.processDonation(
+    // Primeiro, registrar a doação no Firebase para termos um registro
+    const tokenDonation: Omit<TokenDonation, 'createdAt'> & { createdAt: any } = {
       donorAddress,
       donationAmount,
       usdValue,
       tokenAmount,
       transactionHash,
       network,
-      cryptoSymbol
-    );
+      cryptoSymbol,
+      createdAt: new Date(),
+      status: 'pending'
+    };
+    
+    // Adicionar ao Firebase
+    console.log(`Salvando registro da doação no Firebase...`);
+    const docRef = await addDoc(collection(db, 'tokenDonations'), tokenDonation);
+    const donationId = docRef.id;
+    console.log(`Registro de doação criado com ID: ${donationId}`);
+    
+    // Chamar a API do servidor para distribuir tokens
+    try {
+      console.log('Chamando API para distribuir tokens G33...');
+      const response = await fetch('/api/distribute-tokens', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          donorAddress,
+          usdValue,
+          donationId,
+          transactionHash,
+          network,
+          cryptoSymbol
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('Erro na distribuição automática:', result.error);
+        
+        // Atualizar o registro com o erro
+        await updateDoc(docRef, {
+          status: 'failed',
+          error: result.error || 'Falha na distribuição de tokens G33'
+        });
+        
+        // Ainda retornamos o ID do registro
+        return donationId;
+      }
+      
+      console.log(`Tokens distribuídos com sucesso: ${result.tokenAmount} G33. Hash da transação: ${result.transactionHash}`);
+      
+      // Atualizamos apenas se a API não fez a atualização
+      if (!result.recordUpdated) {
+        await updateDoc(docRef, {
+          status: 'distributed',
+          distributionTxHash: result.transactionHash
+        });
+      }
+    } catch (apiError: any) {
+      console.error('Erro ao chamar API de distribuição:', apiError);
+      
+      // Atualizar o registro com o erro
+      await updateDoc(docRef, {
+        status: 'failed',
+        error: apiError.message || 'Erro ao chamar serviço de distribuição de tokens'
+      });
+      
+      // Tentar usar o método antigo como fallback apenas no ambiente local
+      try {
+        // Verificar se estamos em ambiente local
+        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+          console.log('Tentando método alternativo de distribuição no ambiente local...');
+          await g33TokenDistributorService.distributeTokens(donorAddress, usdValue);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback de distribuição também falhou:', fallbackError);
+      }
+    }
     
     console.log(`Doação registrada para distribuição de tokens: ${tokenAmount} G33`);
     return donationId;

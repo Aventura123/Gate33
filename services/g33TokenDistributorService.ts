@@ -24,6 +24,7 @@ interface TokenDonation {
   createdAt: Date;
   status: 'pending' | 'distributed' | 'failed';
   distributionTxHash?: string;
+  error?: string; // Campo adicional para armazenar mensagens de erro
 }
 
 /**
@@ -36,6 +37,8 @@ class G33TokenDistributorService {
   private contract: ethers.Contract | null = null;
   private distributorAddress: string | null = null;
   private isInitialized: boolean = false;
+  private initializationError: string | null = null;
+  private lastInitAttempt: number = 0;
 
   constructor() {
     // Inicialização assíncrona
@@ -47,32 +50,70 @@ class G33TokenDistributorService {
    */
   async init(): Promise<void> {
     try {
+      // Evitar tentativas frequentes de inicialização
+      const now = Date.now();
+      if (this.lastInitAttempt > 0 && (now - this.lastInitAttempt) < 60000) {
+        console.log("Tentativa de inicialização muito recente, aguardando antes de tentar novamente");
+        return;
+      }
+      
+      this.lastInitAttempt = now;
+      this.initializationError = null;
+      console.log("Iniciando G33TokenDistributorService...");
+      
       // Buscar configurações do contrato no Firebase
       const configDoc = await getDoc(doc(db, "settings", "contractConfig"));
       
       if (configDoc.exists()) {
         const config = configDoc.data();
         this.distributorAddress = config.tokenDistributorAddress;
-        const privateKey = process.env.DISTRIBUTOR_PRIVATE_KEY;
+        console.log(`Endereço do distribuidor obtido: ${this.distributorAddress}`);
+        
+        // Verificar a chave privada de duas formas: como variável de ambiente direta ou dentro de process.env
+        let privateKey = process.env.DISTRIBUTOR_PRIVATE_KEY;
+        
+        // Verificação da presença da chave privada
+        if (!privateKey) {
+          throw new Error("Chave privada do distribuidor não encontrada nas variáveis de ambiente");
+        }
+        
         const rpcUrl = config.rpcUrl || process.env.RPC_URL || "https://polygon-rpc.com";
+        console.log(`URL RPC a ser usada: ${rpcUrl}`);
         
         if (this.distributorAddress && privateKey) {
           // Configurar provider e wallet
           this.provider = new ethers.providers.JsonRpcProvider(rpcUrl);
           this.wallet = new ethers.Wallet(privateKey, this.provider);
+          const walletAddress = await this.wallet.getAddress();
+          console.log(`Carteira do distribuidor configurada: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`);
           
           // Conectar ao contrato
           this.contract = new ethers.Contract(this.distributorAddress, DISTRIBUTOR_ABI, this.wallet);
-          this.isInitialized = true;
           
-          console.log("G33TokenDistributorService inicializado com sucesso");
+          // Verificar se o contrato está acessível
+          try {
+            const availableTokens = await this.contract.getAvailableTokens();
+            console.log(`Contrato do distribuidor conectado com sucesso. Tokens disponíveis: ${ethers.utils.formatEther(availableTokens)}`);
+            this.isInitialized = true;
+          } catch (contractError: unknown) {
+            const errorMessage = contractError instanceof Error 
+              ? contractError.message
+              : "Erro desconhecido ao acessar funções do contrato";
+            throw new Error(`Erro ao acessar funções do contrato: ${errorMessage}`);
+          }
+          
           return;
+        } else {
+          throw new Error(`Configurações incompletas: distribuidor=${!!this.distributorAddress}, chavePrivada=${!!privateKey}`);
         }
+      } else {
+        throw new Error("Documento de configuração do contrato não encontrado no Firebase");
       }
-      
-      console.warn("Configurações incompletas para G33TokenDistributorService");
     } catch (error) {
-      console.error("Erro ao inicializar G33TokenDistributorService:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      this.initializationError = errorMessage;
+      console.error("Erro ao inicializar G33TokenDistributorService:", errorMessage);
+      this.isInitialized = false;
     }
   }
 
@@ -97,20 +138,35 @@ class G33TokenDistributorService {
   async distributeTokens(donorAddress: string, usdValue: number): Promise<string | null> {
     try {
       if (!(await this.ensureInitialized())) {
-        throw new Error("Serviço não inicializado");
+        throw new Error(`Serviço não inicializado. Erro: ${this.initializationError || "Desconhecido"}`);
+      }
+      
+      // Verificar se há tokens disponíveis
+      const availableTokensWei = await this.contract!.getAvailableTokens();
+      const availableTokens = parseFloat(ethers.utils.formatEther(availableTokensWei));
+      const tokensNeeded = usdValue; // 1 token por 1 USD
+      
+      console.log(`Distribuição de tokens: ${tokensNeeded} tokens necessários, ${availableTokens} tokens disponíveis`);
+      
+      if (availableTokens < tokensNeeded) {
+        throw new Error(`Tokens insuficientes no contrato distribuidor. Disponível: ${availableTokens}, Necessário: ${tokensNeeded}`);
       }
       
       // Converter valor USD para o formato esperado pelo contrato (multiplicado por 100 para precisão)
       const usdValueScaled = Math.floor(usdValue * 100);
       
+      console.log(`Chamando contrato para distribuir tokens para ${donorAddress}: ${usdValue} USD (${usdValueScaled} scaled)`);
+      
       // Chamar a função do contrato para distribuir tokens
       const tx = await this.contract!.distributeTokens(donorAddress, usdValueScaled);
-      const receipt = await tx.wait(1);
+      console.log(`Transação de distribuição iniciada: ${tx.hash}`);
       
+      const receipt = await tx.wait(1);
       console.log(`Tokens G33 distribuídos para ${donorAddress}. Hash: ${receipt.transactionHash}`);
       return receipt.transactionHash;
     } catch (error) {
-      console.error("Erro ao distribuir tokens G33:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      console.error("Erro ao distribuir tokens G33:", errorMessage);
       return null;
     }
   }
@@ -153,6 +209,13 @@ class G33TokenDistributorService {
     
     // Tentar distribuir tokens automaticamente
     try {
+      console.log(`Processando doação para distribuição de tokens: ${tokenAmount} G33 para ${donorAddress}`);
+      
+      // Verificar inicialização antes de tentar distribuir
+      if (!(await this.ensureInitialized())) {
+        throw new Error(`Serviço distribuidor não inicializado. Erro: ${this.initializationError || "Desconhecido"}`);
+      }
+      
       const distributionTxHash = await this.distributeTokens(donorAddress, usdValue);
       
       if (distributionTxHash) {
@@ -166,17 +229,20 @@ class G33TokenDistributorService {
       } else {
         // Distribuição falhou, mas o registro foi criado
         await updateDoc(docRef, {
-          status: 'failed'
+          status: 'failed',
+          error: 'Falha na distribuição automática de tokens'
         });
         
         console.log(`Registro de doação criado, mas distribuição de tokens falhou`);
       }
     } catch (error) {
-      console.error("Erro ao processar distribuição de tokens:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      console.error("Erro ao processar distribuição de tokens:", errorMessage);
       
       // Atualizar status para falha
       await updateDoc(docRef, {
-        status: 'failed'
+        status: 'failed',
+        error: errorMessage
       });
     }
     
