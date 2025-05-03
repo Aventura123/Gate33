@@ -11,14 +11,13 @@ const ERC20_ABI = [
   "function transfer(address to, uint256 amount) returns (bool)"
 ];
 
-// Learn2Earn contract ABI (atualizado para corresponder exatamente à função no contrato)
+// Learn2Earn contract ABI (simplified - replace with your complete ABI)
 const LEARN2EARN_ABI = [
-  "function createLearn2Earn(string memory _firebaseId, address _tokenAddress, uint256 _tokenAmount, uint256 _startTime, uint256 _endTime, uint256 _maxParticipants) external",
-  "function claimLearn2Earn(uint256 _learn2earnId, uint256 _amount, bytes memory _signature) external", 
-  "function hasClaimed(uint256 _learn2earnId, address _user) view returns (bool)",
-  "function getTokenPerParticipant(uint256 _learn2earnId) external view returns (uint256)",
-  "function learn2earns(uint256 _learn2earnId) external view returns (string memory id, address tokenAddress, uint256 tokenAmount, uint256 startTime, uint256 endTime, uint256 maxParticipants, uint256 participantCount, bool active)",
-  "function updateFeeConfig(address _feeCollector, uint256 _feePercent) external"
+  "function createLearn2Earn(string memory id, address tokenAddress, uint256 amount, uint256 startTime, uint256 endTime, uint256 maxParticipants) returns (uint256)",
+  "function depositTokens(uint256 learn2earnId, uint256 amount) returns (bool)",
+  "function getAllowance(address tokenAddress) view returns (uint256)",
+  "function claimTokens(string memory learn2earnId) returns (bool)",
+  "function updateFeeConfig(address feeCollector, uint256 feePercent) external"
 ];
 
 // Define network contract address interface
@@ -424,260 +423,28 @@ class Learn2EarnContractService {
       }
       
       const signer = provider.getSigner();
-      const userAddress = await signer.getAddress();
       
       // Create learn2earn contract instance
       const learn2earnContract = new ethers.Contract(contractAddress, LEARN2EARN_ABI, signer);
       
-      console.log(`Calling claimLearn2Earn with learn2earnId: ${learn2earnId}`);
+      console.log(`Calling claimTokens with learn2earnId: ${learn2earnId}`);
       
-      try {
-        // Buscar os dados do Learn2Earn no Firebase
-        const docRef = doc(db, "learn2earn", learn2earnId);
-        const docSnap = await getDoc(docRef);
-        
-        if (!docSnap.exists()) {
-          return {
-            success: false,
-            message: "Learn2Earn opportunity not found."
-          };
-        }
-        
-        const learn2EarnData = docSnap.data();
-        
-        // Obter o ID numérico do contrato
-        // IMPORTANTE: Este ID deve ser configurado corretamente no Firebase
-        const numericLearn2EarnId = learn2EarnData.contractId 
-          ? Number(learn2EarnData.contractId) 
-          : 0;
-        
-        console.log(`Using numeric contract ID: ${numericLearn2EarnId}`);
-        
-        // Obter a quantidade de tokens por participante
-        let tokenPerParticipant;
-        try {
-          // Tenta obter do contrato primeiro
-          tokenPerParticipant = await learn2earnContract.getTokenPerParticipant(numericLearn2EarnId);
-          console.log("Token per participant from contract:", tokenPerParticipant.toString());
-        } catch (error) {
-          // Se falhar, usa o valor do Firebase
-          tokenPerParticipant = learn2EarnData.tokenPerParticipant || "0.01";
-          console.log("Using token per participant from Firebase:", tokenPerParticipant);
-        }
-        
-        // Converter o valor para Wei (unidade do blockchain)
-        const amount = ethers.utils.parseUnits(tokenPerParticipant.toString(), 18);
-        console.log("Amount in Wei:", amount.toString());
-        
-        // Verificar se o usuário já reivindicou
-        try {
-          const alreadyClaimed = await learn2earnContract.hasClaimed(numericLearn2EarnId, userAddress);
-          
-          if (alreadyClaimed) {
-            console.log("User has already claimed tokens for this learn2earn");
-            return {
-              success: false,
-              alreadyClaimed: true,
-              message: "You have already claimed tokens for this Learn2Earn opportunity."
-            };
-          }
-        } catch (checkError) {
-          console.log("Could not check if user has already claimed:", checkError);
-          // Continuar mesmo se não conseguir verificar
-        }
-        
-        // Obter uma assinatura válida do backend
-        console.log("Requesting signature from backend API...");
-        
-        try {
-          const apiResponse = await fetch('/api/learn2earn/claim-signature', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contractId: numericLearn2EarnId,
-              userAddress,
-              amount: amount.toString(),
-              network
-            })
-          });
-          
-          const signatureData = await apiResponse.json();
-          
-          if (!apiResponse.ok) {
-            console.error("API returned an error:", signatureData);
-            
-            // Verificar se é erro de não ter completado as tarefas
-            if (apiResponse.status === 403 || (signatureData.error && signatureData.error.includes("not completed"))) {
-              return {
-                success: false,
-                notEligible: true,
-                message: "You have not completed the required tasks for this Learn2Earn opportunity."
-              };
-            }
-            
-            // Verificar se já foi recompensado
-            if (signatureData.error && signatureData.error.includes("already been rewarded")) {
-              return {
-                success: false,
-                alreadyClaimed: true,
-                message: "You have already claimed tokens for this Learn2Earn opportunity."
-              };
-            }
-            
-            // Erro de servidor não configurado para gerar assinaturas (comum em ambiente de desenvolvimento)
-            if (signatureData.devEnvironment) {
-              return {
-                success: false,
-                invalidSignature: true,
-                devEnvironment: true,
-                message: "Signature generation is not configured on this server. In production, you need a properly configured server with admin private key."
-              };
-            }
-            
-            throw new Error(signatureData.error || "Failed to get signature from API");
-          }
-          
-          const { signature } = signatureData;
-          
-          if (!signature) {
-            throw new Error("Invalid signature returned from API");
-          }
-          
-          console.log("Received valid signature from API");
-          
-          // Set manual gas limit to avoid estimation errors
-          const options = {
-            gasLimit: 800000, // Increased gas limit 
-          };
-          
-          console.log(`Calling contract with parameters:`, {
-            contractId: numericLearn2EarnId,
-            amount: amount.toString(),
-            signatureLength: signature.length
-          });
-          
-          // Call the contract's claimLearn2Earn function with the valid signature
-          const tx = await learn2earnContract.claimLearn2Earn(
-            numericLearn2EarnId,
-            amount, 
-            signature,
-            options
-          );
-          
-          console.log("Transaction sent:", tx.hash);
-          
-          // Wait for transaction confirmation
-          const receipt = await tx.wait(1);
-          
-          console.log("Claim transaction confirmed:", receipt.transactionHash);
-          
-          return {
-            success: true,
-            transactionHash: receipt.transactionHash,
-            blockNumber: receipt.blockNumber
-          };
-        } catch (apiError: any) {
-          console.error("Error getting signature from API:", apiError);
-          throw new Error(`Failed to get signature: ${apiError.message}`);
-        }
-      } catch (txError: any) {
-        console.error("Transaction error details:", txError);
-        
-        // Check if it's a known contract error
-        const errorMessage = txError.message || "";
-        
-        // Verificações específicas de erros comuns
-        if (errorMessage.includes("invalid BigNumber") || errorMessage.includes("INVALID_ARGUMENT")) {
-          return {
-            success: false,
-            message: "O ID do Learn2Earn não está no formato correto. Por favor, contate o suporte.",
-            invalidId: true
-          };
-        }
-        
-        if (errorMessage.includes("CALL_EXCEPTION")) {
-          // Verifica as mensagens de erro mais comuns
-          if (errorMessage.toLowerCase().includes("already claimed") || txError.reason?.toLowerCase().includes("already claimed")) {
-            return {
-              success: false,
-              alreadyClaimed: true,
-              message: "You have already claimed tokens for this Learn2Earn opportunity."
-            };
-          }
-          
-          if (errorMessage.toLowerCase().includes("signature") || txError.reason?.toLowerCase().includes("signature") || 
-              errorMessage.toLowerCase().includes("invalid") || txError.reason?.toLowerCase().includes("invalid")) {
-            return {
-              success: false,
-              invalidSignature: true,
-              message: "Invalid signature. The backend needs to generate a valid signature for this claim. Please contact support."
-            };
-          }
-          
-          if (errorMessage.toLowerCase().includes("learn2earn does not exist")) {
-            return {
-              success: false,
-              invalidId: true,
-              message: "This Learn2Earn opportunity doesn't exist on the blockchain. The contractId may be incorrect."
-            };
-          }
-          
-          if (errorMessage.toLowerCase().includes("not started")) {
-            return {
-              success: false,
-              message: "This Learn2Earn opportunity has not started yet."
-            };
-          }
-          
-          if (errorMessage.toLowerCase().includes("ended")) {
-            return {
-              success: false,
-              message: "This Learn2Earn opportunity has already ended."
-            };
-          }
-          
-          // Se temos um hash da transação, incluímos para depuração
-          if (txError.transactionHash) {
-            return {
-              success: false,
-              message: "Transaction was rejected by the contract. Please contact support if you believe this is an error.",
-              transactionHash: txError.transactionHash
-            };
-          }
-          
-          // Erro genérico de contrato
-          return {
-            success: false,
-            message: "Transaction was rejected by the contract. Please make sure you meet all requirements for claiming tokens."
-          };
-        }
-        
-        // Re-throw other errors
-        throw txError;
-      }
+      // Call the contract to claim the tokens
+      const tx = await learn2earnContract.claimTokens(learn2earnId);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait(1);
+      
+      console.log("Claim transaction confirmed:", receipt.transactionHash);
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber
+      };
     } catch (error: unknown) {
       console.error("Error claiming tokens:", error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      // Verificar casos específicos de erro
-      if (errorMessage.includes("Failed to get signature")) {
-        return {
-          success: false,
-          message: "Could not obtain a valid signature. You may not have completed all required tasks.",
-          signatureError: true
-        };
-      }
-      
-      // Verificar se é um erro relacionado a número inválido
-      if (errorMessage.includes("invalid BigNumber") || errorMessage.includes("INVALID_ARGUMENT")) {
-        return {
-          success: false,
-          message: "O ID do Learn2Earn não está no formato correto. Por favor, contate o suporte.",
-          invalidId: true
-        };
-      }
-      
-      // Mensagem mais detalhada para ajudar no diagnóstico
       return {
         success: false,
         message: `Failed to claim tokens: ${errorMessage}`

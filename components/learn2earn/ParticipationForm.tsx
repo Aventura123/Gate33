@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { connectWallet, getCurrentAddress } from '../../services/crypto';
 import learn2earnContractService from '../../services/learn2earnContractService';
+import { collection, addDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 interface ParticipationFormProps {
   learn2earnId: string;
@@ -20,6 +22,11 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
   const [invalidId, setInvalidId] = useState(false);
   const [invalidSignature, setInvalidSignature] = useState(false);
   
+  // New state for tracking participation registration
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [participationChecked, setParticipationChecked] = useState(false);
+  
   const handleConnectWallet = async () => {
     setIsConnecting(true);
     setError(null);
@@ -33,6 +40,8 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
       
       if (address) {
         setWalletAddress(address);
+        // Check if user has already registered participation
+        checkParticipation(address);
       } else {
         throw new Error('Unable to get wallet address');
       }
@@ -43,12 +52,73 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
       setIsConnecting(false);
     }
   };
+
+  // Function to check if user has already registered participation
+  const checkParticipation = async (address: string) => {
+    try {
+      const participantsRef = collection(db, "learn2earnParticipants");
+      const q = query(
+        participantsRef, 
+        where("walletAddress", "==", address),
+        where("learn2earnId", "==", learn2earnId)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        // User has already registered
+        setIsRegistered(true);
+        console.log("User has already registered participation");
+      }
+      
+      setParticipationChecked(true);
+    } catch (err) {
+      console.error("Error checking participation:", err);
+    }
+  };
+  
+  // Function to register participation
+  const handleRegisterParticipation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!walletAddress) {
+      setError('Please connect your wallet first');
+      return;
+    }
+    
+    setRegistering(true);
+    setError(null);
+    
+    try {
+      // Register the user's participation in Firebase
+      const participantsRef = collection(db, "learn2earnParticipants");
+      await addDoc(participantsRef, {
+        walletAddress,
+        learn2earnId,
+        network,
+        completedTasks: true, // In a real app this would be based on task completion
+        createdAt: new Date(),
+        claimed: false
+      });
+      
+      setIsRegistered(true);
+    } catch (err: any) {
+      console.error('Error registering participation:', err);
+      setError(err.message || 'Failed to register participation');
+    } finally {
+      setRegistering(false);
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!walletAddress) {
       setError('Please connect your wallet first');
+      return;
+    }
+
+    if (!isRegistered) {
+      setError('You need to register your participation first');
       return;
     }
 
@@ -71,6 +141,30 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
       if (result.success) {
         setSuccess(true);
         setTransactionHash(result.transactionHash);
+        
+        // Update the participation document to mark as claimed
+        try {
+          const participantsRef = collection(db, "learn2earnParticipants");
+          const q = query(
+            participantsRef, 
+            where("walletAddress", "==", walletAddress),
+            where("learn2earnId", "==", learn2earnId)
+          );
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            // Update the first matching document (should only be one)
+            const docRef = querySnapshot.docs[0].ref;
+            await updateDoc(docRef, {
+              claimed: true,
+              claimedAt: new Date(),
+              transactionHash: result.transactionHash
+            });
+          }
+        } catch (updateErr) {
+          console.error("Error updating participation status:", updateErr);
+          // We don't need to show this error to the user as the claim was successful
+        }
       } else if (result.alreadyClaimed) {
         // Se o usuário já reivindicou tokens para esta oportunidade
         setAlreadyClaimed(true);
@@ -120,6 +214,23 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
       setSubmitting(false);
     }
   };
+
+  // Check participation on component load if wallet is already connected
+  useEffect(() => {
+    const checkWalletAndParticipation = async () => {
+      try {
+        const address = await getCurrentAddress();
+        if (address) {
+          setWalletAddress(address);
+          checkParticipation(address);
+        }
+      } catch (err) {
+        console.error("Error checking wallet on load:", err);
+      }
+    };
+    
+    checkWalletAndParticipation();
+  }, [learn2earnId]);
   
   return (
     <div>
@@ -214,62 +325,111 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
             Complete all tasks above and submit this form to earn {tokenSymbol} tokens. Your wallet will be verified before tokens are distributed.
           </p>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {!walletAddress ? (
+          {!walletAddress ? (
+            <button
+              type="button"
+              onClick={handleConnectWallet}
+              disabled={isConnecting}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg flex justify-center items-center"
+            >
+              {isConnecting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Connecting Wallet...
+                </>
+              ) : "Connect Wallet to Participate"}
+            </button>
+          ) : !participationChecked ? (
+            <div className="flex justify-center">
+              <svg className="animate-spin h-10 w-10 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p className="ml-3 text-gray-300">Checking participation status...</p>
+            </div>
+          ) : !isRegistered ? (
+            <form onSubmit={handleRegisterParticipation} className="space-y-6">
+              <div className="p-4 bg-gray-800 rounded-lg">
+                <h4 className="text-gray-400 text-sm mb-1">Connected Wallet</h4>
+                <p className="text-orange-400 font-mono text-sm break-all">{walletAddress}</p>
+                <p className="text-gray-500 text-xs mt-1">Make sure you're connected to the {network} network.</p>
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="tasks-checkbox"
+                  className="mr-2"
+                  required
+                />
+                <label htmlFor="tasks-checkbox" className="text-gray-300 text-sm">
+                  I confirm that I have completed all the required tasks for this Learn2Earn opportunity.
+                </label>
+              </div>
+              
               <button
-                type="button"
-                onClick={handleConnectWallet}
-                disabled={isConnecting}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg flex justify-center items-center"
+                type="submit"
+                disabled={registering}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg flex justify-center items-center"
               >
-                {isConnecting ? (
+                {registering ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Connecting Wallet...
+                    Registering Participation...
                   </>
-                ) : "Connect Wallet to Participate"}
+                ) : "Register Participation"}
               </button>
-            ) : (
-              <>
-                <div className="p-4 bg-gray-800 rounded-lg">
-                  <h4 className="text-gray-400 text-sm mb-1">Connected Wallet</h4>
-                  <p className="text-orange-400 font-mono text-sm break-all">{walletAddress}</p>
-                  <p className="text-gray-500 text-xs mt-1">Make sure you're connected to the {network} network.</p>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="terms-checkbox"
-                    className="mr-2"
-                    required
-                  />
-                  <label htmlFor="terms-checkbox" className="text-gray-300 text-sm">
-                    I confirm that I have completed all tasks and understand that rewards are subject to verification.
-                  </label>
-                </div>
-                
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg flex justify-center items-center"
-                >
-                  {submitting ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Submitting...
-                    </>
-                  ) : `Submit & Claim ${tokenSymbol} Tokens`}
-                </button>
-              </>
-            )}
-          </form>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="p-4 bg-gray-800 rounded-lg">
+                <h4 className="text-gray-400 text-sm mb-1">Connected Wallet</h4>
+                <p className="text-orange-400 font-mono text-sm break-all">{walletAddress}</p>
+                <p className="text-gray-500 text-xs mt-1">Make sure you're connected to the {network} network.</p>
+              </div>
+              
+              <div className="p-4 bg-blue-500/20 border border-blue-500 rounded-lg">
+                <h4 className="text-blue-400 text-sm mb-1">Participation Registered ✓</h4>
+                <p className="text-gray-300 text-sm">
+                  Your participation has been registered. You can now claim your tokens.
+                </p>
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="terms-checkbox"
+                  className="mr-2"
+                  required
+                />
+                <label htmlFor="terms-checkbox" className="text-gray-300 text-sm">
+                  I confirm that I have completed all tasks and understand that rewards are subject to verification.
+                </label>
+              </div>
+              
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg flex justify-center items-center"
+              >
+                {submitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Submitting...
+                  </>
+                ) : `Submit & Claim ${tokenSymbol} Tokens`}
+              </button>
+            </form>
+          )}
           
           {error && (
             <div className="mt-4 p-3 bg-red-500/20 border border-red-500 rounded-lg">
