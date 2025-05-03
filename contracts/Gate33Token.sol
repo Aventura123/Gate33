@@ -19,7 +19,7 @@ contract Gate33Token is ERC20Capped, Ownable {
     /**
      * @dev Construtor que configura o token sem mintar nenhum token inicialmente
      */
-    constructor() ERC20("Gate33", "G33") ERC20Capped(MAX_SUPPLY) {
+    constructor(address initialOwner) ERC20("Gate33", "G33") ERC20Capped(MAX_SUPPLY) Ownable(initialOwner) {
         // Não minta tokens no construtor
     }
     

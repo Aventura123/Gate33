@@ -255,5 +255,20 @@ class G33TokenDistributorService {
   }
 }
 
+// Exportar a instância do serviço
 export const g33TokenDistributorService = new G33TokenDistributorService();
+
+// Atualizar o endereço do contrato distribuidor no Firebase
+(async () => {
+  try {
+    const distributorAddress = "0x0726e207027cb4cffb28c3e65e90ec908916f38c"; // Endereço correto do contrato implantado
+    await updateDoc(doc(db, "settings", "contractConfig"), {
+      tokenDistributorAddress: distributorAddress
+    });
+    console.log("Endereço do contrato distribuidor atualizado no Firebase");
+  } catch (err) {
+    console.error("Erro ao atualizar endereço do contrato no Firebase:", err);
+  }
+})();
+
 export default g33TokenDistributorService;

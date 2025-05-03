@@ -24,7 +24,7 @@ contract G33TokenDistributor is Ownable, ReentrancyGuard {
     
     // Histórico de distribuições
     struct Distribution {
-        address donor;
+        address donorAddress; // Corrigido de 'string' para 'address'
         uint256 tokenAmount;
         uint256 donationAmountUsd;
         uint256 timestamp;
@@ -54,9 +54,8 @@ contract G33TokenDistributor is Ownable, ReentrancyGuard {
     
     /**
      * @dev Construtor que configura o endereço do token G33
-     * @param _g33TokenAddress O endereço do contrato do token G33
      */
-    constructor(address _g33TokenAddress) {
+    constructor(address _g33TokenAddress) Ownable(msg.sender) {
         require(_g33TokenAddress != address(0), "G33 token address cannot be zero");
         g33Token = IERC20(_g33TokenAddress);
         
@@ -107,7 +106,7 @@ contract G33TokenDistributor is Ownable, ReentrancyGuard {
         
         // Registrar a distribuição
         distributions.push(Distribution({
-            donor: donor,
+            donorAddress: donor,
             tokenAmount: tokenAmount,
             donationAmountUsd: donationAmountUsd,
             timestamp: block.timestamp
@@ -166,7 +165,7 @@ contract G33TokenDistributor is Ownable, ReentrancyGuard {
         
         for (uint256 i = 0; i < resultCount; i++) {
             uint256 index = length - 1 - i; // Começando do mais recente
-            donors[i] = distributions[index].donor;
+            donors[i] = distributions[index].donorAddress;
             amounts[i] = distributions[index].tokenAmount;
             donationValues[i] = distributions[index].donationAmountUsd;
             timestamps[i] = distributions[index].timestamp;
