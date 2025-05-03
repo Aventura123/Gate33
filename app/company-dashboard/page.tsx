@@ -13,7 +13,7 @@ import smartContractService from "../../services/smartContractService";
 import learn2earnContractService from "../../services/learn2earnContractService";
 // Import the Learn2Earn interfaces
 import { Learn2Earn, Learn2EarnTask, NewLearn2Earn } from "../../types/learn2earn";
-// Importando os serviços e componentes necessários para Instant Jobs
+// Importing necessary services and components for Instant Jobs
 import instantJobsService, { InstantJob, JobMessage } from '../../services/instantJobsService';
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
@@ -181,7 +181,7 @@ const PostJobPage = (): JSX.Element => {
   const [depositError, setDepositError] = useState<string | null>(null);
   const [isDepositConfirmed, setIsDepositConfirmed] = useState(false);
 
-  // Função para buscar os planos de preços do Firebase
+  // Function to fetch pricing plans from Firebase
   const fetchPricingPlans = useCallback(async () => {
     try {
       if (!db) throw new Error("Firestore is not initialized");
@@ -223,7 +223,7 @@ const PostJobPage = (): JSX.Element => {
     }
   }, [db]);
 
-  // Buscar os planos de preços ao montar o componente
+  // Fetch pricing plans when component mounts
   useEffect(() => {
     fetchPricingPlans();
   }, [fetchPricingPlans]);
@@ -1215,8 +1215,8 @@ const PostJobPage = (): JSX.Element => {
     setActiveTab("myJobs");
   };
 
-  // Funções para Instant Jobs
-  // Função para carregar Instant Jobs
+  // Functions for Instant Jobs
+  // Function to load Instant Jobs
   const loadInstantJobs = async () => {
     try {
       const jobs = await instantJobsService.getInstantJobsByCompany(companyId);
@@ -1226,7 +1226,7 @@ const PostJobPage = (): JSX.Element => {
     }
   };
   
-  // Função para carregar mensagens de um Instant Job
+  // Function to load messages of an Instant Job
   const loadJobMessages = async (jobId: string) => {
     try {
       const messages = await instantJobsService.getMessages(jobId);
@@ -1236,7 +1236,7 @@ const PostJobPage = (): JSX.Element => {
     }
   };
   
-  // Função para enviar mensagem
+  // Function to send message
   const handleSendMessage = async (message: string) => {
     if (!selectedJobId || !companyProfile) return;
 
@@ -1250,7 +1250,7 @@ const PostJobPage = (): JSX.Element => {
         message
       });
 
-      // Recarregar mensagens após enviar
+      // Reload messages after sending
       await loadJobMessages(selectedJobId);
     } catch (error) {
       console.error("Error sending message:", error);
@@ -1259,7 +1259,7 @@ const PostJobPage = (): JSX.Element => {
     }
   };
   
-  // Função para criar um novo Instant Job
+  // Function to create a new Instant Job
   const handleCreateInstantJob = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -1285,7 +1285,7 @@ const PostJobPage = (): JSX.Element => {
       
       alert("Micro-task created successfully!");
       
-      // Resetar formulário e voltar para lista
+      // Reset form and go back to list
       setNewInstantJobData({
         title: '',
         description: '',
@@ -1308,16 +1308,16 @@ const PostJobPage = (): JSX.Element => {
     }
   };
   
-  // Função para aprovar um trabalho concluído
+  // Function to approve a completed job
   const handleApproveJob = async (jobId: string) => {
     try {
       await instantJobsService.approveJob(jobId, companyId);
       alert("Micro-task approved successfully!");
       
-      // Atualizar a lista de trabalhos
+      // Update the list of jobs
       loadInstantJobs();
       
-      // Se está vendo os detalhes do trabalho aprovado, atualize-o
+      // If viewing the details of the approved job, update it
       if (selectedJobId === jobId) {
         const updatedJob = await instantJobsService.getInstantJobsByCompany(companyId)
           .then(jobs => jobs.find(job => job.id === jobId));
@@ -1336,14 +1336,14 @@ const PostJobPage = (): JSX.Element => {
     }
   };
   
-  // Carregar instantJobs quando necessário
+  // Load instantJobs when necessary
   useEffect(() => {
     if (activeTab === "instantJobs" && companyId) {
       loadInstantJobs();
     }
   }, [activeTab, companyId]);
   
-  // Carregar detalhes do job quando selecionar um
+  // Load job details when selecting one
   useEffect(() => {
     if (selectedJobId) {
       const job = instantJobs.find(job => job.id === selectedJobId);
@@ -1354,9 +1354,9 @@ const PostJobPage = (): JSX.Element => {
     }
   }, [selectedJobId]);
 
-  // Renderizar a aba de Instant Jobs
+  // Render the Instant Jobs tab
   const renderInstantJobsTab = () => {
-    // Mostrar lista de Instant Jobs
+    // Show list of Instant Jobs
     if (activeSection === 'list') {
       return (
         <div>
@@ -1401,7 +1401,7 @@ const PostJobPage = (): JSX.Element => {
       );
     }
     
-    // Mostrar formulário de criação
+    // Show creation form
     if (activeSection === 'create') {
       return (
         <div>
@@ -1417,51 +1417,51 @@ const PostJobPage = (): JSX.Element => {
           
           <form onSubmit={handleCreateInstantJob} className="space-y-4">
             <div>
-              <label className="block text-gray-300 mb-2">Título da Tarefa</label>
+              <label className="block text-gray-300 mb-2">Task Title</label>
               <input
                 type="text"
                 value={newInstantJobData.title}
                 onChange={(e) => setNewInstantJobData({...newInstantJobData, title: e.target.value})}
-                placeholder="ex: Desenvolver um smart contract para ICO"
+                placeholder="e.g., Develop a smart contract for ICO"
                 className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
                 required
               />
             </div>
             
             <div>
-              <label className="block text-gray-300 mb-2">Descrição Detalhada</label>
+              <label className="block text-gray-300 mb-2">Detailed Description</label>
               <textarea
                 value={newInstantJobData.description}
                 onChange={(e) => setNewInstantJobData({...newInstantJobData, description: e.target.value})}
-                placeholder="Descreva detalhadamente o que você precisa..."
+                placeholder="Describe in detail what you need..."
                 className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white h-32"
                 required
               />
             </div>
             
             <div>
-              <label className="block text-gray-300 mb-2">Categoria</label>
+              <label className="block text-gray-300 mb-2">Category</label>
               <select
                 value={newInstantJobData.category}
                 onChange={(e) => setNewInstantJobData({...newInstantJobData, category: e.target.value})}
                 className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
                 required
               >
-                <option value="">Selecione uma categoria</option>
-                <option value="development">Desenvolvimento</option>
+                <option value="">Select a category</option>
+                <option value="development">Development</option>
                 <option value="design">Design</option>
                 <option value="marketing">Marketing</option>
-                <option value="content">Conteúdo</option>
-                <option value="research">Pesquisa</option>
+                <option value="content">Content</option>
+                <option value="research">Research</option>
                 <option value="smart-contracts">Smart Contracts</option>
-                <option value="testing">Testes</option>
-                <option value="other">Outro</option>
+                <option value="testing">Testing</option>
+                <option value="other">Other</option>
               </select>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-300 mb-2">Orçamento</label>
+                <label className="block text-gray-300 mb-2">Budget</label>
                 <input
                   type="number"
                   value={newInstantJobData.budget}
@@ -1474,7 +1474,7 @@ const PostJobPage = (): JSX.Element => {
               </div>
               
               <div>
-                <label className="block text-gray-300 mb-2">Moeda</label>
+                <label className="block text-gray-300 mb-2">Currency</label>
                 <select
                   value={newInstantJobData.currency}
                   onChange={(e) => setNewInstantJobData({...newInstantJobData, currency: e.target.value})}
@@ -1490,7 +1490,7 @@ const PostJobPage = (): JSX.Element => {
             </div>
             
             <div>
-              <label className="block text-gray-300 mb-2">Prazo Final</label>
+              <label className="block text-gray-300 mb-2">Deadline</label>
               <input
                 type="date"
                 value={newInstantJobData.deadline.toISOString().split('T')[0]}
@@ -1501,12 +1501,12 @@ const PostJobPage = (): JSX.Element => {
             </div>
             
             <div>
-              <label className="block text-gray-300 mb-2">Habilidades Necessárias (separadas por vírgula)</label>
+              <label className="block text-gray-300 mb-2">Required Skills (comma separated)</label>
               <input
                 type="text"
                 value={newInstantJobData.requiredSkills}
                 onChange={(e) => setNewInstantJobData({...newInstantJobData, requiredSkills: e.target.value})}
-                placeholder="ex: Solidity, React, Web3.js"
+                placeholder="e.g., Solidity, React, Web3.js"
                 className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
                 required
               />
@@ -1518,13 +1518,13 @@ const PostJobPage = (): JSX.Element => {
                 onClick={() => setActiveSection('list')}
                 className="bg-gray-700 hover:bg-gray-600 text-white mr-4"
               >
-                Cancelar
+                Cancel
               </button>
               <button
                 type="submit"
                 className="bg-orange-500 hover:bg-orange-600 text-white"
               >
-                Criar Micro-tarefa
+                Create Micro-task
               </button>
             </div>
           </form>
@@ -1532,7 +1532,7 @@ const PostJobPage = (): JSX.Element => {
       );
     }
     
-    // Mostrar detalhes da micro-tarefa com mensagens
+    // Show micro-task details with messages
     if (activeSection === 'detail' && selectedJob) {
       return (
         <div>
@@ -1545,15 +1545,15 @@ const PostJobPage = (): JSX.Element => {
               }}
               className="text-orange-400 hover:text-orange-300 mr-3"
             >
-              &larr; Voltar
+              &larr; Back
             </button>
             <h2 className="text-3xl font-semibold text-orange-500">{selectedJob.title}</h2>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Painel esquerdo: Informações da tarefa */}
+            {/* Left panel: Task information */}
             <div className="md:col-span-1 bg-black/50 p-6 rounded-lg border border-gray-800">
-              <h3 className="text-xl font-semibold text-orange-400 mb-4">Informações</h3>
+              <h3 className="text-xl font-semibold text-orange-400 mb-4">Information</h3>
               
               <div className="space-y-3">
                 <div>
@@ -1566,23 +1566,23 @@ const PostJobPage = (): JSX.Element => {
                     ${selectedJob.status === 'disputed' ? 'text-red-400' : ''}
                     font-semibold
                   `}>
-                    {selectedJob.status === 'open' ? 'Aberta' : ''}
-                    {selectedJob.status === 'accepted' ? 'Aceita' : ''}
-                    {selectedJob.status === 'in_progress' ? 'Em Andamento' : ''}
-                    {selectedJob.status === 'completed' ? 'Completa - Aguardando Aprovação' : ''}
-                    {selectedJob.status === 'approved' ? 'Aprovada' : ''}
-                    {selectedJob.status === 'disputed' ? 'Em Disputa' : ''}
-                    {selectedJob.status === 'closed' ? 'Encerrada' : ''}
+                    {selectedJob.status === 'open' ? 'Open' : ''}
+                    {selectedJob.status === 'accepted' ? 'Accepted' : ''}
+                    {selectedJob.status === 'in_progress' ? 'In Progress' : ''}
+                    {selectedJob.status === 'completed' ? 'Complete - Awaiting Approval' : ''}
+                    {selectedJob.status === 'approved' ? 'Approved' : ''}
+                    {selectedJob.status === 'disputed' ? 'In Dispute' : ''}
+                    {selectedJob.status === 'closed' ? 'Closed' : ''}
                   </span>
                 </div>
                 
                 <div>
-                  <span className="text-orange-300 block">Orçamento:</span>
+                  <span className="text-orange-300 block">Budget:</span>
                   <span className="text-white">{selectedJob.budget} {selectedJob.currency}</span>
                 </div>
                 
                 <div>
-                  <span className="text-orange-300 block">Prazo:</span>
+                  <span className="text-orange-300 block">Deadline:</span>
                   <span className="text-white">
                     {selectedJob.deadline instanceof Date 
                       ? selectedJob.deadline.toLocaleDateString() 
@@ -1591,19 +1591,19 @@ const PostJobPage = (): JSX.Element => {
                 </div>
                 
                 <div>
-                  <span className="text-orange-300 block">Categoria:</span>
+                  <span className="text-orange-300 block">Category:</span>
                   <span className="text-white">{selectedJob.category}</span>
                 </div>
                 
                 {selectedJob.acceptedByName && selectedJob.status !== 'open' && (
                   <div>
-                    <span className="text-orange-300 block">Aceito por:</span>
+                    <span className="text-orange-300 block">Accepted by:</span>
                     <span className="text-white">{selectedJob.acceptedByName}</span>
                   </div>
                 )}
                 
                 <div>
-                  <span className="text-orange-300 block">Habilidades Necessárias:</span>
+                  <span className="text-orange-300 block">Required Skills:</span>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {selectedJob.requiredSkills?.map((skill, index) => (
                       <span key={index} className="bg-gray-800 text-xs text-orange-300 px-2 py-1 rounded-full">
@@ -1614,7 +1614,7 @@ const PostJobPage = (): JSX.Element => {
                 </div>
                 
                 <div>
-                  <span className="text-orange-300 block">Descrição:</span>
+                  <span className="text-orange-300 block">Description:</span>
                   <p className="text-white mt-2 whitespace-pre-line">{selectedJob.description}</p>
                 </div>
                 
@@ -1624,20 +1624,20 @@ const PostJobPage = (): JSX.Element => {
                       onClick={() => selectedJob.id && handleApproveJob(selectedJob.id)}
                       className="w-full bg-green-500 hover:bg-green-600 text-white"
                     >
-                      Aprovar Tarefa Concluída
+                      Approve Completed Task
                     </button>
                   </div>
                 )}
               </div>
             </div>
             
-            {/* Painel direito: Sistema de mensagens */}
+            {/* Right panel: Message system */}
             <div className="md:col-span-2 bg-black/50 p-6 rounded-lg border border-gray-800">
-              <h3 className="text-xl font-semibold text-orange-400 mb-4">Mensagens</h3>
+              <h3 className="text-xl font-semibold text-orange-400 mb-4">Messages</h3>
               
               {selectedJob.status === 'open' ? (
                 <div className="text-center py-8 text-gray-400">
-                  Mensagens estarão disponíveis quando alguém aceitar esta micro-tarefa.
+                  Messages will be available when someone accepts this micro-task.
                 </div>
               ) : (
                 <MessageSystem 
@@ -1654,10 +1654,10 @@ const PostJobPage = (): JSX.Element => {
       );
     }
     
-    return <div>Carregando...</div>;
+    return <div>Loading...</div>;
   };
 
-  // Renderizar conteúdo com base na aba ativa
+  // Render content based on active tab
   const renderContent = () => {
     switch (activeTab) {
       case "profile":
@@ -1969,7 +1969,7 @@ const PostJobPage = (): JSX.Element => {
       
       setLearn2EarnData(updatedData);
     } else if (name === 'maxParticipants') {
-      // Tratamento especial para maxParticipants para permitir que seja undefined
+      // Special treatment for maxParticipants to allow it to be undefined
       setLearn2EarnData({...learn2earnData, [name]: value ? Number(value) : undefined});
     } else {
       setLearn2EarnData({...learn2earnData, [name]: value ?? ""});
@@ -2324,14 +2324,14 @@ const PostJobPage = (): JSX.Element => {
   };
 
   // Add rendering for the Learn2Earn tab (changed from "Add rendering for the Airdrops tab")
-// Adicionando um novo estado para controlar as subfunções do Learn2Earn
+// Adding a new state to control the subfunctions of Learn2Earn
 const [learn2EarnSubTab, setLearn2EarnSubTab] = useState<'new' | 'my'>('my');
 
-// Função para renderizar o Learn2Earn com subfunções
+// Function to render Learn2Earn with subfunctions
 const renderLearn2Earn = () => {
   return (
     <div>
-      {/* Guias para mudar entre "My L2L" e "New L2L" */}
+      {/* Tabs to switch between "My L2L" and "New L2L" */}
       <div className="flex mb-6">
         <button
           onClick={() => setLearn2EarnSubTab('my')}
@@ -2355,13 +2355,13 @@ const renderLearn2Earn = () => {
         </button>
       </div>
 
-      {/* Renderizar o subcomponente apropriado baseado no subtab selecionado */}
+      {/* Render the appropriate subcomponent based on the selected subtab */}
       {learn2EarnSubTab === 'new' ? renderNewLearn2Earn() : renderMyLearn2Earn(syncWarnings, syncing)}
     </div>
   );
 }
 
-// Função para renderizar a criação de novo Learn2Earn
+// Function to render the creation of new Learn2Earn
 const renderNewLearn2Earn = () => {
   if (isLoadingLearn2Earn) {
     return <p className="text-gray-300 py-4">Loading...</p>;
@@ -2372,7 +2372,7 @@ const renderNewLearn2Earn = () => {
       <div className="bg-black/50 p-6 rounded-lg">
         <h3 className="text-2xl font-semibold text-orange-500 mb-4">Create New Learn2Earn</h3>
         
-        {/* ... conteúdo existente para o step 'info' ... */}
+        {/* ... existing content for step 'info' ... */}
         <form onSubmit={(e) => {
           e.preventDefault();
           setLearn2EarnStep('tasks');
@@ -2423,7 +2423,7 @@ const renderNewLearn2Earn = () => {
             )}
           </div>
 
-          {/* ... resto do formulário existente ... */}
+          {/* ... rest of the existing form ... */}
           <div className="mb-4">
             <label className="block text-gray-300 mb-2">Learn2Earn Title</label>
             <input 
@@ -2576,7 +2576,7 @@ const renderNewLearn2Earn = () => {
       <div className="bg-black/50 p-6 rounded-lg">
         <h3 className="text-2xl font-semibold text-orange-500 mb-4">Add Learning Tasks</h3>
         
-        {/* ... conteúdo existente para o step 'tasks' ... */}
+        {/* ... existing content for step 'tasks' ... */}
         {learn2earnData.tasks.length > 0 && (
           <div className="mb-6">
             <h4 className="text-xl font-medium text-white mb-2">Current Tasks</h4>
@@ -2828,7 +2828,7 @@ const renderNewLearn2Earn = () => {
   return <div>Loading...</div>;
 };
 
-// Função para renderizar a lista de Learn2Earn da empresa
+// Function to render the company's Learn2Earn list
 const renderMyLearn2Earn = (syncWarnings: {id:string; msg:string}[], syncing: boolean) => {
   if (isLoadingLearn2Earn || syncing) {
     return <p className="text-gray-300 py-4">Loading & synchronizing Learn2Earn opportunities...</p>;
@@ -2853,7 +2853,7 @@ const renderMyLearn2Earn = (syncWarnings: {id:string; msg:string}[], syncing: bo
           {syncing ? 'Sincronizando...' : 'Sincronizar status'}
         </button>
       </div>
-      {/* ...restante do renderMyLearn2Earn... */}
+      {/* ...rest of renderMyLearn2Earn... */}
       <div>
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-semibold text-orange-500">Your Learn2Earn Opportunities</h3>
@@ -2976,7 +2976,7 @@ const renderMyLearn2Earn = (syncWarnings: {id:string; msg:string}[], syncing: bo
                   </button>
                 </div>
                 
-                {/* Progress bar para tokens distribuídos */}
+                {/* Progress bar for distributed tokens */}
                 <div className="mt-4">
                   <div className="flex justify-between text-xs text-gray-400 mb-1">
                     <span>Token Distribution Progress</span>
@@ -2998,36 +2998,36 @@ const renderMyLearn2Earn = (syncWarnings: {id:string; msg:string}[], syncing: bo
   );
 };
 
-  // Adicionar nova aba para Instant Jobs
+  // Add new tab for Instant Jobs
   const tabs = [
     { id: "profile", label: "Company Profile" },
     { id: "jobs", label: "Jobs" },
     { id: "instantJobs", label: "Instant Jobs" },
     { id: "settings", label: "Settings" },
-    // Outras tabs existentes...
+    // Other existing tabs...
   ];
 
-  // Adicionar estado para armazenar as redes disponíveis
+  // Add state to store available networks
   const [availableNetworks, setAvailableNetworks] = useState<string[]>([]);
   const [isLoadingNetworks, setIsLoadingNetworks] = useState(false);
 
-  // Função para buscar redes disponíveis do Firestore
+  // Function to fetch available networks from Firestore
   const fetchAvailableNetworks = useCallback(async () => {
     setIsLoadingNetworks(true);
     try {
-      // Buscar as redes disponíveis usando o serviço do contrato
+      // Fetch available networks using the contract service
       const networks = await learn2earnContractService.getSupportedNetworks();
-      console.log("Redes disponíveis encontradas:", networks);
+      console.log("Available networks found:", networks);
       setAvailableNetworks(networks);
     } catch (error) {
-      console.error("Erro ao buscar redes disponíveis:", error);
+      console.error("Error fetching available networks:", error);
       setAvailableNetworks([]);
     } finally {
       setIsLoadingNetworks(false);
     }
   }, []);
 
-  // Buscar redes disponíveis quando o componente for montado ou quando a aba Learn2Earn for selecionada
+  // Fetch available networks when the component mounts or when the Learn2Earn tab is selected
   useEffect(() => {
     if (activeTab === "learn2earn") {
       fetchAvailableNetworks();
@@ -3035,17 +3035,17 @@ const renderMyLearn2Earn = (syncWarnings: {id:string; msg:string}[], syncing: bo
     }
   }, [activeTab, fetchAvailableNetworks, fetchFeePercentage]);
 
-  // Função dummy para evitar erro de referência
+  // Dummy function to avoid reference error
 const fetchL2LStats = (l2lId: string) => {
-  // Implementação futura: buscar estatísticas reais do contrato
-  // Por enquanto, não faz nada
+  // Future implementation: fetch real stats from the contract
+  // For now, do nothing
 };
 
-  // Adiciona estados de sincronização no componente principal
+  // Add sync states in the main component
   const [syncWarnings, setSyncWarnings] = useState<{id:string; msg:string}[]>([]);
   const [syncing, setSyncing] = useState(false);
 
-  // Sincronização automática de status Learn2Earn
+  // Automatic synchronization of Learn2Earn statuses
   useEffect(() => {
     const syncStatuses = async () => {
       if (!learn2earn || learn2earn.length === 0) return;
@@ -3071,11 +3071,11 @@ const fetchL2LStats = (l2lId: string) => {
           if (onChainActive !== firebaseActive) {
             const newStatus = onChainActive ? 'active' : 'completed';
             await updateDoc(doc(db, "learn2earn", l2l.id), { status: newStatus });
-            warnings.push({id: l2l.id, msg: `Status sincronizado: Blockchain=${onChainActive ? 'Ativo' : 'Inativo'}, Firebase=${l2l.status}`});
+            warnings.push({id: l2l.id, msg: `Status synchronized: Blockchain=${onChainActive ? 'Active' : 'Inactive'}, Firebase=${l2l.status}`});
             l2l.status = newStatus;
           }
         } catch (err) {
-          warnings.push({id: l2l.id, msg: `Erro ao sincronizar status do Learn2Earn: ${l2l.title}`});
+          warnings.push({id: l2l.id, msg: `Error synchronizing Learn2Earn status: ${l2l.title}`});
         }
       }
       setSyncWarnings(warnings);
@@ -3085,7 +3085,7 @@ const fetchL2LStats = (l2lId: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(learn2earn)]);
 
-  // Função manual para sincronizar status
+  // Manual function to synchronize statuses
 const manualSyncStatuses = async () => {
   if (!learn2earn || learn2earn.length === 0) return;
   setSyncing(true);
@@ -3110,11 +3110,11 @@ const manualSyncStatuses = async () => {
       if (onChainActive !== firebaseActive) {
         const newStatus = onChainActive ? 'active' : 'completed';
         await updateDoc(doc(db, "learn2earn", l2l.id), { status: newStatus });
-        warnings.push({id: l2l.id, msg: `Status sincronizado: Blockchain=${onChainActive ? 'Ativo' : 'Inativo'}, Firebase=${l2l.status}`});
+        warnings.push({id: l2l.id, msg: `Status synchronized: Blockchain=${onChainActive ? 'Active' : 'Inactive'}, Firebase=${l2l.status}`});
         l2l.status = newStatus;
       }
     } catch (err) {
-      warnings.push({id: l2l.id, msg: `Erro ao sincronizar status do Learn2Earn: ${l2l.title}`});
+      warnings.push({id: l2l.id, msg: `Error synchronizing Learn2Earn status: ${l2l.title}`});
     }
   }
   setSyncWarnings(warnings);

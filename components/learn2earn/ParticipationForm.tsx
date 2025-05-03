@@ -199,13 +199,13 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
           // We don't need to show this error to the user as the claim was successful
         }
       } else if (result.alreadyClaimed) {
-        // Se o usuário já reivindicou tokens para esta oportunidade
+        // If the user has already claimed tokens for this opportunity
         setAlreadyClaimed(true);
       } else if (result.invalidId) {
-        // Se o ID do Learn2Earn não está no formato correto
+        // If the Learn2Earn ID is not in the correct format
         setInvalidId(true);
       } else if (result.invalidSignature) {
-        // Se a assinatura é inválida
+        // If the signature is invalid
         setInvalidSignature(true);
       } else if (result.specificError === "ended") {
         // The Learn2Earn opportunity has ended
@@ -214,10 +214,10 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
         // There's a time synchronization issue between the blockchain and our database
         setHasTimeSyncIssue(true);
       } else if (result.notEligible) {
-        // Se o usuário não é elegível para reivindicar tokens
+        // If the user is not eligible to claim tokens
         setError("You are not eligible to claim tokens for this Learn2Earn opportunity. Make sure you've completed all tasks.");
       } else if (result.notSupported) {
-        // Se a rede não é suportada
+        // If the network is not supported
         setNetworkMismatch(true);
         setError(`This network (${network}) is not currently supported for Learn2Earn.`);
       } else {
