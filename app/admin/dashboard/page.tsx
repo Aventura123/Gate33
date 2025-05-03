@@ -3457,6 +3457,56 @@ const fetchEmployersList = async () => {
                   </div>
                 </div>
               )}
+
+              {activeTab === "learn2earn" && activeSubTab === "list" && (
+                <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                  <h3 className="text-xl text-orange-400 mb-4">Learn2Earn Opportunities</h3>
+                  {learn2earnLoading && <p className="text-gray-400">Loading opportunities...</p>}
+                  {learn2earnError && <p className="text-red-400">{learn2earnError}</p>}
+                  {!learn2earnLoading && !learn2earnError && learn2earns.length === 0 && <p className="text-gray-400">No Learn2Earn opportunities available.</p>}
+                  <ul className="space-y-4">
+                    {learn2earns.map((l2e) => (
+                      <li key={l2e.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-4 bg-black/30 rounded-lg border border-gray-700">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-orange-500 font-bold text-lg">{l2e.title}</span>
+                            <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${l2e.status === 'active' ? 'bg-green-700 text-green-300' : l2e.status === 'paused' ? 'bg-yellow-700 text-yellow-300' : 'bg-gray-700 text-gray-300'}`}>{l2e.status?.toUpperCase()}</span>
+                          </div>
+                          <div className="text-gray-300 text-sm mb-1">{l2e.description}</div>
+                          <div className="flex flex-wrap gap-4 text-xs text-gray-400 mb-1">
+                            <span>Network: <b>{l2e.network}</b></span>
+                            <span>Token: <b>{l2e.tokenSymbol}</b></span>
+                            <span>Amount: <b>{l2e.tokenAmount}</b></span>
+                            <span>Per User: <b>{l2e.tokenPerParticipant}</b></span>
+                            <span>Participants: <b>{l2e.totalParticipants || 0} / {l2e.maxParticipants || '∞'}</b></span>
+                            <span>Start: {formatFirestoreTimestamp(l2e.startDate)}</span>
+                            <span>End: {formatFirestoreTimestamp(l2e.endDate)}</span>
+                          </div>
+                          <div className="text-xs text-gray-500">ID: {l2e.id}</div>
+                        </div>
+                        <div className="flex flex-col gap-2 mt-4 md:mt-0 md:ml-6 min-w-[160px]">
+                          <button
+                            className={`px-3 py-1 rounded ${l2e.status === 'active' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white`}
+                            disabled={pausingLearn2EarnId === l2e.id}
+                            onClick={() => handleToggleLearn2EarnStatus(l2e.id, l2e.status)}
+                          >
+                            {pausingLearn2EarnId === l2e.id
+                              ? (l2e.status === 'active' ? 'Pausing...' : 'Activating...')
+                              : (l2e.status === 'active' ? 'Pause' : 'Activate')}
+                          </button>
+                          <button
+                            className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white"
+                            disabled={deletingLearn2EarnId === l2e.id}
+                            onClick={() => handleDeleteLearn2Earn(l2e.id)}
+                          >
+                            {deletingLearn2EarnId === l2e.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </>
           )}
         </div>

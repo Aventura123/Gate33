@@ -65,7 +65,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({ learn2earnId, tok
     setInvalidSignature(false);
     
     try {
-      // Integração real com o contrato Learn2Earn
+      // Usa apenas learn2earnId, pois firebaseId não está disponível
       const result = await learn2earnContractService.claimLearn2Earn(network, learn2earnId);
       
       if (result.success) {

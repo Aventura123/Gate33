@@ -2330,7 +2330,7 @@ const renderLearn2Earn = () => {
       </div>
 
       {/* Renderizar o subcomponente apropriado baseado no subtab selecionado */}
-      {learn2EarnSubTab === 'new' ? renderNewLearn2Earn() : renderMyLearn2Earn()}
+      {learn2EarnSubTab === 'new' ? renderNewLearn2Earn() : renderMyLearn2Earn(syncWarnings, syncing)}
     </div>
   );
 }
@@ -2803,161 +2803,171 @@ const renderNewLearn2Earn = () => {
 };
 
 // Função para renderizar a lista de Learn2Earn da empresa
-const renderMyLearn2Earn = () => {
-  if (isLoadingLearn2Earn) {
-    return <p className="text-gray-300 py-4">Loading Learn2Earn opportunities...</p>;
+const renderMyLearn2Earn = (syncWarnings: {id:string; msg:string}[], syncing: boolean) => {
+  if (isLoadingLearn2Earn || syncing) {
+    return <p className="text-gray-300 py-4">Loading & synchronizing Learn2Earn opportunities...</p>;
   }
-
-  // Função para buscar estatísticas de um Learn2Earn
-  const fetchL2LStats = async (l2lId: string) => {
-    try {
-      // Implementação futura: buscar estatísticas reais do contrato
-      console.log(`Fetching stats for Learn2Earn: ${l2lId}`);
-    } catch (error) {
-      console.error(`Error fetching stats for Learn2Earn ${l2lId}:`, error);
-    }
-  };
-  
+  // ...existing code...
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-semibold text-orange-500">Your Learn2Earn Opportunities</h3>
+      <div className="flex justify-between items-center mb-4">
+        {syncWarnings.length > 0 && (
+          <div className="bg-yellow-900/40 border border-yellow-600 text-yellow-300 p-3 rounded flex-1 mr-4">
+            <b>Sincronização de status:</b>
+            <ul className="list-disc ml-5">
+              {syncWarnings.map(w => <li key={w.id}>{w.msg}</li>)}
+            </ul>
+          </div>
+        )}
         <button
-          onClick={() => {
-            setLearn2EarnSubTab('new');
-            setLearn2EarnStep('info');
-          }}
-          className="bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600"
+          className={`bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded ${syncing ? 'opacity-60 cursor-not-allowed' : ''}`}
+          disabled={syncing}
+          onClick={manualSyncStatuses}
         >
-          Create New Learn2Earn
+          {syncing ? 'Sincronizando...' : 'Sincronizar status'}
         </button>
       </div>
-      
-      {learn2earn.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-gray-300">You haven't created any Learn2Earn opportunities yet.</p>
+      {/* ...restante do renderMyLearn2Earn... */}
+      <div>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-2xl font-semibold text-orange-500">Your Learn2Earn Opportunities</h3>
           <button
             onClick={() => {
               setLearn2EarnSubTab('new');
               setLearn2EarnStep('info');
             }}
-            className="mt-4 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
+            className="bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600"
           >
-            Create Your First Learn2Earn
+            Create New Learn2Earn
           </button>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {learn2earn.map((item) => (
-            <div key={item.id} className="bg-black/30 p-6 rounded-lg border border-gray-700">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="text-xl font-medium text-orange-300">{item.title}</h4>
-                  <div className="mt-2">
-                    <p className="text-gray-300">{item.description}</p>
+        
+        {learn2earn.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-300">You haven't created any Learn2Earn opportunities yet.</p>
+            <button
+              onClick={() => {
+                setLearn2EarnSubTab('new');
+                setLearn2EarnStep('info');
+              }}
+              className="mt-4 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
+            >
+              Create Your First Learn2Earn
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {learn2earn.map((item) => (
+              <div key={item.id} className="bg-black/30 p-6 rounded-lg border border-gray-700">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="text-xl font-medium text-orange-300">{item.title}</h4>
+                    <div className="mt-2">
+                      <p className="text-gray-300">{item.description}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex">
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                    item.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                    item.status === 'completed' ? 'bg-orange-500/20 text-orange-400' :
-                    'bg-gray-500/20 text-gray-400'
-                  }`}>
-                    {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-black/20 p-3 rounded-md">
-                  <div className="text-sm text-gray-400">Token</div>
-                  <div className="text-lg font-medium text-white">
-                    {item.tokenAmount} {item.tokenSymbol}
-                  </div>
-                </div>
-                <div className="bg-black/20 p-3 rounded-md">
-                  <div className="text-sm text-gray-400">Reward Per User</div>
-                  <div className="text-lg font-medium text-white">
-                    {item.tokenPerParticipant} {item.tokenSymbol}
-                  </div>
-                </div>
-                <div className="bg-black/20 p-3 rounded-md">
-                  <div className="text-sm text-gray-400">Participants</div>
-                  <div className="text-lg font-medium text-white">
-                    {item.totalParticipants || 0} / {item.maxParticipants || '∞'}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-black/20 p-3 rounded-md">
-                  <div className="text-sm text-gray-400">Start Date</div>
-                  <div className="text-white">
-                    {formatDate(item.startDate)}
-                  </div>
-                </div>
-                <div className="bg-black/20 p-3 rounded-md">
-                  <div className="text-sm text-gray-400">End Date</div>
-                  <div className="text-white">
-                    {formatDate(item.endDate)}
-                  </div>
-                </div>
-                <div className="bg-black/20 p-3 rounded-md col-span-1 md:col-span-2">
-                  <div className="text-sm text-gray-400">Network</div>
-                  <div className="flex items-center">
-                    <span className="bg-gray-700 text-xs px-2 py-1 rounded mr-2">
-                      {(item.network ?? "N/A").toUpperCase()}
+                  <div className="flex">
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                      item.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                      item.status === 'completed' ? 'bg-orange-500/20 text-orange-400' :
+                      'bg-gray-500/20 text-gray-400'
+                    }`}>
+                      {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                     </span>
-                    {item.contractAddress && (
-                      <span className="text-xs text-gray-400 truncate">
-                        Contract: {item.contractAddress.substring(0, 8)}...{item.contractAddress.substring(item.contractAddress.length - 6)}
+                  </div>
+                </div>
+                
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-black/20 p-3 rounded-md">
+                    <div className="text-sm text-gray-400">Token</div>
+                    <div className="text-lg font-medium text-white">
+                      {item.tokenAmount} {item.tokenSymbol}
+                    </div>
+                  </div>
+                  <div className="bg-black/20 p-3 rounded-md">
+                    <div className="text-sm text-gray-400">Reward Per User</div>
+                    <div className="text-lg font-medium text-white">
+                      {item.tokenPerParticipant} {item.tokenSymbol}
+                    </div>
+                  </div>
+                  <div className="bg-black/20 p-3 rounded-md">
+                    <div className="text-sm text-gray-400">Participants</div>
+                    <div className="text-lg font-medium text-white">
+                      {item.totalParticipants || 0} / {item.maxParticipants || '∞'}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-black/20 p-3 rounded-md">
+                    <div className="text-sm text-gray-400">Start Date</div>
+                    <div className="text-white">
+                      {formatDate(item.startDate)}
+                    </div>
+                  </div>
+                  <div className="bg-black/20 p-3 rounded-md">
+                    <div className="text-sm text-gray-400">End Date</div>
+                    <div className="text-white">
+                      {formatDate(item.endDate)}
+                    </div>
+                  </div>
+                  <div className="bg-black/20 p-3 rounded-md col-span-1 md:col-span-2">
+                    <div className="text-sm text-gray-400">Network</div>
+                    <div className="flex items-center">
+                      <span className="bg-gray-700 text-xs px-2 py-1 rounded mr-2">
+                        {(item.network ?? "N/A").toUpperCase()}
                       </span>
-                    )}
+                      {item.contractAddress && (
+                        <span className="text-xs text-gray-400 truncate">
+                          Contract: {item.contractAddress.substring(0, 8)}...{item.contractAddress.substring(item.contractAddress.length - 6)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 flex space-x-2 justify-end">
+                  {item.status === 'draft' ? (
+                    <button 
+                      onClick={() => toggle(item, 'active')}
+                      className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
+                    >
+                      Activate
+                    </button>
+                  ) : item.status === 'active' ? (
+                    <button 
+                      onClick={() => toggle(item, 'completed')}
+                      className="bg-orange-600 text-white px-3 py-1 rounded-md hover:bg-orange-700"
+                    >
+                      End Campaign
+                    </button>
+                  ) : null}
+                  <button
+                    onClick={() => fetchL2LStats(item.id)}
+                    className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                  >
+                    View Details
+                  </button>
+                </div>
+                
+                {/* Progress bar para tokens distribuídos */}
+                <div className="mt-4">
+                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Token Distribution Progress</span>
+                    <span>{Math.min(100, Math.round((item.totalParticipants || 0) * item.tokenPerParticipant / item.tokenAmount * 100))}%</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2.5">
+                    <div 
+                      className="bg-orange-500 h-2.5 rounded-full progress-bar" 
+                      data-progress-width={`${Math.min(100, Math.round((item.totalParticipants || 0) * item.tokenPerParticipant / item.tokenAmount * 100))}%`}
+                    ></div>
                   </div>
                 </div>
               </div>
-              
-              <div className="mt-4 flex space-x-2 justify-end">
-                {item.status === 'draft' ? (
-                  <button 
-                    onClick={() => toggle(item, 'active')}
-                    className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
-                  >
-                    Activate
-                  </button>
-                ) : item.status === 'active' ? (
-                  <button 
-                    onClick={() => toggle(item, 'completed')}
-                    className="bg-orange-600 text-white px-3 py-1 rounded-md hover:bg-orange-700"
-                  >
-                    End Campaign
-                  </button>
-                ) : null}
-                <button
-                  onClick={() => fetchL2LStats(item.id)}
-                  className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
-                >
-                  View Details
-                </button>
-              </div>
-              
-              {/* Progress bar para tokens distribuídos */}
-              <div className="mt-4">
-                <div className="flex justify-between text-xs text-gray-400 mb-1">
-                  <span>Token Distribution Progress</span>
-                  <span>{Math.min(100, Math.round((item.totalParticipants || 0) * item.tokenPerParticipant / item.tokenAmount * 100))}%</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2.5">
-                  <div 
-                    className="bg-orange-500 h-2.5 rounded-full progress-bar" 
-                    data-progress-width={`${Math.min(100, Math.round((item.totalParticipants || 0) * item.tokenPerParticipant / item.tokenAmount * 100))}%`}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -2998,6 +3008,92 @@ const renderMyLearn2Earn = () => {
       fetchFeePercentage(); // Now this reference is valid
     }
   }, [activeTab, fetchAvailableNetworks, fetchFeePercentage]);
+
+  // Função dummy para evitar erro de referência
+const fetchL2LStats = (l2lId: string) => {
+  // Implementação futura: buscar estatísticas reais do contrato
+  // Por enquanto, não faz nada
+};
+
+  // Adiciona estados de sincronização no componente principal
+  const [syncWarnings, setSyncWarnings] = useState<{id:string; msg:string}[]>([]);
+  const [syncing, setSyncing] = useState(false);
+
+  // Sincronização automática de status Learn2Earn
+  useEffect(() => {
+    const syncStatuses = async () => {
+      if (!learn2earn || learn2earn.length === 0) return;
+      setSyncing(true);
+      const warnings: {id:string; msg:string}[] = [];
+      for (const l2l of learn2earn) {
+        if (!l2l.learn2earnId || !l2l.network) continue;
+        try {
+          const contractAddresses = await learn2earnContractService.getContractAddresses(l2l.network);
+          if (!contractAddresses.contractAddress) continue;
+          const provider = await getWeb3Provider();
+          if (!provider) continue;
+          const contract = new (window as any).ethers.Contract(
+            contractAddresses.contractAddress,
+            [
+              "function learn2earns(uint256) view returns (string id, address tokenAddress, uint256 tokenAmount, uint256 startTime, uint256 endTime, uint256 maxParticipants, uint256 participantCount, bool active)"
+            ],
+            provider
+          );
+          const onChain = await contract.learn2earns(Number(l2l.learn2earnId));
+          const onChainActive = Boolean(onChain.active);
+          const firebaseActive = l2l.status === 'active';
+          if (onChainActive !== firebaseActive) {
+            const newStatus = onChainActive ? 'active' : 'completed';
+            await updateDoc(doc(db, "learn2earn", l2l.id), { status: newStatus });
+            warnings.push({id: l2l.id, msg: `Status sincronizado: Blockchain=${onChainActive ? 'Ativo' : 'Inativo'}, Firebase=${l2l.status}`});
+            l2l.status = newStatus;
+          }
+        } catch (err) {
+          warnings.push({id: l2l.id, msg: `Erro ao sincronizar status do Learn2Earn: ${l2l.title}`});
+        }
+      }
+      setSyncWarnings(warnings);
+      setSyncing(false);
+    };
+    syncStatuses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(learn2earn)]);
+
+  // Função manual para sincronizar status
+const manualSyncStatuses = async () => {
+  if (!learn2earn || learn2earn.length === 0) return;
+  setSyncing(true);
+  const warnings: {id:string; msg:string}[] = [];
+  for (const l2l of learn2earn) {
+    if (!l2l.learn2earnId || !l2l.network) continue;
+    try {
+      const contractAddresses = await learn2earnContractService.getContractAddresses(l2l.network);
+      if (!contractAddresses.contractAddress) continue;
+      const provider = await getWeb3Provider();
+      if (!provider) continue;
+      const contract = new (window as any).ethers.Contract(
+        contractAddresses.contractAddress,
+        [
+          "function learn2earns(uint256) view returns (string id, address tokenAddress, uint256 tokenAmount, uint256 startTime, uint256 endTime, uint256 maxParticipants, uint256 participantCount, bool active)"
+        ],
+        provider
+      );
+      const onChain = await contract.learn2earns(Number(l2l.learn2earnId));
+      const onChainActive = Boolean(onChain.active);
+      const firebaseActive = l2l.status === 'active';
+      if (onChainActive !== firebaseActive) {
+        const newStatus = onChainActive ? 'active' : 'completed';
+        await updateDoc(doc(db, "learn2earn", l2l.id), { status: newStatus });
+        warnings.push({id: l2l.id, msg: `Status sincronizado: Blockchain=${onChainActive ? 'Ativo' : 'Inativo'}, Firebase=${l2l.status}`});
+        l2l.status = newStatus;
+      }
+    } catch (err) {
+      warnings.push({id: l2l.id, msg: `Erro ao sincronizar status do Learn2Earn: ${l2l.title}`});
+    }
+  }
+  setSyncWarnings(warnings);
+  setSyncing(false);
+};
 
   return (
     <Layout>
