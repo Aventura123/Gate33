@@ -225,6 +225,35 @@ export default function Learn2EarnPage() {
               ))}
             </div>
           )}
+          
+          {/* Informative Card about Learn2Earn - Redesigned in English and more compact */}
+          <div className="mt-16 bg-gradient-to-br from-black/80 to-orange-900/40 border-2 border-orange-500 rounded-lg shadow-lg shadow-orange-500/20">
+            <div className="relative p-6">
+              {/* Decorative element */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full -mr-8 -mt-8 z-0"></div>
+              
+              <div className="relative z-10">
+                <h2 className="text-2xl font-bold text-orange-400 mb-4 text-center">What is Learn2Earn?</h2>
+                
+                <div className="flex flex-col md:flex-row gap-4 items-center">
+                  <div className="md:w-1/5 text-center">
+                    <div className="inline-block p-4 bg-orange-500/20 rounded-full">
+                      <span className="text-5xl">🎓</span>
+                    </div>
+                  </div>
+                  
+                  <div className="md:w-4/5 text-gray-200">
+                    <p className="mb-3 text-base">
+                      Learn2Earn is an interactive educational platform where you can learn about blockchain and crypto while earning token rewards.
+                    </p>
+                    <p className="text-base">
+                      Complete modules, quizzes and tasks from project teams to gain knowledge about blockchain technology and receive cryptocurrency tokens as rewards.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </Layout>
