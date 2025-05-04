@@ -252,19 +252,14 @@ export async function POST(request: NextRequest) {
           message: `Token distribution completed successfully.`
         });
       } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error("❌ [API] Error distributing tokens:", error.message);
-          return NextResponse.json(
-            { success: false, error: 'Error distributing tokens', details: error.message },
-            { status: 500 }
-          );
-        } else {
-          console.error("❌ [API] Unknown error distributing tokens:", error);
-          return NextResponse.json(
-            { success: false, error: 'Unknown error distributing tokens', details: String(error) },
-            { status: 500 }
-          );
-        }
+        console.error("❌ [API] Error distributing tokens:", error);
+
+        // Ensure the error is serialized properly
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return NextResponse.json(
+          { success: false, error: 'Error distributing tokens', details: errorMessage },
+          { status: 500 }
+        );
       }
     } catch (error: unknown) {
       if (error instanceof Error) {

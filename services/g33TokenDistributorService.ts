@@ -3,23 +3,23 @@ import { collection, addDoc, getDocs, query, where, doc, getDoc, updateDoc } fro
 import { db } from '../lib/firebase';
 import dotenv from 'dotenv';
 
-// Carregar variáveis de ambiente do arquivo .env
+// Load environment variables from .env file
 dotenv.config();
 
-// Verificar se a chave privada está disponível
+// Check if the private key is available
 if (!process.env.DISTRIBUTOR_PRIVATE_KEY) {
-  console.error("DISTRIBUTOR_PRIVATE_KEY não encontrada. Verifique o arquivo .env ou as configurações do ambiente.");
+  console.error("DISTRIBUTOR_PRIVATE_KEY not found. Check the .env file or environment settings.");
 } else {
-  console.log("DISTRIBUTOR_PRIVATE_KEY carregada com sucesso.");
+  console.log("DISTRIBUTOR_PRIVATE_KEY loaded successfully.");
 }
 
-// Removendo o carregamento de dotenv
-// As variáveis de ambiente devem ser configuradas no ambiente de execução ou no arquivo .env.local
+// Removing dotenv loading
+// Environment variables should be set in the runtime environment or .env.local file
 
-// Log para verificar se as variáveis de ambiente estão acessíveis
-console.log("Variáveis de ambiente disponíveis:", Object.keys(process.env));
+// Log to check if environment variables are accessible
+console.log("Available environment variables:", Object.keys(process.env));
 
-// ABI simplificado do contrato G33TokenDistributor
+// Simplified ABI of the G33TokenDistributor contract
 const DISTRIBUTOR_ABI = [
   "function distributeTokens(address donor, uint256 donationAmountUsd) external",
   "function getAvailableTokens() external view returns (uint256)",
@@ -29,7 +29,7 @@ const DISTRIBUTOR_ABI = [
   "function totalDonationsUsd() external view returns (uint256)"
 ];
 
-// Lista de URLs RPC confiáveis para a rede Polygon
+// List of reliable RPC URLs for the Polygon network
 const POLYGON_RPC_URLS = [
   "https://polygon-rpc.com",
   "https://polygon.llamarpc.com",
@@ -37,49 +37,49 @@ const POLYGON_RPC_URLS = [
   "https://polygon-mainnet.public.blastapi.io",
   "https://polygon-bor.publicnode.com",
   "https://polygon.meowrpc.com",
-  "wss://polygon-mainnet.g.alchemy.com/v2/demo", // Alchemy WS público
+  "wss://polygon-mainnet.g.alchemy.com/v2/demo", // Alchemy public WS
   "wss://ws-matic-mainnet.chainstacklabs.com"   // ChainStack WS
 ];
 
-// Lista de proxies CORS confiáveis que podem ajudar a contornar restrições de rede
+// List of reliable CORS proxies that can help bypass network restrictions
 const CORS_PROXIES = [
   "https://corsproxy.io/?",
   "https://cors-anywhere.herokuapp.com/",
   "https://api.allorigins.win/raw?url="
 ];
 
-// Endpoint RPC confiável para usar com proxy
+// Reliable RPC endpoint to use with proxy
 const RELIABLE_RPC_ENDPOINTS = [
   "https://polygon-rpc.com",
   "https://polygon.llamarpc.com"
 ];
 
-// Endpoints locais para desenvolvimento
+// Local endpoints for development
 const LOCAL_RPC_URLS = [
-  "http://127.0.0.1:8545", // Ganache / Hardhat padrão
-  "http://localhost:8545"  // Alternativo
+  "http://127.0.0.1:8545", // Default Ganache / Hardhat
+  "http://localhost:8545"  // Alternative
 ];
 
-// Endereço do contrato distribuidor e token definidos via variável de ambiente
+// Distributor and token contract addresses defined via environment variable
 const DISTRIBUTOR_ADDRESS = process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS || "0x137c762cb3eea5c8e5a6ed2fdf41dd47b5e13455";
 const G33_TOKEN_ADDRESS = process.env.G33_TOKEN_ADDRESS || "0xc6099a207e9d2d37d1203f060d2e77c1e05008fa";
 
-// Interface para registro de doações
+// Interface for donation records
 interface TokenDonation {
   donorAddress: string;
-  donationAmount: number; // valor em cripto
-  usdValue: number; // valor convertido para USD
-  tokenAmount: number; // quantidade de tokens a serem distribuídos
+  donationAmount: number; // value in crypto
+  usdValue: number; // value converted to USD
+  tokenAmount: number; // amount of tokens to be distributed
   transactionHash: string;
   network: string;
   cryptoSymbol: string;
   createdAt: Date;
   status: 'pending' | 'distributed' | 'failed';
   distributionTxHash?: string;
-  error?: string; // Campo adicional para armazenar mensagens de erro
+  error?: string; // Additional field to store error messages
 }
 
-// Interface para RPC Endpoints
+// Interface for RPC Endpoints
 interface RpcEndpoint {
   url: string;
   network: {
@@ -89,12 +89,12 @@ interface RpcEndpoint {
 }
 
 /**
- * Verifica se a aplicação está em uma rede com acesso à internet limitado
- * e que precisa usar fallbacks especiais
+ * Checks if the application is on a network with limited internet access
+ * and needs to use special fallbacks
  */
 async function isRestrictedNetwork(): Promise<boolean> {
   try {
-    // Tenta acessar uma URL externa conhecida
+    // Try to access a known external URL
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     
@@ -106,23 +106,23 @@ async function isRestrictedNetwork(): Promise<boolean> {
     
     return !response.ok;
   } catch (error) {
-    console.log('Detectada possível restrição de rede');
+    console.log('Possible network restriction detected');
     return true;
   }
 }
 
 /**
- * Tenta conectar a um RPC através de um proxy CORS
- * @param baseRpcUrl URL base do RPC
- * @returns Provider conectado ou null se falhar
+ * Tries to connect to an RPC through a CORS proxy
+ * @param baseRpcUrl Base URL of the RPC
+ * @returns Connected provider or null if it fails
  */
 async function createProxiedProvider(baseRpcUrl: string): Promise<ethers.providers.Provider | null> {
   for (const proxyUrl of CORS_PROXIES) {
     try {
       const fullUrl = `${proxyUrl}${baseRpcUrl}`;
-      console.log(`🔄 Tentando conectar via proxy CORS: ${fullUrl}`);
+      console.log(`🔄 Trying to connect via CORS proxy: ${fullUrl}`);
       
-      // Criar um provider com o URL do proxy
+      // Create a provider with the proxy URL
       const provider = new ethers.providers.JsonRpcProvider({
         url: fullUrl,
         headers: {
@@ -131,7 +131,7 @@ async function createProxiedProvider(baseRpcUrl: string): Promise<ethers.provide
         }
       });
       
-      // Testar a conexão com timeout
+      // Test the connection with timeout
       const testPromise = provider.getBlockNumber();
       const resultPromise = Promise.race([
         testPromise,
@@ -141,10 +141,10 @@ async function createProxiedProvider(baseRpcUrl: string): Promise<ethers.provide
       ]);
       
       const blockNumber = await resultPromise;
-      console.log(`✅ Conectado com sucesso via proxy CORS. Bloco: ${blockNumber}`);
+      console.log(`✅ Successfully connected via CORS proxy. Block: ${blockNumber}`);
       return provider;
     } catch (error) {
-      console.warn(`❌ Falha ao conectar via proxy CORS: ${proxyUrl}`, 
+      console.warn(`❌ Failed to connect via CORS proxy: ${proxyUrl}`, 
         error instanceof Error ? error.message : String(error));
     }
   }
@@ -153,8 +153,8 @@ async function createProxiedProvider(baseRpcUrl: string): Promise<ethers.provide
 }
 
 /**
- * Serviço para interagir com o contrato G33TokenDistributor
- * Este serviço gerencia a distribuição automática de tokens G33 para doadores
+ * Service to interact with the G33TokenDistributor contract
+ * This service manages the automatic distribution of G33 tokens to donors
  */
 class G33TokenDistributorService {
   private provider: ethers.providers.Provider | null = null;
@@ -172,7 +172,7 @@ class G33TokenDistributorService {
   }
 
   /**
-   * Tenta criar um provider confiável para a rede Polygon
+   * Tries to create a reliable provider for the Polygon network
    */
   private async createProvider(): Promise<ethers.providers.Provider | null> {
     const providerUrls = [
@@ -181,18 +181,18 @@ class G33TokenDistributorService {
       { url: "https://1rpc.io/matic" }
     ];
 
-    // Tentar conexão direta primeiro
+    // Try direct connection first
     for (const {url} of providerUrls) {
       try {
-        console.log(`🔄 Tentando conectar ao RPC: ${url}`);
+        console.log(`🔄 Trying to connect to RPC: ${url}`);
         
-        // Criar provider com timeout
+        // Create provider with timeout
         const provider = new ethers.providers.JsonRpcProvider({ 
           url,
-          timeout: 10000 // 10 segundos de timeout
+          timeout: 10000 // 10 seconds timeout
         });
         
-        // Testar a conexão com timeout adicional
+        // Test the connection with additional timeout
         const blockNumber = await Promise.race([
           provider.getBlockNumber(),
           new Promise<never>((_, reject) => 
@@ -200,15 +200,15 @@ class G33TokenDistributorService {
           )
         ]);
         
-        console.log(`✅ Conectado com sucesso ao RPC ${url}. Bloco atual: ${blockNumber}`);
+        console.log(`✅ Successfully connected to RPC ${url}. Current block: ${blockNumber}`);
         return provider;
       } catch (error) {
-        console.warn(`❌ Falha ao conectar ao RPC ${url}:`, error instanceof Error ? error.message : String(error));
+        console.warn(`❌ Failed to connect to RPC ${url}:`, error instanceof Error ? error.message : String(error));
       }
     }
     
-    // Se todas as conexões diretas falharem, tentar via proxy CORS
-    console.log("⚠️ Todas as conexões diretas falharam. Tentando via proxy CORS...");
+    // If all direct connections fail, try via CORS proxy
+    console.log("⚠️ All direct connections failed. Trying via CORS proxy...");
     
     for (const baseRpcUrl of RELIABLE_RPC_ENDPOINTS) {
       const proxiedProvider = await createProxiedProvider(baseRpcUrl);
@@ -217,14 +217,14 @@ class G33TokenDistributorService {
       }
     }
     
-    // Se ainda falhar, tentar conexão com fallback de HTTP customizado
+    // If still fails, try connection with custom HTTP fallback
     try {
-      console.log("⚠️ Tentando conexão com fallback HTTP customizado...");
+      console.log("⚠️ Trying connection with custom HTTP fallback...");
       
-      // Criar um provider customizado que usa fetch diretamente
+      // Create a custom provider that uses fetch directly
       const url = "https://polygon-rpc.com";
       
-      // Definir uma função de fetch customizada
+      // Define a custom fetch function
       const myCustomFetch = async (url: string, payload: string): Promise<string> => {
         try {
           const headers = {
@@ -252,19 +252,19 @@ class G33TokenDistributorService {
           
           return await response.text();
         } catch (error) {
-          console.error("Erro no fetch customizado:", error);
+          console.error("Error in custom fetch:", error);
           throw error;
         }
       };
       
-      // Usar o JsonRpcProvider com conexão básica
+      // Use JsonRpcProvider with basic connection
       const customProvider = new ethers.providers.JsonRpcProvider(url);
       
-      // Substituir a função de envio de solicitação do provider
+      // Override the provider's request sending function
       const originalSend = customProvider.send;
       customProvider.send = async (method: string, params: Array<any>): Promise<any> => {
         try {
-          console.log(`Chamando método ${method} com fetch customizado`);
+          console.log(`Calling method ${method} with custom fetch`);
           
           const payload = JSON.stringify({
             method,
@@ -277,32 +277,32 @@ class G33TokenDistributorService {
           const json = JSON.parse(result);
           
           if (json.error) {
-            console.error(`Erro RPC: ${json.error.message || JSON.stringify(json.error)}`);
-            throw new Error(json.error.message || "Erro desconhecido");
+            console.error(`RPC error: ${json.error.message || JSON.stringify(json.error)}`);
+            throw new Error(json.error.message || "Unknown error");
           }
           
           return json.result;
         } catch (error) {
-          console.error("Erro ao enviar requisição RPC:", error);
-          // Tentar o método original em caso de falha
+          console.error("Error sending RPC request:", error);
+          // Try the original method in case of failure
           return originalSend(method, params);
         }
       };
       
-      // Testar a conexão
+      // Test the connection
       const blockNumber = await customProvider.getBlockNumber();
-      console.log(`✅ Conectado com sucesso usando fetch customizado. Bloco: ${blockNumber}`);
+      console.log(`✅ Successfully connected using custom fetch. Block: ${blockNumber}`);
       return customProvider;
     } catch (error) {
-      console.error("❌ Falha também na conexão com fetch customizado:", 
+      console.error("❌ Also failed to connect with custom fetch:", 
         error instanceof Error ? error.message : String(error));
     }
     
-    // Se em desenvolvimento, criar um provider fake para testes
+    // If in development, create a fake provider for testing
     if (this.isDevMode) {
-      console.warn("🔶 MODO DE DESENVOLVIMENTO: Criando provider simulado para testes");
+      console.warn("🔶 DEVELOPMENT MODE: Creating simulated provider for testing");
       
-      // Criar um provider simulado que retorna valores fixos para testes
+      // Create a simulated provider that returns fixed values for testing
       const fakeProvider = {
         getNetwork: async () => ({ chainId: 137, name: "polygon" }),
         getBlockNumber: async () => 42000000,
@@ -315,7 +315,7 @@ class G33TokenDistributorService {
           hash: "0x" + "1".repeat(64),
           wait: async () => ({ status: 1, gasUsed: ethers.BigNumber.from(150000) })
         }),
-        // Outros métodos necessários para testes
+        // Other methods needed for testing
         getFeeData: async () => ({
           maxFeePerGas: ethers.utils.parseUnits("50", "gwei"),
           maxPriorityFeePerGas: ethers.utils.parseUnits("30", "gwei"),
@@ -330,14 +330,14 @@ class G33TokenDistributorService {
   }
 
   /**
-   * Testa a conectividade com um endpoint RPC
+   * Tests connectivity with an RPC endpoint
    */
   private async testRpcEndpoint(url: string): Promise<{success: boolean, latency?: number, error?: string}> {
     const start = Date.now();
     
     try {
-      // Primeiro testa se consegue fazer uma requisição HTTP básica
-      console.log(`🔍 Testando conectividade HTTP básica para ${url}...`);
+      // First test if it can make a basic HTTP request
+      console.log(`🔍 Testing basic HTTP connectivity to ${url}...`);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
@@ -367,7 +367,7 @@ class G33TokenDistributorService {
         }
         
         const data = await response.json();
-        console.log(`✅ RPC ${url} respondeu em ${Date.now() - start}ms`);
+        console.log(`✅ RPC ${url} responded in ${Date.now() - start}ms`);
         return {
           success: true,
           latency: Date.now() - start
@@ -395,13 +395,13 @@ class G33TokenDistributorService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
 
   /**
-   * Testa todos os RPCs disponíveis e retorna um relatório
+   * Tests all available RPCs and returns a report
    */
   private async testAllRpcs(): Promise<RpcEndpoint[]> {
     const endpoints: RpcEndpoint[] = [
@@ -419,42 +419,42 @@ class G33TokenDistributorService {
       }
     ];
     
-    console.log("\n🔍 Iniciando teste de conectividade RPC...");
+    console.log("\n🔍 Starting RPC connectivity test...");
     
     const workingEndpoints: RpcEndpoint[] = [];
     
     for (const endpoint of endpoints) {
-      console.log(`\nTestando ${endpoint.url}...`);
+      console.log(`\nTesting ${endpoint.url}...`);
       const result = await this.testRpcEndpoint(endpoint.url);
       
       if (result.success) {
         console.log(`✅ ${endpoint.url}: OK (${result.latency}ms)`);
         workingEndpoints.push(endpoint);
       } else {
-        console.log(`❌ ${endpoint.url}: Falha - ${result.error}`);
+        console.log(`❌ ${endpoint.url}: Failed - ${result.error}`);
       }
     }
     
-    console.log("\nTeste de conectividade RPC concluído.");
+    console.log("\nRPC connectivity test completed.");
     return workingEndpoints;
   }
 
   /**
-   * Obtém a chave privada de várias fontes possíveis
-   * @returns A chave privada ou null se não encontrada
+   * Gets the private key from various possible sources
+   * @returns The private key or null if not found
    */
   private getPrivateKey(): string | null {
-    // Log para debug
-    console.log("Buscando chave privada do distribuidor...");
+    // Log for debug
+    console.log("Fetching distributor private key...");
     
-    // Verificar se a variável DISTRIBUTOR_PRIVATE_KEY está acessível
+    // Check if the DISTRIBUTOR_PRIVATE_KEY variable is accessible
     if (process.env.DISTRIBUTOR_PRIVATE_KEY) {
-      console.log("DISTRIBUTOR_PRIVATE_KEY encontrada no ambiente de execução.");
+      console.log("DISTRIBUTOR_PRIVATE_KEY found in runtime environment.");
     } else {
-      console.error("DISTRIBUTOR_PRIVATE_KEY não encontrada no ambiente de execução.");
+      console.error("DISTRIBUTOR_PRIVATE_KEY not found in runtime environment.");
     }
     
-    // Lista de possíveis nomes de variáveis de ambiente para a chave privada
+    // List of possible environment variable names for the private key
     const possibleEnvKeys = [
       "DISTRIBUTOR_PRIVATE_KEY",
       "PRIVATE_KEY_DISTRIBUTOR",
@@ -465,55 +465,55 @@ class G33TokenDistributorService {
       "OWNER_PRIVATE_KEY"
     ];
     
-    // Verificar cada uma das variáveis de ambiente possíveis
+    // Check each of the possible environment variables
     for (const keyName of possibleEnvKeys) {
       if (process.env[keyName]) {
         let privateKey = process.env[keyName];
-        console.log(`Encontrada chave privada em variável: ${keyName}`);
+        console.log(`Found private key in variable: ${keyName}`);
         
-        // Adicionar prefixo 0x se necessário
+        // Add 0x prefix if necessary
         if (!privateKey.startsWith('0x')) {
           privateKey = '0x' + privateKey;
-          console.log("Adicionado prefixo '0x' à chave privada");
+          console.log("Added '0x' prefix to private key");
         }
         
         return privateKey;
       }
     }
     
-    // APENAS EM DESENVOLVIMENTO: Se não encontrou chave e estamos em desenvolvimento, usar simulada
+    // ONLY IN DEVELOPMENT: If no key is found and we are in development, use simulated key
     if (this.isDevMode) {
-      throw new Error("Chave privada não encontrada. Verifique as variáveis de ambiente.");
+      throw new Error("Private key not found. Check environment variables.");
     }
     
     return null;
   }
 
   /**
-   * Inicializa o serviço carregando configurações e conectando ao contrato
-   * @param forceInit Se verdadeiro, força a inicialização mesmo se uma tentativa recente foi feita
+   * Initializes the service by loading configurations and connecting to the contract
+   * @param forceInit If true, forces initialization even if a recent attempt was made
    */
   async init(forceInit: boolean = false): Promise<void> {
     try {
-      console.log("🔄 Iniciando G33TokenDistributorService...");
+      console.log("🔄 Initializing G33TokenDistributorService...");
       
-      // Evitar tentativas frequentes de inicialização apenas quando não forçado
+      // Avoid frequent initialization attempts only when not forced
       const now = Date.now();
       if (!forceInit && this.lastInitAttempt > 0 && (now - this.lastInitAttempt) < 60000) {
-        console.log("Tentativa de inicialização muito recente, aguardando antes de tentar novamente");
+        console.log("Recent initialization attempt, waiting before trying again");
         return;
       }
       
       this.lastInitAttempt = now;
       this.initializationError = null;
       
-      // Log detalhado do modo de execução
-      console.log("Iniciando G33TokenDistributorService no modo:", this.isDevMode ? "desenvolvimento" : "produção");
-      console.log("Ambiente NODE_ENV:", process.env.NODE_ENV);
+      // Detailed log of execution mode
+      console.log("Initializing G33TokenDistributorService in mode:", this.isDevMode ? "development" : "production");
+      console.log("Environment NODE_ENV:", process.env.NODE_ENV);
       console.log("NEXT_PUBLIC_DEVELOPMENT_MODE:", process.env.NEXT_PUBLIC_DEVELOPMENT_MODE);
       
-      // Debug para verificar variáveis de ambiente
-      console.log("Variáveis de ambiente relacionadas:", Object.keys(process.env).filter(key => 
+      // Debug to check environment variables
+      console.log("Related environment variables:", Object.keys(process.env).filter(key => 
         key.includes('DISTRIBUTOR') || 
         key.includes('TOKEN') || 
         key.includes('PROVIDER') ||
@@ -521,27 +521,27 @@ class G33TokenDistributorService {
         key.includes('PRIVATE')
       ));
       
-      // Log para listar todas as variáveis de ambiente disponíveis
-      console.log("Variáveis de ambiente disponíveis:", Object.keys(process.env));
+      // Log to list all available environment variables
+      console.log("Available environment variables:", Object.keys(process.env));
       
-      // Obter a chave privada
+      // Get the private key
       this.privateKey = this.getPrivateKey();
       
-      // Verificar se a chave privada foi encontrada
+      // Check if the private key was found
       if (!this.privateKey) {
-        throw new Error("Chave privada do distribuidor não encontrada. Verifique as variáveis de ambiente.");
+        throw new Error("Distributor private key not found. Check environment variables.");
       }
       
-      // Verificar o formato da chave privada
+      // Check the format of the private key
       if (!/^0x[a-fA-F0-9]{64}$/.test(this.privateKey)) {
-        console.warn(`⚠️ Aviso: Chave privada parece estar no formato incorreto. Comprimento: ${this.privateKey.length}, esperado: 66 caracteres.`);
+        console.warn(`⚠️ Warning: Private key appears to be in incorrect format. Length: ${this.privateKey.length}, expected: 66 characters.`);
         
-        // Se estiver em desenvolvimento, corrigir a chave
+        // If in development, correct the key
         if (this.isDevMode) {
           this.privateKey = "0x1234567890123456789012345678901234567890123456789012345678901234";
-          console.log("⚠️ [DESENVOLVIMENTO] Substituindo com chave simulada devido a formato incorreto.");
+          console.log("⚠️ [DEVELOPMENT] Replacing with simulated key due to incorrect format.");
         } else {
-          throw new Error("Formato inválido da chave privada do distribuidor. Verifique as variáveis de ambiente.");
+          throw new Error("Invalid format of distributor private key. Check environment variables.");
         }
       }
       
@@ -554,90 +554,90 @@ class G33TokenDistributorService {
         try {
           configDoc = await getDoc(doc(db, "settings", "contractConfig"));
           if (configDoc.exists()) break;
-          throw new Error("Documento de configuração do contrato não encontrado no Firebase");
+          throw new Error("Contract configuration document not found in Firebase");
         } catch (error) {
           retryCount++;
           const errorMessage = error instanceof Error ? error.message : String(error);
-          console.warn(`Tentativa ${retryCount} de obter configuração do contrato falhou:`, errorMessage);
-          if (retryCount >= maxRetries) throw new Error("Falha ao obter configuração do contrato após várias tentativas");
-          await new Promise((resolve) => setTimeout(resolve, 2000)); // Esperar 2 segundos antes de tentar novamente
+          console.warn(`Attempt ${retryCount} to get contract configuration failed:`, errorMessage);
+          if (retryCount >= maxRetries) throw new Error("Failed to get contract configuration after multiple attempts");
+          await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds before trying again
         }
       }
       
       // Use environment variable or fallback for distributor address
       this.distributorAddress = DISTRIBUTOR_ADDRESS;
-      console.log(`Endereço do distribuidor definido: ${this.distributorAddress}`);
+      console.log(`Distributor address set: ${this.distributorAddress}`);
 
       if (!this.distributorAddress) {
-        throw new Error("Endereço do distribuidor não está configurado.");
+        throw new Error("Distributor address is not configured.");
       }
       
-      console.log("Configurando provider para a rede Polygon...");
+      console.log("Setting up provider for the Polygon network...");
       try {
         this.provider = await this.createProvider();
         
         if (!this.provider) {
-          throw new Error("Não foi possível estabelecer conexão com nenhum RPC. Verifique os endpoints e a conectividade de rede.");
+          throw new Error("Could not establish connection to any RPC. Check endpoints and network connectivity.");
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error("Erro ao configurar provider:", errorMessage);
-        throw new Error("Erro crítico ao configurar provider para a rede Polygon.");
+        console.error("Error setting up provider:", errorMessage);
+        throw new Error("Critical error setting up provider for the Polygon network.");
       }
       
       if (!this.provider) {
-        throw new Error("Não foi possível estabelecer conexão com nenhum RPC");
+        throw new Error("Could not establish connection to any RPC");
       }
 
-      // Configurar wallet com provider já estabelecido
+      // Set up wallet with established provider
       if (this.privateKey) {
         this.wallet = new ethers.Wallet(this.privateKey, this.provider);
-        console.log("✅ Wallet configurada com sucesso");
+        console.log("✅ Wallet set up successfully");
       }
       
       try {
         this.provider = this.provider;
         this.wallet = new ethers.Wallet(this.privateKey, this.provider);
-        console.log("Chave privada configurada com sucesso.");
+        console.log("Private key set up successfully.");
         
-        // Log da chave privada usada para inicializar o wallet
-        console.log(`Chave privada usada: ${this.privateKey}`);
-        // Log do endereço gerado a partir da chave privada
+        // Log the private key used to initialize the wallet
+        console.log(`Private key used: ${this.privateKey}`);
+        // Log the address generated from the private key
         const generatedWalletAddress = await this.wallet.getAddress();
-        console.log(`Endereço gerado a partir da chave privada: ${generatedWalletAddress}`);
+        console.log(`Address generated from private key: ${generatedWalletAddress}`);
 
-        // Removendo redefinição da variável 'walletAddress'
-        console.log(`Carteira do distribuidor configurada: ${generatedWalletAddress.substring(0, 6)}...${generatedWalletAddress.substring(generatedWalletAddress.length - 4)}`);
+        // Removing redefinition of 'walletAddress' variable
+        console.log(`Distributor wallet set up: ${generatedWalletAddress.substring(0, 6)}...${generatedWalletAddress.substring(generatedWalletAddress.length - 4)}`);
         
-        // Conectar ao contrato
+        // Connect to the contract
         this.contract = new ethers.Contract(this.distributorAddress, DISTRIBUTOR_ABI, this.wallet);
         
-        // Verificar se o contrato está acessível
+        // Check if the contract is accessible
         try {
           const availableTokens = await this.contract.getAvailableTokens();
-          console.log(`Contrato do distribuidor conectado com sucesso. Tokens disponíveis: ${ethers.utils.formatEther(availableTokens)}`);
+          console.log(`Distributor contract connected successfully. Available tokens: ${ethers.utils.formatEther(availableTokens)}`);
           this.isInitialized = true;
         } catch (contractError: unknown) {
           const errorMessage = contractError instanceof Error 
             ? contractError.message
-            : "Erro desconhecido ao acessar funções do contrato";
+            : "Unknown error accessing contract functions";
             
-          throw new Error(`Erro ao acessar funções do contrato: ${errorMessage}`);
+          throw new Error(`Error accessing contract functions: ${errorMessage}`);
         }
       } catch (walletError: unknown) {
         const errorMessage = walletError instanceof Error 
           ? walletError.message
-          : "Erro desconhecido";
+          : "Unknown error";
           
-        console.error("Erro ao criar carteira com a chave privada fornecida:", errorMessage);
-        throw new Error(`Erro ao criar carteira: ${errorMessage}. Verifique se a chave privada está no formato correto.`);
+        console.error("Error creating wallet with provided private key:", errorMessage);
+        throw new Error(`Error creating wallet: ${errorMessage}. Check if the private key is in the correct format.`);
       }
       
-      // Verificar o chainId da rede conectada
+      // Check the chainId of the connected network
       const network = await this.provider!.getNetwork();
-      console.log(`Conectado à rede: ${network.name} (chainId: ${network.chainId})`);
+      console.log(`Connected to network: ${network.name} (chainId: ${network.chainId})`);
       if (network.chainId !== 137) {
-        throw new Error(`Provedor RPC conectado à rede errada. Esperado: Polygon Mainnet (chainId 137), Atual: ${network.chainId}`);
+        throw new Error(`RPC provider connected to the wrong network. Expected: Polygon Mainnet (chainId 137), Current: ${network.chainId}`);
       }
 
       return;
@@ -647,47 +647,47 @@ class G33TokenDistributorService {
 
       // Handle offline mode gracefully
       if (errorMessage.includes("offline")) {
-        console.error("Firestore está offline. O serviço será inicializado em modo limitado.");
-        this.isInitialized = false; // Marcar como não inicializado, mas sem lançar erro crítico
+        console.error("Firestore is offline. The service will be initialized in limited mode.");
+        this.isInitialized = false; // Mark as not initialized, but without throwing a critical error
       } else {
-        console.error("Erro ao inicializar G33TokenDistributorService:", errorMessage);
+        console.error("Error initializing G33TokenDistributorService:", errorMessage);
         this.isInitialized = false;
       }
     }
   }
 
   /**
-   * Verifica se o serviço está inicializado e pronto para uso
-   * @returns Verdadeiro se o serviço estiver inicializado
+   * Checks if the service is initialized and ready for use
+   * @returns True if the service is initialized
    */
   private async ensureInitialized(): Promise<boolean> {
     if (this.isInitialized) return true;
     
-    // Tentar inicializar novamente
+    // Try to initialize again
     await this.init();
     return this.isInitialized;
   }
   
   /**
-   * Verifica se o serviço está inicializado (método público)
-   * @returns Status de inicialização do serviço
+   * Checks if the service is initialized (public method)
+   * @returns Initialization status of the service
    */
   public checkIsInitialized(): boolean {
     return this.isInitialized;
   }
   
   /**
-   * Obtém o erro de inicialização, se houver
-   * @returns Mensagem de erro ou null
+   * Gets the initialization error, if any
+   * @returns Error message or null
    */
   public getInitializationError(): string | null {
     return this.initializationError;
   }
 
   /**
-   * Verifica se um endereço está autorizado como distribuidor no contrato
-   * @param address Endereço a ser verificado
-   * @returns true se o endereço está autorizado, false caso contrário
+   * Checks if an address is authorized as a distributor in the contract
+   * @param address Address to be checked
+   * @returns true if the address is authorized, false otherwise
    */
   async isAuthorizedDistributor(address: string): Promise<boolean> {
     try {
@@ -695,7 +695,7 @@ class G33TokenDistributorService {
         return false;
       }
       
-      // Criar um contrato com interface estendida que inclui o método distributors
+      // Create a contract with extended interface that includes the distributors method
       const extendedContract = new ethers.Contract(
         this.distributorAddress!,
         [
@@ -703,102 +703,102 @@ class G33TokenDistributorService {
           "function distributors(address) external view returns (bool)",
           "function owner() external view returns (address)"
         ],
-        // Corrigindo o problema de tipo, garantindo que provider não seja null
+        // Fixing the type issue, ensuring provider is not null
         this.provider || undefined
       );
       
-      // Verificar se o endereço é um distribuidor autorizado
+      // Check if the address is an authorized distributor
       const isDistributor = await extendedContract.distributors(address);
       if (isDistributor) {
-        console.log(`✅ O endereço ${address} é um distribuidor autorizado`);
+        console.log(`✅ The address ${address} is an authorized distributor`);
         return true;
       }
       
-      // Verificar se o endereço é o proprietário do contrato
+      // Check if the address is the owner of the contract
       const owner = await extendedContract.owner();
       if (owner.toLowerCase() === address.toLowerCase()) {
-        console.log(`✅ O endereço ${address} é o proprietário do contrato`);
+        console.log(`✅ The address ${address} is the owner of the contract`);
         return true;
       }
       
-      console.warn(`⚠️ O endereço ${address} NÃO é um distribuidor autorizado nem o proprietário`);
+      console.warn(`⚠️ The address ${address} is NOT an authorized distributor nor the owner`);
       return false;
     } catch (error) {
-      console.error(`Erro ao verificar se ${address} é um distribuidor autorizado:`, error);
+      console.error(`Error checking if ${address} is an authorized distributor:`, error);
       return false;
     }
   }
 
   /**
-   * Distribui tokens G33 para um doador com base no valor da doação em USD
-   * @param donorAddress Endereço do doador
-   * @param usdValue Valor da doação em USD (número decimal)
-   * @param waitForConfirmation Se verdadeiro, aguarda confirmação da transação
-   * @returns Hash da transação de distribuição ou null se falhar
+   * Distributes G33 tokens to a donor based on the donation amount in USD
+   * @param donorAddress Donor's address
+   * @param usdValue Donation amount in USD (decimal number)
+   * @param waitForConfirmation If true, waits for transaction confirmation
+   * @returns Distribution transaction hash or null if it fails
    */
   async distributeTokens(donorAddress: string, usdValue: number, waitForConfirmation: boolean = false): Promise<string | null> {
     try {
       if (!(await this.ensureInitialized())) {
-        throw new Error(`Serviço não inicializado. Erro: ${this.initializationError || "Desconhecido"}`);
+        throw new Error(`Service not initialized. Error: ${this.initializationError || "Unknown"}`);
       }
       
-      // VALIDAÇÃO CRÍTICA: O contrato G33TokenDistributorV2 não processa valores menores que 1 USD
-      // Isso ocorre porque o contrato faz: tokenAmount = donationAmountUsd / 100 (divisão inteira)
-      // Se o valor for menor que 100 (1 USD), o resultado será 0 tokens
+      // CRITICAL VALIDATION: The G33TokenDistributorV2 contract does not process values less than 1 USD
+      // This is because the contract does: tokenAmount = donationAmountUsd / 100 (integer division)
+      // If the value is less than 100 (1 USD), the result will be 0 tokens
       if (usdValue < 1) {
-        throw new Error(`Valor mínimo para distribuição de tokens é 1 USD. Valor informado: ${usdValue} USD`);
+        throw new Error(`Minimum value for token distribution is 1 USD. Provided value: ${usdValue} USD`);
       }
 
-      // VALIDAÇÃO CRÍTICA: Garantir que o valor enviado é um inteiro
-      // O contrato não suporta frações de token
+      // CRITICAL VALIDATION: Ensure the value sent is an integer
+      // The contract does not support fractional tokens
       if (usdValue % 1 !== 0) {
-        console.warn(`⚠️ Aviso: O valor USD ${usdValue} contém decimais e será arredondado para ${Math.floor(usdValue)} USD`);
+        console.warn(`⚠️ Warning: The USD value ${usdValue} contains decimals and will be rounded to ${Math.floor(usdValue)} USD`);
         usdValue = Math.floor(usdValue);
       }
       
-      // Verificar se há tokens disponíveis
+      // Check if there are available tokens
       const availableTokensWei = await this.contract!.getAvailableTokens();
       const availableTokens = parseFloat(ethers.utils.formatEther(availableTokensWei));
-      const tokensNeeded = usdValue; // 1 token por 1 USD
+      const tokensNeeded = usdValue; // 1 token per 1 USD
       
-      console.log(`Distribuição de tokens: ${tokensNeeded} tokens necessários, ${availableTokens} tokens disponíveis`);
+      console.log(`Token distribution: ${tokensNeeded} tokens needed, ${availableTokens} tokens available`);
       
       if (availableTokens < tokensNeeded) {
-        throw new Error(`Tokens insuficientes no contrato distribuidor. Disponível: ${availableTokens}, Necessário: ${tokensNeeded}`);
+        throw new Error(`Insufficient tokens in the distributor contract. Available: ${availableTokens}, Needed: ${tokensNeeded}`);
       }
       
-      // Escalar valor USD para o formato esperado pelo contrato G33TokenDistributorV2
-      // O contrato espera o valor em centavos (x100) para precisão de 2 casas decimais
-      const usdValueScaled = Math.round(usdValue * 100); // Usar Math.round para evitar problemas de arredondamento
+      // Scale USD value to the format expected by the G33TokenDistributorV2 contract
+      // The contract expects the value in cents (x100) for 2 decimal places precision
+      const usdValueScaled = Math.round(usdValue * 100); // Use Math.round to avoid rounding issues
 
-      console.log(`Valor USD original: ${usdValue}`);
-      console.log(`Valor escalado para o contrato (x100): ${usdValueScaled}`);
-      console.log(`O doador receberá ${usdValue} tokens completos G33`);
+      console.log(`Original USD value: ${usdValue}`);
+      console.log(`Scaled value for the contract (x100): ${usdValueScaled}`);
+      console.log(`The donor will receive ${usdValue} full G33 tokens`);
       
-      // NOVO: Validar endereço do doador
+      // NEW: Validate donor address
       if (!ethers.utils.isAddress(donorAddress)) {
-        throw new Error(`Endereço do doador inválido: ${donorAddress}`);
+        throw new Error(`Invalid donor address: ${donorAddress}`);
       }
       
-      // Verificar o endereço da carteira do distribuidor para diagnóstico
+      // Check the distributor wallet address for diagnostics
       const walletAddress = await this.wallet!.getAddress();
-      console.log(`Carteira do distribuidor que assinará a transação: ${walletAddress}`);
+      console.log(`Distributor wallet signing the transaction: ${walletAddress}`);
       
-      // Verificar se o endereço do contrato distribuidor está definido
+      // Check if the distributor contract address is set
       if (!this.distributorAddress) {
-        throw new Error("Endereço do contrato distribuidor não está definido");
+        throw new Error("Distributor contract address is not set");
       }
       
-      // VERIFICAÇÃO: Verificar se o endereço do contrato e o endereço do wallet são iguais
-      // Isso pode acontecer em configuração incorreta e causar erros de "insufficient funds"
+      // CHECK: Verify if the contract address and wallet address are the same
+      // This can happen in misconfiguration and cause "insufficient funds" errors
       if (this.distributorAddress.toLowerCase() === walletAddress.toLowerCase()) {
-        console.warn("⚠️ ALERTA: O endereço da carteira e o endereço do contrato são iguais!");
-        console.warn("Este é um problema de configuração que pode causar erros de 'insufficient funds'");
-        console.warn("O contrato em si não deve ser usado como assinador de transações");
+        console.warn("⚠️ ALERT: The wallet address and contract address are the same!");
+        console.warn("This is a configuration issue that can cause 'insufficient funds' errors");
+        console.warn("The contract itself should not be used as the transaction signer");
       }
       
-      // NOVO: Verificar se já houve uma transação recente idêntica
-      console.log("Verificando histórico de doações recentes...");
+      // NEW: Check if there was a recent identical transaction
+      console.log("Checking recent donation history...");
       try {
         const donationRegistry = collection(db, 'tokenDonations');
         const q = query(
@@ -814,50 +814,50 @@ class G33TokenDistributorService {
             const donation = doc.data();
             const timestamp = donation.createdAt?.toDate?.() || new Date(donation.createdAt);
             const minutesSince = (Date.now() - timestamp.getTime()) / (1000 * 60);
-            return minutesSince < 5; // Doações nos últimos 5 minutos
+            return minutesSince < 5; // Donations in the last 5 minutes
           });
           
           if (recentDonations.length > 0) {
             const recentDonation = recentDonations[0].data();
-            console.warn(`🚨 Encontrada doação muito recente (últimos 5 minutos) para o mesmo endereço e valor`);
+            console.warn(`🚨 Found very recent donation (last 5 minutes) for the same address and value`);
             if (recentDonation.distributionTxHash) {
-              console.warn(`Hash da transação recente: ${recentDonation.distributionTxHash}`);
-              console.warn("Aguardando 10 segundos para evitar problemas de nonce...");
+              console.warn(`Recent transaction hash: ${recentDonation.distributionTxHash}`);
+              console.warn("Waiting 10 seconds to avoid nonce issues...");
               await new Promise(resolve => setTimeout(resolve, 10000));
             }
           }
         }
       } catch (dbError) {
-        console.warn("Erro ao verificar doações anteriores:", dbError);
-        // Não interromper o fluxo por falha na verificação de duplicidade
+        console.warn("Error checking previous donations:", dbError);
+        // Do not interrupt the flow due to duplicate check failure
       }
       
-      // NOVO: Verificar permissões da carteira como distribuidora
+      // NEW: Check wallet permissions as distributor
       try {
         const isAuthorized = await this.isAuthorizedDistributor(walletAddress);
         if (!isAuthorized) {
-          throw new Error(`A carteira ${walletAddress} não está autorizada como distribuidora. A transação seria revertida.`);
+          throw new Error(`The wallet ${walletAddress} is not authorized as a distributor. The transaction would be reverted.`);
         }
-        console.log(`✅ Carteira autorizada como distribuidora!`);
+        console.log(`✅ Wallet authorized as distributor!`);
       } catch (authError) {
-        console.error("Erro ao verificar permissões de distribuidor:", authError);
-        throw new Error(`Falha ao verificar permissões de distribuidor: ${authError instanceof Error ? authError.message : String(authError)}`);
+        console.error("Error checking distributor permissions:", authError);
+        throw new Error(`Failed to check distributor permissions: ${authError instanceof Error ? authError.message : String(authError)}`);
       }
       
-      // NOVO: Fazer uma simulação prévia para detectar erros
+      // NEW: Perform a preliminary simulation to detect errors
       try {
-        console.log(`Realizando simulação prévia da transação...`);
+        console.log(`Performing preliminary transaction simulation...`);
         await this.contract!.callStatic.distributeTokens(donorAddress, usdValueScaled, {
           from: walletAddress
         });
-        console.log("✅ Simulação prévia bem-sucedida! A transação deve funcionar.");
+        console.log("✅ Preliminary simulation successful! The transaction should work.");
       } catch (simError: any) {
-        // Extrair informação útil do erro de simulação
-        console.error("❌ A simulação da transação falhou! Erro:", 
+        // Extract useful information from the simulation error
+        console.error("❌ Transaction simulation failed! Error:", 
           simError instanceof Error ? simError.message : String(simError));
         
-        // Analisar o erro para fornecer informações mais úteis
-        let errorMessage = "Simulação falhou";
+        // Analyze the error to provide more useful information
+        let errorMessage = "Simulation failed";
         
         if (simError.error?.message) {
           errorMessage = simError.error.message;
@@ -866,54 +866,54 @@ class G33TokenDistributorService {
         }
         
         if (errorMessage.includes("Insufficient tokens")) {
-          throw new Error(`Tokens insuficientes no contrato distribuidor.`);
+          throw new Error(`Insufficient tokens in the distributor contract.`);
         } else if (errorMessage.includes("Not authorized")) {
-          throw new Error(`Conta ${walletAddress} não tem permissão para distribuir tokens.`);
+          throw new Error(`Account ${walletAddress} does not have permission to distribute tokens.`);
         } else if (errorMessage.includes("execution reverted")) {
-          throw new Error(`Simulação falhou: ${errorMessage}. Verifique o saldo e permissões do contrato.`);
+          throw new Error(`Simulation failed: ${errorMessage}. Check the contract's balance and permissions.`);
         }
         
-        throw new Error(`Simulação prévia falhou: ${errorMessage}`);
+        throw new Error(`Preliminary simulation failed: ${errorMessage}`);
       }
       
-      // Método padrão: Usar a carteira configurada no serviço
+      // Default method: Use the wallet configured in the service
       // ----------------------------------------------------- 
-      console.log("Usando carteira configurada no serviço para distribuir tokens...");
+      console.log("Using wallet configured in the service to distribute tokens...");
       
-      // Verificar saldo da carteira para gas
-      console.log(`Verificando saldo da carteira que assina a transação: ${walletAddress}`);
+      // Check wallet balance for gas
+      console.log(`Checking balance of the wallet signing the transaction: ${walletAddress}`);
       const walletBalance = await this.provider!.getBalance(walletAddress);
-      console.log(`Saldo da carteira (direto do provedor RPC): ${ethers.utils.formatEther(walletBalance)} MATIC`);
+      console.log(`Wallet balance (direct from RPC provider): ${ethers.utils.formatEther(walletBalance)} MATIC`);
       
-      // Log do nó RPC usado
+      // Log the RPC node used
       if (this.provider instanceof ethers.providers.JsonRpcProvider) {
-        console.log(`Usando nó RPC: ${this.provider.connection.url}`);
+        console.log(`Using RPC node: ${this.provider.connection.url}`);
       }
       
       const ignoreBalanceCheck = true;
       
-      // Obter fee data atual para garantir valores apropriados de gas
+      // Get current fee data to ensure appropriate gas values
       const feeData = await this.provider!.getFeeData();
-      console.log("Fees atuais da rede:", {
+      console.log("Current network fees:", {
         maxFeePerGas: feeData.maxFeePerGas ? ethers.utils.formatUnits(feeData.maxFeePerGas, "gwei") + " gwei" : "N/A",
         maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ? ethers.utils.formatUnits(feeData.maxPriorityFeePerGas, "gwei") + " gwei" : "N/A",
         gasPrice: feeData.gasPrice ? ethers.utils.formatUnits(feeData.gasPrice, "gwei") + " gwei" : "N/A"
       });
       
-      // IMPORTANTE: Polygon exige pelo menos 25 gwei para maxPriorityFeePerGas (gas tip cap)
-      // Erro mostra: minimum needed 25000000000 (25 gwei)
-      // Vamos usar valores mais altos para garantir que a transação seja aceita
+      // IMPORTANT: Polygon requires at least 25 gwei for maxPriorityFeePerGas (gas tip cap)
+      // Error shows: minimum needed 25000000000 (25 gwei)
+      // We will use higher values to ensure the transaction is accepted
       const MIN_GAS_PRICE = ethers.utils.parseUnits("30", "gwei"); 
-      const MIN_PRIORITY_FEE = ethers.utils.parseUnits("50", "gwei"); // Aumentado de 30 para 50
-      const MIN_FEE_PER_GAS = ethers.utils.parseUnits("100", "gwei"); // Aumentado de 50 para 100
+      const MIN_PRIORITY_FEE = ethers.utils.parseUnits("50", "gwei"); // Increased from 30 to 50
+      const MIN_FEE_PER_GAS = ethers.utils.parseUnits("100", "gwei"); // Increased from 50 to 100
       
-      // Usar o maior entre o valor mínimo e o sugerido pelo provider
+      // Use the higher of the minimum value and the provider's suggested value
       const gasPrice = feeData.gasPrice && feeData.gasPrice.gt(MIN_GAS_PRICE) 
         ? feeData.gasPrice 
         : MIN_GAS_PRICE;
         
-      // Para transações EIP-1559 (tipo 2), usar maxFeePerGas e maxPriorityFeePerGas
-      // Garantir que o minimo de 50 gwei para priority fee seja respeitado
+      // For EIP-1559 transactions (type 2), use maxFeePerGas and maxPriorityFeePerGas
+      // Ensure the minimum of 50 gwei for priority fee is respected
       const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas.gt(MIN_PRIORITY_FEE)
         ? feeData.maxPriorityFeePerGas
         : MIN_PRIORITY_FEE;
@@ -922,25 +922,25 @@ class G33TokenDistributorService {
         ? feeData.maxFeePerGas
         : MIN_FEE_PER_GAS;
       
-      // Aumentar o gas limit para garantir que haja gas suficiente
-      const gasLimit = 300000; // Aumentado de 200000 para 300000
+      // Increase the gas limit to ensure there is enough gas
+      const gasLimit = 300000; // Increased from 200000 to 300000
       
-      // Calcular custo estimado (usando o maior valor possível)
+      // Calculate estimated cost (using the highest possible value)
       const estimatedCost = maxFeePerGas.mul(gasLimit);
-      console.log(`Custo estimado: ${ethers.utils.formatEther(estimatedCost)} MATIC`);
+      console.log(`Estimated cost: ${ethers.utils.formatEther(estimatedCost)} MATIC`);
       
       if (!ignoreBalanceCheck && walletBalance.lt(estimatedCost)) {
-        throw new Error(`Saldo insuficiente para esta transação. Necessário: ${ethers.utils.formatEther(estimatedCost)} MATIC, Disponível: ${ethers.utils.formatEther(walletBalance)} MATIC`);
+        throw new Error(`Insufficient balance for this transaction. Required: ${ethers.utils.formatEther(estimatedCost)} MATIC, Available: ${ethers.utils.formatEther(walletBalance)} MATIC`);
       }
       
-      // Obter nonce
+      // Get nonce
       const nonce = await this.provider!.getTransactionCount(walletAddress, "latest");
       
-      // NOVO: usar diretamente o contrato em vez de construir a transação manualmente
+      // NEW: use the contract directly instead of building the transaction manually
       try {
-        console.log(`Preparando chamada direta ao contrato com gasLimit ${gasLimit}...`);
+        console.log(`Preparing direct contract call with gasLimit ${gasLimit}...`);
         
-        // Configurar gasLimit explicitamente
+        // Set gasLimit explicitly
         const overrides = {
           maxFeePerGas,
           maxPriorityFeePerGas,
@@ -948,21 +948,21 @@ class G33TokenDistributorService {
           nonce,
         };
         
-        // Chamar o contrato diretamente em vez de construir a transação manualmente
-        console.log(`Enviando transação via contrato.distributeTokens...`);
+        // Call the contract directly instead of building the transaction manually
+        console.log(`Sending transaction via contract.distributeTokens...`);
         const tx = await this.contract!.distributeTokens(donorAddress, usdValueScaled, overrides);
-        console.log(`Transação enviada: ${tx.hash}`);
+        console.log(`Transaction sent: ${tx.hash}`);
         
-        // Aguardar confirmação se necessário
+        // Wait for confirmation if necessary
         if (waitForConfirmation) {
-          console.log(`Aguardando confirmação da transação ${tx.hash}...`);
+          console.log(`Waiting for transaction ${tx.hash} confirmation...`);
           
-          // Definir timeout e máximo de tentativas para evitar espera infinita
-          const maxAttempts = 30; // Aumentado o número de tentativas
-          const delayBetweenAttempts = 5000; // 5 segundos entre tentativas
+          // Set timeout and maximum attempts to avoid infinite wait
+          const maxAttempts = 30; // Increased number of attempts
+          const delayBetweenAttempts = 5000; // 5 seconds between attempts
           let attempts = 0;
           
-          // Função para esperar um recibo com timeout
+          // Function to wait for a receipt with timeout
           const waitForReceipt = async (): Promise<ethers.providers.TransactionReceipt | null> => {
             while (attempts < maxAttempts) {
               attempts++;
@@ -972,38 +972,38 @@ class G33TokenDistributorService {
                   return receipt;
                 }
                 
-                console.log(`Tentativa ${attempts}/${maxAttempts}: Transação ainda pendente...`);
+                console.log(`Attempt ${attempts}/${maxAttempts}: Transaction still pending...`);
                 await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts));
               } catch (error) {
-                console.warn(`Erro ao verificar recibo (tentativa ${attempts}):`, error);
+                console.warn(`Error checking receipt (attempt ${attempts}):`, error);
                 await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts));
               }
             }
             
-            // Se chegou aqui, não conseguiu obter o recibo
-            console.warn(`Tempo limite excedido (${maxAttempts * delayBetweenAttempts / 1000}s). A transação ainda pode ser confirmada posteriormente.`);
+            // If it reaches here, it could not get the receipt
+            console.warn(`Timeout exceeded (${maxAttempts * delayBetweenAttempts / 1000}s). The transaction may still be confirmed later.`);
             return null;
           };
           
           const receipt = await waitForReceipt();
           if (receipt) {
-            console.log(`Transação confirmada! Gas usado: ${receipt.gasUsed.toString()}`);
+            console.log(`Transaction confirmed! Gas used: ${receipt.gasUsed.toString()}`);
             
-            // Verificar se a transação foi bem-sucedida
+            // Check if the transaction was successful
             if (receipt.status === 0) {
-              console.error("❌ A transação foi confirmada, mas a execução do contrato falhou (execution reverted)!");
-              console.log("Verifique a transação em: https://polygonscan.com/tx/" + tx.hash);
+              console.error("❌ The transaction was confirmed, but the contract execution failed (execution reverted)!");
+              console.log("Check the transaction at: https://polygonscan.com/tx/" + tx.hash);
               
-              // NOVO: Tentar novamente com outros parâmetros
-              console.log("Tentando novamente com parâmetros diferentes...");
+              // NEW: Try again with different parameters
+              console.log("Trying again with different parameters...");
               
-              // Esperar 10 segundos antes de tentar novamente
+              // Wait 10 seconds before trying again
               await new Promise(resolve => setTimeout(resolve, 10000));
               
-              // Incrementar o nonce para evitar substituir a transação anterior
+              // Increment the nonce to avoid replacing the previous transaction
               const newNonce = await this.provider!.getTransactionCount(walletAddress, "latest");
               
-              // Aumentar o gas limit e as fees para ter certeza que vai funcionar
+              // Increase the gas limit and fees to ensure it works
               const newOverrides = {
                 maxFeePerGas: ethers.utils.parseUnits("150", "gwei"),
                 maxPriorityFeePerGas: ethers.utils.parseUnits("100", "gwei"),
@@ -1011,7 +1011,7 @@ class G33TokenDistributorService {
                 nonce: newNonce,
               };
               
-              console.log("Enviando nova tentativa com configurações:", {
+              console.log("Sending new attempt with settings:", {
                 maxFeePerGas: ethers.utils.formatUnits(newOverrides.maxFeePerGas, "gwei") + " gwei",
                 maxPriorityFeePerGas: ethers.utils.formatUnits(newOverrides.maxPriorityFeePerGas, "gwei") + " gwei",
                 gasLimit: newOverrides.gasLimit.toString(),
@@ -1020,42 +1020,42 @@ class G33TokenDistributorService {
               
               try {
                 const retryTx = await this.contract!.distributeTokens(donorAddress, usdValueScaled, newOverrides);
-                console.log(`Nova transação enviada: ${retryTx.hash}`);
+                console.log(`New transaction sent: ${retryTx.hash}`);
                 return retryTx.hash;
               } catch (retryError) {
-                console.error("❌ Também falhou na segunda tentativa:", retryError);
-                throw new Error("Execução do contrato falhou - execution reverted. A transferência de tokens não foi completada mesmo após nova tentativa.");
+                console.error("❌ Also failed on the second attempt:", retryError);
+                throw new Error("Contract execution failed - execution reverted. The token transfer was not completed even after retry.");
               }
             }
             
-            // Verificar logs para confirmar que o evento TokensDistributed foi emitido
+            // Check logs to confirm that the TokensDistributed event was emitted
             let eventEmitted = false;
             if (receipt.logs && receipt.logs.length > 0) {
               for (const log of receipt.logs) {
                 if (log.address.toLowerCase() === this.distributorAddress?.toLowerCase()) {
                   eventEmitted = true;
-                  console.log("✅ Evento emitido pelo contrato distribuidor detectado");
+                  console.log("✅ Event emitted by the distributor contract detected");
                   break;
                 }
               }
             }
             
             if (!eventEmitted) {
-              console.warn("⚠️ Transação confirmada, mas nenhum evento do contrato distribuidor foi detectado");
-              console.log("A transação pode ter falhado silenciosamente. Verifique em: https://polygonscan.com/tx/" + tx.hash);
+              console.warn("⚠️ Transaction confirmed, but no event from the distributor contract was detected");
+              console.log("The transaction may have silently failed. Check at: https://polygonscan.com/tx/" + tx.hash);
             }
           } else {
-            console.warn("Tempo limite excedido esperando confirmação. A transação ainda pode ser confirmada posteriormente.");
-            console.log("Você pode verificar o status da transação em https://polygonscan.com/tx/" + tx.hash);
+            console.warn("Timeout exceeded waiting for confirmation. The transaction may still be confirmed later.");
+            console.log("You can check the transaction status at https://polygonscan.com/tx/" + tx.hash);
           }
         }
         
         return tx.hash;
       } catch (contractError: any) {
-        console.error("❌ Erro ao chamar contrato.distributeTokens:", contractError);
+        console.error("❌ Error calling contract.distributeTokens:", contractError);
         
-        // Tentar extrair informações mais úteis do erro
-        let errorMessage = "Erro ao chamar contrato";
+        // Try to extract more useful information from the error
+        let errorMessage = "Error calling contract";
         
         if (contractError.error?.message) {
           errorMessage = contractError.error.message;
@@ -1064,127 +1064,127 @@ class G33TokenDistributorService {
         }
         
         if (errorMessage.includes("gas required exceeds")) {
-          throw new Error(`Erro no gas: ${errorMessage}. Aumente o gas limit para esta transação.`);
+          throw new Error(`Gas error: ${errorMessage}. Increase the gas limit for this transaction.`);
         } else if (errorMessage.includes("nonce")) { 
-          throw new Error(`Erro no nonce: ${errorMessage}. Pode haver uma transação pendente.`);
+          throw new Error(`Nonce error: ${errorMessage}. There may be a pending transaction.`);
         } else {
-          throw new Error(`Erro ao distribuir tokens: ${errorMessage}`);
+          throw new Error(`Error distributing tokens: ${errorMessage}`);
         }
       }
       
-      // O código abaixo só é executado se a tentativa de usar o contrato diretamente falhar
+      // The code below is only executed if the attempt to use the contract directly fails
       // -----------------------------------------------------------------------------
       
-      // Preparar dados para a transação como fallback
+      // Prepare data for the transaction as a fallback
       const ABI = ["function distributeTokens(address donor, uint256 donationAmountUsd)"];
       const iface = new ethers.utils.Interface(ABI);
       const calldata = iface.encodeFunctionData("distributeTokens", [donorAddress, usdValueScaled]);
       
-      // Construir transação com parâmetros EIP-1559 adequados para Polygon
+      // Build transaction with appropriate EIP-1559 parameters for Polygon
       const tx = {
-        to: this.distributorAddress || undefined, // Convertendo null para undefined para satisfazer TransactionRequest
+        to: this.distributorAddress || undefined, // Converting null to undefined to satisfy TransactionRequest
         maxFeePerGas: maxFeePerGas,
         maxPriorityFeePerGas: maxPriorityFeePerGas,
         gasLimit: ethers.utils.hexlify(gasLimit),
         data: calldata,
         nonce: nonce,
         chainId: 137, // Polygon mainnet
-        type: 2 // Tipo EIP-1559
+        type: 2 // EIP-1559 type
       };
       
-      console.log("Enviando transação com configurações:", {
+      console.log("Sending transaction with settings:", {
         maxFeePerGas: ethers.utils.formatUnits(maxFeePerGas, "gwei") + " gwei",
         maxPriorityFeePerGas: ethers.utils.formatUnits(maxPriorityFeePerGas, "gwei") + " gwei",
         gasLimit: gasLimit.toString(),
         nonce: nonce,
-        tipo: "EIP-1559 (tipo 2)"
+        type: "EIP-1559 (type 2)"
       });
       
-      // Assinar e enviar
-      console.log("Enviando transação manual (fallback method)...");
+      // Sign and send
+      console.log("Sending manual transaction (fallback method)...");
       const signedTx = await this.wallet!.signTransaction(tx);
       const submittedTx = await this.provider!.sendTransaction(signedTx);
       
-      console.log(`Transação enviada: ${submittedTx.hash}`);
+      console.log(`Transaction sent: ${submittedTx.hash}`);
       
-      // Aguardar confirmação se necessário
+      // Wait for confirmation if necessary
       if (waitForConfirmation) {
-        console.log(`Aguardando confirmação da transação ${submittedTx.hash}...`);
+        console.log(`Waiting for transaction ${submittedTx.hash} confirmation...`);
         
-        // Código de espera por confirmação...
+        // Confirmation waiting code...
         // ...existing code...
       }
       
       return submittedTx.hash;
     } catch (error: any) {
-      console.error("❌ Erro ao distribuir tokens G33:", error);
+      console.error("❌ Error distributing G33 tokens:", error);
       
-      // Extrair detalhes do erro
+      // Extract error details
       if (error.error?.body) {
         try {
           const errorBody = JSON.parse(error.error.body);
-          console.error("Detalhes do erro blockchain:", {
+          console.error("Blockchain error details:", {
             code: errorBody.error?.code,
             message: errorBody.error?.message,
             data: errorBody.error?.data
           });
           
-          // Verificar se o erro é relacionado a gas price baixo
+          // Check if the error is related to low gas price
           if (errorBody.error?.message && errorBody.error.message.includes("gas tip cap")) {
             const errorMsg = errorBody.error.message;
-            // Extrair o valor mínimo requerido
+            // Extract the minimum required value
             const minGasMatch = errorMsg.match(/minimum needed (\d+)/);
             if (minGasMatch && minGasMatch[1]) {
               const minGasNeeded = parseInt(minGasMatch[1], 10);
-              console.log(`⚠️ Gas tip cap muito baixo. Mínimo necessário: ${minGasNeeded / 1_000_000_000} gwei`);
+              console.log(`⚠️ Gas tip cap too low. Minimum needed: ${minGasNeeded / 1_000_000_000} gwei`);
               
-              // Aqui você poderia implementar um retry automático com valor maior
-              throw new Error(`Gas tip cap insuficiente. O mínimo necessário é ${minGasNeeded / 1_000_000_000} gwei. Tente novamente com um valor maior.`);
+              // Here you could implement an automatic retry with a higher value
+              throw new Error(`Insufficient gas tip cap. The minimum required is ${minGasNeeded / 1_000_000_000} gwei. Try again with a higher value.`);
             }
           }
         } catch (parseError) {
-          console.error("Erro ao processar detalhes do erro:", parseError);
+          console.error("Error processing error details:", parseError);
         }
       }
       
-      // Análise do erro mais precisa para gas price
+      // More precise error analysis for gas price
       if (error.message) {
         if (error.message.includes("gas tip cap") || error.message.includes("underpriced")) {
-          // Verificar se a mensagem inclui o valor mínimo necessário
+          // Check if the message includes the minimum required value
           const minGasMatch = error.message.match(/minimum needed (\d+)/);
           if (minGasMatch && minGasMatch[1]) {
             const minGasNeeded = parseInt(minGasMatch[1], 10);
             const minGasInGwei = minGasNeeded / 1_000_000_000;
-            console.log(`⚠️ Gas price muito baixo. Mínimo necessário: ${minGasInGwei} gwei`);
-            throw new Error(`Transação com gas price muito baixo. A rede Polygon exige no mínimo ${minGasInGwei} gwei. Consulte https://polygonscan.com/gastracker para valores atuais.`);
+            console.log(`⚠️ Gas price too low. Minimum needed: ${minGasInGwei} gwei`);
+            throw new Error(`Transaction with gas price too low. The Polygon network requires at least ${minGasInGwei} gwei. Check https://polygonscan.com/gastracker for current values.`);
           } else {
-            throw new Error(`Transação com gas price muito baixo para a rede Polygon. Consulte https://polygonscan.com/gastracker para valores atuais.`);
+            throw new Error(`Transaction with gas price too low for the Polygon network. Check https://polygonscan.com/gastracker for current values.`);
           }
         } else if (error.code === "INSUFFICIENT_FUNDS") {
-          throw new Error("Fundos insuficientes para enviar a transação. Por favor, adicione MATIC à carteira distribuidora.");
+          throw new Error("Insufficient funds to send the transaction. Please add MATIC to the distributor wallet.");
         } else if (error.code === "NONCE_EXPIRED") {
-          throw new Error(`Erro de nonce: ${error.message}. Tente novamente.`);
+          throw new Error(`Nonce error: ${error.message}. Try again.`);
         } else if (error.code === "REPLACEMENT_UNDERPRICED") {
-          throw new Error(`Transação com gas price muito baixo. Aumente o gas price e tente novamente.`);
+          throw new Error(`Transaction with gas price too low. Increase the gas price and try again.`);
         }
       }
       
-      // Erro genérico
-      throw new Error(`Falha ao distribuir tokens G33: ${error.message || JSON.stringify(error)}`);
+      // Generic error
+      throw new Error(`Failed to distribute G33 tokens: ${error.message || JSON.stringify(error)}`);
     }
   }
 
   /**
-   * Registra uma doação e distribui tokens G33 automaticamente
-   * @param donorAddress Endereço do doador
-   * @param donationAmount Valor doado em criptomoeda
-   * @param usdValue Valor equivalente em USD
-   * @param tokenAmount Quantidade de tokens a distribuir
-   * @param transactionHash Hash da transação de doação
-   * @param network Rede da doação
-   * @param cryptoSymbol Símbolo da criptomoeda usada
-   * @returns Um objeto contendo o ID do documento no Firebase e o status da distribuição
-   * @throws Error se a distribuição de tokens falhar
+   * Records a donation and automatically distributes G33 tokens
+   * @param donorAddress Donor's address
+   * @param donationAmount Donated amount in cryptocurrency
+   * @param usdValue Equivalent value in USD
+   * @param tokenAmount Amount of tokens to distribute
+   * @param transactionHash Donation transaction hash
+   * @param network Donation network
+   * @param cryptoSymbol Cryptocurrency symbol used
+   * @returns An object containing the document ID in Firebase and the distribution status
+   * @throws Error if token distribution fails
    */
   async processDonation(
     donorAddress: string,
@@ -1195,7 +1195,7 @@ class G33TokenDistributorService {
     network: string,
     cryptoSymbol: string
   ): Promise<{id: string, success: boolean, distributionTxHash?: string, error?: string}> {
-    // Criar objeto para registrar a doação
+    // Create object to record the donation
     const tokenDonation: TokenDonation = {
       donorAddress,
       donationAmount,
@@ -1208,70 +1208,70 @@ class G33TokenDistributorService {
       status: 'pending'
     };
     
-    // Adicionar ao Firebase com status inicial 'pending'
+    // Add to Firebase with initial status 'pending'
     const docRef = await addDoc(collection(db, 'tokenDonations'), tokenDonation);
     const donationId = docRef.id;
     
     try {
-      console.log(`Processando doação para distribuição de tokens: ${tokenAmount} G33 para ${donorAddress}`);
+      console.log(`Processing donation for token distribution: ${tokenAmount} G33 to ${donorAddress}`);
       
-      // MUITO IMPORTANTE: Verificar inicialização antes de tentar distribuir
+      // VERY IMPORTANT: Check initialization before attempting to distribute
       if (!(await this.ensureInitialized())) {
-        const errorMsg = `Serviço distribuidor não inicializado. Erro: ${this.initializationError || "Desconhecido"}`;
+        const errorMsg = `Distributor service not initialized. Error: ${this.initializationError || "Unknown"}`;
         console.error(errorMsg);
         
-        // Atualizar o status da doação para 'failed'
+        // Update donation status to 'failed'
         await updateDoc(docRef, {
           status: 'failed',
           error: errorMsg
         });
         
-        // Lançar erro para interromper o processamento da doação
+        // Throw error to interrupt donation processing
         throw new Error(errorMsg);
       }
       
-      // Tentar distribuir os tokens
+      // Try to distribute the tokens
       const distributionTxHash = await this.distributeTokens(donorAddress, usdValue);
       
       if (!distributionTxHash) {
-        const errorMsg = 'Falha na distribuição de tokens - transação blockchain não completada';
+        const errorMsg = 'Token distribution failed - blockchain transaction not completed';
         console.error(errorMsg);
         
-        // Atualizar o status da doação para 'failed'
+        // Update donation status to 'failed'
         await updateDoc(docRef, {
           status: 'failed',
           error: errorMsg
         });
         
-        // Lançar erro para interromper o processamento da doação
+        // Throw error to interrupt donation processing
         throw new Error(errorMsg);
       }
       
-      // Distribuição bem-sucedida - atualizar o registro
+      // Successful distribution - update the record
       await updateDoc(docRef, {
         status: 'distributed',
         distributionTxHash
       });
       
-      console.log(`Doação processada e tokens distribuídos com sucesso: ${tokenAmount} G33 para ${donorAddress}`);
+      console.log(`Donation processed and tokens distributed successfully: ${tokenAmount} G33 to ${donorAddress}`);
       
-      // Retornar sucesso com o hash da transação de distribuição
+      // Return success with the distribution transaction hash
       return {
         id: donationId,
         success: true,
         distributionTxHash
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-      console.error("Erro crítico ao processar distribuição de tokens:", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Critical error processing token distribution:", errorMessage);
       
-      // Atualizar status para falha
+      // Update status to failed
       await updateDoc(docRef, {
         status: 'failed',
         error: errorMessage
       });
       
-      // Retornar falha e propagar o erro
+      // Return failure and propagate the error
       return {
         id: donationId,
         success: false,
@@ -1281,8 +1281,8 @@ class G33TokenDistributorService {
   }
 
   /**
-   * Obtém o total de tokens disponíveis para distribuição
-   * @returns Quantidade de tokens disponíveis ou 0 se não for possível obter
+   * Gets the total tokens available for distribution
+   * @returns Amount of tokens available or 0 if unable to get
    */
   async getAvailableTokens(): Promise<string> {
     try {
@@ -1293,13 +1293,13 @@ class G33TokenDistributorService {
       const availableTokens = await this.contract!.getAvailableTokens();
       return ethers.utils.formatEther(availableTokens);
     } catch (error) {
-      console.error("Erro ao obter tokens disponíveis:", error);
+      console.error("Error getting available tokens:", error);
       return "0";
     }
   }
 
   /**
-   * Obtém estatísticas de distribuição
+   * Gets distribution statistics
    */
   async getDistributionStats() {
     try {
@@ -1319,12 +1319,12 @@ class G33TokenDistributorService {
       
       return {
         totalDistributed: ethers.utils.formatEther(totalDistributed),
-        // totalDonationsUsd é armazenado com 2 casas decimais extras (x100)
+        // totalDonationsUsd is stored with 2 extra decimal places (x100)
         totalDonationsUsd: (Number(totalDonationsUsd) / 100).toString(),
         availableTokens: ethers.utils.formatEther(availableTokens)
       };
     } catch (error) {
-      console.error("Erro ao obter estatísticas de distribuição:", error);
+      console.error("Error getting distribution statistics:", error);
       return {
         totalDistributed: "0",
         totalDonationsUsd: "0",
@@ -1334,8 +1334,8 @@ class G33TokenDistributorService {
   }
 
   /**
-   * Obtém o total de tokens já distribuídos para um doador específico
-   * @param donorAddress Endereço do doador
+   * Gets the total tokens already distributed to a specific donor
+   * @param donorAddress Donor's address
    */
   async getTokensDistributedToDonor(donorAddress: string): Promise<string> {
     try {
@@ -1346,15 +1346,15 @@ class G33TokenDistributorService {
       const tokenAmount = await this.contract!.tokensDistributed(donorAddress);
       return ethers.utils.formatEther(tokenAmount);
     } catch (error) {
-      console.error(`Erro ao obter tokens distribuídos para ${donorAddress}:`, error);
+      console.error(`Error getting tokens distributed to ${donorAddress}:`, error);
       return "0";
     }
   }
 
   /**
-   * Obtém o recibo de uma transação pelo seu hash
-   * @param txHash Hash da transação
-   * @returns Recibo da transação ou null se não encontrado
+   * Gets the receipt of a transaction by its hash
+   * @param txHash Transaction hash
+   * @returns Transaction receipt or null if not found
    */
   async getTransactionReceipt(txHash: string): Promise<ethers.providers.TransactionReceipt | null> {
     try {
@@ -1363,13 +1363,13 @@ class G33TokenDistributorService {
       }
       
       if (!this.provider) {
-        console.error("Provider não disponível para verificar recibo da transação");
+        console.error("Provider not available to check transaction receipt");
         return null;
       }
       
       return await this.provider.getTransactionReceipt(txHash);
     } catch (error) {
-      console.error(`Erro ao obter recibo da transação ${txHash}:`, error);
+      console.error(`Error getting transaction receipt ${txHash}:`, error);
       return null;
     }
   }
@@ -1377,40 +1377,40 @@ class G33TokenDistributorService {
 
 // Ensure the service is initialized only on the server side
 if (typeof window !== "undefined") {
-  console.error("G33TokenDistributorService não pode ser inicializado no cliente. Ignorando inicialização.");
-  throw new Error("Execução no cliente detectada. Serviço não será inicializado.");
+  console.error("G33TokenDistributorService cannot be initialized on the client. Ignoring initialization.");
+  throw new Error("Client-side execution detected. Service will not be initialized.");
 }
 
-// Exportar a instância do serviço
+// Export the service instance
 export const g33TokenDistributorService = new G33TokenDistributorService();
 
-// Atualizar o endereço do contrato distribuidor no Firebase
+// Update the distributor contract address in Firebase
 (async () => {
   try {
-    const distributorAddress = "0x137c762cb3eea5c8e5a6ed2fdf41dd47b5e13455"; // Endereço do novo contrato G33TokenDistributorV2
+    const distributorAddress = "0x137c762cb3eea5c8e5a6ed2fdf41dd47b5e13455"; // Address of the new G33TokenDistributorV2 contract
     await updateDoc(doc(db, "settings", "contractConfig"), {
       tokenDistributorAddress: distributorAddress
     });
-    console.log("Endereço do contrato distribuidor atualizado no Firebase");
+    console.log("Distributor contract address updated in Firebase");
   } catch (err) {
-    console.error("Erro ao atualizar endereço do contrato no Firebase:", err);
+    console.error("Error updating contract address in Firebase:", err);
   }
 })();
 
-console.log("--- Verificando contexto de execução ---");
+console.log("--- Checking execution context ---");
 console.log("process.env.NODE_ENV:", process.env.NODE_ENV);
-console.log("process.env.DISTRIBUTOR_PRIVATE_KEY:", process.env.DISTRIBUTOR_PRIVATE_KEY ? "[REDACTED]" : "Não encontrada");
+console.log("process.env.DISTRIBUTOR_PRIVATE_KEY:", process.env.DISTRIBUTOR_PRIVATE_KEY ? "[REDACTED]" : "Not found");
 
 // Ensure DISTRIBUTOR_PRIVATE_KEY-dependent logic is skipped on the client side
 if (typeof window !== "undefined") {
-  console.error("Este código está sendo executado no lado do cliente. Variáveis de ambiente privadas não estão disponíveis no cliente.");
-  throw new Error("Execução no cliente detectada. Lógica dependente de DISTRIBUTOR_PRIVATE_KEY será ignorada.");
+  console.error("This code is running on the client side. Private environment variables are not available on the client.");
+  throw new Error("Client-side execution detected. DISTRIBUTOR_PRIVATE_KEY-dependent logic will be skipped.");
 }
 
 if (typeof window !== "undefined") {
-  console.error("Este código está sendo executado no lado do cliente. Variáveis de ambiente privadas não estão disponíveis no cliente.");
+  console.error("This code is running on the client side. Private environment variables are not available on the client.");
 } else {
-  console.log("Este código está sendo executado no lado do servidor.");
+  console.log("This code is running on the server side.");
 }
 
 export default g33TokenDistributorService;

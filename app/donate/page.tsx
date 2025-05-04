@@ -292,47 +292,41 @@ export default function DonatePage() {
   
     try {
       if (!selectedCrypto || !selectedNetwork || !donationAmount) {
-        throw new Error("Detalhes da doação estão incompletos.");
+        throw new Error("Donation details are incomplete.");
       }
   
       if (!walletConnected) {
-        throw new Error("Por favor, conecte sua carteira primeiro.");
+        throw new Error("Please connect your wallet first.");
       }
   
-      // Certifique-se de que estamos na rede correta
       if (currentNetwork !== selectedNetwork.id) {
         const switched = await switchNetwork(selectedNetwork.id);
         if (!switched) {
-          throw new Error("Falha ao mudar de rede. Por favor, mude manualmente e tente novamente.");
+          throw new Error("Failed to switch network. Please switch manually and try again.");
         }
       }
 
-      // Para USDT, precisamos garantir que a transação USDT seja enviada primeiro
       let txHash = "transaction-hash-placeholder";
       let usdtTxSuccess = false;
       
       if (selectedCrypto.symbol === "USDT") {
-        console.log("Processando transação USDT...");
-        // Endereço do receptor da doação
+        console.log("Processing USDT transaction...");
         const recipientAddress = DONATION_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
         if (!recipientAddress) {
-          throw new Error(`Endereço de doação não encontrado para ${selectedCrypto.symbol} na rede ${selectedNetwork.name}`);
+          throw new Error(`Donation address not found for ${selectedCrypto.symbol} on ${selectedNetwork.name}`);
         }
 
-        // Endereço do contrato USDT na rede selecionada
         const tokenAddress = TOKEN_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
         if (!tokenAddress) {
-          throw new Error(`Contrato ${selectedCrypto.symbol} não encontrado na rede ${selectedNetwork.name}`);
+          throw new Error(`Contract ${selectedCrypto.symbol} not found on ${selectedNetwork.name}`);
         }
 
         try {
-          // Obter Web3Provider com suporte a getSigner
           const provider = await web3Service.getWeb3Provider();
           if (!provider) {
-            throw new Error("Não foi possível obter provedor web3. Por favor, verifique sua carteira.");
+            throw new Error("Unable to get web3 provider. Please check your wallet.");
           }
-          
-          // Usar o signer do provider para o contrato
+
           const signer = provider.getSigner();
           const usdtContract = new ethers.Contract(
             tokenAddress,
@@ -346,79 +340,55 @@ export default function DonatePage() {
             signer
           );
 
-          // Obter os decimais do token
           const decimals = await usdtContract.decimals();
-          
-          // Converter o valor para a representação correta com decimais
           const amount = ethers.utils.parseUnits(donationAmount, decimals);
-          
-          // Enviar a transação
+
           const tx = await usdtContract.transfer(recipientAddress, amount);
-          
-          // Esperar a confirmação da transação
-          console.log("Aguardando confirmação da transação USDT...");
-          await tx.wait(1); // Aguardar 1 confirmação
-          
-          // Obter o hash da transação para registro
+
+          console.log("Waiting for USDT transaction confirmation...");
+          await tx.wait(1);
+
           txHash = tx.hash;
           usdtTxSuccess = true;
-          console.log(`Transação USDT enviada com sucesso! Hash: ${txHash}`);
-        } catch (txError: any) {
-          console.error("Erro ao enviar transação:", txError);
-          throw new Error(`Erro ao enviar ${selectedCrypto.symbol}: ${txError.message || 'Falha na transação'}`);
+          console.log(`USDT transaction sent successfully! Hash: ${txHash}`);
+        } catch (txError) {
+          const errorMessage = txError instanceof Error ? txError.message : String(txError);
+          console.error("Error sending transaction:", errorMessage);
+          throw new Error(`Error sending ${selectedCrypto.symbol}: ${errorMessage}`);
         }
-      } else if (selectedCrypto.symbol === "ETH" || selectedCrypto.symbol === "BNB") {
-        // Implementação para ETH ou BNB (tokens nativos) pode ser adicionada aqui
-        // Similar ao processamento de USDT, mas usando o método de envio nativo
       }
-      
-      console.log("Iniciando distribuição de tokens G33...");
-      
-      // Agora queremos garantir que os tokens G33 sejam enviados corretamente
-      // antes de confirmar o sucesso da doação
+
+      console.log("Starting G33 token distribution...");
+
       try {
-        // Registre a doação no sistema e distribua tokens G33, esperando a confirmação
         const result = await tokenService.processDonationAndDistributeTokens(
           walletAddress,
           parseFloat(donationAmount),
           selectedCrypto.symbol,
-          txHash, // Hash real da transação de doação
+          txHash,
           selectedNetwork.id,
-          true // Novo parâmetro: 'waitForConfirmation' - esperar até que os tokens sejam distribuídos
+          true
         );
-    
+
         if (!result.success) {
-          // Se houve um problema na distribuição dos tokens G33, não consideramos a doação completa
-          // mesmo que o USDT tenha sido enviado
-          console.error("Falha na distribuição dos tokens G33:", result.error);
-          throw new Error(result.error || "Falha na distribuição dos tokens G33. Por favor, tente novamente.");
+          console.error("Failed to distribute G33 tokens:", result.error);
+          throw new Error(result.error || "Failed to distribute G33 tokens. Please try again.");
         }
-    
-        // Chegando aqui, temos certeza que tanto a doação quanto a distribuição foram bem-sucedidas
+
         setTransactionHash(result.distributionTxHash || txHash);
         setDonationStep('success');
-        console.log("Doação e distribuição de tokens concluídas com sucesso!");
-        console.log("Hash da transação de distribuição:", result.distributionTxHash);
-        
-        // Podemos adicionar uma verificação adicional de saldo aqui se necessário
-      } catch (error: any) {
-        console.error("Erro ao distribuir tokens G33:", error);
-        
-        // Se o erro for específico de fundos insuficientes para gas, podemos tentar com um gas fee menor
-        if (error.message && error.message.includes("insufficient funds for gas")) {
-          setError("Erro temporário na rede blockchain. Por favor, tente novamente em alguns minutos.");
-        } else {
-          setError(error.message || "Erro ao distribuir tokens G33. Por favor, tente novamente.");
-        }
-        
-        // Como não conseguimos confirmar a distribuição dos tokens, consideramos a doação como incompleta
+        console.log("Donation and token distribution completed successfully!");
+      } catch (error) {
+        console.error("Error distributing G33 tokens:", error);
+        setError(error instanceof Error ? error.message : "Error distributing G33 tokens. Please try again.");
         setDonationStep('error');
       } finally {
         setIsProcessing(false);
       }
-    } catch (error: any) {
-      console.error("Erro ao processar doação:", error);
-      setError(error.message || "Erro desconhecido ao processar a doação.");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Error processing donation:", errorMessage);
+      setError(errorMessage || "Unknown error processing donation.");
       setDonationStep('error');
     } finally {
       setIsProcessing(false);
