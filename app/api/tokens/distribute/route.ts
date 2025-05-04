@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import { doc, getDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
+import { g33TokenDistributorService } from '../../../../services/g33TokenDistributorService';
 
 // ABI simplificado do contrato G33TokenDistributor
 const DISTRIBUTOR_ABI = [
   "function distributeTokens(address donor, uint256 donationAmountUsd) external",
-  "function getAvailableTokens() external view returns (uint256)"
+  "function getAvailableTokens() external view returns (uint256)",
+  "function distributors(address) external view returns (bool)",
+  "function tokensDistributed(address) external view returns (uint256)"
 ];
 
 // Lista expandida de URLs RPC para maior resiliência
@@ -123,28 +126,10 @@ async function createRpcProvider(): Promise<ethers.providers.Provider | undefine
 export async function POST(request: NextRequest) {
   try {
     console.log("🔄 [API] Iniciando distribuição de tokens G33");
-    
-    // Log full environment variables for debugging (hiding sensitive data)
-    console.log("🔧 [API] Variáveis de ambiente disponíveis:", Object.keys(process.env)
-      .filter(key => !key.includes('KEY') && !key.includes('SECRET') && !key.includes('PASSWORD'))
-      .join(', '));
-    
-    // Verify DISTRIBUTOR_PRIVATE_KEY presence but don't log actual value
-    if (process.env.DISTRIBUTOR_PRIVATE_KEY) {
-      console.log("✅ [API] DISTRIBUTOR_PRIVATE_KEY está configurada e disponível");
-    } else {
-      console.error("❌ [API] DISTRIBUTOR_PRIVATE_KEY não está configurada");
-    }
-    
+
     let requestData;
     try {
       requestData = await request.json();
-      console.log(`📋 [API] Dados da solicitação recebidos: ${JSON.stringify({
-        donorAddress: requestData.donorAddress,
-        usdValue: requestData.usdValue,
-        donationId: requestData.donationId || 'Não fornecido',
-        network: requestData.network || 'polygon'
-      })}`);
     } catch (parseError) {
       console.error("❌ [API] Erro ao analisar corpo da requisição:", parseError);
       return NextResponse.json(
@@ -152,363 +137,159 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    const { donorAddress, usdValue, donationId, transactionHash, network, cryptoSymbol } = requestData;
-    
-    // Validação de parâmetros
+
+    const { donorAddress, donationId, transactionHash, network, cryptoSymbol } = requestData;
+    // Inicializamos usdValue como let para permitir modificações
+    let usdValue = requestData.usdValue;
+
+    // DIAGNÓSTICO: Adicionando logs detalhados para debug
+    console.log("📊 [API] Valor USD recebido:", usdValue, "Tipo:", typeof usdValue);
+    console.log("📊 [API] Dados completos da requisição:", JSON.stringify(requestData, null, 2));
+
     if (!donorAddress || !ethers.utils.isAddress(donorAddress)) {
-      console.error("❌ [API] Endereço de doador inválido:", donorAddress);
       return NextResponse.json(
         { success: false, error: 'Endereço de doador inválido' },
         { status: 400 }
       );
     }
 
+    // VALIDAÇÕES ADICIONAIS: Garantir que o valor é um número válido e no formato correto
     if (!usdValue || typeof usdValue !== 'number' || usdValue <= 0) {
+      console.error(`❌ [API] Valor USD inválido: ${usdValue} (${typeof usdValue})`);
       return NextResponse.json(
         { success: false, error: 'Valor USD inválido' },
         { status: 400 }
       );
     }
-    
-    console.log(`📋 Dados da solicitação:
-      - Doador: ${donorAddress} 
-      - Valor USD: $${usdValue}
-      - ID da doação: ${donationId || 'Não fornecido'}
-      - Rede origem: ${network || 'polygon'}
-    `);
 
-    // Obter chave privada do distribuidor (armazenada em variáveis de ambiente)
-    const privateKey = process.env.DISTRIBUTOR_PRIVATE_KEY;
-    if (!privateKey) {
-      console.error('❌ [API] Chave privada do distribuidor não configurada');
+    // VALIDAÇÃO CRÍTICA: Verificar se o valor é um inteiro
+    if (usdValue % 1 !== 0) {
+      console.warn(`⚠️ [API] O valor USD ${usdValue} contém decimais e será arredondado para ${Math.floor(usdValue)}`);
+      usdValue = Math.floor(usdValue);
+    }
+
+    // VALIDAÇÃO CRÍTICA: Garantir valor mínimo de 1 USD
+    if (usdValue < 1) {
+      console.error(`❌ [API] Valor USD muito baixo: ${usdValue}. Mínimo necessário: 1 USD`);
       return NextResponse.json(
-        { success: false, error: 'Erro de configuração do servidor: DISTRIBUTOR_PRIVATE_KEY não encontrada' },
-        { status: 500 }
+        { success: false, error: 'Valor USD muito baixo. Mínimo necessário: 1 USD', value: usdValue },
+        { status: 400 }
       );
     }
-    
-    // Buscar endereço do contrato distribuidor no Firebase
-    try {
-      console.log("[API] Tentando acessar o Firebase para obter configuração do contrato...");
-      const configDocRef = doc(db, "settings", "contractConfig");
-      const configSnap = await getDoc(configDocRef);
+
+    // DIAGNÓSTICO: Mostrando valor que será enviado ao contrato
+    console.log(`📊 [API] Valor USD final a ser processado: ${usdValue}`);
+    console.log(`📊 [API] Valor que será enviado ao contrato (x100): ${usdValue * 100}`);
+    console.log(`📊 [API] Valor em hexadecimal: 0x${(usdValue * 100).toString(16)}`);
+
+    // Garantir que o serviço está inicializado antes de prosseguir
+    if (!g33TokenDistributorService.checkIsInitialized()) {
+      console.log("⏳ [API] Aguardando inicialização do serviço...");
+      // Forçar uma inicialização e aguardar sua conclusão
+      await g33TokenDistributorService.init(true); // Forçar inicialização mesmo que tenha sido tentada recentemente
       
-      if (!configSnap.exists()) {
-        console.error("❌ [API] Documento de configuração não encontrado no Firebase");
-        return NextResponse.json(
-          { success: false, error: 'Documento de configuração do contrato não encontrado' },
-          { status: 500 }
-        );
-      }
-      
-      if (!configSnap.data().tokenDistributorAddress) {
-        console.error("❌ [API] Endereço do distribuidor não configurado no documento Firebase");
-        return NextResponse.json(
-          { success: false, error: 'Endereço do contrato distribuidor não configurado' },
-          { status: 500 }
-        );
-      }
-      
-      const distributorAddress = configSnap.data().tokenDistributorAddress;
-      console.log(`✅ [API] Endereço do contrato distribuidor obtido: ${distributorAddress}`);
-    
-      // Obter um provider confiável usando nosso método de fallback
-      console.log(`🌐 [API] Tentando conectar à Polygon com múltiplos endpoints...`);
-      const provider = await createRpcProvider();
-      
-      if (!provider) {
-        console.error('❌ [API] Erro fatal: Não foi possível obter um provider válido');
+      // Verificar novamente após a tentativa de inicialização
+      if (!g33TokenDistributorService.checkIsInitialized()) {
+        const error = g33TokenDistributorService.getInitializationError() || "Erro desconhecido";
+        console.error(`❌ [API] Serviço não inicializado após tentativa: ${error}`);
         return NextResponse.json(
           { 
             success: false, 
-            error: 'Não foi possível estabelecer conexão com a blockchain. Tente novamente mais tarde.',
-            details: "Falha ao conectar com todos os endpoints RPC disponíveis"
+            error: 'Serviço distribuidor não inicializado', 
+            details: `Não foi possível inicializar o serviço: ${error}`
           },
           { status: 503 }
         );
       }
-      
-      console.log(`✅ [API] Conexão com provider blockchain estabelecida com sucesso`);
-      
-      // Configurar wallet
+    }
+
+    try {
+      console.log("✅ [API] Serviço inicializado, prosseguindo com distribuição");
       try {
-        // Definir tokensNeeded no início do bloco
-        const tokensNeeded = usdValue;
-        console.log("[API] Configurando wallet com a chave privada...");
-        const wallet = new ethers.Wallet(privateKey, provider);
-        const walletAddress = await wallet.getAddress();
-        
-        console.log(`👛 [API] Carteira do distribuidor configurada: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`);
-        
-        // Verificar o saldo de MATIC da carteira para diagnóstico
-        const walletBalance = await provider.getBalance(walletAddress);
-        console.log(`💰 [API] Saldo de MATIC da carteira: ${ethers.utils.formatEther(walletBalance)} MATIC`);
-        
-        if (walletBalance.isZero()) {
-          console.error("❌ [API] A carteira do distribuidor não tem saldo de MATIC");
-          return NextResponse.json(
-            { success: false, error: 'A carteira do distribuidor não tem saldo de MATIC para pagar gas' },
-            { status: 400 }
-          );
+        const distributionResult = await g33TokenDistributorService.distributeTokens(donorAddress, usdValue, true);
+
+        if (!distributionResult) {
+          throw new Error('Falha ao distribuir tokens. Verifique os logs para mais detalhes.');
         }
-        
-        // Conectar ao contrato
-        console.log(`[API] Conectando ao contrato ${distributorAddress}...`);
-        const contract = new ethers.Contract(distributorAddress, DISTRIBUTOR_ABI, wallet);
-        
-        // Verificar saldo de tokens disponíveis
-        console.log("[API] Verificando saldo de tokens disponíveis...");
-        let availableTokensWei;
-        try {
-          availableTokensWei = await contract.getAvailableTokens();
-          const availableTokens = parseFloat(ethers.utils.formatEther(availableTokensWei));
-          
-          console.log(`💰 [API] Tokens disponíveis: ${availableTokens.toFixed(2)}`);
-          console.log(`🎯 [API] Tokens necessários: ${tokensNeeded.toFixed(2)}`);
-          
-          if (availableTokens < tokensNeeded) {
-            console.error(`❌ [API] Tokens insuficientes (${availableTokens} disponíveis, ${tokensNeeded} necessários)`);
-            return NextResponse.json(
-              { 
-                success: false, 
-                error: `Tokens insuficientes no distribuidor`,
-                availableTokens,
-                tokensNeeded
-              },
-              { status: 400 }
-            );
-          }
-        } catch (contractError) {
-          console.error("❌ [API] Erro ao acessar função getAvailableTokens do contrato:", contractError);
-          return NextResponse.json(
-            { 
-              success: false, 
-              error: 'Erro ao acessar contrato inteligente',
-              details: contractError instanceof Error ? contractError.message : "Erro desconhecido no contrato"
-            },
-            { status: 500 }
-          );
-        }
-        
-        // Escalar valor USD para o formato esperado pelo contrato G33TokenDistributorV2
-        // O novo contrato agora lida corretamente com as casas decimais:
-        // 1. Recebe donationAmountUsd como valor * 100 (para precisão de 2 casas decimais)
-        // 2. Calcula tokenAmount = donationAmountUsd / 100
-        // 3. Multiplica por 10^18 antes de transferir para considerar casas decimais do ERC-20
-        //
-        // Para 1 USD:
-        // Enviamos 100 (1 * 100)
-        // O contrato calcula 100 / 100 = 1 e envia 1 * 10^18 wei = 1 token completo
-        
-        const usdValueScaled = Math.floor(usdValue * 100);
-        
-        console.log(`💱 [API] Valor USD original: $${usdValue}`);
-        console.log(`💱 [API] Valor escalado para o contrato (x100): ${usdValueScaled}`);
-        console.log(`💱 [API] O doador receberá ${usdValue} tokens completos G33`);
-        
-        // Obter valores atuais de gas da rede
-        console.log("[API] Obtendo fee data da rede...");
-        let feeData;
-        try {
-          feeData = await provider.getFeeData();
-          console.log("[API] Fee data obtido com sucesso");
-        } catch (feeError) {
-          console.error("❌ [API] Erro ao obter fee data da rede:", feeError);
-          feeData = {
-            gasPrice: ethers.utils.parseUnits("35", "gwei"),
-            maxFeePerGas: ethers.utils.parseUnits("60", "gwei"),
-            maxPriorityFeePerGas: ethers.utils.parseUnits("30", "gwei")
-          };
-          console.log("[API] Usando fee data de fallback");
-        }
-        
-        // Configurar gas com valores suficientes para Polygon
-        const gasLimit = ethers.utils.hexlify(80000); // Valor fixo para o gas limit
-        
-        // IMPORTANTE: Polygon exige pelo menos 25 gwei para maxPriorityFeePerGas (gas tip cap)
-        // Usar 30 gwei para garantir que a transação seja aceita
-        const maxPriorityFeePerGas = ethers.utils.parseUnits("30", "gwei"); 
-        
-        // Usar um valor de maxFeePerGas também adequado
-        const maxFeePerGas = ethers.utils.parseUnits("60", "gwei");
-        
-        // Calcular custo estimado da transação
-        const estimatedGasCost = maxFeePerGas.mul(gasLimit);
-        console.log(`⛽ [API] Custo estimado da transação: ${ethers.utils.formatEther(estimatedGasCost)} MATIC`);
-        
-        if (estimatedGasCost.gt(walletBalance)) {
-          console.error(`❌ [API] Fundos insuficientes para a transação. Necessário: ${ethers.utils.formatEther(estimatedGasCost)} MATIC, Disponível: ${ethers.utils.formatEther(walletBalance)} MATIC`);
-          return NextResponse.json(
-            { 
-              success: false, 
-              error: `Fundos insuficientes na carteira distribuidora`,
-              required: ethers.utils.formatEther(estimatedGasCost),
-              available: ethers.utils.formatEther(walletBalance)
-            },
-            { status: 400 }
-          );
-        }
-        
-        console.log(`🚀 [API] Distribuindo ${tokensNeeded} tokens para ${donorAddress}...`);
-        console.log(`⛽ [API] Configurações de gas: 
-          - Gas Limit: ${gasLimit}
-          - MaxPriorityFeePerGas: ${ethers.utils.formatUnits(maxPriorityFeePerGas, "gwei")} gwei
-          - MaxFeePerGas: ${ethers.utils.formatUnits(maxFeePerGas, "gwei")} gwei
-        `);
-        
-        // Enviar transação com configurações de gas explícitas e baixas
-        console.log("[API] Enviando transação para o contrato...");
-        const tx = await contract.distributeTokens(donorAddress, usdValueScaled, {
-          gasLimit,
-          maxPriorityFeePerGas,
-          maxFeePerGas,
-          type: 2 // Tipo EIP-1559 para suportar as configurações de gas
-        });
-        
-        console.log(`📤 [API] Transação enviada: ${tx.hash}`);
-        
-        // Aguardar confirmação
-        console.log("[API] Aguardando confirmação da transação (1 bloco)...");
-        const receipt = await tx.wait(1);
-        console.log(`✅ [API] Transação confirmada! Gas usado: ${receipt.gasUsed.toString()}`);
-        
-        // Atualizar registro no Firebase se temos um ID de doação
+
+        console.log("✅ [API] Tokens distribuídos com sucesso");
+
         if (donationId) {
-          try {
-            console.log(`[API] Atualizando registro de doação ${donationId} no Firebase...`);
-            const donationRef = doc(db, 'tokenDonations', donationId);
-            await updateDoc(donationRef, {
-              status: 'distributed',
-              distributionTxHash: tx.hash,
+          await updateDoc(doc(db, 'tokenDonations', donationId), {
+            status: 'distributed',
+            distributionTxHash: distributionResult,
+            updatedAt: new Date()
+          });
+        }
+
+        // Verificar a transação para garantir que não houve falha de execução
+        console.log("[API] Verificando status da transação na blockchain...");
+        const receipt = await g33TokenDistributorService.getTransactionReceipt(distributionResult);
+        
+        if (receipt && receipt.status === 0) {
+          console.error("❌ [API] Transação foi incluída na blockchain, mas a execução do contrato falhou (status=0)");
+          
+          // Atualizar o registro para refletir o erro
+          if (donationId) {
+            await updateDoc(doc(db, 'tokenDonations', donationId), {
+              status: 'failed',
+              error: 'Execution reverted: A transação foi incluída na blockchain mas a execução do contrato falhou',
               updatedAt: new Date()
             });
-            console.log("[API] Registro de doação atualizado com sucesso");
-          } catch (updateError) {
-            console.error("⚠️ [API] Erro ao atualizar registro da doação:", updateError);
-            // Não falha a operação principal se apenas o update falhar
           }
-        } else {
-          // Criar novo registro se não temos um ID existente
-          try {
-            await addDoc(collection(db, 'tokenDonations'), {
-              donorAddress,
-              donationAmount: 0, // Não temos o valor original em cripto
-              usdValue,
-              tokenAmount: tokensNeeded,
-              transactionHash: transactionHash || tx.hash,
-              network: network || 'polygon',
-              cryptoSymbol: cryptoSymbol || 'UNKNOWN',
-              createdAt: new Date(),
-              status: 'distributed',
-              distributionTxHash: tx.hash
-            });
-          } catch (addError) {
-            console.error("⚠️ Erro ao criar registro de doação:", addError);
-            // Não falha a operação principal se apenas a criação do registro falhar
-          }
+          
+          return NextResponse.json({
+            success: false,
+            transactionHash: distributionResult,
+            error: 'Falha na execução do contrato (execution reverted)',
+            message: `A transação ${distributionResult} foi incluída na blockchain, mas a execução falhou. Verifique em https://polygonscan.com/tx/${distributionResult}`
+          }, { status: 400 });
         }
-        
-        // Retornar resposta de sucesso
-        console.log("[API] Operação concluída com sucesso, retornando resposta");
+
         return NextResponse.json({
           success: true,
-          transactionHash: tx.hash,
-          tokenAmount: tokensNeeded,
-          recordUpdated: !!donationId,
-          message: `Distribuição de ${tokensNeeded} tokens G33 concluída com sucesso`
+          transactionHash: distributionResult,
+          message: `Distribuição de tokens concluída com sucesso.`
         });
-        
-      } catch (walletError) {
-        if (walletError instanceof Error) {
-          console.error("❌ [API] Erro ao configurar wallet ou interagir com contrato:", walletError.message);
-          console.error("Stack trace:", walletError.stack);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error("❌ [API] Erro ao distribuir tokens:", error.message);
           return NextResponse.json(
-            { 
-              success: false, 
-              error: 'Erro ao interagir com a blockchain',
-              details: walletError.message
-            },
+            { success: false, error: 'Erro ao distribuir tokens', details: error.message },
             { status: 500 }
           );
         } else {
-          console.error("❌ [API] Erro desconhecido ao configurar wallet ou interagir com contrato:", walletError);
+          console.error("❌ [API] Erro desconhecido ao distribuir tokens:", error);
           return NextResponse.json(
-            { 
-              success: false, 
-              error: 'Erro desconhecido ao interagir com a blockchain',
-              details: String(walletError)
-            },
+            { success: false, error: 'Erro desconhecido ao distribuir tokens', details: String(error) },
             { status: 500 }
           );
         }
       }
-    } catch (firebaseError) {
-      console.error("❌ [API] Erro ao acessar Firebase:", firebaseError);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Erro ao acessar configurações no banco de dados',
-          details: firebaseError instanceof Error ? firebaseError.message : "Erro desconhecido no Firebase"
-        },
-        { status: 500 }
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("❌ [API] Erro ao distribuir tokens:", error.message);
+        return NextResponse.json(
+          { success: false, error: 'Erro ao distribuir tokens', details: error.message },
+          { status: 500 }
+        );
+      } else {
+        console.error("❌ [API] Erro desconhecido ao distribuir tokens:", error);
+        return NextResponse.json(
+          { success: false, error: 'Erro desconhecido ao distribuir tokens', details: String(error) },
+          { status: 500 }
+        );
+      }
     }
-    
-  } catch (error: any) {
-    // Log complete error with stack trace
-    console.error('❌ [API] Erro grave na distribuição de tokens:', error);
-    console.error('Stack trace:', error.stack);
-    
-    // Verificar tipo específico de erro
-    let statusCode = 500;
-    let errorMessage = 'Erro ao processar a distribuição de tokens';
-    let errorDetails = {};
-    
-    if (error.code === 'INSUFFICIENT_FUNDS') {
-      statusCode = 400;
-      errorMessage = 'Fundos insuficientes para gas na carteira do distribuidor';
-    } else if (error.code === 'UNPREDICTABLE_GAS_LIMIT') {
-      statusCode = 400;
-      errorMessage = 'Erro na estimativa de gas para a transação';
-    } else if (error.code === 'CALL_EXCEPTION') {
-      statusCode = 400;
-      errorMessage = 'Erro ao chamar o contrato distribuidor';
-    } else if (error.code === 'SERVER_ERROR') {
-      statusCode = 500;
-      errorMessage = 'Erro interno do servidor';
-    } else if (error.message && error.message.includes('network')) {
-      statusCode = 503;
-      errorMessage = 'Erro de conexão com a rede blockchain';
-    } else if (error.message && error.message.includes('inicializa')) {
-      statusCode = 503;
-      errorMessage = 'Serviço distribuidor não inicializado completamente';
-    } else if (error.code === 'TIMEOUT') {
-      statusCode = 504;
-      errorMessage = 'Tempo limite excedido na conexão com a blockchain';
-    } else if (error.message && error.message.includes('insufficient funds')) {
-      statusCode = 400;
-      errorMessage = 'Fundos insuficientes na carteira do distribuidor para enviar a transação';
-      console.error("Detalhes do erro de fundos insuficientes:", error);
-    }
-    
-    // Log detalhado para depuração
-    console.log(`⚠️ [API] Distribuição falhou: ${errorMessage}`, {
-      statusCode,
-      errorCode: error.code || 'UNKNOWN_ERROR',
-      errorReason: error.reason || null,
-      errorMessage: error.message || null,
-      stack: error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : null
-    });
-    
+  } catch (error) {
+    console.error("❌ [API] Erro inesperado:", error);
     return NextResponse.json(
       { 
         success: false, 
-        error: errorMessage,
-        code: error.code || 'UNKNOWN_ERROR',
-        details: error.reason || error.message || 'Erro interno do servidor'
+        error: 'Erro inesperado', 
+        details: error instanceof Error ? error.message : String(error) 
       },
-      { status: statusCode }
+      { status: 500 }
     );
   }
 }

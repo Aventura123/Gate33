@@ -490,14 +490,15 @@ class G33TokenDistributorService {
 
   /**
    * Inicializa o serviço carregando configurações e conectando ao contrato
+   * @param forceInit Se verdadeiro, força a inicialização mesmo se uma tentativa recente foi feita
    */
-  async init(): Promise<void> {
+  async init(forceInit: boolean = false): Promise<void> {
     try {
       console.log("🔄 Iniciando G33TokenDistributorService...");
       
-      // Evitar tentativas frequentes de inicialização
+      // Evitar tentativas frequentes de inicialização apenas quando não forçado
       const now = Date.now();
-      if (this.lastInitAttempt > 0 && (now - this.lastInitAttempt) < 60000) {
+      if (!forceInit && this.lastInitAttempt > 0 && (now - this.lastInitAttempt) < 60000) {
         console.log("Tentativa de inicialização muito recente, aguardando antes de tentar novamente");
         return;
       }
@@ -683,6 +684,51 @@ class G33TokenDistributorService {
   }
 
   /**
+   * Verifica se um endereço está autorizado como distribuidor no contrato
+   * @param address Endereço a ser verificado
+   * @returns true se o endereço está autorizado, false caso contrário
+   */
+  async isAuthorizedDistributor(address: string): Promise<boolean> {
+    try {
+      if (!(await this.ensureInitialized())) {
+        return false;
+      }
+      
+      // Criar um contrato com interface estendida que inclui o método distributors
+      const extendedContract = new ethers.Contract(
+        this.distributorAddress!,
+        [
+          ...DISTRIBUTOR_ABI,
+          "function distributors(address) external view returns (bool)",
+          "function owner() external view returns (address)"
+        ],
+        // Corrigindo o problema de tipo, garantindo que provider não seja null
+        this.provider || undefined
+      );
+      
+      // Verificar se o endereço é um distribuidor autorizado
+      const isDistributor = await extendedContract.distributors(address);
+      if (isDistributor) {
+        console.log(`✅ O endereço ${address} é um distribuidor autorizado`);
+        return true;
+      }
+      
+      // Verificar se o endereço é o proprietário do contrato
+      const owner = await extendedContract.owner();
+      if (owner.toLowerCase() === address.toLowerCase()) {
+        console.log(`✅ O endereço ${address} é o proprietário do contrato`);
+        return true;
+      }
+      
+      console.warn(`⚠️ O endereço ${address} NÃO é um distribuidor autorizado nem o proprietário`);
+      return false;
+    } catch (error) {
+      console.error(`Erro ao verificar se ${address} é um distribuidor autorizado:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Distribui tokens G33 para um doador com base no valor da doação em USD
    * @param donorAddress Endereço do doador
    * @param usdValue Valor da doação em USD (número decimal)
@@ -693,6 +739,20 @@ class G33TokenDistributorService {
     try {
       if (!(await this.ensureInitialized())) {
         throw new Error(`Serviço não inicializado. Erro: ${this.initializationError || "Desconhecido"}`);
+      }
+      
+      // VALIDAÇÃO CRÍTICA: O contrato G33TokenDistributorV2 não processa valores menores que 1 USD
+      // Isso ocorre porque o contrato faz: tokenAmount = donationAmountUsd / 100 (divisão inteira)
+      // Se o valor for menor que 100 (1 USD), o resultado será 0 tokens
+      if (usdValue < 1) {
+        throw new Error(`Valor mínimo para distribuição de tokens é 1 USD. Valor informado: ${usdValue} USD`);
+      }
+
+      // VALIDAÇÃO CRÍTICA: Garantir que o valor enviado é um inteiro
+      // O contrato não suporta frações de token
+      if (usdValue % 1 !== 0) {
+        console.warn(`⚠️ Aviso: O valor USD ${usdValue} contém decimais e será arredondado para ${Math.floor(usdValue)} USD`);
+        usdValue = Math.floor(usdValue);
       }
       
       // Verificar se há tokens disponíveis
@@ -707,15 +767,17 @@ class G33TokenDistributorService {
       }
       
       // Escalar valor USD para o formato esperado pelo contrato G33TokenDistributorV2
-      // O novo contrato agora lida corretamente com as casas decimais:
-      // 1. Recebe donationAmountUsd como valor * 100 (para precisão de 2 casas decimais)
-      // 2. Calcula tokenAmount = donationAmountUsd / 100
-      // 3. Multiplica por 10^18 antes de transferir para considerar casas decimais do ERC-20
-      const usdValueScaled = Math.floor(usdValue * 100);
-      
+      // O contrato espera o valor em centavos (x100) para precisão de 2 casas decimais
+      const usdValueScaled = Math.round(usdValue * 100); // Usar Math.round para evitar problemas de arredondamento
+
       console.log(`Valor USD original: ${usdValue}`);
       console.log(`Valor escalado para o contrato (x100): ${usdValueScaled}`);
       console.log(`O doador receberá ${usdValue} tokens completos G33`);
+      
+      // NOVO: Validar endereço do doador
+      if (!ethers.utils.isAddress(donorAddress)) {
+        throw new Error(`Endereço do doador inválido: ${donorAddress}`);
+      }
       
       // Verificar o endereço da carteira do distribuidor para diagnóstico
       const walletAddress = await this.wallet!.getAddress();
@@ -734,100 +796,90 @@ class G33TokenDistributorService {
         console.warn("O contrato em si não deve ser usado como assinador de transações");
       }
       
-      // ------------------------------------------------------
-      // MÉTODO ALTERNATIVO: Usar carteira externa via Web3Service (MetaMask) se disponível
-      // ------------------------------------------------------
-      const web3Service = require('./web3Service').web3Service;
-      if (web3Service.isWalletConnected()) {
-        try {
-          console.log("Usando carteira Web3 conectada para distribuir tokens...");
+      // NOVO: Verificar se já houve uma transação recente idêntica
+      console.log("Verificando histórico de doações recentes...");
+      try {
+        const donationRegistry = collection(db, 'tokenDonations');
+        const q = query(
+          donationRegistry,
+          where('donorAddress', '==', donorAddress),
+          where('usdValue', '==', usdValue),
+          where('status', 'in', ['distributed', 'pending']),
+        );
+        
+        const existingDonations = await getDocs(q);
+        if (!existingDonations.empty) {
+          const recentDonations = existingDonations.docs.filter(doc => {
+            const donation = doc.data();
+            const timestamp = donation.createdAt?.toDate?.() || new Date(donation.createdAt);
+            const minutesSince = (Date.now() - timestamp.getTime()) / (1000 * 60);
+            return minutesSince < 5; // Doações nos últimos 5 minutos
+          });
           
-          const walletInfo = web3Service.getWalletInfo();
-          if (!walletInfo || !walletInfo.address) {
-            throw new Error("Não foi possível obter informações da carteira conectada");
-          }
-          
-          console.log(`Carteira conectada: ${walletInfo.address}`);
-          
-          // Criar um novo contrato usando o provider do Web3Service
-          const provider = await web3Service.getWeb3Provider();
-          if (!provider) {
-            throw new Error("Não foi possível obter o provider da Web3");
-          }
-          
-          // Usar o signer do provider conectado (MetaMask)
-          const signer = provider.getSigner();
-          const externalContract = new ethers.Contract(
-            this.distributorAddress,
-            DISTRIBUTOR_ABI,
-            signer
-          );
-          
-          // Verificar se quem está assinando é o proprietário do contrato
-          try {
-            const signerAddress = await signer.getAddress();
-            console.log(`Usando endereço ${signerAddress} para assinar a transação`);
-            
-            // Obter fee data atual para garantir valores apropriados de gas
-            const feeData = await provider.getFeeData();
-            console.log("Fees atuais da rede:", {
-              maxFeePerGas: feeData.maxFeePerGas ? ethers.utils.formatUnits(feeData.maxFeePerGas, "gwei") + " gwei" : "N/A",
-              maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ? ethers.utils.formatUnits(feeData.maxPriorityFeePerGas, "gwei") + " gwei" : "N/A",
-              gasPrice: feeData.gasPrice ? ethers.utils.formatUnits(feeData.gasPrice, "gwei") + " gwei" : "N/A"
-            });
-            
-            // Criar a transação com gas explícito - usando valores mais altos que o mínimo exigido (25 gwei)
-            console.log(`Chamando distributeTokens(${donorAddress}, ${usdValueScaled})`);
-            
-            // Usar configurações de gas adequadas para a rede atual
-            // Polygon exige pelo menos 25 gwei para maxPriorityFeePerGas (gas tip cap)
-            const gasOptions = {
-              gasLimit: 200000,  // Gas limit aumentado para garantir
-              maxPriorityFeePerGas: ethers.utils.parseUnits("30", "gwei"),  // 30 gwei (mínimo exigido: 25 gwei)
-              maxFeePerGas: ethers.utils.parseUnits("60", "gwei")  // 60 gwei
-            };
-            
-            console.log("Enviando transação com opções de gas:", {
-              gasLimit: gasOptions.gasLimit.toString(),
-              maxPriorityFeePerGas: ethers.utils.formatUnits(gasOptions.maxPriorityFeePerGas, "gwei") + " gwei",
-              maxFeePerGas: ethers.utils.formatUnits(gasOptions.maxFeePerGas, "gwei") + " gwei"
-            });
-            
-            const tx = await externalContract.distributeTokens(
-              donorAddress,
-              usdValueScaled,
-              gasOptions
-            );
-            
-            console.log(`Transação enviada: ${tx.hash}`);
-            
-            // Aguardar confirmação se necessário
-            if (waitForConfirmation) {
-              console.log(`Aguardando confirmação da transação ${tx.hash}...`);
-              const receipt = await tx.wait(1);
-              console.log(`Transação confirmada! Gas usado: ${receipt.gasUsed.toString()}`);
+          if (recentDonations.length > 0) {
+            const recentDonation = recentDonations[0].data();
+            console.warn(`🚨 Encontrada doação muito recente (últimos 5 minutos) para o mesmo endereço e valor`);
+            if (recentDonation.distributionTxHash) {
+              console.warn(`Hash da transação recente: ${recentDonation.distributionTxHash}`);
+              console.warn("Aguardando 10 segundos para evitar problemas de nonce...");
+              await new Promise(resolve => setTimeout(resolve, 10000));
             }
-            
-            // Se chegou aqui, a transação foi bem-sucedida
-            return tx.hash;
-          } catch (externalError: any) {
-            console.error("Erro ao usar carteira externa:", externalError);
-            throw externalError; // Propagar o erro para ser tratado abaixo
           }
-        } catch (web3Error: any) {
-          console.error("Erro ao usar Web3 externa:", web3Error);
-          // Continuar com o método padrão se a abordagem externa falhar
-          console.log("Voltando ao método padrão...");
         }
-      } else {
-        console.log("Nenhuma carteira Web3 conectada, usando método padrão...");
+      } catch (dbError) {
+        console.warn("Erro ao verificar doações anteriores:", dbError);
+        // Não interromper o fluxo por falha na verificação de duplicidade
+      }
+      
+      // NOVO: Verificar permissões da carteira como distribuidora
+      try {
+        const isAuthorized = await this.isAuthorizedDistributor(walletAddress);
+        if (!isAuthorized) {
+          throw new Error(`A carteira ${walletAddress} não está autorizada como distribuidora. A transação seria revertida.`);
+        }
+        console.log(`✅ Carteira autorizada como distribuidora!`);
+      } catch (authError) {
+        console.error("Erro ao verificar permissões de distribuidor:", authError);
+        throw new Error(`Falha ao verificar permissões de distribuidor: ${authError instanceof Error ? authError.message : String(authError)}`);
+      }
+      
+      // NOVO: Fazer uma simulação prévia para detectar erros
+      try {
+        console.log(`Realizando simulação prévia da transação...`);
+        await this.contract!.callStatic.distributeTokens(donorAddress, usdValueScaled, {
+          from: walletAddress
+        });
+        console.log("✅ Simulação prévia bem-sucedida! A transação deve funcionar.");
+      } catch (simError: any) {
+        // Extrair informação útil do erro de simulação
+        console.error("❌ A simulação da transação falhou! Erro:", 
+          simError instanceof Error ? simError.message : String(simError));
+        
+        // Analisar o erro para fornecer informações mais úteis
+        let errorMessage = "Simulação falhou";
+        
+        if (simError.error?.message) {
+          errorMessage = simError.error.message;
+        } else if (simError.message) {
+          errorMessage = simError.message;
+        }
+        
+        if (errorMessage.includes("Insufficient tokens")) {
+          throw new Error(`Tokens insuficientes no contrato distribuidor.`);
+        } else if (errorMessage.includes("Not authorized")) {
+          throw new Error(`Conta ${walletAddress} não tem permissão para distribuir tokens.`);
+        } else if (errorMessage.includes("execution reverted")) {
+          throw new Error(`Simulação falhou: ${errorMessage}. Verifique o saldo e permissões do contrato.`);
+        }
+        
+        throw new Error(`Simulação prévia falhou: ${errorMessage}`);
       }
       
       // Método padrão: Usar a carteira configurada no serviço
       // ----------------------------------------------------- 
       console.log("Usando carteira configurada no serviço para distribuir tokens...");
       
-      // Garantir que estamos verificando o saldo da carteira que assina a transação
+      // Verificar saldo da carteira para gas
       console.log(`Verificando saldo da carteira que assina a transação: ${walletAddress}`);
       const walletBalance = await this.provider!.getBalance(walletAddress);
       console.log(`Saldo da carteira (direto do provedor RPC): ${ethers.utils.formatEther(walletBalance)} MATIC`);
@@ -835,20 +887,9 @@ class G33TokenDistributorService {
       // Log do nó RPC usado
       if (this.provider instanceof ethers.providers.JsonRpcProvider) {
         console.log(`Usando nó RPC: ${this.provider.connection.url}`);
-      } else {
-        console.log("Provedor não suporta acesso à propriedade 'connection'.");
       }
-      // Log do endereço da carteira configurada
-      console.log(`Endereço da carteira configurada: ${walletAddress}`);
       
-      // Ignorar a verificação de saldo pois parece estar reportando incorretamente
-      // Sabemos que a carteira tem fundos suficientes (8.59 MATIC conforme reportado)
       const ignoreBalanceCheck = true;
-      
-      // Preparar dados para a transação
-      const ABI = ["function distributeTokens(address donor, uint256 donationAmountUsd)"];
-      const iface = new ethers.utils.Interface(ABI);
-      const calldata = iface.encodeFunctionData("distributeTokens", [donorAddress, usdValueScaled]);
       
       // Obter fee data atual para garantir valores apropriados de gas
       const feeData = await this.provider!.getFeeData();
@@ -860,10 +901,10 @@ class G33TokenDistributorService {
       
       // IMPORTANTE: Polygon exige pelo menos 25 gwei para maxPriorityFeePerGas (gas tip cap)
       // Erro mostra: minimum needed 25000000000 (25 gwei)
-      // Vamos usar 30 gwei para ter margem de segurança
+      // Vamos usar valores mais altos para garantir que a transação seja aceita
       const MIN_GAS_PRICE = ethers.utils.parseUnits("30", "gwei"); 
-      const MIN_PRIORITY_FEE = ethers.utils.parseUnits("30", "gwei");
-      const MIN_FEE_PER_GAS = ethers.utils.parseUnits("50", "gwei");
+      const MIN_PRIORITY_FEE = ethers.utils.parseUnits("50", "gwei"); // Aumentado de 30 para 50
+      const MIN_FEE_PER_GAS = ethers.utils.parseUnits("100", "gwei"); // Aumentado de 50 para 100
       
       // Usar o maior entre o valor mínimo e o sugerido pelo provider
       const gasPrice = feeData.gasPrice && feeData.gasPrice.gt(MIN_GAS_PRICE) 
@@ -871,7 +912,7 @@ class G33TokenDistributorService {
         : MIN_GAS_PRICE;
         
       // Para transações EIP-1559 (tipo 2), usar maxFeePerGas e maxPriorityFeePerGas
-      // Garantir que o minimo de 25 gwei para priority fee seja respeitado
+      // Garantir que o minimo de 50 gwei para priority fee seja respeitado
       const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas.gt(MIN_PRIORITY_FEE)
         ? feeData.maxPriorityFeePerGas
         : MIN_PRIORITY_FEE;
@@ -880,7 +921,8 @@ class G33TokenDistributorService {
         ? feeData.maxFeePerGas
         : MIN_FEE_PER_GAS;
       
-      const gasLimit = 200000; // Aumentado para ter margem de segurança
+      // Aumentar o gas limit para garantir que haja gas suficiente
+      const gasLimit = 300000; // Aumentado de 200000 para 300000
       
       // Calcular custo estimado (usando o maior valor possível)
       const estimatedCost = maxFeePerGas.mul(gasLimit);
@@ -893,10 +935,153 @@ class G33TokenDistributorService {
       // Obter nonce
       const nonce = await this.provider!.getTransactionCount(walletAddress, "latest");
       
+      // NOVO: usar diretamente o contrato em vez de construir a transação manualmente
+      try {
+        console.log(`Preparando chamada direta ao contrato com gasLimit ${gasLimit}...`);
+        
+        // Configurar gasLimit explicitamente
+        const overrides = {
+          maxFeePerGas,
+          maxPriorityFeePerGas,
+          gasLimit,
+          nonce,
+        };
+        
+        // Chamar o contrato diretamente em vez de construir a transação manualmente
+        console.log(`Enviando transação via contrato.distributeTokens...`);
+        const tx = await this.contract!.distributeTokens(donorAddress, usdValueScaled, overrides);
+        console.log(`Transação enviada: ${tx.hash}`);
+        
+        // Aguardar confirmação se necessário
+        if (waitForConfirmation) {
+          console.log(`Aguardando confirmação da transação ${tx.hash}...`);
+          
+          // Definir timeout e máximo de tentativas para evitar espera infinita
+          const maxAttempts = 30; // Aumentado o número de tentativas
+          const delayBetweenAttempts = 5000; // 5 segundos entre tentativas
+          let attempts = 0;
+          
+          // Função para esperar um recibo com timeout
+          const waitForReceipt = async (): Promise<ethers.providers.TransactionReceipt | null> => {
+            while (attempts < maxAttempts) {
+              attempts++;
+              try {
+                const receipt = await this.provider!.getTransactionReceipt(tx.hash);
+                if (receipt) {
+                  return receipt;
+                }
+                
+                console.log(`Tentativa ${attempts}/${maxAttempts}: Transação ainda pendente...`);
+                await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts));
+              } catch (error) {
+                console.warn(`Erro ao verificar recibo (tentativa ${attempts}):`, error);
+                await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts));
+              }
+            }
+            
+            // Se chegou aqui, não conseguiu obter o recibo
+            console.warn(`Tempo limite excedido (${maxAttempts * delayBetweenAttempts / 1000}s). A transação ainda pode ser confirmada posteriormente.`);
+            return null;
+          };
+          
+          const receipt = await waitForReceipt();
+          if (receipt) {
+            console.log(`Transação confirmada! Gas usado: ${receipt.gasUsed.toString()}`);
+            
+            // Verificar se a transação foi bem-sucedida
+            if (receipt.status === 0) {
+              console.error("❌ A transação foi confirmada, mas a execução do contrato falhou (execution reverted)!");
+              console.log("Verifique a transação em: https://polygonscan.com/tx/" + tx.hash);
+              
+              // NOVO: Tentar novamente com outros parâmetros
+              console.log("Tentando novamente com parâmetros diferentes...");
+              
+              // Esperar 10 segundos antes de tentar novamente
+              await new Promise(resolve => setTimeout(resolve, 10000));
+              
+              // Incrementar o nonce para evitar substituir a transação anterior
+              const newNonce = await this.provider!.getTransactionCount(walletAddress, "latest");
+              
+              // Aumentar o gas limit e as fees para ter certeza que vai funcionar
+              const newOverrides = {
+                maxFeePerGas: ethers.utils.parseUnits("150", "gwei"),
+                maxPriorityFeePerGas: ethers.utils.parseUnits("100", "gwei"),
+                gasLimit: 500000,
+                nonce: newNonce,
+              };
+              
+              console.log("Enviando nova tentativa com configurações:", {
+                maxFeePerGas: ethers.utils.formatUnits(newOverrides.maxFeePerGas, "gwei") + " gwei",
+                maxPriorityFeePerGas: ethers.utils.formatUnits(newOverrides.maxPriorityFeePerGas, "gwei") + " gwei",
+                gasLimit: newOverrides.gasLimit.toString(),
+                nonce: newOverrides.nonce,
+              });
+              
+              try {
+                const retryTx = await this.contract!.distributeTokens(donorAddress, usdValueScaled, newOverrides);
+                console.log(`Nova transação enviada: ${retryTx.hash}`);
+                return retryTx.hash;
+              } catch (retryError) {
+                console.error("❌ Também falhou na segunda tentativa:", retryError);
+                throw new Error("Execução do contrato falhou - execution reverted. A transferência de tokens não foi completada mesmo após nova tentativa.");
+              }
+            }
+            
+            // Verificar logs para confirmar que o evento TokensDistributed foi emitido
+            let eventEmitted = false;
+            if (receipt.logs && receipt.logs.length > 0) {
+              for (const log of receipt.logs) {
+                if (log.address.toLowerCase() === this.distributorAddress?.toLowerCase()) {
+                  eventEmitted = true;
+                  console.log("✅ Evento emitido pelo contrato distribuidor detectado");
+                  break;
+                }
+              }
+            }
+            
+            if (!eventEmitted) {
+              console.warn("⚠️ Transação confirmada, mas nenhum evento do contrato distribuidor foi detectado");
+              console.log("A transação pode ter falhado silenciosamente. Verifique em: https://polygonscan.com/tx/" + tx.hash);
+            }
+          } else {
+            console.warn("Tempo limite excedido esperando confirmação. A transação ainda pode ser confirmada posteriormente.");
+            console.log("Você pode verificar o status da transação em https://polygonscan.com/tx/" + tx.hash);
+          }
+        }
+        
+        return tx.hash;
+      } catch (contractError: any) {
+        console.error("❌ Erro ao chamar contrato.distributeTokens:", contractError);
+        
+        // Tentar extrair informações mais úteis do erro
+        let errorMessage = "Erro ao chamar contrato";
+        
+        if (contractError.error?.message) {
+          errorMessage = contractError.error.message;
+        } else if (contractError.message) {
+          errorMessage = contractError.message;
+        }
+        
+        if (errorMessage.includes("gas required exceeds")) {
+          throw new Error(`Erro no gas: ${errorMessage}. Aumente o gas limit para esta transação.`);
+        } else if (errorMessage.includes("nonce")) { 
+          throw new Error(`Erro no nonce: ${errorMessage}. Pode haver uma transação pendente.`);
+        } else {
+          throw new Error(`Erro ao distribuir tokens: ${errorMessage}`);
+        }
+      }
+      
+      // O código abaixo só é executado se a tentativa de usar o contrato diretamente falhar
+      // -----------------------------------------------------------------------------
+      
+      // Preparar dados para a transação como fallback
+      const ABI = ["function distributeTokens(address donor, uint256 donationAmountUsd)"];
+      const iface = new ethers.utils.Interface(ABI);
+      const calldata = iface.encodeFunctionData("distributeTokens", [donorAddress, usdValueScaled]);
+      
       // Construir transação com parâmetros EIP-1559 adequados para Polygon
-      // Isso vai substituir o antigo formato "legacy" que usava apenas gasPrice
       const tx = {
-        to: this.distributorAddress,
+        to: this.distributorAddress || undefined, // Convertendo null para undefined para satisfazer TransactionRequest
         maxFeePerGas: maxFeePerGas,
         maxPriorityFeePerGas: maxPriorityFeePerGas,
         gasLimit: ethers.utils.hexlify(gasLimit),
@@ -915,7 +1100,7 @@ class G33TokenDistributorService {
       });
       
       // Assinar e enviar
-      console.log("Enviando transação...");
+      console.log("Enviando transação manual (fallback method)...");
       const signedTx = await this.wallet!.signTransaction(tx);
       const submittedTx = await this.provider!.sendTransaction(signedTx);
       
@@ -924,8 +1109,9 @@ class G33TokenDistributorService {
       // Aguardar confirmação se necessário
       if (waitForConfirmation) {
         console.log(`Aguardando confirmação da transação ${submittedTx.hash}...`);
-        const receipt = await submittedTx.wait(1);
-        console.log(`Transação confirmada! Gas usado: ${receipt.gasUsed.toString()}`);
+        
+        // Código de espera por confirmação...
+        // ...existing code...
       }
       
       return submittedTx.hash;
@@ -1161,6 +1347,29 @@ class G33TokenDistributorService {
     } catch (error) {
       console.error(`Erro ao obter tokens distribuídos para ${donorAddress}:`, error);
       return "0";
+    }
+  }
+
+  /**
+   * Obtém o recibo de uma transação pelo seu hash
+   * @param txHash Hash da transação
+   * @returns Recibo da transação ou null se não encontrado
+   */
+  async getTransactionReceipt(txHash: string): Promise<ethers.providers.TransactionReceipt | null> {
+    try {
+      if (!(await this.ensureInitialized())) {
+        return null;
+      }
+      
+      if (!this.provider) {
+        console.error("Provider não disponível para verificar recibo da transação");
+        return null;
+      }
+      
+      return await this.provider.getTransactionReceipt(txHash);
+    } catch (error) {
+      console.error(`Erro ao obter recibo da transação ${txHash}:`, error);
+      return null;
     }
   }
 }
