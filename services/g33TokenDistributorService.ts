@@ -61,8 +61,8 @@ const LOCAL_RPC_URLS = [
 ];
 
 // Endereço do contrato distribuidor e token definidos via variável de ambiente
-const DISTRIBUTOR_ADDRESS = process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS || "0x0726e207027cb4cffb28c3e65e90ec908916f38c";
-const G33_TOKEN_ADDRESS = process.env.G33_TOKEN_ADDRESS || "0x3805FF925B6B0126849BD260A338391DF5F6E382";
+const DISTRIBUTOR_ADDRESS = process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS || "0x137c762cb3eea5c8e5a6ed2fdf41dd47b5e13455";
+const G33_TOKEN_ADDRESS = process.env.G33_TOKEN_ADDRESS || "0xc6099a207e9d2d37d1203f060d2e77c1e05008fa";
 
 // Interface para registro de doações
 interface TokenDonation {
@@ -706,14 +706,16 @@ class G33TokenDistributorService {
         throw new Error(`Tokens insuficientes no contrato distribuidor. Disponível: ${availableTokens}, Necessário: ${tokensNeeded}`);
       }
       
-      // IMPORTANTE: O contrato atual divide o valor por 100 E não considera casas decimais
-      // Para compensar isso, multiplicamos o valor por 100 (para o contrato) e por 10^18 (para casas decimais)
-      // 1 USD deveria ser 1 token completo (10^18 wei)
-      const multiplier = 100 * (10 ** 18);
-      const usdValueScaled = Math.floor(usdValue * multiplier);
+      // Escalar valor USD para o formato esperado pelo contrato G33TokenDistributorV2
+      // O novo contrato agora lida corretamente com as casas decimais:
+      // 1. Recebe donationAmountUsd como valor * 100 (para precisão de 2 casas decimais)
+      // 2. Calcula tokenAmount = donationAmountUsd / 100
+      // 3. Multiplica por 10^18 antes de transferir para considerar casas decimais do ERC-20
+      const usdValueScaled = Math.floor(usdValue * 100);
       
       console.log(`Valor USD original: ${usdValue}`);
-      console.log(`Valor USD escalado para considerar divisão e casas decimais: ${usdValueScaled}`);
+      console.log(`Valor escalado para o contrato (x100): ${usdValueScaled}`);
+      console.log(`O doador receberá ${usdValue} tokens completos G33`);
       
       // Verificar o endereço da carteira do distribuidor para diagnóstico
       const walletAddress = await this.wallet!.getAddress();
@@ -1175,7 +1177,7 @@ export const g33TokenDistributorService = new G33TokenDistributorService();
 // Atualizar o endereço do contrato distribuidor no Firebase
 (async () => {
   try {
-    const distributorAddress = "0x0726e207027cb4cffb28c3e65e90ec908916f38c"; // Endereço correto do contrato implantado
+    const distributorAddress = "0x137c762cb3eea5c8e5a6ed2fdf41dd47b5e13455"; // Endereço do novo contrato G33TokenDistributorV2
     await updateDoc(doc(db, "settings", "contractConfig"), {
       tokenDistributorAddress: distributorAddress
     });

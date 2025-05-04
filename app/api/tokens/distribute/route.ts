@@ -291,17 +291,21 @@ export async function POST(request: NextRequest) {
           );
         }
         
-        // Escalar valor USD para o formato esperado pelo contrato
-        // IMPORTANTE: O contrato atual divide o valor por 100 E não considera casas decimais
-        // Para compensar isso, multiplicamos o valor por 100 (para o contrato) e por 10^18 (para casas decimais)
-        // 1 USD deveria ser 1 token completo (10^18 wei)
-        const multiplier = BigInt(100) * BigInt(10 ** 18);
-        const usdValueScaled = ethers.BigNumber.from(
-          Math.floor(usdValue * 100).toString()
-        ).mul(ethers.BigNumber.from(10).pow(18));
+        // Escalar valor USD para o formato esperado pelo contrato G33TokenDistributorV2
+        // O novo contrato agora lida corretamente com as casas decimais:
+        // 1. Recebe donationAmountUsd como valor * 100 (para precisão de 2 casas decimais)
+        // 2. Calcula tokenAmount = donationAmountUsd / 100
+        // 3. Multiplica por 10^18 antes de transferir para considerar casas decimais do ERC-20
+        //
+        // Para 1 USD:
+        // Enviamos 100 (1 * 100)
+        // O contrato calcula 100 / 100 = 1 e envia 1 * 10^18 wei = 1 token completo
+        
+        const usdValueScaled = Math.floor(usdValue * 100);
         
         console.log(`💱 [API] Valor USD original: $${usdValue}`);
-        console.log(`💱 [API] Valor USD escalado: ${usdValueScaled.toString()} (para considerar divisão por 100 e 18 casas decimais)`);
+        console.log(`💱 [API] Valor escalado para o contrato (x100): ${usdValueScaled}`);
+        console.log(`💱 [API] O doador receberá ${usdValue} tokens completos G33`);
         
         // Obter valores atuais de gas da rede
         console.log("[API] Obtendo fee data da rede...");

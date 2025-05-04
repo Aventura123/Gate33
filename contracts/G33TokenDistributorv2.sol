@@ -2,39 +2,41 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol"
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
- * @title G33TokenDistributor
+ * @title G33TokenDistributorV2
  * @dev Contrato para distribuir tokens G33 automaticamente para doadores.
- * Os tokens G33 são enviados para este contrato pelo admin (após mintagem completa),
- * e serão distribuídos aos doadores com base no valor em USD de suas doações.
+ * Versão corrigida que considera corretamente as casas decimais dos tokens ERC-20.
  */
-contract G33TokenDistributor is Ownable, ReentrancyGuard {
+contract G33TokenDistributorV2 is Ownable, ReentrancyGuard {
     // Token G33 que será distribuído
     IERC20 public g33Token;
+    
+    // Casas decimais do token (padrão ERC-20 = 18)
+    uint256 public constant TOKEN_DECIMALS = 18;
     
     // Taxa de distribuição (1 token = 1 USD)
     uint256 public constant TOKEN_RATE = 1;
     
     // Mapeamento para rastrear doações e tokens distribuídos
     mapping(address => uint256) public totalDonated;       // Valor doado em USD (x100 para precisão)
-    mapping(address => uint256) public tokensDistributed;  // Tokens já distribuídos
+    mapping(address => uint256) public tokensDistributed;  // Tokens já distribuídos (em unidades inteiras, sem decimais)
     
     // Histórico de distribuições
     struct Distribution {
-        address donorAddress; // Corrigido de 'string' para 'address'
-        uint256 tokenAmount;
-        uint256 donationAmountUsd;
+        address donorAddress;
+        uint256 tokenAmount; // Quantidade de tokens em unidades inteiras (sem decimais)
+        uint256 donationAmountUsd; // Valor USD (x100 para precisão de 2 casas decimais)
         uint256 timestamp;
     }
     
     Distribution[] public distributions;
     
     // Total valores globais
-    uint256 public totalDistributedTokens;
-    uint256 public totalDonationsUsd;
+    uint256 public totalDistributedTokens; // Em unidades inteiras (sem decimais)
+    uint256 public totalDonationsUsd; // Em centavos de USD
     
     // Contas autorizadas a distribuir tokens
     mapping(address => bool) public distributors;
@@ -96,9 +98,14 @@ contract G33TokenDistributor is Ownable, ReentrancyGuard {
         // Como donationAmountUsd é multiplicado por 100 para precisão, dividimos por 100
         uint256 tokenAmount = donationAmountUsd / 100;
         
-        require(g33Token.balanceOf(address(this)) >= tokenAmount, "Insufficient tokens in distributor");
+        // Importante: Calcular o valor real a ser transferido, considerando os decimais
+        // Para tokens ERC-20 padrão com 18 casas decimais
+        uint256 tokenAmountWithDecimals = tokenAmount * 10**TOKEN_DECIMALS;
         
-        // Atualizar registros
+        // Verificar se há tokens suficientes no contrato
+        require(g33Token.balanceOf(address(this)) >= tokenAmountWithDecimals, "Insufficient tokens in distributor");
+        
+        // Atualizar registros (armazenamos valores sem decimais para facilitar a contabilidade)
         totalDonated[donor] += donationAmountUsd;
         tokensDistributed[donor] += tokenAmount;
         totalDistributedTokens += tokenAmount;
@@ -112,8 +119,8 @@ contract G33TokenDistributor is Ownable, ReentrancyGuard {
             timestamp: block.timestamp
         }));
         
-        // Transferir tokens para o doador
-        bool success = g33Token.transfer(donor, tokenAmount);
+        // Transferir tokens para o doador (com decimais corretos)
+        bool success = g33Token.transfer(donor, tokenAmountWithDecimals);
         require(success, "Token transfer failed");
         
         emit TokensDistributed(donor, tokenAmount, donationAmountUsd);
@@ -121,20 +128,40 @@ contract G33TokenDistributor is Ownable, ReentrancyGuard {
     
     /**
      * @dev Recupera tokens não utilizados (apenas proprietário)
-     * @param amount Quantidade de tokens a recuperar
+     * @param amount Quantidade de tokens a recuperar (em unidades inteiras, sem decimais)
      */
     function recoverTokens(uint256 amount) external onlyOwner {
-        require(amount <= g33Token.balanceOf(address(this)), "Amount exceeds balance");
-        bool success = g33Token.transfer(owner(), amount);
+        // Converter para o valor com decimais
+        uint256 amountWithDecimals = amount * 10**TOKEN_DECIMALS;
+        require(amountWithDecimals <= g33Token.balanceOf(address(this)), "Amount exceeds balance");
+        bool success = g33Token.transfer(owner(), amountWithDecimals);
+        require(success, "Token recovery failed");
+    }
+    
+    /**
+     * @dev Recupera todos os tokens não utilizados (apenas proprietário)
+     */
+    function recoverAllTokens() external onlyOwner {
+        uint256 balance = g33Token.balanceOf(address(this));
+        require(balance > 0, "No tokens to recover");
+        bool success = g33Token.transfer(owner(), balance);
         require(success, "Token recovery failed");
     }
     
     /**
      * @dev Retorna o saldo de tokens disponíveis para distribuição
-     * @return Quantidade de tokens G33 no contrato
+     * @return Quantidade de tokens G33 no contrato (com decimais)
      */
     function getAvailableTokens() external view returns (uint256) {
         return g33Token.balanceOf(address(this));
+    }
+    
+    /**
+     * @dev Retorna o saldo de tokens disponíveis para distribuição em unidades inteiras
+     * @return Quantidade de tokens G33 no contrato (convertida para unidades inteiras)
+     */
+    function getAvailableTokensFormatted() external view returns (uint256) {
+        return g33Token.balanceOf(address(this)) / 10**TOKEN_DECIMALS;
     }
     
     /**
