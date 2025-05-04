@@ -979,6 +979,37 @@ class Web3Service {
       };
     }
   }
+
+  /**
+   * Returns a Web3Provider that supports the getSigner method
+   * @returns Web3Provider with getSigner support or null if unavailable
+   */
+  getWeb3Provider(): ethers.providers.Web3Provider | null {
+    try {
+      // Check if we already have an initialized Web3Provider
+      if (this.provider instanceof ethers.providers.Web3Provider) {
+        return this.provider;
+      }
+
+      // If no provider is initialized, try to create a new one
+      if (typeof window !== 'undefined' && window.ethereum) {
+        // Create a new Web3Provider
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        
+        // Store the provider for future use
+        this.provider = provider;
+        
+        console.log("Web3Provider successfully created");
+        return provider;
+      }
+      
+      console.error("Ethereum provider not found. Make sure MetaMask is installed and unlocked.");
+      return null;
+    } catch (error) {
+      console.error("Error getting Web3Provider:", error);
+      return null;
+    }
+  }
 }
 
 export const web3Service = new Web3Service();

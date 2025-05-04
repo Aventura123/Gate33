@@ -2,7 +2,18 @@ import { ethers } from 'ethers';
 import { collection, addDoc, getDocs, query, where, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { web3Service } from './web3Service';
-import { g33TokenDistributorService } from './g33TokenDistributorService';
+// Import the service, but don't initialize it on the client
+// We'll use API endpoints for server-side operations instead
+let g33TokenDistributorService: any = null;
+
+// Only import the service on the server side
+if (typeof window === 'undefined') {
+  try {
+    g33TokenDistributorService = require('./g33TokenDistributorService').g33TokenDistributorService;
+  } catch (error) {
+    console.error('Failed to load distributor service on server side:', error);
+  }
+}
 
 // Taxa de conversão: 1 token G33 por cada 1 USD doado
 const TOKEN_RATE = 1;
@@ -32,11 +43,23 @@ interface TokenDonation {
 // Solicitar preços atuais das criptomoedas da API interna
 async function getCurrentCryptoPrices(): Promise<Record<string, number>> {
   try {
+    // Verificar a conectividade antes de fazer a chamada
+    const isOnline = navigator.onLine;
+    if (!isOnline) {
+      console.warn('Dispositivo offline, usando preços de fallback');
+      throw new Error('Dispositivo offline');
+    }
+    
     // Solicitar os preços das principais criptomoedas que aceitamos para doação
-    const response = await fetch('/api/cryptocurrencies?limit=10');
+    const response = await fetch('/api/cryptocurrencies?limit=10', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      // Adicionar timeout
+      signal: AbortSignal.timeout(5000) // 5 segundos de timeout
+    });
     
     if (!response.ok) {
-      throw new Error('Falha ao obter preços de criptomoedas');
+      throw new Error(`Falha ao obter preços de criptomoedas: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
@@ -72,20 +95,29 @@ async function getCurrentCryptoPrices(): Promise<Record<string, number>> {
 
 // Calcular valor em USD de uma doação em cripto
 export async function calculateUSDValue(amount: string, cryptoSymbol: string): Promise<number> {
-  const prices = await getCurrentCryptoPrices();
-  const symbol = cryptoSymbol.toLowerCase();
-  
-  if (prices[symbol]) {
-    const cryptoAmount = parseFloat(amount);
-    return cryptoAmount * prices[symbol];
+  try {
+    const prices = await getCurrentCryptoPrices();
+    const symbol = cryptoSymbol.toLowerCase();
+    
+    if (prices[symbol]) {
+      const cryptoAmount = parseFloat(amount);
+      return cryptoAmount * prices[symbol];
+    }
+    
+    // Fallback: Se for uma stablecoin conhecida, assumir paridade com USD
+    if (symbol === 'usdt' || symbol === 'usdc' || symbol === 'dai' || symbol === 'busd') {
+      return parseFloat(amount);
+    }
+    
+    throw new Error(`Preço não disponível para ${cryptoSymbol}`);
+  } catch (error) {
+    // Para stablecoins, sempre retornar o valor 1:1 mesmo com erros
+    const symbol = cryptoSymbol.toLowerCase();
+    if (symbol === 'usdt' || symbol === 'usdc' || symbol === 'dai' || symbol === 'busd') {
+      return parseFloat(amount);
+    }
+    throw error;
   }
-  
-  // Fallback: Se for uma stablecoin conhecida, assumir paridade com USD
-  if (symbol === 'usdt' || symbol === 'usdc' || symbol === 'dai' || symbol === 'busd') {
-    return parseFloat(amount);
-  }
-  
-  throw new Error(`Preço não disponível para ${cryptoSymbol}`);
 }
 
 // Calcular quantos tokens G33 seriam distribuídos com base no valor em USD
@@ -95,7 +127,8 @@ export function calculateG33TokenAmount(usdValue: number): number {
 
 /**
  * Registrar uma doação e processar distribuição de tokens G33
- * Nova implementação que usa a API serverless para distribuição
+ * Usando API server-side para garantir acesso às variáveis de ambiente
+ * @throws Error se a distribuição de tokens falhar
  */
 export async function registerTokenDonation(
   donorAddress: string,
@@ -103,9 +136,14 @@ export async function registerTokenDonation(
   cryptoSymbol: string,
   transactionHash: string,
   network: string
-): Promise<string> {
+): Promise<{donationId: string, success: boolean, distributionTxHash?: string, error?: string}> {
   try {
     console.log(`Iniciando registro de doação: ${donationAmount} ${cryptoSymbol} de ${donorAddress}`);
+
+    // Verificar se o ambiente está online
+    if (!navigator.onLine) {
+      throw new Error('Dispositivo offline. Por favor, verifique sua conexão com a internet.');
+    }
     
     // Calcular valor em USD
     const usdValue = await calculateUSDValue(donationAmount.toString(), cryptoSymbol);
@@ -115,8 +153,8 @@ export async function registerTokenDonation(
     const tokenAmount = calculateG33TokenAmount(usdValue);
     console.log(`Tokens G33 a distribuir: ${tokenAmount}`);
     
-    // Primeiro, registrar a doação no Firebase para termos um registro
-    const tokenDonation: Omit<TokenDonation, 'createdAt'> & { createdAt: any } = {
+    // Registrar localmente a doação para ter histórico mesmo se a API falhar
+    const localDonation: TokenDonation = {
       donorAddress,
       donationAmount,
       usdValue,
@@ -128,86 +166,133 @@ export async function registerTokenDonation(
       status: 'pending'
     };
     
-    // Adicionar ao Firebase
-    console.log(`Salvando registro da doação no Firebase...`);
-    const docRef = await addDoc(collection(db, 'tokenDonations'), tokenDonation);
-    const donationId = docRef.id;
-    console.log(`Registro de doação criado com ID: ${donationId}`);
-    
-    // Chamar a API do servidor para distribuir tokens
     try {
-      console.log('Chamando API para distribuir tokens G33...');
-      const response = await fetch('/api/distribute-tokens', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          donorAddress,
-          usdValue,
-          donationId,
-          transactionHash,
-          network,
-          cryptoSymbol
-        }),
-      });
+      // Registrar no Firebase como pendente antes de chamar a API
+      const docRef = await addDoc(collection(db, 'tokenDonations'), localDonation);
+      const donationId = docRef.id;
       
-      const result = await response.json();
+      console.log('Chamando API server-side para distribuição de tokens...');
       
-      if (!response.ok) {
-        console.error('Erro na distribuição automática:', result.error);
-        
-        // Atualizar o registro com o erro
-        await updateDoc(docRef, {
-          status: 'failed',
-          error: result.error || 'Falha na distribuição de tokens G33'
+      // Chamar a API server-side com timeout
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15 segundos
+      
+      try {
+        const response = await fetch('/api/tokens/distribute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            donorAddress,
+            donationAmount,
+            usdValue,
+            tokenAmount,
+            transactionHash,
+            network,
+            cryptoSymbol,
+            donationId
+          }),
+          signal: controller.signal
         });
         
-        // Ainda retornamos o ID do registro
-        return donationId;
-      }
-      
-      console.log(`Tokens distribuídos com sucesso: ${result.tokenAmount} G33. Hash da transação: ${result.transactionHash}`);
-      
-      // Atualizamos apenas se a API não fez a atualização
-      if (!result.recordUpdated) {
-        await updateDoc(docRef, {
+        clearTimeout(timeout);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Erro ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        // Atualizar status no Firebase
+        await updateDoc(doc(db, 'tokenDonations', donationId), {
           status: 'distributed',
-          distributionTxHash: result.transactionHash
+          distributionTxHash: result.transactionHash,
+          updatedAt: new Date()
         });
+        
+        console.log(`Tokens distribuídos com sucesso: ${tokenAmount} G33. Hash da transação: ${result.transactionHash}`);
+        return {
+          donationId,
+          success: true,
+          distributionTxHash: result.transactionHash
+        };
+      } catch (fetchError: any) {
+        clearTimeout(timeout);
+        
+        // Tratamento específico por tipo de erro
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Tempo limite excedido ao conectar com o servidor');
+        }
+        
+        // Se o servidor não está disponível, registrar, mas não falhar completamente
+        await updateDoc(doc(db, 'tokenDonations', donationId), {
+          status: 'failed',
+          error: fetchError.message || 'Falha na comunicação com o servidor',
+          updatedAt: new Date()
+        });
+        
+        throw new Error(fetchError.message || 'Falha na comunicação com o servidor');
       }
     } catch (apiError: any) {
-      console.error('Erro ao chamar API de distribuição:', apiError);
+      console.error('Erro na API de distribuição de tokens:', apiError);
       
-      // Atualizar o registro com o erro
-      await updateDoc(docRef, {
-        status: 'failed',
-        error: apiError.message || 'Erro ao chamar serviço de distribuição de tokens'
-      });
-      
-      // Tentar usar o método antigo como fallback apenas no ambiente local
-      try {
-        // Verificar se estamos em ambiente local
-        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-          console.log('Tentando método alternativo de distribuição no ambiente local...');
-          await g33TokenDistributorService.distributeTokens(donorAddress, usdValue);
-        }
-      } catch (fallbackError) {
-        console.error('Fallback de distribuição também falhou:', fallbackError);
+      // Verificar se é um erro de conexão/servidor
+      if (apiError.message.includes('Failed to fetch') || 
+          apiError.message.includes('NetworkError') ||
+          apiError.message.includes('network') ||
+          apiError.message.includes('offline') ||
+          apiError.message.includes('ECONNREFUSED')) {
+        throw new Error('Erro de conexão com o servidor. Verifique se o servidor está ativo e sua conexão com a internet.');
       }
+      
+      throw new Error(`Falha na distribuição de tokens: ${apiError.message}`);
     }
-    
-    console.log(`Doação registrada para distribuição de tokens: ${tokenAmount} G33`);
-    return donationId;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao registrar doação para tokens:', error);
-    throw error;
+    return {
+      donationId: '',
+      success: false,
+      error: error.message || 'Erro desconhecido ao processar distribuição de tokens'
+    };
   }
 }
 
 // Obter estatísticas de distribuição de tokens
 export async function getTokenDistributionStats() {
   try {
+    // On the client side, use the API instead of direct service call
+    if (typeof window !== 'undefined') {
+      try {
+        const response = await fetch('/api/tokens/stats');
+        if (!response.ok) {
+          throw new Error('Failed to fetch token stats from API');
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching token stats via API:', error);
+        return {
+          totalSupply: TOKEN_INFO.totalSupply,
+          totalDistributed: 0,
+          availableForDistribution: TOKEN_INFO.totalSupply,
+          totalDonationsUsd: 0,
+          percentageDistributed: 0,
+          isServiceAvailable: false
+        };
+      }
+    }
+
+    // Server-side execution with direct access to the service
+    if (!g33TokenDistributorService || !g33TokenDistributorService.checkIsInitialized()) {
+      return {
+        totalSupply: TOKEN_INFO.totalSupply,
+        totalDistributed: 0,
+        availableForDistribution: TOKEN_INFO.totalSupply,
+        totalDonationsUsd: 0,
+        percentageDistributed: 0,
+        isServiceAvailable: false
+      };
+    }
+    
     const stats = await g33TokenDistributorService.getDistributionStats();
     
     return {
@@ -215,16 +300,18 @@ export async function getTokenDistributionStats() {
       totalDistributed: parseFloat(stats.totalDistributed),
       availableForDistribution: parseFloat(stats.availableTokens),
       totalDonationsUsd: parseFloat(stats.totalDonationsUsd),
-      percentageDistributed: parseFloat(stats.totalDistributed) / TOKEN_INFO.totalSupply * 100
+      percentageDistributed: parseFloat(stats.totalDistributed) / TOKEN_INFO.totalSupply * 100,
+      isServiceAvailable: true
     };
-  } catch (error) {
+   } catch (error) {
     console.error('Erro ao obter estatísticas de distribuição:', error);
     return {
       totalSupply: TOKEN_INFO.totalSupply,
       totalDistributed: 0,
       availableForDistribution: TOKEN_INFO.totalSupply,
       totalDonationsUsd: 0,
-      percentageDistributed: 0
+      percentageDistributed: 0,
+      isServiceAvailable: false
     };
   }
 }
@@ -232,11 +319,145 @@ export async function getTokenDistributionStats() {
 // Verificar se um doador já recebeu tokens
 export async function getTokensDistributedToDonor(address: string): Promise<number> {
   try {
+    // On the client side, use the API instead of direct service call
+    if (typeof window !== 'undefined') {
+      try {
+        const response = await fetch(`/api/tokens/donor-stats?address=${encodeURIComponent(address)}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch donor token stats from API');
+        }
+        const data = await response.json();
+        return data.tokensDistributed || 0;
+      } catch (error) {
+        console.error('Error fetching donor token stats via API:', error);
+        return 0;
+      }
+    }
+
+    // Server-side execution with direct access to the service
+    if (!g33TokenDistributorService || !g33TokenDistributorService.checkIsInitialized()) {
+      return 0;
+    }
+    
     const tokensStr = await g33TokenDistributorService.getTokensDistributedToDonor(address);
     return parseFloat(tokensStr);
   } catch (error) {
     console.error('Erro ao obter tokens distribuídos para doador:', error);
     return 0;
+  }
+}
+
+export async function processDonationAndDistributeTokens(
+  donorAddress: string,
+  donationAmount: number,
+  cryptoSymbol: string,
+  transactionHash: string,
+  network: string,
+  waitForConfirmation: boolean = false
+): Promise<{ success: boolean; distributionTxHash?: string; error?: string }> {
+  try {
+    console.log(`Iniciando processamento de doação: ${donationAmount} ${cryptoSymbol} de ${donorAddress}`);
+
+    // Calcular valor em USD
+    const usdValue = await calculateUSDValue(donationAmount.toString(), cryptoSymbol);
+    console.log(`Valor em USD calculado: $${usdValue.toFixed(2)}`);
+
+    // Calcular quantidade de tokens G33
+    const tokenAmount = calculateG33TokenAmount(usdValue);
+    console.log(`Tokens G33 a distribuir: ${tokenAmount}`);
+
+    // Registrar localmente a doação no Firebase
+    const donationRecord = {
+      donorAddress,
+      donationAmount,
+      usdValue,
+      tokenAmount,
+      transactionHash,
+      network,
+      cryptoSymbol,
+      createdAt: new Date(),
+      status: 'pending'
+    };
+
+    const docRef = await addDoc(collection(db, 'tokenDonations'), donationRecord);
+    const donationId = docRef.id;
+
+    // Use API endpoint on client side
+    if (typeof window !== 'undefined') {
+      const response = await fetch('/api/tokens/distribute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donorAddress,
+          donationAmount,
+          usdValue,
+          tokenAmount,
+          transactionHash,
+          network,
+          cryptoSymbol,
+          donationId,
+          waitForConfirmation
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      // Update the Firebase record with the result
+      await updateDoc(doc(db, 'tokenDonations', donationId), {
+        status: result.success ? 'distributed' : 'failed',
+        distributionTxHash: result.distributionTxHash || null,
+        error: result.error || null,
+        updatedAt: new Date()
+      });
+
+      return {
+        success: result.success,
+        distributionTxHash: result.distributionTxHash,
+        error: result.error
+      };
+    }
+
+    // Server-side execution with direct access to the service
+    if (!g33TokenDistributorService || !g33TokenDistributorService.checkIsInitialized()) {
+      throw new Error('Token distributor service is not available on the server');
+    }
+
+    // Usar o contrato inteligente diretamente para distribuir tokens
+    console.log('Distribuindo tokens diretamente usando o contrato inteligente...');
+    const distributionTxHash = await g33TokenDistributorService.distributeTokens(
+      donorAddress, 
+      usdValue,
+      waitForConfirmation
+    );
+
+    if (!distributionTxHash) {
+      throw new Error('Falha ao distribuir tokens usando o contrato inteligente.');
+    }
+
+    console.log(`Tokens distribuídos com sucesso. Hash da transação: ${distributionTxHash}`);
+
+    // Atualizar o status no Firebase
+    await updateDoc(doc(db, 'tokenDonations', donationId), {
+      status: 'distributed',
+      distributionTxHash,
+      updatedAt: new Date()
+    });
+
+    return {
+      success: true,
+      distributionTxHash
+    };
+  } catch (error: any) {
+    console.error('Erro ao processar doação e distribuir tokens:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro desconhecido ao processar doação.'
+    };
   }
 }
 
@@ -247,6 +468,7 @@ export const tokenService = {
   registerTokenDonation,
   getTokenDistributionStats,
   getTokensDistributedToDonor,
+  processDonationAndDistributeTokens,
   TOKEN_INFO
 };
 
