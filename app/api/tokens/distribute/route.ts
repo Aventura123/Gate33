@@ -4,7 +4,7 @@ import { doc, getDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
 import { g33TokenDistributorService } from '../../../../services/g33TokenDistributorService';
 
-// ABI simplificado do contrato G33TokenDistributor
+// Simplified ABI of G33TokenDistributor contract
 const DISTRIBUTOR_ABI = [
   "function distributeTokens(address donor, uint256 donationAmountUsd) external",
   "function getAvailableTokens() external view returns (uint256)",
@@ -12,29 +12,29 @@ const DISTRIBUTOR_ABI = [
   "function tokensDistributed(address) external view returns (uint256)"
 ];
 
-// Lista expandida de URLs RPC para maior resiliência
-// Incluindo endpoints WebSockets (WSS) que podem contornar alguns firewalls
+// Expanded list of RPC URLs for greater resilience
+// Including WebSockets endpoints (WSS) that can bypass some firewalls
 const POLYGON_RPC_URLS = [
-  // WebSocket endpoints que podem contornar bloqueios de firewall
-  "wss://polygon-mainnet.g.alchemy.com/v2/demo",  // Alchemy público
+  // WebSocket endpoints that can bypass firewall blocks
+  "wss://polygon-mainnet.g.alchemy.com/v2/demo",  // Public Alchemy
   "wss://ws-matic-mainnet.chainstacklabs.com",    // ChainStack
   
-  // HTTP endpoints padrão
-  'https://polygon-rpc.com',                      // Endpoint padrão
+  // Standard HTTP endpoints
+  'https://polygon-rpc.com',                      // Default endpoint
   'https://polygon.llamarpc.com',
   'https://polygon-mainnet.public.blastapi.io',
   'https://polygon.meowrpc.com',
   'https://rpc-mainnet.maticvigil.com',
   'https://polygon-bor.publicnode.com',
   
-  // Infura endpoint (com chave pública para teste)
+  // Infura endpoint (with public key for testing)
   'https://polygon-mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161'
 ];
 
 const INFURA_KEY = "7b71460a7cfd447295a93a1d76a71ed6";
 const POLYGON_RPC_URL = `https://polygon-mainnet.infura.io/v3/${INFURA_KEY}`;
 
-// Configurações para diferentes redes
+// Settings for different networks
 const NETWORK_RPC_URLS = {
   'polygon': POLYGON_RPC_URL,
   'ethereum': process.env.ETHEREUM_RPC_URL || 'https://eth.llamarpc.com',
@@ -42,31 +42,31 @@ const NETWORK_RPC_URLS = {
 };
 
 /**
- * Tenta criar um provider confiável para a rede Polygon com múltiplas tentativas
- * @returns Um provider conectado ou undefined se falhar
+ * Attempts to create a reliable provider for the Polygon network with multiple attempts
+ * @returns A connected provider or undefined if it fails
  */
 async function getReliableProvider(): Promise<ethers.providers.Provider | undefined> {
-  console.log("🌐 Tentando conectar ao RPC principal:", POLYGON_RPC_URL);
+  console.log("🌐 Attempting to connect to main RPC:", POLYGON_RPC_URL);
   
   try {
-    // Primeiro, tentar com Infura
+    // First, try with Infura
     const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC_URL);
     const blockNumber = await provider.getBlockNumber();
-    console.log(`✅ Conexão RPC bem-sucedida. Bloco atual: ${blockNumber}`);
+    console.log(`✅ RPC connection successful. Current block: ${blockNumber}`);
     return provider;
   } catch (error) {
-    console.error("❌ Falha ao conectar ao RPC Infura:", error);
+    console.error("❌ Failed to connect to Infura RPC:", error);
     
-    // Se Infura falhar, tentar RPC alternativo
+    // If Infura fails, try alternative RPC
     try {
       const backupUrl = "https://polygon-rpc.com";
-      console.log("🔄 Tentando RPC alternativo:", backupUrl);
+      console.log("🔄 Trying alternative RPC:", backupUrl);
       const provider = new ethers.providers.JsonRpcProvider(backupUrl);
       const blockNumber = await provider.getBlockNumber();
-      console.log(`✅ Conexão alternativa bem-sucedida. Bloco: ${blockNumber}`);
+      console.log(`✅ Alternative connection successful. Block: ${blockNumber}`);
       return provider;
     } catch (backupError) {
-      console.error("❌ Falha também no RPC alternativo:", backupError);
+      console.error("❌ Alternative RPC also failed:", backupError);
       return undefined;
     }
   }
@@ -90,7 +90,7 @@ async function createRpcProvider(): Promise<ethers.providers.Provider | undefine
 
   for (const config of providerConfigs) {
     try {
-      console.log(`🔄 [API] Tentando conectar ao RPC: ${config.url}`);
+      console.log(`🔄 [API] Attempting to connect to RPC: ${config.url}`);
       
       const provider = new ethers.providers.JsonRpcProvider({
         url: config.url,
@@ -98,7 +98,7 @@ async function createRpcProvider(): Promise<ethers.providers.Provider | undefine
         skipFetchSetup: true
       });
 
-      // Adicionar timeout para a verificação de conexão
+      // Add timeout for connection verification
       const networkCheck = Promise.race([
         provider.getNetwork(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
@@ -107,11 +107,11 @@ async function createRpcProvider(): Promise<ethers.providers.Provider | undefine
       const network = await networkCheck;
       if ((network as ethers.providers.Network).chainId === 137) {
         const blockNumber = await provider.getBlockNumber();
-        console.log(`✅ [API] Conectado com sucesso ao RPC ${config.url}. Bloco: ${blockNumber}`);
+        console.log(`✅ [API] Successfully connected to RPC ${config.url}. Block: ${blockNumber}`);
         return provider;
       }
     } catch (error) {
-      console.warn(`❌ [API] Falha ao conectar ao RPC ${config.url}:`, error instanceof Error ? error.message : String(error));
+      console.warn(`❌ [API] Failed to connect to RPC ${config.url}:`, error instanceof Error ? error.message : String(error));
       continue;
     }
   }
@@ -120,83 +120,83 @@ async function createRpcProvider(): Promise<ethers.providers.Provider | undefine
 }
 
 /**
- * API para distribuição segura de tokens G33 após doações
- * Esta API é executada do lado do servidor e tem acesso seguro às chaves privadas
+ * API for secure distribution of G33 tokens after donations
+ * This API runs on the server side and has secure access to private keys
  */
 export async function POST(request: NextRequest) {
   try {
-    console.log("🔄 [API] Iniciando distribuição de tokens G33");
+    console.log("🔄 [API] Starting G33 token distribution");
 
     let requestData;
     try {
       requestData = await request.json();
     } catch (parseError) {
-      console.error("❌ [API] Erro ao analisar corpo da requisição:", parseError);
+      console.error("❌ [API] Error parsing request body:", parseError);
       return NextResponse.json(
-        { success: false, error: 'Erro ao analisar corpo da requisição' },
+        { success: false, error: 'Error parsing request body' },
         { status: 400 }
       );
     }
 
     const { donorAddress, donationId, transactionHash, network, cryptoSymbol } = requestData;
-    // Inicializamos usdValue como let para permitir modificações
+    // Initialize usdValue as let to allow modifications
     let usdValue = requestData.usdValue;
 
-    // DIAGNÓSTICO: Adicionando logs detalhados para debug
-    console.log("📊 [API] Valor USD recebido:", usdValue, "Tipo:", typeof usdValue);
-    console.log("📊 [API] Dados completos da requisição:", JSON.stringify(requestData, null, 2));
+    // DIAGNOSTICS: Adding detailed logs for debugging
+    console.log("📊 [API] USD value received:", usdValue, "Type:", typeof usdValue);
+    console.log("📊 [API] Complete request data:", JSON.stringify(requestData, null, 2));
 
     if (!donorAddress || !ethers.utils.isAddress(donorAddress)) {
       return NextResponse.json(
-        { success: false, error: 'Endereço de doador inválido' },
+        { success: false, error: 'Invalid donor address' },
         { status: 400 }
       );
     }
 
-    // VALIDAÇÕES ADICIONAIS: Garantir que o valor é um número válido e no formato correto
+    // ADDITIONAL VALIDATIONS: Ensure value is a valid number and in correct format
     if (!usdValue || typeof usdValue !== 'number' || usdValue <= 0) {
-      console.error(`❌ [API] Valor USD inválido: ${usdValue} (${typeof usdValue})`);
+      console.error(`❌ [API] Invalid USD value: ${usdValue} (${typeof usdValue})`);
       return NextResponse.json(
-        { success: false, error: 'Valor USD inválido' },
+        { success: false, error: 'Invalid USD value' },
         { status: 400 }
       );
     }
 
-    // VALIDAÇÃO CRÍTICA: Verificar se o valor é um inteiro
+    // CRITICAL VALIDATION: Check if value is an integer
     if (usdValue % 1 !== 0) {
-      console.warn(`⚠️ [API] O valor USD ${usdValue} contém decimais e será arredondado para ${Math.floor(usdValue)}`);
+      console.warn(`⚠️ [API] USD value ${usdValue} contains decimals and will be rounded to ${Math.floor(usdValue)}`);
       usdValue = Math.floor(usdValue);
     }
 
-    // VALIDAÇÃO CRÍTICA: Garantir valor mínimo de 1 USD
+    // CRITICAL VALIDATION: Ensure minimum value of 1 USD
     if (usdValue < 1) {
-      console.error(`❌ [API] Valor USD muito baixo: ${usdValue}. Mínimo necessário: 1 USD`);
+      console.error(`❌ [API] USD value too low: ${usdValue}. Minimum required: 1 USD`);
       return NextResponse.json(
-        { success: false, error: 'Valor USD muito baixo. Mínimo necessário: 1 USD', value: usdValue },
+        { success: false, error: 'USD value too low. Minimum required: 1 USD', value: usdValue },
         { status: 400 }
       );
     }
 
-    // DIAGNÓSTICO: Mostrando valor que será enviado ao contrato
-    console.log(`📊 [API] Valor USD final a ser processado: ${usdValue}`);
-    console.log(`📊 [API] Valor que será enviado ao contrato (x100): ${usdValue * 100}`);
-    console.log(`📊 [API] Valor em hexadecimal: 0x${(usdValue * 100).toString(16)}`);
+    // DIAGNOSTICS: Showing value that will be sent to contract
+    console.log(`📊 [API] Final USD value to be processed: ${usdValue}`);
+    console.log(`📊 [API] Value that will be sent to contract (x100): ${usdValue * 100}`);
+    console.log(`📊 [API] Value in hexadecimal: 0x${(usdValue * 100).toString(16)}`);
 
-    // Garantir que o serviço está inicializado antes de prosseguir
+    // Ensure service is initialized before proceeding
     if (!g33TokenDistributorService.checkIsInitialized()) {
-      console.log("⏳ [API] Aguardando inicialização do serviço...");
-      // Forçar uma inicialização e aguardar sua conclusão
-      await g33TokenDistributorService.init(true); // Forçar inicialização mesmo que tenha sido tentada recentemente
+      console.log("⏳ [API] Waiting for service initialization...");
+      // Force initialization and wait for completion
+      await g33TokenDistributorService.init(true); // Force initialization even if attempted recently
       
-      // Verificar novamente após a tentativa de inicialização
+      // Check again after initialization attempt
       if (!g33TokenDistributorService.checkIsInitialized()) {
-        const error = g33TokenDistributorService.getInitializationError() || "Erro desconhecido";
-        console.error(`❌ [API] Serviço não inicializado após tentativa: ${error}`);
+        const error = g33TokenDistributorService.getInitializationError() || "Unknown error";
+        console.error(`❌ [API] Service not initialized after attempt: ${error}`);
         return NextResponse.json(
           { 
             success: false, 
-            error: 'Serviço distribuidor não inicializado', 
-            details: `Não foi possível inicializar o serviço: ${error}`
+            error: 'Distributor service not initialized', 
+            details: `Could not initialize service: ${error}`
           },
           { status: 503 }
         );
@@ -204,15 +204,15 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      console.log("✅ [API] Serviço inicializado, prosseguindo com distribuição");
+      console.log("✅ [API] Service initialized, proceeding with distribution");
       try {
         const distributionResult = await g33TokenDistributorService.distributeTokens(donorAddress, usdValue, true);
 
         if (!distributionResult) {
-          throw new Error('Falha ao distribuir tokens. Verifique os logs para mais detalhes.');
+          throw new Error('Failed to distribute tokens. Check logs for more details.');
         }
 
-        console.log("✅ [API] Tokens distribuídos com sucesso");
+        console.log("✅ [API] Tokens distributed successfully");
 
         if (donationId) {
           await updateDoc(doc(db, 'tokenDonations', donationId), {
@@ -222,18 +222,18 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // Verificar a transação para garantir que não houve falha de execução
-        console.log("[API] Verificando status da transação na blockchain...");
+        // Verify transaction to ensure execution didn't fail
+        console.log("[API] Checking transaction status on blockchain...");
         const receipt = await g33TokenDistributorService.getTransactionReceipt(distributionResult);
         
         if (receipt && receipt.status === 0) {
-          console.error("❌ [API] Transação foi incluída na blockchain, mas a execução do contrato falhou (status=0)");
+          console.error("❌ [API] Transaction was included in blockchain, but contract execution failed (status=0)");
           
-          // Atualizar o registro para refletir o erro
+          // Update record to reflect error
           if (donationId) {
             await updateDoc(doc(db, 'tokenDonations', donationId), {
               status: 'failed',
-              error: 'Execution reverted: A transação foi incluída na blockchain mas a execução do contrato falhou',
+              error: 'Execution reverted: Transaction was included in blockchain but contract execution failed',
               updatedAt: new Date()
             });
           }
@@ -241,52 +241,52 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({
             success: false,
             transactionHash: distributionResult,
-            error: 'Falha na execução do contrato (execution reverted)',
-            message: `A transação ${distributionResult} foi incluída na blockchain, mas a execução falhou. Verifique em https://polygonscan.com/tx/${distributionResult}`
+            error: 'Contract execution failed (execution reverted)',
+            message: `Transaction ${distributionResult} was included in blockchain, but execution failed. Check at https://polygonscan.com/tx/${distributionResult}`
           }, { status: 400 });
         }
 
         return NextResponse.json({
           success: true,
           transactionHash: distributionResult,
-          message: `Distribuição de tokens concluída com sucesso.`
+          message: `Token distribution completed successfully.`
         });
       } catch (error: unknown) {
         if (error instanceof Error) {
-          console.error("❌ [API] Erro ao distribuir tokens:", error.message);
+          console.error("❌ [API] Error distributing tokens:", error.message);
           return NextResponse.json(
-            { success: false, error: 'Erro ao distribuir tokens', details: error.message },
+            { success: false, error: 'Error distributing tokens', details: error.message },
             { status: 500 }
           );
         } else {
-          console.error("❌ [API] Erro desconhecido ao distribuir tokens:", error);
+          console.error("❌ [API] Unknown error distributing tokens:", error);
           return NextResponse.json(
-            { success: false, error: 'Erro desconhecido ao distribuir tokens', details: String(error) },
+            { success: false, error: 'Unknown error distributing tokens', details: String(error) },
             { status: 500 }
           );
         }
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error("❌ [API] Erro ao distribuir tokens:", error.message);
+        console.error("❌ [API] Error distributing tokens:", error.message);
         return NextResponse.json(
-          { success: false, error: 'Erro ao distribuir tokens', details: error.message },
+          { success: false, error: 'Error distributing tokens', details: error.message },
           { status: 500 }
         );
       } else {
-        console.error("❌ [API] Erro desconhecido ao distribuir tokens:", error);
+        console.error("❌ [API] Unknown error distributing tokens:", error);
         return NextResponse.json(
-          { success: false, error: 'Erro desconhecido ao distribuir tokens', details: String(error) },
+          { success: false, error: 'Unknown error distributing tokens', details: String(error) },
           { status: 500 }
         );
       }
     }
   } catch (error) {
-    console.error("❌ [API] Erro inesperado:", error);
+    console.error("❌ [API] Unexpected error:", error);
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Erro inesperado', 
+        error: 'Unexpected error', 
         details: error instanceof Error ? error.message : String(error) 
       },
       { status: 500 }

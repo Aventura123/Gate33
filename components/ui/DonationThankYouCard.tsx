@@ -51,8 +51,18 @@ const DonationThankYouCard: React.FC<DonationThankYouCardProps> = ({
         <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
           <p className="text-xs text-gray-400 mb-2">G33 Token Contract Address:</p>
           <p className="font-mono text-xs text-gray-300 break-all select-all">
-            0x014Ab399D1F4cAa25D4fFD87848A35Af0F7Bd303
+             0xc6099a207e9d2d37d1203f060d2e77c1e05008fa
           </p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div>
+              <p className="text-xs text-gray-400">Token Symbol:</p>
+              <p className="font-mono text-xs text-orange-300">G33</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Decimals:</p>
+              <p className="font-mono text-xs text-orange-300">18</p>
+            </div>
+          </div>
         </div>
         
         {/* Transaction Hash (if available) */}

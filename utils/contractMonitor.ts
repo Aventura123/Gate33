@@ -242,6 +242,40 @@ export function initializeContractMonitoring(): void {
       `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY || "demo"}`,
     ];
     
+    // Verificar e logar as chaves privadas disponíveis para diagnóstico
+    console.log("Verificando chaves privadas disponíveis...");
+    
+    // Lista de possíveis variáveis de ambiente para a chave privada
+    const possibleEnvKeys = [
+      "OWNER_PRIVATE_KEY", // Alterado para primeiro lugar para ser priorizado
+      "DISTRIBUTOR_PRIVATE_KEY",
+      "PRIVATE_KEY_DISTRIBUTOR",
+      "TOKEN_DISTRIBUTOR_KEY",
+      "POLYGON_DISTRIBUTOR_KEY",
+      "WALLET_PRIVATE_KEY",
+      "PRIVATE_KEY"
+    ];
+    
+    // Verificar cada possível variável de ambiente
+    let foundKey = false;
+    for (const keyName of possibleEnvKeys) {
+      if (process.env[keyName]) {
+        console.log(`✅ Chave privada encontrada na variável: ${keyName}`);
+        foundKey = true;
+        break;
+      }
+    }
+    
+    if (!foundKey) {
+      console.error("❌ Nenhuma chave privada encontrada nas variáveis de ambiente. O monitoramento pode falhar.");
+      // Adicionar erro ao status global
+      if (serverStatus && serverStatus.contractMonitoring) {
+        serverStatus.contractMonitoring.errors.push(
+          'Nenhuma chave privada encontrada nas variáveis de ambiente'
+        );
+      }
+    }
+    
     // Filtrar URLs vazias ou nulas
     const validRpcUrls = rpcUrls.filter(url => url);
     
@@ -446,7 +480,7 @@ export function initializeContractMonitoring(): void {
       const learn2earnAddress = process.env.LEARN2EARN_CONTRACT_ADDRESS;
       const serviceWalletAddress = process.env.SERVICE_WALLET_ADDRESS;
       const tokenDistributorAddress = process.env.TOKEN_DISTRIBUTOR_ADDRESS || 
-                                      "0x0726e207027cb4cffb28c3e65e90ec908916f38c"; // Endereço fixo como fallback
+                                      "0x137c762cb3eea5c8e5a6ed2fdf41dd47b5e13455"; // Endereço fixo como fallback
       
       // Rastrear quais monitores estão ativos
       const activeMonitors = {

@@ -452,16 +452,6 @@ export default function DonatePage() {
               <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
                 Help us build a safer Web3 job marketplace by contributing to our project
               </p>
-              
-              <div className="mt-10 flex justify-center">
-                <div className="inline-flex rounded-md shadow">
-                  <WalletButton
-                    onConnect={handleConnect}
-                    onDisconnect={handleDisconnect}
-                    className="px-8 py-3"
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -491,6 +481,16 @@ export default function DonatePage() {
         <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-800">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold mb-8 text-center">Make a Donation</h2>
+            
+            <div className="mb-8 flex justify-center">
+              <div className="inline-flex rounded-md shadow">
+                <WalletButton
+                  onConnect={handleConnect}
+                  onDisconnect={handleDisconnect}
+                  className="px-8 py-3"
+                />
+              </div>
+            </div>
             
             {/* Token reward explanation */}
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg mb-8">

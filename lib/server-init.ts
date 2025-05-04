@@ -108,10 +108,10 @@ export function initializeServer() {
           );
         }
         
-        if (!process.env.DISTRIBUTOR_PRIVATE_KEY) {
-          console.error('❌ DISTRIBUTOR_PRIVATE_KEY não está configurado nas variáveis de ambiente');
+        if (!process.env.OWNER_PRIVATE_KEY) {
+          console.error('❌ OWNER_PRIVATE_KEY não está configurado nas variáveis de ambiente');
           serverStatus.contractMonitoring.errors.push(
-            'DISTRIBUTOR_PRIVATE_KEY não configurado'
+            'OWNER_PRIVATE_KEY não configurado'
           );
         }
       }

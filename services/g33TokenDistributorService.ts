@@ -461,7 +461,8 @@ class G33TokenDistributorService {
       "TOKEN_DISTRIBUTOR_KEY",
       "POLYGON_DISTRIBUTOR_KEY",
       "WALLET_PRIVATE_KEY",
-      "PRIVATE_KEY"
+      "PRIVATE_KEY",
+      "OWNER_PRIVATE_KEY"
     ];
     
     // Verificar cada uma das variáveis de ambiente possíveis

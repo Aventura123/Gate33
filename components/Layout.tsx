@@ -128,6 +128,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <a href="/nft" className="block px-4 py-2 hover:text-orange-500" onClick={() => setMenuOpen(false)}>NFT</a>
           <a href="/crypto-tools" className="block px-4 py-2 hover:text-orange-500" onClick={() => setMenuOpen(false)}>Crypto Tools</a>
           <a href="/bitcoin-analysis" className="block px-4 py-2 hover:text-orange-500" onClick={() => setMenuOpen(false)}>Bitcoin Analysis</a>
+          <a href="/donate" className="block px-4 py-2 hover:text-orange-500 font-medium" onClick={() => setMenuOpen(false)}>Donate</a>
           
           {/* Páginas adicionais */}
           <a href="/#faq" className="block hover:text-orange-500 mb-2" onClick={() => setMenuOpen(false)}>FAQ</a>
@@ -186,6 +187,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <a href="/nft" className="block hover:text-orange-500 mb-2">NFT</a>
               <a href="/crypto-tools" className="block hover:text-orange-500 mb-2">Crypto Tools</a>
               <a href="/bitcoin-analysis" className="block hover:text-orange-500 mb-2">Bitcoin Analysis</a>
+              <a href="/donate" className="block hover:text-orange-500 mb-2 font-medium">Donate</a>
             </nav>
           </div>
           <div>
