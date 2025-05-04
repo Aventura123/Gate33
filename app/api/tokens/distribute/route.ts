@@ -291,8 +291,17 @@ export async function POST(request: NextRequest) {
           );
         }
         
-        // Escalar valor USD para o formato esperado pelo contrato (x100 para precisão de 2 casas decimais)
-        const usdValueScaled = Math.floor(usdValue * 100);
+        // Escalar valor USD para o formato esperado pelo contrato
+        // IMPORTANTE: O contrato atual divide o valor por 100 E não considera casas decimais
+        // Para compensar isso, multiplicamos o valor por 100 (para o contrato) e por 10^18 (para casas decimais)
+        // 1 USD deveria ser 1 token completo (10^18 wei)
+        const multiplier = BigInt(100) * BigInt(10 ** 18);
+        const usdValueScaled = ethers.BigNumber.from(
+          Math.floor(usdValue * 100).toString()
+        ).mul(ethers.BigNumber.from(10).pow(18));
+        
+        console.log(`💱 [API] Valor USD original: $${usdValue}`);
+        console.log(`💱 [API] Valor USD escalado: ${usdValueScaled.toString()} (para considerar divisão por 100 e 18 casas decimais)`);
         
         // Obter valores atuais de gas da rede
         console.log("[API] Obtendo fee data da rede...");
