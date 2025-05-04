@@ -863,13 +863,9 @@ class G33TokenDistributorService {
         : MIN_GAS_PRICE;
         
       // Para transações EIP-1559 (tipo 2), usar maxFeePerGas e maxPriorityFeePerGas
-      const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas.gt(MIN_PRIORITY_FEE)
-        ? feeData.maxPriorityFeePerGas
-        : MIN_PRIORITY_FEE;
-        
-      const maxFeePerGas = feeData.maxFeePerGas && feeData.maxFeePerGas.gt(MIN_FEE_PER_GAS)
-        ? feeData.maxFeePerGas
-        : MIN_FEE_PER_GAS;
+      // IMPORTANTE: Polygon exige pelo menos 25 gwei para maxPriorityFeePerGas (gas tip cap)
+      const maxPriorityFeePerGas = ethers.utils.parseUnits("30", "gwei"); // Aumentado para 30 gwei (acima do mínimo exigido de 25 gwei)
+      const maxFeePerGas = ethers.utils.parseUnits("60", "gwei"); // Aumentado para 60 gwei
       
       const gasLimit = 200000; // Aumentado para ter margem de segurança
       

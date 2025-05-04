@@ -9,6 +9,11 @@ const DISTRIBUTOR_ABI = [
   "function getAvailableTokens() external view returns (uint256)"
 ];
 
+// Adicionar função para verificar a propriedade do contrato
+const DISTRIBUTOR_OWNER_ABI = [
+  "function owner() external view returns (address)"
+];
+
 // Lista expandida de URLs RPC para maior resiliência
 // Incluindo endpoints WebSockets (WSS) que podem contornar alguns firewalls
 const POLYGON_RPC_URLS = [
@@ -253,6 +258,39 @@ export async function POST(request: NextRequest) {
           );
         }
         
+        // Antes de executar a distribuição, verificar permissões no contrato
+        try {
+          // Criar contrato com ABI para verificação de proprietário
+          const ownerCheckContract = new ethers.Contract(distributorAddress, DISTRIBUTOR_OWNER_ABI, provider);
+          
+          // Verificar se o contrato tem função owner()
+          try {
+            const contractOwner = await ownerCheckContract.owner();
+            const walletAddress = await wallet.getAddress();
+            
+            console.log(`👮 [API] Proprietário do contrato: ${contractOwner}`);
+            console.log(`🔑 [API] Endereço da carteira: ${walletAddress}`);
+            
+            // Se a carteira não é a proprietária, emitir aviso
+            if (contractOwner.toLowerCase() !== walletAddress.toLowerCase()) {
+              console.warn(`⚠️ [API] AVISO: A carteira distribuidora (${walletAddress}) não é a proprietária do contrato (${contractOwner})`);
+              console.warn(`⚠️ [API] Isso pode causar falhas nas transações por falta de permissão`);
+            }
+          } catch (ownerCheckError: unknown) {
+            // O contrato pode não ter função owner() - isso é normal para alguns contratos
+            const errorMessage = ownerCheckError instanceof Error 
+              ? ownerCheckError.message 
+              : String(ownerCheckError);
+            console.log(`ℹ️ [API] Não foi possível verificar o proprietário do contrato: ${errorMessage}`);
+          }
+        } catch (error: unknown) {
+          // Ignorar erros nesta verificação, pois é apenas diagnóstico
+          const errorMessage = error instanceof Error 
+            ? error.message 
+            : String(error);
+          console.log(`ℹ️ [API] Verificação de proprietário do contrato ignorada: ${errorMessage}`);
+        }
+        
         // Conectar ao contrato
         console.log(`[API] Conectando ao contrato ${distributorAddress}...`);
         const contract = new ethers.Contract(distributorAddress, DISTRIBUTOR_ABI, wallet);
@@ -313,11 +351,11 @@ export async function POST(request: NextRequest) {
         // Configurar gas com valores baixos mas suficientes para garantir a transação
         const gasLimit = ethers.utils.hexlify(80000); // Valor fixo e menor para o gas limit
         
-        // Usar 5 gwei para maxPriorityFeePerGas
-        const maxPriorityFeePerGas = ethers.utils.parseUnits("5", "gwei"); 
+        // Aumentar para 30 gwei, acima do mínimo necessário de 25 gwei exigido pela rede Polygon
+        const maxPriorityFeePerGas = ethers.utils.parseUnits("30", "gwei"); 
         
-        // Usar um valor de maxFeePerGas também reduzido
-        const maxFeePerGas = ethers.utils.parseUnits("30", "gwei");
+        // Aumentar maxFeePerGas também para acomodar o novo valor de maxPriorityFeePerGas
+        const maxFeePerGas = ethers.utils.parseUnits("60", "gwei");
         
         // Calcular custo estimado da transação
         const estimatedGasCost = maxFeePerGas.mul(gasLimit);
