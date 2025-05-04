@@ -304,20 +304,21 @@ export async function POST(request: NextRequest) {
           console.error("❌ [API] Erro ao obter fee data da rede:", feeError);
           feeData = {
             gasPrice: ethers.utils.parseUnits("35", "gwei"),
-            maxFeePerGas: ethers.utils.parseUnits("40", "gwei"),
-            maxPriorityFeePerGas: ethers.utils.parseUnits("10", "gwei")
+            maxFeePerGas: ethers.utils.parseUnits("60", "gwei"),
+            maxPriorityFeePerGas: ethers.utils.parseUnits("30", "gwei")
           };
           console.log("[API] Usando fee data de fallback");
         }
         
-        // Configurar gas com valores baixos mas suficientes para garantir a transação
-        const gasLimit = ethers.utils.hexlify(80000); // Valor fixo e menor para o gas limit
+        // Configurar gas com valores suficientes para Polygon
+        const gasLimit = ethers.utils.hexlify(80000); // Valor fixo para o gas limit
         
-        // Usar 5 gwei para maxPriorityFeePerGas
-        const maxPriorityFeePerGas = ethers.utils.parseUnits("5", "gwei"); 
+        // IMPORTANTE: Polygon exige pelo menos 25 gwei para maxPriorityFeePerGas (gas tip cap)
+        // Usar 30 gwei para garantir que a transação seja aceita
+        const maxPriorityFeePerGas = ethers.utils.parseUnits("30", "gwei"); 
         
-        // Usar um valor de maxFeePerGas também reduzido
-        const maxFeePerGas = ethers.utils.parseUnits("30", "gwei");
+        // Usar um valor de maxFeePerGas também adequado
+        const maxFeePerGas = ethers.utils.parseUnits("60", "gwei");
         
         // Calcular custo estimado da transação
         const estimatedGasCost = maxFeePerGas.mul(gasLimit);

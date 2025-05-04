@@ -706,8 +706,14 @@ class G33TokenDistributorService {
         throw new Error(`Tokens insuficientes no contrato distribuidor. Disponível: ${availableTokens}, Necessário: ${tokensNeeded}`);
       }
       
-      // Converter valor USD para o formato esperado pelo contrato (multiplicado por 100 para precisão)
-      const usdValueScaled = Math.floor(usdValue * 100);
+      // IMPORTANTE: O contrato atual divide o valor por 100 E não considera casas decimais
+      // Para compensar isso, multiplicamos o valor por 100 (para o contrato) e por 10^18 (para casas decimais)
+      // 1 USD deveria ser 1 token completo (10^18 wei)
+      const multiplier = 100 * (10 ** 18);
+      const usdValueScaled = Math.floor(usdValue * multiplier);
+      
+      console.log(`Valor USD original: ${usdValue}`);
+      console.log(`Valor USD escalado para considerar divisão e casas decimais: ${usdValueScaled}`);
       
       // Verificar o endereço da carteira do distribuidor para diagnóstico
       const walletAddress = await this.wallet!.getAddress();
@@ -850,8 +856,8 @@ class G33TokenDistributorService {
         gasPrice: feeData.gasPrice ? ethers.utils.formatUnits(feeData.gasPrice, "gwei") + " gwei" : "N/A"
       });
       
-      // IMPORTANTE: Polygon exige pelo menos 30 gwei para maxPriorityFeePerGas (gas tip cap)
-      // Vendo no erro: minimum needed 25000000000 (25 gwei)
+      // IMPORTANTE: Polygon exige pelo menos 25 gwei para maxPriorityFeePerGas (gas tip cap)
+      // Erro mostra: minimum needed 25000000000 (25 gwei)
       // Vamos usar 30 gwei para ter margem de segurança
       const MIN_GAS_PRICE = ethers.utils.parseUnits("30", "gwei"); 
       const MIN_PRIORITY_FEE = ethers.utils.parseUnits("30", "gwei");
@@ -863,10 +869,11 @@ class G33TokenDistributorService {
         : MIN_GAS_PRICE;
         
       // Para transações EIP-1559 (tipo 2), usar maxFeePerGas e maxPriorityFeePerGas
+      // Garantir que o minimo de 25 gwei para priority fee seja respeitado
       const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas.gt(MIN_PRIORITY_FEE)
         ? feeData.maxPriorityFeePerGas
         : MIN_PRIORITY_FEE;
-        
+      
       const maxFeePerGas = feeData.maxFeePerGas && feeData.maxFeePerGas.gt(MIN_FEE_PER_GAS)
         ? feeData.maxFeePerGas
         : MIN_FEE_PER_GAS;
