@@ -335,29 +335,98 @@ export default function DonatePage() {
       
       setError(null); // Clear any previous error
       
-      // Mapear redes para tipos suportados pelo web3Service
-      const networkTypeMap: Record<string, NetworkType> = {
-        'ethereum': 'ethereum',
-        'polygon': 'polygon',
-        'bsc': 'binance',
-        'avalanche': 'avalanche',
-        'optimism': 'optimism'
+      // Configurações específicas para doações (usando mainnet para todas as redes)
+      const donationNetworkConfig = {
+        'ethereum': {
+          chainId: 1, // Ethereum Mainnet
+          name: 'Ethereum Mainnet',
+          rpcUrl: 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
+          currencySymbol: 'ETH',
+          blockExplorer: 'https://etherscan.io'
+        },
+        'polygon': {
+          chainId: 137, // Polygon Mainnet
+          name: 'Polygon Mainnet',
+          rpcUrl: 'https://polygon-rpc.com',
+          currencySymbol: 'MATIC',
+          blockExplorer: 'https://polygonscan.com'
+        },
+        'bsc': {
+          chainId: 56, // BSC Mainnet (diferente da BSC Testnet usada para jobs)
+          name: 'Binance Smart Chain',
+          rpcUrl: 'https://bsc-dataseed.binance.org/',
+          currencySymbol: 'BNB',
+          blockExplorer: 'https://bscscan.com'
+        },
+        'avalanche': {
+          chainId: 43114, // Avalanche Mainnet
+          name: 'Avalanche C-Chain',
+          rpcUrl: 'https://api.avax.network/ext/bc/C/rpc',
+          currencySymbol: 'AVAX',
+          blockExplorer: 'https://snowtrace.io'
+        },
+        'optimism': {
+          chainId: 10, // Optimism Mainnet
+          name: 'Optimism',
+          rpcUrl: 'https://mainnet.optimism.io',
+          currencySymbol: 'ETH',
+          blockExplorer: 'https://optimistic.etherscan.io'
+        }
       };
       
-      const networkType = networkTypeMap[networkId];
-      if (!networkType) {
-        throw new Error(`Network ${networkId} is not supported for direct wallet transactions`);
+      // Verificar se a rede solicitada existe em nossa configuração de doações
+      if (!donationNetworkConfig[networkId as keyof typeof donationNetworkConfig]) {
+        throw new Error(`Network ${networkId} is not supported for donations`);
       }
+      
+      // Obter configuração da rede para doações
+      const networkConfig = donationNetworkConfig[networkId as keyof typeof donationNetworkConfig];
       
       // Show processing message
       setError("Requesting network switch... Please confirm in your wallet.");
       
+      if (!window.ethereum) {
+        throw new Error("No crypto wallet found. Please install MetaMask.");
+      }
+
       try {
-        await web3Service.switchNetwork(networkType);
+        // Tentar trocar para a rede
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: `0x${networkConfig.chainId.toString(16)}` }],
+        });
+        
         setCurrentNetwork(networkId);
         setError(null); // Clear message after success
         return true;
       } catch (switchError: any) {
+        // Se a rede não está adicionada à MetaMask, tentamos adicioná-la
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [
+                {
+                  chainId: `0x${networkConfig.chainId.toString(16)}`,
+                  chainName: networkConfig.name,
+                  nativeCurrency: {
+                    name: networkConfig.currencySymbol,
+                    symbol: networkConfig.currencySymbol,
+                    decimals: 18,
+                  },
+                  rpcUrls: [networkConfig.rpcUrl],
+                  blockExplorerUrls: [networkConfig.blockExplorer],
+                },
+              ],
+            });
+            return await switchNetwork(networkId); // Tenta novamente após adicionar
+          } catch (addError: any) {
+            console.error("Error adding network:", addError);
+            setError(`Unable to add ${selectedNetwork?.name}: ${addError.message}`);
+            return false;
+          }
+        }
+        
         console.error("Error switching network:", switchError);
         setError(`Unable to switch to ${selectedNetwork?.name}: ${switchError.message}`);
         return false;
@@ -418,23 +487,26 @@ export default function DonatePage() {
         (selectedCrypto.symbol === "BNB" && selectedNetwork.id === "bsc")
       );
       
-      if (isNativeToken) {
-        // Processamento para tokens nativos (ETH na Ethereum, BNB na BSC, AVAX na Avalanche)
-        console.log(`Processing native ${selectedCrypto.symbol} transaction on ${selectedNetwork.name}...`);
-        const recipientAddress = DONATION_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
-        if (!recipientAddress) {
-          throw new Error(`Donation address not found for ${selectedCrypto.symbol} on ${selectedNetwork.name}`);
-        }
-
-        try {
-          const provider = await web3Service.getWeb3Provider();
-          if (!provider) {
-            throw new Error("Unable to get web3 provider. Please check your wallet.");
+      // Validar que a carteira está na rede correta antes de prosseguir
+      const provider = await web3Service.getWeb3Provider();
+      if (!provider) {
+        throw new Error("Unable to connect to your wallet. Please check your connection and try again.");
+      }
+      
+      // Abrir a MetaMask diretamente sem verificações prévias de saldo
+      // para permitir que a própria carteira mostre erros de forma amigável
+      try {
+        if (isNativeToken) {
+          // Processamento para tokens nativos (ETH na Ethereum, BNB na BSC, AVAX na Avalanche)
+          console.log(`Processing native ${selectedCrypto.symbol} transaction on ${selectedNetwork.name}...`);
+          const recipientAddress = DONATION_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
+          if (!recipientAddress) {
+            throw new Error(`Donation address not found for ${selectedCrypto.symbol} on ${selectedNetwork.name}`);
           }
 
           const signer = provider.getSigner();
           
-          // Criar a transação nativa
+          // Criar a transação nativa e enviar diretamente para a MetaMask processar
           const tx = await signer.sendTransaction({
             to: recipientAddress,
             value: ethers.utils.parseEther(donationAmount),
@@ -443,34 +515,22 @@ export default function DonatePage() {
           console.log(`Waiting for ${selectedCrypto.symbol} transaction confirmation...`);
           await waitForTransactionConfirmation(provider, tx.hash);
           txHash = tx.hash;
-          // Armazenar o hash da transação de doação
           setDonationHash(txHash);
           tokenTxSuccess = true;
           console.log(`${selectedCrypto.symbol} transaction sent successfully! Hash: ${txHash}`);
-        } catch (txError) {
-          const errorMessage = txError instanceof Error ? txError.message : String(txError);
-          console.error("Error sending transaction:", errorMessage);
-          throw new Error(`Error sending ${selectedCrypto.symbol}: ${errorMessage}`);
-        }
-      } else {
-        // Processamento para tokens não-nativos (todos tratados como ERC-20)
-        console.log(`Processing token ${selectedCrypto.symbol} as ERC-20 on ${selectedNetwork.name}...`);
-        
-        const recipientAddress = DONATION_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
-        if (!recipientAddress) {
-          throw new Error(`Donation address not found for ${selectedCrypto.symbol} on ${selectedNetwork.name}`);
-        }
+        } else {
+          // Processamento para tokens não-nativos (todos tratados como ERC-20)
+          console.log(`Processing token ${selectedCrypto.symbol} as ERC-20 on ${selectedNetwork.name}...`);
+          
+          const recipientAddress = DONATION_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
+          if (!recipientAddress) {
+            throw new Error(`Donation address not found for ${selectedCrypto.symbol} on ${selectedNetwork.name}`);
+          }
 
-        // Verificar se há um endereço de contrato para o token na rede atual
-        const tokenAddress = TOKEN_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
-        if (!tokenAddress) {
-          throw new Error(`Contract address for ${selectedCrypto.symbol} not found on ${selectedNetwork.name}. Please contact support.`);
-        }
-
-        try {
-          const provider = await web3Service.getWeb3Provider();
-          if (!provider) {
-            throw new Error("Unable to get web3 provider. Please check your wallet.");
+          // Verificar se há um endereço de contrato para o token na rede atual
+          const tokenAddress = TOKEN_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
+          if (!tokenAddress) {
+            throw new Error(`Token ${selectedCrypto.symbol} is not currently supported on ${selectedNetwork.name}.`);
           }
 
           const signer = provider.getSigner();
@@ -486,47 +546,65 @@ export default function DonatePage() {
             signer
           );
 
-          // Verificar os decimais do token
+          // Verificar decimais do token
           let decimals;
           try {
             decimals = await tokenContract.decimals();
             console.log(`Token decimals: ${decimals}`);
           } catch (error) {
-            console.error("Error getting token decimals, using default 18:", error);
-            decimals = 18; // Fallback para o valor padrão se a chamada falhar
+            decimals = 18; // Fallback para o valor padrão
           }
-
-          // Verificar saldo antes da transferência
-          const balance = await tokenContract.balanceOf(await signer.getAddress());
-          console.log(`Current ${selectedCrypto.symbol} balance: ${ethers.utils.formatUnits(balance, decimals)}`);
           
           const amount = ethers.utils.parseUnits(donationAmount, decimals);
           
-          if (balance.lt(amount)) {
-            throw new Error(`Insufficient ${selectedCrypto.symbol} balance. You have ${ethers.utils.formatUnits(balance, decimals)} but trying to send ${donationAmount}`);
-          }
-
-          console.log(`Sending ${donationAmount} ${selectedCrypto.symbol} to ${recipientAddress}`);
+          // Enviar a transação do token ERC-20 diretamente para a MetaMask processar
           const tx = await tokenContract.transfer(recipientAddress, amount);
 
           console.log(`Waiting for ${selectedCrypto.symbol} transaction confirmation...`);
           await waitForTransactionConfirmation(provider, tx.hash);
           txHash = tx.hash;
-          // Armazenar o hash da transação de doação
           setDonationHash(txHash);
           tokenTxSuccess = true;
           console.log(`${selectedCrypto.symbol} transaction sent successfully! Hash: ${txHash}`);
-        } catch (txError) {
-          const errorMessage = txError instanceof Error ? txError.message : String(txError);
-          console.error("Error sending transaction:", errorMessage);
-          throw new Error(`Error sending ${selectedCrypto.symbol}: ${errorMessage}`);
         }
+      } catch (txError: any) {
+        console.error("Error sending transaction:", txError);
+        
+        // Traduzir mensagens de erro comuns para formato mais amigável
+        if (txError.message) {
+          // Verificar saldo insuficiente
+          if (txError.message.includes("insufficient funds") || 
+              txError.message.includes("insufficient balance") ||
+              txError.message.includes("exceeds balance")) {
+            throw new Error(`You don't have enough ${selectedCrypto.symbol} in your wallet to complete this donation.`);
+          }
+          
+          // Erro de rejeição pelo usuário
+          if (txError.message.includes("user rejected") || 
+              txError.message.includes("User denied") ||
+              txError.message.includes("user cancelled")) {
+            throw new Error(`Transaction cancelled. You can try again when you're ready.`);
+          }
+          
+          // Erro de gas 
+          if (txError.message.includes("gas required exceeds")) {
+            throw new Error(`The network is congested right now. Please try again with a higher gas limit.`);
+          }
+          
+          // Erro de nonce
+          if (txError.message.includes("nonce")) {
+            throw new Error(`Transaction sequence error. Please reset your MetaMask account or try again later.`);
+          }
+        }
+        
+        // Mensagem de erro padrão mais amigável se não encaixar em nenhum caso específico
+        throw new Error(`There was a problem processing your ${selectedCrypto.symbol} transaction. Please check your wallet and try again.`);
       }
 
+      // Continue com a distribuição de tokens G33
       console.log("Starting G33 token distribution...");
 
       try {
-        // Passar explicitamente waitForConfirmation como false
         const result = await tokenService.processDonationAndDistributeTokens(
           walletAddress,
           parseFloat(donationAmount),
@@ -538,14 +616,12 @@ export default function DonatePage() {
 
         if (!result.success) {
           console.error("Failed to distribute G33 tokens:", result.error);
-          throw new Error(result.error || "Failed to distribute G33 tokens. Please try again.");
+          throw new Error(result.error || "Failed to distribute G33 tokens. The donation was completed successfully, but there was an issue with token distribution.");
         }
 
-        // Log detalhado para debug
         console.log("Resultado completo da distribuição de tokens:", result);
         console.log("Hash de distribuição recebido:", result.distributionTxHash);
         
-        // Armazenar o hash da distribuição de tokens
         setTransactionHash(result.distributionTxHash || null);
         setDonationStep('success');
         console.log("Donation and token distribution initiated successfully!");
@@ -555,8 +631,15 @@ export default function DonatePage() {
         } else {
           console.error("Error distributing G33 tokens:", error);
         }
-        setError(error instanceof Error ? error.message : "Error distributing G33 tokens. Please try again.");
-        setDonationStep('error');
+        
+        if (tokenTxSuccess) {
+          // Se a doação foi bem-sucedida mas a distribuição de tokens falhou
+          setError("Your donation was successful, but there was an issue distributing your G33 tokens. Our team will ensure you receive them shortly.");
+          setDonationStep('success'); // Ainda mostra o sucesso já que a doação foi completada
+        } else {
+          setError(error instanceof Error ? error.message : "Error distributing G33 tokens. Please try again.");
+          setDonationStep('error');
+        }
       } finally {
         setIsProcessing(false);
       }
