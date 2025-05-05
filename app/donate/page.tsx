@@ -128,6 +128,7 @@ export default function DonatePage() {
   const [donationAmount, setDonationAmount] = useState<string>('');
   const [donationStep, setDonationStep] = useState<'select_crypto' | 'select_network' | 'enter_amount' | 'confirmation' | 'processing' | 'success' | 'error'>('select_crypto');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [donationHash, setDonationHash] = useState<string | null>(null);
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [estimatedTokens, setEstimatedTokens] = useState<number | null>(null);
@@ -141,15 +142,21 @@ export default function DonatePage() {
         setWalletConnected(true);
         setWalletAddress(walletInfo.address);
         
+        console.log("Wallet connected to network:", walletInfo.networkName);
+        
         // Map network name to our network ids
         const networkMap: Record<string, string> = {
           'Ethereum Mainnet': 'ethereum',
+          'Ethereum': 'ethereum',
           'Polygon': 'polygon',
+          'Polygon Mainnet': 'polygon',
           'BSC': 'bsc',
-          'BSC Testnet': 'bsc'
+          'BSC Testnet': 'bsc',
+          'BNB Smart Chain': 'bsc'
         };
         
         const mappedNetwork = networkMap[walletInfo.networkName] || null;
+        console.log("Mapped network:", mappedNetwork, "Original network name:", walletInfo.networkName);
         setCurrentNetwork(mappedNetwork);
       }
     }
@@ -162,15 +169,21 @@ export default function DonatePage() {
     
     const walletInfo = web3Service.getWalletInfo();
     if (walletInfo) {
+      console.log("Wallet connected to network:", walletInfo.networkName);
+      
       // Map network name to our network ids
       const networkMap: Record<string, string> = {
         'Ethereum Mainnet': 'ethereum',
+        'Ethereum': 'ethereum',
         'Polygon': 'polygon',
+        'Polygon Mainnet': 'polygon',
         'BSC': 'bsc',
-        'BSC Testnet': 'bsc'
+        'BSC Testnet': 'bsc',
+        'BNB Smart Chain': 'bsc'
       };
       
       const mappedNetwork = networkMap[walletInfo.networkName] || null;
+      console.log("Mapped network:", mappedNetwork, "Original network name:", walletInfo.networkName);
       setCurrentNetwork(mappedNetwork);
     }
   };
@@ -284,6 +297,23 @@ export default function DonatePage() {
     }
   };
 
+  const waitForTransactionConfirmation = async (provider: ethers.providers.Web3Provider, txHash: string, retries = 5, interval = 3000): Promise<void> => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const receipt = await provider.getTransactionReceipt(txHash);
+        if (receipt && receipt.status === 1) {
+          console.log("Transaction confirmed:", receipt);
+          return;
+        }
+      } catch (error) {
+        console.error("Error checking transaction receipt:", error);
+      }
+      console.log(`Retrying transaction confirmation... (${attempt + 1}/${retries})`);
+      await new Promise(resolve => setTimeout(resolve, interval));
+    }
+    throw new Error("Transaction confirmation timed out. Please check the transaction hash manually.");
+  };
+
   // Handle the donation transaction
   async function processDonation() {
     setIsProcessing(true);
@@ -346,9 +376,10 @@ export default function DonatePage() {
           const tx = await usdtContract.transfer(recipientAddress, amount);
 
           console.log("Waiting for USDT transaction confirmation...");
-          await tx.wait(1);
-
+          await waitForTransactionConfirmation(provider, tx.hash);
           txHash = tx.hash;
+          // Armazenar o hash da transação de doação
+          setDonationHash(txHash);
           usdtTxSuccess = true;
           console.log(`USDT transaction sent successfully! Hash: ${txHash}`);
         } catch (txError) {
@@ -361,13 +392,14 @@ export default function DonatePage() {
       console.log("Starting G33 token distribution...");
 
       try {
+        // Passar explicitamente waitForConfirmation como false
         const result = await tokenService.processDonationAndDistributeTokens(
           walletAddress,
           parseFloat(donationAmount),
           selectedCrypto.symbol,
           txHash,
           selectedNetwork.id,
-          true
+          false // Não esperar pela confirmação da blockchain
         );
 
         if (!result.success) {
@@ -375,11 +407,21 @@ export default function DonatePage() {
           throw new Error(result.error || "Failed to distribute G33 tokens. Please try again.");
         }
 
-        setTransactionHash(result.distributionTxHash || txHash);
+        // Log detalhado para debug
+        console.log("Resultado completo da distribuição de tokens:", result);
+        console.log("Hash de distribuição recebido:", result.distributionTxHash);
+        // transactionHash não existe no tipo retornado, remover referência a ele
+        
+        // Armazenar o hash da distribuição de tokens
+        setTransactionHash(result.distributionTxHash || null);
         setDonationStep('success');
-        console.log("Donation and token distribution completed successfully!");
+        console.log("Donation and token distribution initiated successfully!");
       } catch (error) {
-        console.error("Error distributing G33 tokens:", error);
+        if (error instanceof SyntaxError) {
+          console.error("JSON parsing error:", error.message);
+        } else {
+          console.error("Error distributing G33 tokens:", error);
+        }
         setError(error instanceof Error ? error.message : "Error distributing G33 tokens. Please try again.");
         setDonationStep('error');
       } finally {
@@ -665,7 +707,8 @@ export default function DonatePage() {
                               Connected wallet: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
                             </p>
                             
-                            {currentNetwork !== selectedNetwork.id && (
+                            {/* Exibir aviso apenas quando a rede atual for diferente da rede selecionada */}
+                            {walletConnected && currentNetwork && selectedNetwork && currentNetwork !== selectedNetwork.id ? (
                               <div className="p-3 bg-yellow-900/30 border border-yellow-800/50 rounded-lg mb-4">
                                 <p className="text-sm mb-3">
                                   You need to switch to {selectedNetwork.name} network to continue.
@@ -678,7 +721,7 @@ export default function DonatePage() {
                                   Switch to {selectedNetwork.name}
                                 </button>
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         ) : (
                           <div className="p-3 bg-yellow-900/30 border border-yellow-800/50 rounded-lg mb-4">
@@ -725,7 +768,8 @@ export default function DonatePage() {
               {donationStep === 'success' && (
                 <DonationThankYouCard
                   tokenAmount={estimatedTokens || 0}
-                  transactionHash={transactionHash || undefined}
+                  donationHash={donationHash || undefined}
+                  distributionHash={transactionHash || undefined}
                   networkName={selectedNetwork?.name || 'Polygon'}
                   onNewDonation={resetDonation}
                 />

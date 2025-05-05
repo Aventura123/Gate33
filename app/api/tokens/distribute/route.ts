@@ -138,13 +138,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { donorAddress, donationId, transactionHash, network, cryptoSymbol } = requestData;
+    const { donorAddress, donationId, transactionHash, network, cryptoSymbol, waitForConfirmation = true } = requestData;
     // Initialize usdValue as let to allow modifications
     let usdValue = requestData.usdValue;
 
     // DIAGNOSTICS: Adding detailed logs for debugging
     console.log("📊 [API] USD value received:", usdValue, "Type:", typeof usdValue);
     console.log("📊 [API] Complete request data:", JSON.stringify(requestData, null, 2));
+    console.log("📊 [API] waitForConfirmation flag:", waitForConfirmation);
 
     if (!donorAddress || !ethers.utils.isAddress(donorAddress)) {
       return NextResponse.json(
@@ -206,7 +207,8 @@ export async function POST(request: NextRequest) {
     try {
       console.log("✅ [API] Service initialized, proceeding with distribution");
       try {
-        const distributionResult = await g33TokenDistributorService.distributeTokens(donorAddress, usdValue, true);
+        // Usar o valor de waitForConfirmation passado pelo cliente
+        const distributionResult = await g33TokenDistributorService.distributeTokens(donorAddress, usdValue, waitForConfirmation);
 
         if (!distributionResult) {
           throw new Error('Failed to distribute tokens. Check logs for more details.');
@@ -222,34 +224,38 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // Verify transaction to ensure execution didn't fail
-        console.log("[API] Checking transaction status on blockchain...");
-        const receipt = await g33TokenDistributorService.getTransactionReceipt(distributionResult);
-        
-        if (receipt && receipt.status === 0) {
-          console.error("❌ [API] Transaction was included in blockchain, but contract execution failed (status=0)");
+        // Verificar a transação apenas se waitForConfirmation for true
+        if (waitForConfirmation) {
+          console.log("[API] Checking transaction status on blockchain...");
+          const receipt = await g33TokenDistributorService.getTransactionReceipt(distributionResult);
           
-          // Update record to reflect error
-          if (donationId) {
-            await updateDoc(doc(db, 'tokenDonations', donationId), {
-              status: 'failed',
-              error: 'Execution reverted: Transaction was included in blockchain but contract execution failed',
-              updatedAt: new Date()
-            });
+          if (receipt && receipt.status === 0) {
+            console.error("❌ [API] Transaction was included in blockchain, but contract execution failed (status=0)");
+            
+            // Update record to reflect error
+            if (donationId) {
+              await updateDoc(doc(db, 'tokenDonations', donationId), {
+                status: 'failed',
+                error: 'Execution reverted: Transaction was included in blockchain but contract execution failed',
+                updatedAt: new Date()
+              });
+            }
+            
+            return NextResponse.json({
+              success: false,
+              transactionHash: distributionResult,
+              error: 'Contract execution failed (execution reverted)',
+              message: `Transaction ${distributionResult} was included in blockchain, but execution failed. Check at https://polygonscan.com/tx/${distributionResult}`
+            }, { status: 400 });
           }
-          
-          return NextResponse.json({
-            success: false,
-            transactionHash: distributionResult,
-            error: 'Contract execution failed (execution reverted)',
-            message: `Transaction ${distributionResult} was included in blockchain, but execution failed. Check at https://polygonscan.com/tx/${distributionResult}`
-          }, { status: 400 });
+        } else {
+          console.log("[API] Skipping transaction confirmation check as waitForConfirmation is false");
         }
 
         return NextResponse.json({
           success: true,
           transactionHash: distributionResult,
-          message: `Token distribution completed successfully.`
+          message: `Token distribution initiated successfully.`
         });
       } catch (error: unknown) {
         console.error("❌ [API] Error distributing tokens:", error);

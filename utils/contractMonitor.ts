@@ -3,8 +3,8 @@ import { logSystem } from './logSystem';
 
 // Configurações
 const ALERT_THRESHOLD_ETH = 0.1;  // Alerta se o gasto for maior que este valor em ETH
-const ALERT_THRESHOLD_TOKENS = 50; // Alerta se mais de 50 tokens forem distribuídos em uma única operação
-const ADMIN_EMAIL = 'admin@gate33.com'; // Email para receber alertas
+const ALERT_THRESHOLD_TOKENS = 5000; // Alerta se mais de 50 tokens forem distribuídos em uma única operação
+const ADMIN_EMAIL = 'info@gate33.com'; // Email para receber alertas
 
 // Helper para enviar email
 const sendEmail = async (to: string, subject: string, message: string): Promise<void> => {

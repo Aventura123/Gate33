@@ -1,22 +1,31 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 interface DonationThankYouCardProps {
   tokenAmount: number;
-  transactionHash?: string;
+  donationHash?: string;  // Hash da transação de doação original
+  distributionHash?: string;  // Hash da transação de distribuição de token
   networkName?: string;
   onNewDonation?: () => void;
 }
 
 const DonationThankYouCard: React.FC<DonationThankYouCardProps> = ({
   tokenAmount,
-  transactionHash,
+  donationHash,
+  distributionHash,
   networkName = 'Polygon',
   onNewDonation,
 }) => {
   // Round down to ensure we don't promise more tokens than will be delivered
   const formattedTokenAmount = Math.floor(tokenAmount);
+  
+  // Adicionar logs para depuração
+  useEffect(() => {
+    console.log("DonationThankYouCard - Props recebidas:");
+    console.log("donationHash:", donationHash);
+    console.log("distributionHash:", distributionHash);
+  }, [donationHash, distributionHash]);
   
   return (
     <div className="max-w-md mx-auto bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl shadow-xl overflow-hidden">
@@ -65,14 +74,32 @@ const DonationThankYouCard: React.FC<DonationThankYouCardProps> = ({
           </div>
         </div>
         
-        {/* Transaction Hash (if available) */}
-        {transactionHash && (
+        {/* Donation Transaction Hash (if available) */}
+        {donationHash && donationHash !== "transaction-hash-placeholder" && (
           <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
-            <p className="text-xs text-gray-400 mb-2">Transaction Hash:</p>
-            <p className="font-mono text-xs text-gray-300 break-all select-all">{transactionHash}</p>
+            <p className="text-xs text-gray-400 mb-2">Donation Transaction Hash:</p>
+            <p className="font-mono text-xs text-gray-300 break-all select-all">{donationHash}</p>
             <div className="mt-2 flex justify-end">
               <Link 
-                href={`https://polygonscan.com/tx/${transactionHash}`}
+                href={`https://polygonscan.com/tx/${donationHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-orange-400 hover:text-orange-300 text-xs"
+              >
+                View on Explorer →
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Token Distribution Transaction Hash (if available) */}
+        {distributionHash && distributionHash !== "transaction-hash-placeholder" && (
+          <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
+            <p className="text-xs text-gray-400 mb-2">Token Distribution Transaction Hash:</p>
+            <p className="font-mono text-xs text-gray-300 break-all select-all">{distributionHash}</p>
+            <div className="mt-2 flex justify-end">
+              <Link 
+                href={`https://polygonscan.com/tx/${distributionHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-orange-400 hover:text-orange-300 text-xs"

@@ -357,6 +357,7 @@ export async function processDonationAndDistributeTokens(
 ): Promise<{ success: boolean; distributionTxHash?: string; error?: string }> {
   try {
     console.log(`Starting donation processing: ${donationAmount} ${cryptoSymbol} from ${donorAddress}`);
+    console.log(`waitForConfirmation: ${waitForConfirmation}`);
 
     // Calculate value in USD
     const usdValue = await calculateUSDValue(donationAmount.toString(), cryptoSymbol);
@@ -384,6 +385,12 @@ export async function processDonationAndDistributeTokens(
 
     // Use API endpoint on client side
     if (typeof window !== 'undefined') {
+      console.log('Calling API to distribute tokens with payload:', {
+        donorAddress,
+        usdValue,
+        waitForConfirmation
+      });
+      
       const response = await fetch('/api/tokens/distribute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -406,18 +413,20 @@ export async function processDonationAndDistributeTokens(
       }
 
       const result = await response.json();
+      console.log('Token distribution API response:', result);
+      console.log('Transaction hash received:', result.transactionHash);
       
       // Update the Firebase record with the result
       await updateDoc(doc(db, 'tokenDonations', donationId), {
         status: result.success ? 'distributed' : 'failed',
-        distributionTxHash: result.distributionTxHash || null,
+        distributionTxHash: result.transactionHash || null,
         error: result.error || null,
         updatedAt: new Date()
       });
 
       return {
         success: result.success,
-        distributionTxHash: result.distributionTxHash,
+        distributionTxHash: result.transactionHash,
         error: result.error
       };
     }
