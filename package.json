@@ -25,6 +25,7 @@
     "@metamask/jazzicon": "2.0.0",
     "@reown/appkit": "1.7.3",
     "@reown/appkit-adapter-wagmi": "1.7.3",
+    "@solana/web3.js": "1.98.2",
     "@tanstack/react-query": "5.74.4",
     "@types/dotenv": "6.1.1",
     "@types/formidable": "^3.4.5",

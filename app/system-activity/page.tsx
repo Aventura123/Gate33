@@ -10,28 +10,66 @@ const ContractMonitor: React.FC = () => {
   const [monitoringState, setMonitoringState] = useState<ContractMonitoringState | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRestarting, setIsRestarting] = useState<boolean>(false);
+  const [restartMessage, setRestartMessage] = useState<string | null>(null);
+
+  async function fetchMonitoringState() {
+    try {
+      setLoading(true);
+      const state = await getMonitoringState();
+      setMonitoringState(state);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Error fetching monitoring state");
+      console.error("Error fetching monitoring state:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function fetchMonitoringState() {
-      try {
-        setLoading(true);
-        const state = await getMonitoringState();
-        setMonitoringState(state);
-        setError(null);
-      } catch (err: any) {
-        setError(err.message || "Error fetching monitoring state");
-        console.error("Error fetching monitoring state:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchMonitoringState();
     
     // Update every 30 seconds
     const interval = setInterval(fetchMonitoringState, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Função para reiniciar o monitoramento de contratos
+  const handleRestartMonitoring = async () => {
+    try {
+      setIsRestarting(true);
+      setRestartMessage("Reiniciando monitoramento...");
+
+      const response = await fetch("/api/diagnostics/restart-monitoring", {
+        method: "POST",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setRestartMessage("✅ Monitoramento reiniciado com sucesso! Atualizando status...");
+        // Esperar alguns segundos para o serviço de monitoramento inicializar completamente
+        setTimeout(() => {
+          fetchMonitoringState();
+          setRestartMessage(null);
+        }, 5000);
+      } else {
+        setRestartMessage(`❌ Erro ao reiniciar: ${result.message || "Erro desconhecido"}`);
+        setTimeout(() => {
+          setRestartMessage(null);
+        }, 5000);
+      }
+    } catch (err: any) {
+      console.error("Erro ao reiniciar monitoramento:", err);
+      setRestartMessage(`❌ Erro: ${err.message || "Erro desconhecido"}`);
+      setTimeout(() => {
+        setRestartMessage(null);
+      }, 5000);
+    } finally {
+      setIsRestarting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -60,10 +98,58 @@ const ContractMonitor: React.FC = () => {
 
   return (
     <div className="bg-gray-900/70 border border-blue-900/50 rounded-lg overflow-hidden">
-      <div className="bg-blue-900/50 p-4">
-        <h3 className="text-xl font-medium text-white">Smart Contract Monitor</h3>
-        <p className="text-blue-200 text-sm">Status of contracts and monitored events</p>
+      <div className="bg-blue-900/50 p-4 flex justify-between items-center">
+        <div>
+          <h3 className="text-xl font-medium text-white">Smart Contract Monitor</h3>
+          <p className="text-blue-200 text-sm">Status of contracts and monitored events</p>
+        </div>
+        <div>
+          <button
+            className={`px-4 py-2 rounded flex items-center ${
+              isRestarting
+                ? "bg-gray-700 cursor-not-allowed"
+                : "bg-orange-600 hover:bg-orange-700"
+            }`}
+            onClick={handleRestartMonitoring}
+            disabled={isRestarting}
+          >
+            {isRestarting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                <span>Reiniciando...</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                <span>Reiniciar Monitoramento</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
+      {restartMessage && (
+        <div className={`p-2 text-center text-sm ${
+          restartMessage.startsWith("✅") ? "bg-green-900/30 text-green-300" : 
+          restartMessage.startsWith("❌") ? "bg-red-900/30 text-red-300" : 
+          "bg-blue-900/30 text-blue-300"
+        }`}>
+          {restartMessage}
+        </div>
+      )}
 
       <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Learn2Earn Status */}
