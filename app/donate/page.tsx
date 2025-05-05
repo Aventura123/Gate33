@@ -32,19 +32,25 @@ const cryptocurrencies: CryptoCurrency[] = [
     name: "Ethereum",
     symbol: "ETH",
     icon: "/images/crypto/eth.svg", // Will be replaced by text
-    networks: ["ethereum", "polygon", "bsc"]
+    networks: ["ethereum", "polygon", "bsc", "optimism", "avalanche"]
   },
   {
-    name: "Bitcoin",
-    symbol: "BTC",
-    icon: "/images/crypto/btc.svg", // Will be replaced by text
-    networks: ["bitcoin"]
+    name: "Avalanche",
+    symbol: "AVAX",
+    icon: "/images/crypto/avax.svg", // Will be replaced by text
+    networks: ["ethereum", "polygon", "bsc", "optimism", "avalanche"]
+  },
+  {
+    name: "BNB",
+    symbol: "BNB",
+    icon: "/images/crypto/bnb.svg", // Will be replaced by text
+    networks: ["ethereum", "polygon", "bsc", "optimism", "avalanche"]
   },
   {
     name: "Tether",
     symbol: "USDT",
     icon: "/images/crypto/usdt.svg", // Will be replaced by text
-    networks: ["ethereum", "polygon", "bsc"]
+    networks: ["ethereum", "polygon", "bsc", "optimism", "avalanche"]
   }
 ];
 
@@ -53,25 +59,31 @@ const networks: Network[] = [
     id: "ethereum",
     name: "Ethereum",
     icon: "/images/networks/ethereum.svg",
-    supportedTokens: ["ETH", "USDT"]
+    supportedTokens: ["ETH", "AVAX", "BNB", "USDT"]
   },
   {
     id: "polygon",
     name: "Polygon",
     icon: "/images/networks/polygon.svg",
-    supportedTokens: ["ETH", "USDT"]
+    supportedTokens: ["ETH", "AVAX", "BNB", "USDT"]
   },
   {
     id: "bsc",
     name: "BSC",
     icon: "/images/networks/binance.svg",
-    supportedTokens: ["ETH", "USDT"]
+    supportedTokens: ["BNB", "ETH", "AVAX", "USDT"]
   },
   {
-    id: "bitcoin",
-    name: "Bitcoin Network",
-    icon: "/images/networks/bitcoin.svg",
-    supportedTokens: ["BTC"]
+    id: "avalanche",
+    name: "Avalanche C-Chain",
+    icon: "/images/networks/avalanche.svg",
+    supportedTokens: ["AVAX", "ETH", "BNB", "USDT"]
+  },
+  {
+    id: "optimism",
+    name: "Optimism",
+    icon: "/images/networks/optimism.svg",
+    supportedTokens: ["ETH", "AVAX", "BNB", "USDT"]
   }
 ];
 
@@ -92,30 +104,62 @@ interface TokenContractAddresses {
 const DONATION_ADDRESSES: DonationAddresses = {
   ethereum: {
     ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382", 
+    AVAX: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    BNB: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
     USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382" 
   },
   polygon: {
     ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    AVAX: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    BNB: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
     USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382"
   },
   bsc: {
+    BNB: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    AVAX: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
     USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382"
   },
-  bitcoin: {
-    BTC: "18kWTqh8o8Tzj4Qbekr5FY6AuikLS5zsKJ"
+  avalanche: {
+    AVAX: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    BNB: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382"
+  },
+  optimism: {
+    ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    AVAX: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    BNB: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
+    USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382"
   }
 };
 
 // Token contract addresses para tokens ERC20
 const TOKEN_ADDRESSES: TokenContractAddresses = {
   ethereum: {
-    USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+    USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    AVAX: "0x85f138bfEE4ef8e540890CFb48F620571d67Eda3", // WAVAX em Ethereum
+    BNB: "0xB8c77482e45F1F44dE1745F52C74426C631bDD52"  // BNB em Ethereum (BEP-20)
   },
   polygon: {
-    USDT: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
+    USDT: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+    AVAX: "0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b", // WAVAX em Polygon
+    BNB: "0x3BA4c387f786bFEE076A58914F5Bd38d668B42c3"  // BNB em Polygon
   },
   bsc: {
-    USDT: "0x55d398326f99059fF775485246999027B3197955"
+    USDT: "0x55d398326f99059fF775485246999027B3197955",
+    AVAX: "0x1CE0c2827e2eF14D5C4f29a091d735A204794041", // WAVAX em BSC
+    ETH: "0x2170Ed0880ac9A755fd29B2688956BD959F933F8"  // WETH em BSC
+  },
+  avalanche: {
+    USDT: "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7", // USDT no Avalanche C-Chain
+    ETH: "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB", // WETH em Avalanche
+    BNB: "0x264c1383EA520f73dd837F915ef3a732e204a493"  // BNB em Avalanche
+  },
+  optimism: {
+    USDT: "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58", // USDT no Optimism
+    AVAX: "0x420000000000000000000000000000000000000A", // WAVAX em Optimism (se disponível)
+    BNB: "0x4200000000000000000000000000000000000006"   // BNB em Optimism (se disponível)
   }
 };
 
@@ -152,7 +196,13 @@ export default function DonatePage() {
           'Polygon Mainnet': 'polygon',
           'BSC': 'bsc',
           'BSC Testnet': 'bsc',
-          'BNB Smart Chain': 'bsc'
+          'BNB Smart Chain': 'bsc',
+          'Avalanche': 'avalanche',
+          'Avalanche C-Chain': 'avalanche',
+          'Avalanche Mainnet': 'avalanche',
+          'Optimism': 'optimism',
+          'Optimism Mainnet': 'optimism',
+          'OP Mainnet': 'optimism'
         };
         
         const mappedNetwork = networkMap[walletInfo.networkName] || null;
@@ -161,6 +211,14 @@ export default function DonatePage() {
       }
     }
   }, []);
+
+  // Recalcular o valor estimado quando a criptomoeda ou a rede mudar
+  useEffect(() => {
+    if (donationStep === 'enter_amount' && selectedCrypto && donationAmount && parseFloat(donationAmount) > 0) {
+      console.log(`Recalculando estimativa para ${donationAmount} ${selectedCrypto.symbol}`);
+      calculateEstimatedTokens(donationAmount, selectedCrypto.symbol);
+    }
+  }, [selectedCrypto, selectedNetwork, donationStep]);
 
   // Handle wallet connection
   const handleConnect = async (address: string) => {
@@ -179,7 +237,13 @@ export default function DonatePage() {
         'Polygon Mainnet': 'polygon',
         'BSC': 'bsc',
         'BSC Testnet': 'bsc',
-        'BNB Smart Chain': 'bsc'
+        'BNB Smart Chain': 'bsc',
+        'Avalanche': 'avalanche',
+        'Avalanche C-Chain': 'avalanche',
+        'Avalanche Mainnet': 'avalanche',
+        'Optimism': 'optimism',
+        'Optimism Mainnet': 'optimism',
+        'OP Mainnet': 'optimism'
       };
       
       const mappedNetwork = networkMap[walletInfo.networkName] || null;
@@ -204,6 +268,11 @@ export default function DonatePage() {
       const network = networks.find(n => n.id === crypto.networks[0]) || null;
       setSelectedNetwork(network);
       setDonationStep('enter_amount');
+      
+      // Quando mudar diretamente para enter_amount, garantir que o valor seja recalculado
+      if (donationAmount && parseFloat(donationAmount) > 0) {
+        setTimeout(() => calculateEstimatedTokens(donationAmount, crypto.symbol), 100);
+      }
     } else {
       setDonationStep('select_network');
     }
@@ -266,10 +335,13 @@ export default function DonatePage() {
       
       setError(null); // Clear any previous error
       
+      // Mapear redes para tipos suportados pelo web3Service
       const networkTypeMap: Record<string, NetworkType> = {
         'ethereum': 'ethereum',
         'polygon': 'polygon',
-        'bsc': 'binance'
+        'bsc': 'binance',
+        'avalanche': 'avalanche',
+        'optimism': 'optimism'
       };
       
       const networkType = networkTypeMap[networkId];
@@ -337,18 +409,21 @@ export default function DonatePage() {
       }
 
       let txHash = "transaction-hash-placeholder";
-      let usdtTxSuccess = false;
+      let tokenTxSuccess = false;
       
-      if (selectedCrypto.symbol === "USDT") {
-        console.log("Processing USDT transaction...");
+      // Verificar se o token é nativo da rede ou se é um token ERC-20
+      const isNativeToken = (
+        (selectedCrypto.symbol === "ETH" && selectedNetwork.id === "ethereum") || 
+        (selectedCrypto.symbol === "AVAX" && selectedNetwork.id === "avalanche") || 
+        (selectedCrypto.symbol === "BNB" && selectedNetwork.id === "bsc")
+      );
+      
+      if (isNativeToken) {
+        // Processamento para tokens nativos (ETH na Ethereum, BNB na BSC, AVAX na Avalanche)
+        console.log(`Processing native ${selectedCrypto.symbol} transaction on ${selectedNetwork.name}...`);
         const recipientAddress = DONATION_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
         if (!recipientAddress) {
           throw new Error(`Donation address not found for ${selectedCrypto.symbol} on ${selectedNetwork.name}`);
-        }
-
-        const tokenAddress = TOKEN_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
-        if (!tokenAddress) {
-          throw new Error(`Contract ${selectedCrypto.symbol} not found on ${selectedNetwork.name}`);
         }
 
         try {
@@ -358,7 +433,48 @@ export default function DonatePage() {
           }
 
           const signer = provider.getSigner();
-          const usdtContract = new ethers.Contract(
+          
+          // Criar a transação nativa
+          const tx = await signer.sendTransaction({
+            to: recipientAddress,
+            value: ethers.utils.parseEther(donationAmount),
+          });
+
+          console.log(`Waiting for ${selectedCrypto.symbol} transaction confirmation...`);
+          await waitForTransactionConfirmation(provider, tx.hash);
+          txHash = tx.hash;
+          // Armazenar o hash da transação de doação
+          setDonationHash(txHash);
+          tokenTxSuccess = true;
+          console.log(`${selectedCrypto.symbol} transaction sent successfully! Hash: ${txHash}`);
+        } catch (txError) {
+          const errorMessage = txError instanceof Error ? txError.message : String(txError);
+          console.error("Error sending transaction:", errorMessage);
+          throw new Error(`Error sending ${selectedCrypto.symbol}: ${errorMessage}`);
+        }
+      } else {
+        // Processamento para tokens não-nativos (todos tratados como ERC-20)
+        console.log(`Processing token ${selectedCrypto.symbol} as ERC-20 on ${selectedNetwork.name}...`);
+        
+        const recipientAddress = DONATION_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
+        if (!recipientAddress) {
+          throw new Error(`Donation address not found for ${selectedCrypto.symbol} on ${selectedNetwork.name}`);
+        }
+
+        // Verificar se há um endereço de contrato para o token na rede atual
+        const tokenAddress = TOKEN_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
+        if (!tokenAddress) {
+          throw new Error(`Contract address for ${selectedCrypto.symbol} not found on ${selectedNetwork.name}. Please contact support.`);
+        }
+
+        try {
+          const provider = await web3Service.getWeb3Provider();
+          if (!provider) {
+            throw new Error("Unable to get web3 provider. Please check your wallet.");
+          }
+
+          const signer = provider.getSigner();
+          const tokenContract = new ethers.Contract(
             tokenAddress,
             [
               'function approve(address spender, uint256 amount) public returns (bool)',
@@ -370,18 +486,36 @@ export default function DonatePage() {
             signer
           );
 
-          const decimals = await usdtContract.decimals();
+          // Verificar os decimais do token
+          let decimals;
+          try {
+            decimals = await tokenContract.decimals();
+            console.log(`Token decimals: ${decimals}`);
+          } catch (error) {
+            console.error("Error getting token decimals, using default 18:", error);
+            decimals = 18; // Fallback para o valor padrão se a chamada falhar
+          }
+
+          // Verificar saldo antes da transferência
+          const balance = await tokenContract.balanceOf(await signer.getAddress());
+          console.log(`Current ${selectedCrypto.symbol} balance: ${ethers.utils.formatUnits(balance, decimals)}`);
+          
           const amount = ethers.utils.parseUnits(donationAmount, decimals);
+          
+          if (balance.lt(amount)) {
+            throw new Error(`Insufficient ${selectedCrypto.symbol} balance. You have ${ethers.utils.formatUnits(balance, decimals)} but trying to send ${donationAmount}`);
+          }
 
-          const tx = await usdtContract.transfer(recipientAddress, amount);
+          console.log(`Sending ${donationAmount} ${selectedCrypto.symbol} to ${recipientAddress}`);
+          const tx = await tokenContract.transfer(recipientAddress, amount);
 
-          console.log("Waiting for USDT transaction confirmation...");
+          console.log(`Waiting for ${selectedCrypto.symbol} transaction confirmation...`);
           await waitForTransactionConfirmation(provider, tx.hash);
           txHash = tx.hash;
           // Armazenar o hash da transação de doação
           setDonationHash(txHash);
-          usdtTxSuccess = true;
-          console.log(`USDT transaction sent successfully! Hash: ${txHash}`);
+          tokenTxSuccess = true;
+          console.log(`${selectedCrypto.symbol} transaction sent successfully! Hash: ${txHash}`);
         } catch (txError) {
           const errorMessage = txError instanceof Error ? txError.message : String(txError);
           console.error("Error sending transaction:", errorMessage);
@@ -410,7 +544,6 @@ export default function DonatePage() {
         // Log detalhado para debug
         console.log("Resultado completo da distribuição de tokens:", result);
         console.log("Hash de distribuição recebido:", result.distributionTxHash);
-        // transactionHash não existe no tipo retornado, remover referência a ele
         
         // Armazenar o hash da distribuição de tokens
         setTransactionHash(result.distributionTxHash || null);
@@ -692,12 +825,37 @@ export default function DonatePage() {
                       </span>
                     </div>
                     
-                    {selectedNetwork.id === 'bitcoin' && selectedCrypto.symbol === 'BTC' ? (
-                      <div className="mt-6 p-4 bg-gray-900 rounded-lg">
-                        <p className="text-center mb-2 text-sm text-gray-400">Send BTC to this address:</p>
-                        <div className="bg-gray-700 p-3 rounded text-center break-all">
-                          {DONATION_ADDRESSES.bitcoin.BTC}
-                        </div>
+                    {selectedNetwork.id === 'avalanche' && selectedCrypto.symbol === 'AVAX' ? (
+                      <div className="mt-6">
+                        {walletConnected ? (
+                          <div>
+                            <p className="text-xs text-gray-400 mb-2">
+                              Connected wallet: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
+                            </p>
+                            
+                            {/* Exibir aviso apenas quando a rede atual for diferente da rede selecionada */}
+                            {walletConnected && currentNetwork && selectedNetwork && currentNetwork !== selectedNetwork.id ? (
+                              <div className="p-3 bg-yellow-900/30 border border-yellow-800/50 rounded-lg mb-4">
+                                <p className="text-sm mb-3">
+                                  You need to switch to {selectedNetwork.name} network to continue.
+                                </p>
+                                <button
+                                  type="button"
+                                  className="w-full px-4 py-2 text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                                  onClick={() => switchNetwork(selectedNetwork.id)}
+                                >
+                                  Switch to {selectedNetwork.name}
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-yellow-900/30 border border-yellow-800/50 rounded-lg mb-4">
+                            <p className="text-sm">
+                              Please connect your wallet to proceed with the donation.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="mt-6">
@@ -735,13 +893,14 @@ export default function DonatePage() {
                   </div>
                   
                   <div className="flex justify-center">
-                    {selectedNetwork.id === 'bitcoin' && selectedCrypto.symbol === 'BTC' ? (
+                    {selectedNetwork.id === 'avalanche' && selectedCrypto.symbol === 'AVAX' ? (
                       <button
                         type="button"
-                        className="px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                        onClick={() => setDonationStep('success')}
+                        className="px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                        onClick={processDonation}
+                        disabled={!walletConnected || isProcessing}
                       >
-                        I've Sent the Bitcoin
+                        {isProcessing ? "Processing..." : "Complete Donation"}
                       </button>
                     ) : (
                       <button

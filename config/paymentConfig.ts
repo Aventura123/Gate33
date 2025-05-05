@@ -21,6 +21,12 @@ export const CONTRACT_ADDRESSES = {
   // Binance Testnet contract address
   binanceTestnet: "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B", // Endereço real
   
+  // Avalanche C-Chain contract address
+  avalanche: "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B", // Endereço real
+  
+  // Optimism contract address
+  optimism: "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B", // Endereço real
+  
   // Job payment-specific contract address
   jobPayment: "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B" // Endereço real para job payments
 };
@@ -84,6 +90,20 @@ export const NETWORK_CONFIG = {
     rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545',
     currencySymbol: 'tBNB',
     blockExplorer: 'https://testnet.bscscan.com'
+  },
+  avalanche: {
+    chainId: 43114,
+    name: 'Avalanche C-Chain',
+    rpcUrl: 'https://api.avax.network/ext/bc/C/rpc',
+    currencySymbol: 'AVAX',
+    blockExplorer: 'https://snowtrace.io'
+  },
+  optimism: {
+    chainId: 10,
+    name: 'Optimism',
+    rpcUrl: 'https://mainnet.optimism.io',
+    currencySymbol: 'ETH',
+    blockExplorer: 'https://optimistic.etherscan.io'
   }
 };
 
@@ -147,7 +167,7 @@ export const JOB_PAYMENT_ABI = [
       }
     ],
     "stateMutability": "payable",
-    "type": "function"
+        "type": "function"
   },
   {
     "inputs": [

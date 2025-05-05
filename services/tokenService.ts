@@ -46,16 +46,16 @@ async function getCurrentCryptoPrices(): Promise<Record<string, number>> {
     // Check connectivity before making the call
     const isOnline = navigator.onLine;
     if (!isOnline) {
-      console.warn('Device offline, using fallback prices');
+      console.warn('Device offline, cannot fetch cryptocurrency prices');
       throw new Error('Device offline');
     }
     
     // Request prices of the main cryptocurrencies we accept for donation
-    const response = await fetch('/api/cryptocurrencies?limit=10', {
+    const response = await fetch('/api/cryptocurrencies?limit=50', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       // Add timeout
-      signal: AbortSignal.timeout(5000) // 5 seconds timeout
+      signal: AbortSignal.timeout(8000) // 8 seconds timeout
     });
     
     if (!response.ok) {
@@ -70,54 +70,193 @@ async function getCurrentCryptoPrices(): Promise<Record<string, number>> {
       data.data.forEach((crypto: any) => {
         priceMap[crypto.symbol.toLowerCase()] = crypto.current_price;
       });
+      
+      // Log the fetched prices for debugging
+      console.log('Fetched cryptocurrency prices:', 
+        Object.entries(priceMap)
+          .filter(([symbol]) => ['eth', 'btc', 'avax', 'usdt', 'usdc', 'bnb'].includes(symbol))
+          .map(([symbol, price]) => `${symbol.toUpperCase()}: $${price}`)
+          .join(', ')
+      );
     }
     
-    // Add fallback for major tokens
-    if (!priceMap['eth']) priceMap['eth'] = 3500;
-    if (!priceMap['btc']) priceMap['btc'] = 70000;
+    // Verify we have the required cryptocurrencies
+    const requiredCryptos = ['eth', 'avax', 'usdt', 'usdc'];
+    const missingCryptos = requiredCryptos.filter(symbol => !priceMap[symbol]);
+    
+    if (missingCryptos.length > 0) {
+      // If we're missing critical cryptocurrencies, try fetching them specifically
+      try {
+        // Create symbol list for the POST request
+        const postResponse = await fetch('/api/cryptocurrencies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            symbols: missingCryptos.map(s => s.toUpperCase()),
+            timeframe: '24h'
+          }),
+          signal: AbortSignal.timeout(5000)
+        });
+        
+        if (postResponse.ok) {
+          const additionalData = await postResponse.json();
+          if (additionalData && additionalData.data) {
+            additionalData.data.forEach((crypto: any) => {
+              priceMap[crypto.symbol.toLowerCase()] = crypto.current_price;
+            });
+            
+            console.log('Fetched additional cryptocurrency prices:', 
+              Object.entries(priceMap)
+                .filter(([symbol]) => missingCryptos.includes(symbol))
+                .map(([symbol, price]) => `${symbol.toUpperCase()}: $${price}`)
+                .join(', ')
+            );
+          }
+        }
+      } catch (additionalError) {
+        console.error('Error fetching additional cryptocurrency data:', additionalError);
+      }
+    }
+    
+    // Only add stablecoins parity if needed
     if (!priceMap['usdt']) priceMap['usdt'] = 1;
     if (!priceMap['usdc']) priceMap['usdc'] = 1;
+    if (!priceMap['dai']) priceMap['dai'] = 1;
+    if (!priceMap['busd']) priceMap['busd'] = 1;
     
     return priceMap;
   } catch (error) {
     console.error('Error getting cryptocurrency prices:', error);
     
-    // Return fallback prices for major tokens
-    return {
-      'eth': 3500,
-      'btc': 70000,
-      'usdt': 1,
-      'usdc': 1,
-      'bnb': 600
-    };
+    // Instead of hardcoded fallback values, try a secondary API endpoint
+    try {
+      const backupResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum,bitcoin,avalanche-2,tether,usd-coin,bnb&vs_currencies=usd', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(8000)
+      });
+      
+      if (backupResponse.ok) {
+        const backupData = await backupResponse.json();
+        const backupPriceMap: Record<string, number> = {
+          'eth': backupData['ethereum']?.usd,
+          'btc': backupData['bitcoin']?.usd,
+          'avax': backupData['avalanche-2']?.usd,
+          'bnb': backupData['bnb']?.usd,
+          'usdt': backupData['tether']?.usd || 1,
+          'usdc': backupData['usd-coin']?.usd || 1,
+        };
+        
+        console.log('Using backup cryptocurrency prices:', 
+          Object.entries(backupPriceMap)
+            .filter(([_, price]) => price !== undefined)
+            .map(([symbol, price]) => `${symbol.toUpperCase()}: $${price}`)
+            .join(', ')
+        );
+        
+        // Filter out undefined values and ensure stablecoins are set
+        for (const symbol in backupPriceMap) {
+          if (!backupPriceMap[symbol]) {
+            delete backupPriceMap[symbol];
+          }
+        }
+        
+        // Ensure stablecoins have values
+        if (!backupPriceMap['usdt']) backupPriceMap['usdt'] = 1;
+        if (!backupPriceMap['usdc']) backupPriceMap['usdc'] = 1;
+        
+        return backupPriceMap;
+      }
+    } catch (backupError) {
+      console.error('Backup API also failed:', backupError);
+    }
+    
+    // If all APIs fail, throw an error rather than using outdated fallbacks
+    throw new Error('Unable to fetch cryptocurrency prices from any source');
   }
 }
 
 // Calculate USD value of a crypto donation
 export async function calculateUSDValue(amount: string, cryptoSymbol: string): Promise<number> {
   try {
-    const prices = await getCurrentCryptoPrices();
+    // Normalize the cryptocurrency symbol
     const symbol = cryptoSymbol.toLowerCase();
+    console.log(`Calculating USD value for ${amount} ${cryptoSymbol.toUpperCase()}`);
+    
+    // For stablecoins, fast path with 1:1 conversion
+    if (symbol === 'usdt' || symbol === 'usdc' || symbol === 'dai' || symbol === 'busd') {
+      const value = parseFloat(amount);
+      console.log(`Direct 1:1 conversion for stablecoin: ${cryptoSymbol.toUpperCase()} = $${value.toFixed(2)}`);
+      return value;
+    }
+    
+    // Get current prices for all supported cryptocurrencies
+    const prices = await getCurrentCryptoPrices();
     
     if (prices[symbol]) {
       const cryptoAmount = parseFloat(amount);
-      return cryptoAmount * prices[symbol];
+      const usdValue = cryptoAmount * prices[symbol];
+      console.log(`Conversion using price data: ${amount} ${cryptoSymbol.toUpperCase()} = $${usdValue.toFixed(2)} (rate: $${prices[symbol]})`);
+      return usdValue;
     }
     
-    // Fallback: If it's a known stablecoin, assume USD parity
-    if (symbol === 'usdt' || symbol === 'usdc' || symbol === 'dai' || symbol === 'busd') {
-      return parseFloat(amount);
+    // If we get here, we couldn't find a price for this cryptocurrency
+    console.error(`Price not available for ${cryptoSymbol.toUpperCase()}. Available prices:`, 
+      Object.keys(prices).map(k => k.toUpperCase()).join(', '));
+    
+    // Try a direct API call as last resort
+    try {
+      const coinId = getCoinGeckoIdForSymbol(symbol);
+      if (coinId) {
+        const directResponse = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`, {
+          headers: { 'Accept': 'application/json' },
+          signal: AbortSignal.timeout(5000)
+        });
+        
+        if (directResponse.ok) {
+          const priceData = await directResponse.json();
+          if (priceData[coinId]?.usd) {
+            const directPrice = priceData[coinId].usd;
+            const usdValue = parseFloat(amount) * directPrice;
+            console.log(`Direct API fallback: ${amount} ${cryptoSymbol.toUpperCase()} = $${usdValue.toFixed(2)} (rate: $${directPrice})`);
+            return usdValue;
+          }
+        }
+      }
+    } catch (directApiError) {
+      console.error('Error with direct price API call:', directApiError);
     }
     
     throw new Error(`Price not available for ${cryptoSymbol}`);
   } catch (error) {
+    console.error(`Error calculating USD value for ${cryptoSymbol}:`, error);
+    
     // For stablecoins, always return 1:1 value even with errors
     const symbol = cryptoSymbol.toLowerCase();
     if (symbol === 'usdt' || symbol === 'usdc' || symbol === 'dai' || symbol === 'busd') {
       return parseFloat(amount);
     }
+    
+    // Re-throw for non-stablecoins
     throw error;
   }
+}
+
+// Helper to map cryptocurrency symbols to CoinGecko IDs
+function getCoinGeckoIdForSymbol(symbol: string): string | null {
+  const symbolToId: Record<string, string> = {
+    'btc': 'bitcoin',
+    'eth': 'ethereum',
+    'avax': 'avalanche-2',
+    'bnb': 'binancecoin',
+    'matic': 'matic-network',
+    'usdt': 'tether',
+    'usdc': 'usd-coin',
+    'dai': 'dai',
+    'busd': 'binance-usd',
+  };
+  
+  return symbolToId[symbol.toLowerCase()] || null;
 }
 
 // Calculate how many G33 tokens would be distributed based on USD value

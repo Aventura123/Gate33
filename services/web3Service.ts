@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-export type NetworkType = 'ethereum' | 'polygon' | 'binance';
+export type NetworkType = 'ethereum' | 'polygon' | 'binance' | 'avalanche' | 'optimism';
 
 export interface WalletInfo {
   address: string;
@@ -157,7 +157,9 @@ class Web3Service {
       const networkName = chainId === 97 ? "bnbt" : 
                           chainId === 56 ? "bnb" : 
                           chainId === 1 ? "homestead" : 
-                          chainId === 137 ? "matic" : "any";
+                          chainId === 137 ? "matic" :
+                          chainId === 43114 ? "avalanche" :
+                          chainId === 10 ? "optimism" : "any";
                           
       this.provider = new ethers.providers.Web3Provider(window.ethereum, {
         name: networkName,
@@ -229,10 +231,13 @@ class Web3Service {
         const numericChainId = parseInt(chainId, 16);
         
         // Determine the network name based on chainId
-        const networkName = numericChainId === 97 ? "bnbt" : 
-                         numericChainId === 56 ? "bnb" : 
-                         numericChainId === 1 ? "homestead" : 
-                         numericChainId === 137 ? "matic" : "any";
+        let networkName = "any";
+        if (numericChainId === 97) networkName = "bnbt";
+        else if (numericChainId === 56) networkName = "bnb";
+        else if (numericChainId === 1) networkName = "homestead";
+        else if (numericChainId === 137) networkName = "matic";
+        else if (numericChainId === 43114) networkName = "avalanche";
+        else if (numericChainId === 10) networkName = "optimism";
         
         // Reinitialize the provider and signer with the correct chainId
         this.provider = new ethers.providers.Web3Provider(window.ethereum, {
@@ -387,6 +392,8 @@ class Web3Service {
     if (chainId === 1) return 'Ethereum Mainnet';
     if (chainId === 56) return 'Binance Smart Chain';
     if (chainId === 137) return 'Polygon Mainnet';
+    if (chainId === 43114) return 'Avalanche C-Chain';
+    if (chainId === 10) return 'Optimism';
     if (chainId === 80001) return 'Polygon Mumbai Testnet';
     if (chainId === 11155111) return 'Sepolia Testnet';
     if (chainId === 5) return 'Goerli Testnet';
