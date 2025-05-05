@@ -8,7 +8,7 @@ import { web3Service } from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
 import InstantJobsManager from "../admin/InstantJobsManager";
 import { NETWORK_CONFIG, CONTRACT_ADDRESSES } from "../../config/paymentConfig";
-import "../../styles/payment-settings.css"; // Importação do arquivo CSS externo
+import "../../styles/payment-settings.css"; // Import of external CSS file
 
 interface PaymentConfigProps {
   hasPermission: boolean;
@@ -23,6 +23,7 @@ interface FirestorePaymentConfig {
     ethereum: string;
     polygon: string;
     binance: string;
+    binanceTestnet?: string; // Adding support for the binanceTestnet property
   };
   mainWallet?: string; // Main wallet receiving 70% of payments
   updatedAt?: Date;
@@ -119,55 +120,67 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
   // Load settings from Firestore
   const fetchCurrentSettings = useCallback(async () => {
     try {
-      // Check if there is a settings document
-      const configDoc = await getDocs(collection(db, "settings"));
-      if (!configDoc.empty) {
-        configDoc.forEach((doc) => {
-          const data = doc.data() as FirestorePaymentConfig;
-          // Update component states
-          if (data.receiverAddress) setWalletAddress(data.receiverAddress);
-          if (data.serviceFee) setServiceFee(data.serviceFee);
-          if (data.transactionTimeout) setTransactionTimeout(data.transactionTimeout);
+      console.log("Fetching current payment settings from Firestore...");
+      
+      // Specifically fetch the "paymentConfig" document from the "settings" collection
+      const configRef = doc(db, "settings", "paymentConfig");
+      const configSnapshot = await getDocs(query(collection(db, "settings"), 
+                                            where("__name__", "==", "paymentConfig")));
+      
+      if (!configSnapshot.empty) {
+        const data = configSnapshot.docs[0].data() as FirestorePaymentConfig;
+        console.log("Payment settings found in Firestore:", data);
+        
+        // Update states with values from Firestore
+        if (data.receiverAddress) setWalletAddress(data.receiverAddress);
+        if (data.serviceFee !== undefined) setServiceFee(data.serviceFee);
+        if (data.transactionTimeout !== undefined) setTransactionTimeout(data.transactionTimeout / 1000); // Convert from ms to seconds
+        
+        // Load main wallet if exists
+        if (data.mainWallet) setMainWallet(data.mainWallet);
+        
+        // Load contract addresses - checking the contracts structure
+        if (data.contracts) {
+          if (data.contracts.ethereum) setEthContract(data.contracts.ethereum);
+          if (data.contracts.polygon) setPolygonContract(data.contracts.polygon);
+          if (data.contracts.binance) setBinanceContract(data.contracts.binance);
           
-          // Load main wallet if exists
-          if (data.mainWallet) setMainWallet(data.mainWallet);
-          
-          // Contract configuration
-          if (data.contracts) {
-            if (data.contracts.ethereum) setEthContract(data.contracts.ethereum);
-            if (data.contracts.polygon) setPolygonContract(data.contracts.polygon);
-            if (data.contracts.binance) setBinanceContract(data.contracts.binance);
-          }
-          
-          // Update the current system configuration to show Firestore values
-          setCurrentSystemConfig({
-            receiverAddress: data.receiverAddress || "",
-            mainWallet: data.mainWallet || "",
-            contracts: {
-              ethereum: data.contracts?.ethereum || "",
-              polygon: data.contracts?.polygon || "",
-              binance: data.contracts?.binance || ""
-            },
-            serviceFee: (data.serviceFee || 0) + "%",
-            transactionTimeout: (data.transactionTimeout || 0) + " seconds",
-            updatedAt: data.updatedAt ? (
-              // Ensure Firestore timestamp compatibility
-              typeof data.updatedAt === 'object' && 'seconds' in data.updatedAt
-                ? new Date((data.updatedAt as { seconds: number }).seconds * 1000).toLocaleString()
+          // If there is a specific address for BSC Testnet, load it too
+          if (data.contracts.binanceTestnet) setBinanceTestnetContract(data.contracts.binanceTestnet);
+        }
+        
+        // Update the system configuration view
+        setCurrentSystemConfig({
+          receiverAddress: data.receiverAddress || "",
+          mainWallet: data.mainWallet || "",
+          contracts: {
+            ethereum: data.contracts?.ethereum || "",
+            polygon: data.contracts?.polygon || "",
+            binance: data.contracts?.binance || "",
+            binanceTestnet: data.contracts?.binanceTestnet || ""
+          },
+          serviceFee: (data.serviceFee !== undefined ? data.serviceFee : 0) + "%",
+          transactionTimeout: (data.transactionTimeout ? data.transactionTimeout / 1000 : 0) + " seconds",
+          updatedAt: data.updatedAt ? (
+            // Ensure Firestore timestamp compatibility
+            typeof data.updatedAt === 'object' && 'seconds' in data.updatedAt
+              ? new Date((data.updatedAt as { seconds: number }).seconds * 1000).toLocaleString()
+              : data.updatedAt instanceof Date 
+                ? data.updatedAt.toLocaleString() 
                 : new Date(data.updatedAt).toLocaleString()
-            ) : "Not available"
-          });
-          
-          console.log("Settings loaded from Firestore:", data);
+          ) : "Not available"
         });
+        
+        console.log("Settings loaded successfully from Firestore");
       } else {
-        // If not, create a new document with default values
+        console.log("No payment settings found in Firestore, will create default configuration");
+        // If it doesn't exist, create a new document with default values
         await updatePaymentConfig();
         console.log("Default settings saved to Firestore");
       }
     } catch (err) {
       console.error("Error loading payment settings:", err);
-      setError("Could not load payment settings.");
+      setError("Could not load payment settings. " + (err instanceof Error ? err.message : String(err)));
     }
   }, []);
 
@@ -439,7 +452,15 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
     setUpdateSuccess(false);
     
     try {
-      if (!validateEthereumAddress(walletAddress)) {
+      // Check if we're only updating contract addresses
+      const onlyUpdatingContracts = 
+        (ethContract || polygonContract || binanceContract) && 
+        !walletAddress && 
+        serviceFee === 0 && 
+        transactionTimeout === 0;
+
+      // Only validate wallet address if it's provided or if we're not just updating contract addresses
+      if (walletAddress && !validateEthereumAddress(walletAddress) && !onlyUpdatingContracts) {
         throw new Error("Wallet address is invalid. Must start with '0x' followed by 40 hexadecimal characters.");
       }
       
@@ -462,7 +483,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       }
       
       // Validate transaction timeout
-      if (transactionTimeout < 10) {
+      if (transactionTimeout < 10 && transactionTimeout !== 0) {
         throw new Error("Transaction timeout cannot be less than 10 seconds.");
       }
       
@@ -590,10 +611,10 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       }
 
       console.log("Validating percentages...");
-      // Use os valores base 10 para validação na interface (feePercentage está em base 10)
+      // Use the base 10 values for validation in the interface (feePercentage is in base 10)
       const total = feePercentage + developmentPercentage + charityPercentage + evolutionPercentage;
       
-      // Total na interface não deve exceder 30
+      // Total in the interface should not exceed 30
       if (total > 30) {
         throw new Error("The total sum of all percentages cannot exceed 30%");
       }
@@ -619,14 +640,14 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       
       console.log("Updating percentages one by one...");
       
-      // Atualizando cada porcentagem individualmente com tratamento de erro para cada uma
+      // Updating each percentage individually with error handling for each
       
       try {
         // 1. Update Fee Percentage
         const feeBase1000 = displayToContractPercentage(feePercentage);
         console.log(`1. Updating Fee Percentage: ${feePercentage}% -> ${feeBase1000} (base 1000)`);
         
-        // Aumentando o limite de gás para todas as transações
+        // Increasing the gas limit for all transactions
         await smartContractService.updateFeePercentage(feeBase1000, {
           gasLimit: 300000
         });
@@ -669,9 +690,9 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         const evolutionBase1000 = displayToContractPercentage(evolutionPercentage);
         console.log(`4. Updating Evolution Percentage: ${evolutionPercentage}% -> ${evolutionBase1000} (base 1000)`);
         
-        // Usando o mesmo padrão das outras porcentagens, apenas com um limite de gás maior
+        // Using the same pattern as other percentages, just with a higher gas limit
         await smartContractService.updateEvolutionPercentage(evolutionBase1000, {
-          gasLimit: 400000 // Um pouco mais de gás que as outras operações
+          gasLimit: 400000 // A bit more gas than other operations
         });
         console.log("✓ Evolution percentage updated successfully");
       } catch (err: any) {
@@ -682,7 +703,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       setPercentageUpdateSuccess(true);
       console.log("All percentages updated successfully");
       
-      // Espere um momento antes de atualizar os dados para garantir que a blockchain foi atualizada
+      // Wait a moment before updating the data to ensure the blockchain has been updated
       setTimeout(async () => {
         await fetchContractData();
         console.log("Contract data refreshed after percentage update");
