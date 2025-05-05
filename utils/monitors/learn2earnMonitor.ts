@@ -1,8 +1,8 @@
 import { ethers } from 'ethers';
-import { logSystem } from './logSystem';
-import { db } from '../lib/firebase';
+import { logSystem } from '../logSystem';
+import { db } from '../../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { monitorSolanaLearn2Earn } from './monitors/solanaMonitor';
+import { monitorSolanaLearn2Earn } from './solanaMonitor';
 
 const NETWORK_RPC: Record<string, string> = {
   bsctestnet: 'https://data-seed-prebsc-1-s1.binance.org:8545/',

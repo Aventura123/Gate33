@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminPermissions } from "../../hooks/useAdminPermissions";
 import Layout from "../../components/Layout";
-import { ContractMonitoringState, getMonitoringState } from "../../utils/contractMonitor";
+import { ContractMonitoringState, getMonitoringState } from "../../utils/monitors/contractMonitor";
 
 // Componente de monitoramento de contratos integrado
 const ContractMonitor: React.FC = () => {

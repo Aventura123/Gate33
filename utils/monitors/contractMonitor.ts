@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { logSystem } from './logSystem';
+import { logSystem } from '../logSystem';
 import { monitorLearn2EarnContracts, monitorAllLearn2EarnFromFirestore } from './learn2earnMonitor';
 
 // Configurações

@@ -5,7 +5,7 @@
  * apenas uma vez quando o servidor inicia, como o monitoramento de contratos blockchain.
  */
 import dotenv from 'dotenv';
-import { initializeContractMonitoring } from '../utils/contractMonitor';
+import { initializeContractMonitoring } from '../utils/monitors/contractMonitor';
 import { logSystem } from '../utils/logSystem';
 
 dotenv.config();
