@@ -1,12 +1,43 @@
 "use client";
 
 import Layout from "../../components/Layout";
-import { useState, useEffect } from "react";
-import { collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { useState, useEffect, useCallback } from "react";
+import { collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { useRouter } from "next/navigation";
 import { useAdminPermissions } from "../../hooks/useAdminPermissions";
 import { logSystemActivity, logAdminAction } from "../../utils/logSystem";
+
+// Defina a interface para ticket de suporte
+interface SupportTicket {
+  id: string;
+  subject: string;
+  area: string;
+  seekerEmail: string;
+  description: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+  acceptedBy?: string;
+  acceptedByName?: string;
+  attachmentUrl?: string;
+  closedBy?: string;
+  closedByName?: string;
+  closedAt?: string;
+}
+
+// Defina a interface para mensagens de suporte
+interface SupportMessage {
+  id: string;
+  ticketId: string;
+  senderId: string;
+  senderName?: string;
+  senderType: string;
+  message: string;
+  createdAt: string;
+  isSystemMessage?: boolean;
+  read?: boolean;
+}
 
 const SupportDashboard: React.FC = () => {
   const router = useRouter();
@@ -34,6 +65,18 @@ const SupportDashboard: React.FC = () => {
   const [instantJobs, setInstantJobs] = useState<any[]>([]);
   const [instantJobsLoading, setInstantJobsLoading] = useState(false);
   const [instantJobsError, setInstantJobsError] = useState<string | null>(null);
+
+  // Estados para gerenciamento de tickets de suporte
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketsError, setTicketsError] = useState<string | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
+  const [ticketMessages, setTicketMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [ticketSearchQuery, setTicketSearchQuery] = useState("");
+  const [filteredTickets, setFilteredTickets] = useState<SupportTicket[]>([]);
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<'all' | 'open' | 'closed'>('all');
 
   // Estados para barra de pesquisa
   const [jobSearchQuery, setJobSearchQuery] = useState("");
@@ -486,6 +529,324 @@ const SupportDashboard: React.FC = () => {
     }
   };
 
+  // Função para buscar tickets de suporte
+  const fetchTickets = async () => {
+    setTicketsLoading(true);
+    setTicketsError(null);
+    try {
+      if (!db) {
+        console.error("Firestore is not initialized.");
+        throw new Error("Firestore is not initialized.");
+      }
+
+      const ticketsCollection = collection(db, "supportTickets");
+      const querySnapshot = await getDocs(ticketsCollection);
+
+      // Corrija o tipo do array retornado pelo map para garantir que todos os campos estejam presentes
+      const ticketsList = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        subject: doc.data().subject || '',
+        area: doc.data().area || '',
+        seekerEmail: doc.data().seekerEmail || '',
+        description: doc.data().description || '',
+        status: doc.data().status || 'open',
+        createdAt: doc.data().createdAt || '',
+        updatedAt: doc.data().updatedAt || '',
+        acceptedBy: doc.data().acceptedBy,
+        acceptedByName: doc.data().acceptedByName,
+        attachmentUrl: doc.data().attachmentUrl,
+        closedBy: doc.data().closedBy,
+        closedByName: doc.data().closedByName,
+        closedAt: doc.data().closedAt,
+      })) as SupportTicket[];
+
+      setTickets(ticketsList);
+      setFilteredTickets(ticketsList);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      setTicketsError("Failed to fetch support tickets. Please check the console for more details.");
+      setTickets([]);
+      setFilteredTickets([]);
+    } finally {
+      setTicketsLoading(false);
+    }
+  };
+
+  // Função para buscar mensagens de um ticket
+  const fetchTicketMessages = async (ticketId: string) => {
+    try {
+      if (!db) {
+        console.error("Firestore is not initialized.");
+        throw new Error("Firestore is not initialized.");
+      }
+
+      const messagesCollection = collection(db, "supportMessages");
+      const messagesQuery = query(messagesCollection, where("ticketId", "==", ticketId));
+      const querySnapshot = await getDocs(messagesQuery);
+
+      const messagesList: SupportMessage[] = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ticketId: doc.data().ticketId || '',
+        senderId: doc.data().senderId || '',
+        senderName: doc.data().senderName,
+        senderType: doc.data().senderType || '',
+        message: doc.data().message || '',
+        createdAt: doc.data().createdAt || new Date().toISOString(),
+        isSystemMessage: doc.data().isSystemMessage,
+        read: doc.data().read
+      }));
+
+      // Ordenar por data de criação (mais antigas primeiro)
+      messagesList.sort((a, b) => {
+        return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+      });
+
+      setTicketMessages(messagesList);
+    } catch (error) {
+      console.error("Error fetching ticket messages:", error);
+      setTicketMessages([]);
+    }
+  };
+
+  // Função para aceitar um ticket de suporte
+  const handleAcceptTicket = async (ticketId: string) => {
+    try {
+      if (!db) {
+        throw new Error("Firestore is not initialized.");
+      }
+
+      const userId = localStorage.getItem("userId") || "unknown";
+      const userName = localStorage.getItem("userName") || "unknown";
+      
+      // Atualizar o ticket no Firestore
+      const ticketRef = doc(db, "supportTickets", ticketId);
+      await updateDoc(ticketRef, {
+        acceptedBy: userId,
+        acceptedByName: userName,
+        acceptedAt: new Date().toISOString(),
+        status: "open"
+      });
+      
+      // Atualizar o ticket na tela
+      setTickets((prev: SupportTicket[]) => 
+        prev.map(ticket => 
+          ticket.id === ticketId 
+            ? { 
+                ...ticket, 
+                acceptedBy: userId, 
+                acceptedByName: userName,
+                acceptedAt: new Date().toISOString(),
+                status: "open"
+              } 
+            : ticket
+        )
+      );
+      
+      setFilteredTickets((prev: SupportTicket[]) => 
+        prev.map(ticket => 
+          ticket.id === ticketId 
+            ? { 
+                ...ticket, 
+                acceptedBy: userId, 
+                acceptedByName: userName,
+                acceptedAt: new Date().toISOString(),
+                status: "open"
+              } 
+            : ticket
+        )
+      );
+      
+      if (selectedTicket?.id === ticketId) {
+        setSelectedTicket((prev: SupportTicket | null) => prev ? { 
+          ...prev, 
+          acceptedBy: userId,
+          acceptedByName: userName,
+          acceptedAt: new Date().toISOString(),
+          status: "open"
+        } : null);
+      }
+      
+      // Registrar a ação nos logs
+      await logSystemActivity(
+        "admin_action",
+        userName,
+        {
+          userId,
+          userRole: role,
+          action: "Aceitou ticket de suporte",
+          entityType: "supportTicket",
+          entityId: ticketId,
+          timestamp: new Date().toISOString()
+        }
+      );
+      
+      // Enviar uma mensagem automática para o ticket
+      await addDoc(collection(db, "supportMessages"), {
+        ticketId,
+        senderId: userId,
+        senderName: userName,
+        senderType: "support",
+        message: "Ticket aceito! Como posso ajudar você?",
+        createdAt: new Date().toISOString(),
+        isSystemMessage: true
+      });
+      
+      // Recarregar as mensagens do ticket
+      fetchTicketMessages(ticketId);
+      
+      alert("Ticket accepted successfully!");
+    } catch (error) {
+      console.error("Error accepting ticket:", error);
+      alert("Failed to accept ticket. Please check the console for details.");
+    }
+  };
+
+  // Função para enviar uma mensagem em um ticket
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTicket || !newMessage.trim() || !db) {
+      return;
+    }
+    
+    setSendingMessage(true);
+    try {
+      const userId = localStorage.getItem("userId") || "unknown";
+      const userName = localStorage.getItem("userName") || "unknown";
+      
+      // Adicionar a mensagem ao Firestore
+      await addDoc(collection(db, "supportMessages"), {
+        ticketId: selectedTicket.id,
+        senderId: userId,
+        senderName: userName,
+        senderType: "support",
+        message: newMessage,
+        createdAt: new Date().toISOString()
+      });
+      
+      // Limpar o campo de mensagem
+      setNewMessage("");
+      
+      // Recarregar as mensagens
+      fetchTicketMessages(selectedTicket.id);
+      
+      // Registrar a ação nos logs
+      await logSystemActivity(
+        "admin_action",
+        userName,
+        {
+          userId,
+          userRole: role,
+          action: "Enviou mensagem em ticket de suporte",
+          entityType: "supportTicket",
+          entityId: selectedTicket.id,
+          timestamp: new Date().toISOString()
+        }
+      );
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert("Failed to send message. Please check the console for details.");
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  // Função para fechar um ticket de suporte
+  const handleCloseTicket = async (ticketId: string) => {
+    if (!window.confirm("Are you sure you want to close this ticket? This will mark it as resolved.")) {
+      return;
+    }
+    
+    try {
+      if (!db) {
+        throw new Error("Firestore is not initialized.");
+      }
+
+      const userId = localStorage.getItem("userId") || "unknown";
+      const userName = localStorage.getItem("userName") || "unknown";
+      
+      // Atualizar o ticket no Firestore
+      const ticketRef = doc(db, "supportTickets", ticketId);
+      await updateDoc(ticketRef, {
+        status: "closed",
+        closedBy: userId,
+        closedByName: userName,
+        closedAt: new Date().toISOString()
+      });
+      
+      // Atualizar o ticket na tela
+      setTickets((prev: SupportTicket[]) => 
+        prev.map(ticket => 
+          ticket.id === ticketId 
+            ? { 
+                ...ticket, 
+                status: "closed",
+                closedBy: userId,
+                closedByName: userName,
+                closedAt: new Date().toISOString()
+              } 
+            : ticket
+        )
+      );
+      
+      setFilteredTickets((prev: SupportTicket[]) => 
+        prev.map(ticket => 
+          ticket.id === ticketId 
+            ? { 
+                ...ticket, 
+                status: "closed",
+                closedBy: userId,
+                closedByName: userName,
+                closedAt: new Date().toISOString()
+              } 
+            : ticket
+        )
+      );
+      
+      if (selectedTicket?.id === ticketId) {
+        setSelectedTicket((prev: SupportTicket | null) => prev ? { 
+          ...prev, 
+          status: "closed",
+          closedBy: userId,
+          closedByName: userName,
+          closedAt: new Date().toISOString()
+        } : null);
+      }
+      
+      // Registrar a ação nos logs
+      await logSystemActivity(
+        "admin_action",
+        userName,
+        {
+          userId,
+          userRole: role,
+          action: "Fechou ticket de suporte",
+          entityType: "supportTicket",
+          entityId: ticketId,
+          timestamp: new Date().toISOString()
+        }
+      );
+      
+      // Enviar uma mensagem automática para o ticket
+      await addDoc(collection(db, "supportMessages"), {
+        ticketId,
+        senderId: userId,
+        senderName: userName,
+        senderType: "support",
+        message: "Este ticket foi marcado como resolvido e fechado. Se precisar de mais ajuda, por favor abra um novo ticket.",
+        createdAt: new Date().toISOString(),
+        isSystemMessage: true
+      });
+      
+      // Recarregar as mensagens do ticket
+      fetchTicketMessages(ticketId);
+      
+      alert("Ticket closed successfully!");
+    } catch (error) {
+      console.error("Error closing ticket:", error);
+      alert("Failed to close ticket. Please check the console for details.");
+    }
+  };
+
   return (
     <Layout>
       <main className="min-h-screen flex bg-gradient-to-br from-blue-900 to-black text-white">
@@ -558,10 +919,30 @@ const SupportDashboard: React.FC = () => {
                 className={`cursor-pointer p-3 rounded-lg text-center ${
                   activeTab === "chat" ? "bg-blue-500 text-white" : "bg-black/50 text-gray-300"
                 }`}
-                onClick={() => handleTabChange("chat", null)}
+                onClick={() => handleTabChange("chat", "tickets")}
               >
-                Live Chat
+                Assistance
               </div>
+              {activeTab === "chat" && (
+                <ul className="ml-4 mt-2 space-y-2">
+                  <li
+                    className={`cursor-pointer p-2 rounded-lg text-center ${
+                      activeSubTab === "tickets" ? "bg-blue-500 text-white" : "bg-black/50 text-gray-300"
+                    }`}
+                    onClick={() => handleTabChange("chat", "tickets")}
+                  >
+                    Support Tickets
+                  </li>
+                  <li
+                    className={`cursor-pointer p-2 rounded-lg text-center ${
+                      activeSubTab === "livechat" ? "bg-blue-500 text-white" : "bg-black/50 text-gray-300"
+                    }`}
+                    onClick={() => handleTabChange("chat", "livechat")}
+                  >
+                    Live Chat
+                  </li>
+                </ul>
+              )}
             </li>
           </ul>
           
@@ -821,7 +1202,7 @@ const SupportDashboard: React.FC = () => {
           )}
 
           {/* Live Chat */}
-          {activeTab === "chat" && (
+          {activeTab === "chat" && activeSubTab === "livechat" && (
             <div>
               <h2 className="text-3xl font-semibold text-blue-500 mb-6">Live Chat</h2>
               <div className="bg-black/50 p-6 rounded-lg mb-6">
@@ -833,6 +1214,177 @@ const SupportDashboard: React.FC = () => {
                       You will be able to provide real-time support to users through live chat.
                     </p>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Assistance - Support Tickets */}
+          {activeTab === "chat" && activeSubTab === "tickets" && (
+            <div>
+              <h2 className="text-3xl font-semibold text-blue-500 mb-6">Support Tickets</h2>
+              <div className="mb-6 flex gap-4">
+                <input
+                  type="text"
+                  placeholder="Search by subject, area, or email..."
+                  className="flex-1 px-4 py-2 bg-black/50 border border-gray-600 rounded-lg text-white placeholder-gray-400"
+                  value={ticketSearchQuery}
+                  onChange={e => {
+                    setTicketSearchQuery(e.target.value);
+                    const q = e.target.value.toLowerCase();
+                    setFilteredTickets(
+                      tickets.filter(
+                        t =>
+                          t.subject?.toLowerCase().includes(q) ||
+                          t.area?.toLowerCase().includes(q) ||
+                          t.seekerEmail?.toLowerCase().includes(q)
+                      )
+                    );
+                  }}
+                />
+                <select
+                  className="px-3 py-2 bg-black/50 border border-gray-600 rounded-lg text-white"
+                  value={ticketStatusFilter}
+                  onChange={e => {
+                    const status = e.target.value as 'all' | 'open' | 'closed';
+                    setTicketStatusFilter(status);
+                    setFilteredTickets(
+                      status === 'all'
+                        ? tickets
+                        : tickets.filter(t => t.status === status)
+                    );
+                  }}
+                >
+                  <option value="all">All</option>
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                </select>
+                <button
+                  className="px-4 py-2 bg-blue-500 rounded text-white"
+                  onClick={fetchTickets}
+                  type="button"
+                >
+                  Refresh
+                </button>
+              </div>
+              <div className="flex gap-6">
+                {/* Ticket List */}
+                <div className="w-1/3 min-w-[220px] max-w-xs border-r border-blue-900 pr-4 overflow-y-auto ticket-list">
+                  {ticketsLoading ? (
+                    <div className="text-gray-400">Loading tickets...</div>
+                  ) : filteredTickets.length === 0 ? (
+                    <div className="text-gray-400">No tickets found.</div>
+                  ) : (
+                    <ul className="space-y-2">
+                      {filteredTickets.map(ticket => (
+                        <li key={ticket.id}>
+                          <button
+                            className={`w-full text-left p-3 rounded-lg border border-blue-700/30 bg-black/40 hover:bg-blue-900/30 transition-colors ${selectedTicket?.id === ticket.id ? 'border-blue-500 bg-blue-900/40' : ''}`}
+                            onClick={() => {
+                              setSelectedTicket(ticket);
+                              fetchTicketMessages(ticket.id);
+                            }}
+                          >
+                            <div className="font-semibold text-blue-400 truncate">{ticket.subject}</div>
+                            <div className="text-xs text-gray-400 truncate">{ticket.area}</div>
+                            <div className="text-xs text-gray-500">{ticket.seekerEmail}</div>
+                            <div className="text-xs text-gray-500">{typeof ticket.createdAt === 'string' && ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : new Date().toLocaleString()}</div>
+                            <div className="text-xs mt-1">
+                              <span className={`px-2 py-0.5 rounded ${ticket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{ticket.status}</span>
+                            </div>
+                            {ticket.acceptedBy && (
+                              <div className="text-xs text-blue-300 mt-1">Accepted</div>
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                {/* Ticket Details & Chat */}
+                <div className="flex-1 min-w-0">
+                  {selectedTicket ? (
+                    <div className="bg-black/60 rounded-lg p-6 h-full flex flex-col ticket-details">
+                      <div className="mb-2">
+                        <div className="text-lg font-bold text-blue-400">{selectedTicket.subject}</div>
+                        <div className="text-sm text-gray-400">Area: {selectedTicket.area}</div>
+                        <div className="text-xs text-gray-500">Opened: {typeof selectedTicket.createdAt === 'string' && selectedTicket.createdAt ? new Date(selectedTicket.createdAt).toLocaleString() : new Date().toLocaleString()}</div>
+                        <div className="text-xs mt-1">
+                          <span className={`px-2 py-0.5 rounded ${selectedTicket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{selectedTicket.status}</span>
+                        </div>
+                        <div className="mt-2 text-gray-300">{selectedTicket.description}</div>
+                        {selectedTicket.attachmentUrl && (
+                          <div className="mt-2">
+                            <a href={selectedTicket.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">View Attachment</a>
+                          </div>
+                        )}
+                        <div className="mt-2 text-xs text-blue-200">
+                          {selectedTicket.acceptedByName && <>Accepted by: {selectedTicket.acceptedByName}</> }
+                        </div>
+                      </div>
+                      <div className="flex-1 overflow-y-auto border-t border-blue-900 pt-4 mb-2 ticket-messages">
+                        {ticketMessages.length === 0 ? (
+                          <div className="text-gray-400">No messages yet.</div>
+                        ) : (
+                          <ul className="space-y-3">
+                            {ticketMessages.map(msg => (
+                              <li key={msg.id} className={`flex ${msg.senderType === 'support' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.senderType === 'support' ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-100'}`}>
+                                  {msg.message}
+                                  <div className="text-xs text-gray-300 mt-1 text-right">{new Date(msg.createdAt).toLocaleString()}</div>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                      {/* Actions */}
+                      <div className="flex gap-2 mt-4">
+                        {!selectedTicket.acceptedBy && selectedTicket.status === 'open' && (
+                          <button
+                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                            onClick={() => handleAcceptTicket(selectedTicket.id)}
+                          >
+                            Accept Ticket
+                          </button>
+                        )}
+                        {selectedTicket.status === 'open' && (
+                          <button
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                            onClick={() => handleCloseTicket(selectedTicket.id)}
+                          >
+                            Close Ticket
+                          </button>
+                        )}
+                      </div>
+                      {/* Chat input */}
+                      {selectedTicket.status === 'open' && selectedTicket.acceptedBy && (
+                        <form onSubmit={handleSendMessage} className="flex gap-2 mt-4">
+                          <input
+                            type="text"
+                            className="flex-1 p-2 rounded bg-black/40 border border-blue-500/30 text-white"
+                            placeholder="Type your message..."
+                            value={newMessage}
+                            onChange={e => setNewMessage(e.target.value)}
+                            disabled={sendingMessage}
+                            required
+                          />
+                          <button
+                            type="submit"
+                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-60"
+                            disabled={sendingMessage || !newMessage.trim()}
+                          >
+                            {sendingMessage ? 'Sending...' : 'Send'}
+                          </button>
+                        </form>
+                      )}
+                      {selectedTicket.status === 'closed' && (
+                        <div className="text-green-400 text-sm mt-4">This ticket is closed.</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-gray-400 flex items-center justify-center h-full">Select a ticket to view details and chat.</div>
+                  )}
                 </div>
               </div>
             </div>

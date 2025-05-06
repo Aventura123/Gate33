@@ -48,3 +48,16 @@ button {
   opacity: 1 !important;
   font-weight: 600 !important;
 }
+
+/* Add styles for seeker-dashboard */
+.ticket-list {
+  max-height: 500px;
+}
+
+.ticket-details {
+  min-height: 320px;
+}
+
+.ticket-messages {
+  max-height: 220px;
+}

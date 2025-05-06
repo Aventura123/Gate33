@@ -3,7 +3,7 @@
 import React, { useState, useEffect, JSX, useCallback } from "react";
 import Layout from "../../components/Layout"; // Assuming Layout component exists and is suitable
 import { useRouter } from "next/navigation";
-import { collection, getDocs, doc, getDoc, updateDoc, query, where } from "firebase/firestore"; // Add necessary imports
+import { collection, getDocs, doc, getDoc, updateDoc, query, where, addDoc, serverTimestamp } from "firebase/firestore"; // Add necessary imports
 import { db } from "../../lib/firebase"; // Assuming db instance is correctly configured
 import instantJobsService, { InstantJob, JobMessage } from '../../services/instantJobsService';
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
@@ -52,8 +52,35 @@ interface JobApplication {
     status: string; // e.g., 'Applied', 'Interviewing', 'Rejected', 'Offered'
 }
 
+// Interface for Support Ticket
+interface SupportTicket {
+  id: string;
+  seekerId: string;
+  seekerEmail: string;
+  area: string;
+  subject: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  attachmentUrl?: string;
+  acceptedBy?: string;
+}
+
+// Interface for Support Message
+interface SupportMessage {
+  id: string;
+  ticketId: string;
+  senderId: string;
+  senderType: string;
+  message: string;
+  createdAt: string;
+  read?: boolean;
+}
+
 const SeekerDashboard = () => {
   const [activeTab, setActiveTab] = useState("myProfile"); // Default tab
+  const [activeSupportTab, setActiveSupportTab] = useState<'new' | 'my'>('new');
   const [userPhoto, setUserPhoto] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [seekerId, setSeekerId] = useState("");
@@ -92,6 +119,86 @@ const SeekerDashboard = () => {
   const [myApplications, setMyApplications] = useState<any[]>([]);
   const [isApplyingForJob, setIsApplyingForJob] = useState(false);
   
+  // Support ticket form state
+  const [ticketArea, setTicketArea] = useState("");
+  const [ticketSubject, setTicketSubject] = useState("");
+  const [ticketDescription, setTicketDescription] = useState("");
+  const [ticketFile, setTicketFile] = useState<File | null>(null);
+  const [ticketLoading, setTicketLoading] = useState(false);
+  const [ticketSuccess, setTicketSuccess] = useState("");
+  const [ticketError, setTicketError] = useState("");
+
+  // Support ticket areas (dropdown options)
+  const supportAreas = [
+    "Login/Account",
+    "Job Applications",
+    "Instant Jobs",
+    "Payments",
+    "Profile/Settings",
+    "Other"
+  ];
+
+  // Handle ticket file upload
+  const handleTicketFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setTicketFile(e.target.files[0]);
+    } else {
+      setTicketFile(null);
+    }
+  };
+
+  // Handle ticket submit
+  const handleSubmitTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTicketError("");
+    setTicketSuccess("");
+    setTicketLoading(true);
+    try {
+      // Upload file if present (optional, can be improved later)
+      let attachmentUrl = "";
+      if (ticketFile) {
+        // Use Firebase Storage helper if available
+        const storageModule = await import("../../lib/firebase");
+        const { storage } = storageModule;
+        const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+        const fileRef = ref(storage, `support-tickets/${seekerId}/${Date.now()}-${ticketFile.name}`);
+        await uploadBytes(fileRef, ticketFile);
+        attachmentUrl = await getDownloadURL(fileRef);
+      }
+      // Create ticket in Firestore
+      const ticketDoc = {
+        seekerId,
+        seekerEmail: seekerProfile.email,
+        area: ticketArea,
+        subject: ticketSubject,
+        description: ticketDescription,
+        attachmentUrl,
+        status: "open",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const docRef = await addDoc(collection(db, "supportTickets"), ticketDoc);
+      // Call API to send confirmation email
+      await fetch("/api/support/ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...ticketDoc,
+          ticketId: docRef.id,
+        }),
+      });
+      setTicketSuccess("Your support ticket has been submitted! You will receive a confirmation email shortly.");
+      setTicketArea("");
+      setTicketSubject("");
+      setTicketDescription("");
+      setTicketFile(null);
+    } catch (err: any) {
+      setTicketError("Failed to submit ticket. Please try again later.");
+      console.error("Support ticket error:", err);
+    } finally {
+      setTicketLoading(false);
+    }
+  };
 
   // Detect mobile device on client side
   useEffect(() => {
@@ -798,6 +905,105 @@ const SeekerDashboard = () => {
     }
   };
 
+  // Support tickets state
+  const [myTickets, setMyTickets] = useState<SupportTicket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [ticketMessages, setTicketMessages] = useState<SupportMessage[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+
+  // Fetch tickets for this seeker
+  const fetchMyTickets = useCallback(async () => {
+    if (!seekerId || !db) return;
+    setLoadingTickets(true);
+    try {
+      const q = query(collection(db, "supportTickets"), where("seekerId", "==", seekerId));
+      const snapshot = await getDocs(q);
+      const tickets = snapshot.docs.map(doc => ({ 
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt || new Date().toISOString(),
+        updatedAt: doc.data().updatedAt || new Date().toISOString(),
+        status: doc.data().status || 'open',
+        area: doc.data().area || '',
+        subject: doc.data().subject || '',
+        description: doc.data().description || ''
+      } as SupportTicket));
+      
+      // Sort by createdAt desc
+      tickets.sort((a, b) => new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime());
+      setMyTickets(tickets);
+    } catch (err) {
+      setMyTickets([]);
+      console.error("Error fetching tickets:", err);
+    } finally {
+      setLoadingTickets(false);
+    }
+  }, [seekerId, db]);
+
+  // Fetch messages for a ticket
+  const fetchTicketMessages = useCallback(async (ticketId: string) => {
+    if (!ticketId || !db) return;
+    try {
+      const q = query(collection(db, "supportMessages"), where("ticketId", "==", ticketId));
+      const snapshot = await getDocs(q);
+      const messages = snapshot.docs.map(doc => ({ 
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt || new Date().toISOString()
+      } as SupportMessage));
+      
+      // Sort by createdAt asc
+      messages.sort((a, b) => new Date(a.createdAt || Date.now()).getTime() - new Date(b.createdAt || Date.now()).getTime());
+      setTicketMessages(messages);
+    } catch (err) {
+      setTicketMessages([]);
+      console.error("Error fetching ticket messages:", err);
+    }
+  }, [db]);
+
+  // Send a new message in the ticket chat
+  const handleSendTicketMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedTicket || !db) return;
+    setSendingMessage(true);
+    try {
+      await addDoc(collection(db, "supportMessages"), {
+        ticketId: selectedTicket.id,
+        senderId: seekerId,
+        senderType: "seeker",
+        message: newMessage,
+        createdAt: new Date().toISOString(),
+      });
+      setNewMessage("");
+      await fetchTicketMessages(selectedTicket.id);
+    } catch (err) {
+      console.error("Error sending ticket message:", err);
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  // Load tickets when switching to 'my' tab
+  useEffect(() => {
+    if (activeTab === "support" && activeSupportTab === "my") {
+      fetchMyTickets();
+    }
+  }, [activeTab, activeSupportTab, fetchMyTickets]);
+
+  // Load messages when selecting a ticket
+  useEffect(() => {
+    if (selectedTicket) {
+      fetchTicketMessages(selectedTicket.id);
+    } else {
+      setTicketMessages([]);
+    }
+  }, [selectedTicket, fetchTicketMessages]);
+
+  // Only allow sending messages if ticket is open AND acceptedBy is set
+  const canSendMessage = selectedTicket && selectedTicket.status === 'open' && selectedTicket.acceptedBy;
+
   return (
     <Layout>
       <div className="container mx-auto py-10">
@@ -861,6 +1067,16 @@ const SeekerDashboard = () => {
                 >
                   Settings
                 </button>
+                <button 
+                  onClick={() => setActiveTab("support")}
+                  className={`w-full text-left px-4 py-3 rounded-md mb-2 transition-colors ${
+                    activeTab === "support" 
+                      ? "bg-orange-500 text-white" 
+                      : "text-gray-300 hover:bg-orange-500/20"
+                  }`}
+                >
+                  Support
+                </button>
                 
                 {/* Wallet Connection Button */}
                 <div className="px-3 py-4 border-t border-orange-800/50 mt-2">
@@ -909,6 +1125,167 @@ const SeekerDashboard = () => {
             {activeTab === "myApplications" && renderMyApplications()}
             {activeTab === "instantJobs" && renderInstantJobsTab()}
             {activeTab === "settings" && renderSettings()}
+            {activeTab === "support" && (
+              <div className="bg-black/70 p-10 rounded-lg shadow-lg">
+                <div className="flex gap-4 mb-6">
+                  <button
+                    className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${activeSupportTab === 'new' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
+                    onClick={() => setActiveSupportTab('new')}
+                  >
+                    New Ticket
+                  </button>
+                  <button
+                    className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${activeSupportTab === 'my' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
+                    onClick={() => setActiveSupportTab('my')}
+                  >
+                    My Tickets
+                  </button>
+                </div>
+                {/* Render content for each support tab here (to be implemented next) */}
+                {activeSupportTab === 'new' && (
+                  <form onSubmit={handleSubmitTicket} className="space-y-6 max-w-lg">
+                    <div>
+                      <label className="block text-sm text-gray-300 mb-1">Platform Area/Function <span className="text-red-400">*</span></label>
+                      <select
+                        className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
+                        value={ticketArea}
+                        onChange={e => setTicketArea(e.target.value)}
+                        required
+                      >
+                        <option value="">Select an area</option>
+                        {supportAreas.map(area => (
+                          <option key={area} value={area}>{area}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-300 mb-1">Subject <span className="text-red-400">*</span></label>
+                      <input
+                        type="text"
+                        className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
+                        value={ticketSubject}
+                        onChange={e => setTicketSubject(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-300 mb-1">Description <span className="text-red-400">*</span></label>
+                      <textarea
+                        className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
+                        value={ticketDescription}
+                        onChange={e => setTicketDescription(e.target.value)}
+                        rows={5}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-300 mb-1">Attachment (optional)</label>
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={handleTicketFileChange}
+                        className="w-full text-white"
+                      />
+                    </div>
+                    {ticketError && <div className="text-red-400">{ticketError}</div>}
+                    {ticketSuccess && <div className="text-green-400">{ticketSuccess}</div>}
+                    <button
+                      type="submit"
+                      className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 disabled:opacity-60"
+                      disabled={ticketLoading}
+                    >
+                      {ticketLoading ? "Submitting..." : "Submit Ticket"}
+                    </button>
+                  </form>
+                )}
+                {activeSupportTab === 'my' && (
+                  <div className="flex gap-6">
+                    {/* Ticket list */}
+                    <div className="w-1/3 min-w-[220px] max-w-xs border-r border-orange-900 pr-4 overflow-y-auto ticket-list">
+                      {loadingTickets ? (
+                        <div className="text-gray-400">Loading tickets...</div>
+                      ) : myTickets.length === 0 ? (
+                        <div className="text-gray-400">No support tickets found.</div>
+                      ) : (
+                        <ul className="space-y-2">
+                          {myTickets.map(ticket => (
+                            <li key={ticket.id}>
+                              <button
+                                className={`w-full text-left p-3 rounded-lg border border-orange-700/30 bg-black/40 hover:bg-orange-900/30 transition-colors ${selectedTicket?.id === ticket.id ? 'border-orange-500 bg-orange-900/40' : ''}`}
+                                onClick={() => setSelectedTicket(ticket)}
+                              >
+                                <div className="font-semibold text-orange-400 truncate">{ticket.subject}</div>
+                                <div className="text-xs text-gray-400 truncate">{ticket.area}</div>
+                                <div className="text-xs text-gray-500">{new Date(ticket.createdAt || Date.now()).toLocaleString()}</div>
+                                <div className="text-xs mt-1"><span className={`px-2 py-0.5 rounded ${ticket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{ticket.status}</span></div>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    {/* Ticket chat/details */}
+                    <div className="flex-1 min-w-0">
+                      {selectedTicket ? (
+                        <div className="bg-black/60 rounded-lg p-6 h-full flex flex-col ticket-details">
+                          <div className="mb-2">
+                            <div className="text-lg font-bold text-orange-400">{selectedTicket.subject}</div>
+                            <div className="text-sm text-gray-400">Area: {selectedTicket.area}</div>
+                            <div className="text-xs text-gray-500">Opened: {new Date(selectedTicket.createdAt || Date.now()).toLocaleString()}</div>
+                            <div className="text-xs mt-1"><span className={`px-2 py-0.5 rounded ${selectedTicket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{selectedTicket.status}</span></div>
+                            <div className="mt-2 text-gray-300">{selectedTicket.description}</div>
+                            {selectedTicket.attachmentUrl && (
+                              <div className="mt-2"><a href={selectedTicket.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">View Attachment</a></div>
+                            )}
+                          </div>
+                          <div className="flex-1 overflow-y-auto border-t border-orange-900 pt-4 mb-2 ticket-messages">
+                            {ticketMessages.length === 0 ? (
+                              <div className="text-gray-400">No messages yet.</div>
+                            ) : (
+                              <ul className="space-y-3">
+                                {ticketMessages.map(msg => (
+                                  <li key={msg.id} className={`flex ${msg.senderType === 'seeker' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.senderType === 'seeker' ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-100'}`}>
+                                      {msg.message}
+                                      <div className="text-xs text-gray-300 mt-1 text-right">{new Date(msg.createdAt).toLocaleString()}</div>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                          {selectedTicket.status === 'open' && canSendMessage && (
+                            <form onSubmit={handleSendTicketMessage} className="flex gap-2 mt-auto">
+                              <input
+                                type="text"
+                                className="flex-1 p-2 rounded bg-black/40 border border-orange-500/30 text-white"
+                                placeholder="Type your message..."
+                                value={newMessage}
+                                onChange={e => setNewMessage(e.target.value)}
+                                disabled={sendingMessage}
+                                required
+                              />
+                              <button
+                                type="submit"
+                                className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-60"
+                                disabled={sendingMessage || !newMessage.trim()}
+                              >
+                                {sendingMessage ? 'Sending...' : 'Send'}
+                              </button>
+                            </form>
+                          )}
+                          {selectedTicket.status === 'open' && !canSendMessage && (
+                            <div className="text-yellow-400 text-sm mt-4">You can send messages after a support agent accepts your ticket.</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-gray-400 flex items-center justify-center h-full">Select a ticket to view details and chat.</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, JSX, useCallback } from "react";
 import Layout from "../../components/Layout";
 import { useRouter } from "next/navigation";
-import { collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, updateDoc, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 // Import payment related services
 import { connectWallet, getCurrentAddress, getWeb3Provider } from "../../services/crypto";
@@ -17,6 +17,36 @@ import { Learn2Earn, Learn2EarnTask, NewLearn2Earn } from "../../types/learn2ear
 import instantJobsService, { InstantJob, JobMessage } from '../../services/instantJobsService';
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
+
+// Interface for Support Ticket
+interface SupportTicket {
+  id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  subject: string;
+  description: string;
+  status: 'pending' | 'open' | 'resolved';
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+  acceptedBy?: string;
+  acceptedByName?: string;
+  acceptedAt?: string;
+}
+
+// Interface for Support Messages
+interface SupportMessage {
+  id: string;
+  ticketId: string;
+  senderId: string;
+  senderName?: string;
+  senderType: string;
+  message: string;
+  createdAt: string;
+  isSystemMessage?: boolean;
+  read?: boolean;
+}
 
 // Define job pricing plans
 interface PricingPlan {
@@ -140,6 +170,19 @@ const PostJobPage = (): JSX.Element => {
     currency: 'ETH',
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     requiredSkills: ''
+  });
+  
+  // Support Tickets states
+  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [ticketMessages, setTicketMessages] = useState<SupportMessage[]>([]);
+  const [isSendingTicketMessage, setIsSendingTicketMessage] = useState(false);
+  const [supportSectionActive, setSupportSectionActive] = useState<'list' | 'create' | 'detail'>('list');
+  const [newTicketData, setNewTicketData] = useState({
+    subject: '',
+    description: '',
+    category: 'general'
   });
   
   // Update the learn2earnData state to properly type the dates
@@ -1885,6 +1928,13 @@ const PostJobPage = (): JSX.Element => {
             {renderLearn2Earn()}
           </div>
         );
+      case "support":
+        return (
+          <div className="bg-black/70 p-10 rounded-lg shadow-lg">
+            <h2 className="text-3xl font-semibold text-orange-500 mb-6">Support Tickets</h2>
+            {renderSupportTickets()}
+          </div>
+        );
       default:
         return <div>Page not found.</div>;
     }
@@ -3121,6 +3171,412 @@ const manualSyncStatuses = async () => {
   setSyncing(false);
 };
 
+// Support Tickets Functions
+  // Function to fetch support tickets
+  const fetchSupportTickets = useCallback(async () => {
+    if (!db || !companyId) return;
+
+    try {
+      const ticketsCollection = collection(db, "supportTickets");
+      const q = query(
+        ticketsCollection, 
+        where("userId", "==", companyId),
+        where("userType", "==", "company"),
+        orderBy("createdAt", "desc")
+      );
+      
+      const ticketsSnapshot = await getDocs(q);
+      const fetchedTickets: SupportTicket[] = ticketsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.().toISOString() || new Date().toISOString(),
+        updatedAt: doc.data().updatedAt?.toDate?.().toISOString() || new Date().toISOString(),
+      } as SupportTicket));
+      
+      setSupportTickets(fetchedTickets);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+    }
+  }, [db, companyId]);
+
+  // Function to fetch ticket messages
+  const fetchTicketMessages = useCallback(async (ticketId: string) => {
+    if (!db || !ticketId) return;
+
+    try {
+      const messagesCollection = collection(db, "supportMessages");
+      const q = query(
+        messagesCollection,
+        where("ticketId", "==", ticketId),
+        orderBy("createdAt", "asc")
+      );
+      
+      const messagesSnapshot = await getDocs(q);
+      const fetchedMessages: SupportMessage[] = messagesSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.().toISOString() || new Date().toISOString(),
+      } as SupportMessage));
+      
+      setTicketMessages(fetchedMessages);
+    } catch (error) {
+      console.error("Error fetching ticket messages:", error);
+    }
+  }, [db]);
+
+  // Function to create new ticket
+  const handleCreateTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!db || !companyId || !companyProfile.name) {
+      alert("Você precisa estar logado para criar um ticket de suporte.");
+      return;
+    }
+    
+    if (!newTicketData.subject || !newTicketData.description) {
+      alert("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+    
+    try {
+      const ticketData = {
+        userId: companyId,
+        userName: companyProfile.name,
+        userEmail: companyProfile.responsiblePerson || "",
+        userType: "company",
+        subject: newTicketData.subject,
+        description: newTicketData.description,
+        category: newTicketData.category,
+        status: "pending" as const,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      
+      // Add ticket to Firestore
+      const ticketsCollection = collection(db, "supportTickets");
+      const docRef = await addDoc(ticketsCollection, ticketData);
+      
+      // Add initial system message
+      const messagesCollection = collection(db, "supportMessages");
+      await addDoc(messagesCollection, {
+        ticketId: docRef.id,
+        senderId: "system",
+        senderName: "Sistema",
+        senderType: "system",
+        message: "Ticket criado. Nossa equipe de suporte responderá em breve.",
+        createdAt: serverTimestamp(),
+        isSystemMessage: true
+      });
+      
+      // Create notification for support team
+      const notificationsCollection = collection(db, "supportNotifications");
+      await addDoc(notificationsCollection, {
+        ticketId: docRef.id,
+        userId: companyId,
+        userName: companyProfile.name,
+        userType: "company",
+        subject: newTicketData.subject,
+        status: "new",
+        createdAt: serverTimestamp(),
+        read: false
+      });
+      
+      // Reset form and fetch updated list
+      setNewTicketData({
+        subject: "",
+        description: "",
+        category: "general"
+      });
+      
+      setSupportSectionActive("list");
+      fetchSupportTickets();
+      
+      alert("Ticket de suporte criado com sucesso!");
+    } catch (error) {
+      console.error("Error creating support ticket:", error);
+      alert("Erro ao criar ticket de suporte. Por favor, tente novamente.");
+    }
+  };
+
+  // Function to send a message in a ticket
+  const handleSendTicketMessage = async (message: string) => {
+    if (!db || !companyId || !selectedTicketId || !message) return;
+    
+    setIsSendingTicketMessage(true);
+    
+    try {
+      // Add message to Firestore
+      const messagesCollection = collection(db, "supportMessages");
+      await addDoc(messagesCollection, {
+        ticketId: selectedTicketId,
+        senderId: companyId,
+        senderName: companyProfile.name || "Empresa",
+        senderType: "company",
+        message: message,
+        createdAt: serverTimestamp(),
+        read: false
+      });
+      
+      // Update ticket's updatedAt timestamp
+      const ticketRef = doc(db, "supportTickets", selectedTicketId);
+      await updateDoc(ticketRef, {
+        updatedAt: serverTimestamp()
+      });
+      
+      // Create notification for support team
+      const notificationsCollection = collection(db, "supportNotifications");
+      await addDoc(notificationsCollection, {
+        ticketId: selectedTicketId,
+        userId: companyId,
+        userName: companyProfile.name || "Empresa",
+        userType: "company",
+        message: message,
+        status: "reply",
+        createdAt: serverTimestamp(),
+        read: false
+      });
+      
+      // Reload messages
+      fetchTicketMessages(selectedTicketId);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert("Erro ao enviar mensagem. Por favor, tente novamente.");
+    } finally {
+      setIsSendingTicketMessage(false);
+    }
+  };
+
+  // Function to select a ticket to view
+  const handleSelectTicket = (ticket: SupportTicket) => {
+    setSelectedTicket(ticket);
+    setSelectedTicketId(ticket.id);
+    setSupportSectionActive("detail");
+    fetchTicketMessages(ticket.id);
+  };
+
+  // Set up real-time listeners for ticket messages
+  useEffect(() => {
+    if (!db || !selectedTicketId) return;
+    
+    const messagesCollection = collection(db, "supportMessages");
+    const q = query(
+      messagesCollection,
+      where("ticketId", "==", selectedTicketId),
+      orderBy("createdAt", "asc")
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const updatedMessages: SupportMessage[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.().toISOString() || new Date().toISOString(),
+      } as SupportMessage));
+      
+      setTicketMessages(updatedMessages);
+    });
+    
+    // Clean up listener when component unmounts
+    return () => unsubscribe();
+  }, [db, selectedTicketId]);
+
+  // Função para renderizar o seção de tickets de suporte
+  const renderSupportTickets = () => {
+    return (
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Coluna esquerda: notificações + lista de tickets + botão novo ticket */}
+        <div className="w-full md:w-1/3">
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={() => setSupportSectionActive('create')}
+              className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
+            >
+              Novo Ticket
+            </button>
+          </div>
+          {/* Notificações no topo */}
+          {notifications.length > 0 && (
+            <div className="mb-4">
+              <ul className="space-y-2">
+                {notifications.map((notification, index) => (
+                  <li key={index} className="bg-black/50 p-2 rounded text-gray-300 text-sm">
+                    {notification}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {/* Lista de tickets */}
+          <div className="space-y-2">
+            {supportTickets.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-300">Você não possui tickets de suporte.</p>
+              </div>
+            ) : (
+              supportTickets.map((ticket) => (
+                <div
+                  key={ticket.id}
+                  className={`bg-black/50 border border-gray-700 hover:border-orange-400 rounded-lg p-3 cursor-pointer transition-colors ${selectedTicketId === ticket.id ? 'border-orange-500' : ''}`}
+                  onClick={() => handleSelectTicket(ticket)}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-semibold text-white mb-1">{ticket.subject}</div>
+                      <div className="text-gray-400 text-xs mb-1">{ticket.category}</div>
+                      <div className="text-gray-500 text-xs">{new Date(ticket.createdAt).toLocaleString()}</div>
+                    </div>
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                      ticket.status === 'resolved' 
+                        ? 'bg-green-900/30 text-green-400' 
+                        : ticket.status === 'open' 
+                        ? 'bg-blue-900/30 text-blue-400'
+                        : 'bg-yellow-900/30 text-yellow-400'
+                    }`}>
+                      {ticket.status === 'resolved' 
+                        ? 'Resolvido' 
+                        : ticket.status === 'open' 
+                        ? 'Em Andamento' 
+                        : 'Pendente'}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+        {/* Coluna direita: detalhes do ticket ou mensagem padrão */}
+        <div className="w-full md:w-2/3">
+          {supportSectionActive === 'detail' && selectedTicket ? (
+            <div className="bg-black/50 p-6 rounded-lg">
+              <h3 className="text-xl font-semibold text-orange-500 mb-2">Detalhes do Ticket</h3>
+              <div className="mb-4">
+                <div className="font-bold text-white">{selectedTicket.subject}</div>
+                <div className="text-gray-400 text-sm mb-1">Categoria: {selectedTicket.category}</div>
+                <div className="text-gray-500 text-xs mb-1">Aberto em: {new Date(selectedTicket.createdAt).toLocaleString()}</div>
+                <div className="text-gray-300 mt-2">{selectedTicket.description}</div>
+                <div className="mt-2">
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                    selectedTicket.status === 'resolved' 
+                      ? 'bg-green-900/30 text-green-400' 
+                      : selectedTicket.status === 'open' 
+                      ? 'bg-blue-900/30 text-blue-400'
+                      : 'bg-yellow-900/30 text-yellow-400'
+                  }`}>
+                    {selectedTicket.status === 'resolved' 
+                      ? 'Resolvido' 
+                      : selectedTicket.status === 'open' 
+                      ? 'Em Andamento' 
+                      : 'Pendente'}
+                  </span>
+                </div>
+              </div>
+              <div className="border-t border-gray-700 pt-4">
+                <h4 className="text-orange-400 font-semibold mb-2">Mensagens</h4>
+                <div className="max-h-64 overflow-y-auto space-y-3 mb-4">
+                  {ticketMessages.length === 0 ? (
+                    <div className="text-gray-400">Nenhuma mensagem ainda.</div>
+                  ) : (
+                    ticketMessages.map(msg => (
+                      <div key={msg.id} className={`p-2 rounded ${msg.senderType === 'company' ? 'bg-orange-900/30 text-orange-200' : msg.isSystemMessage ? 'bg-gray-800 text-gray-400' : 'bg-gray-700 text-white'}`}>
+                        <div className="text-xs font-bold mb-1">{msg.senderName || msg.senderType}</div>
+                        <div className="text-sm">{msg.message}</div>
+                        <div className="text-xs text-gray-400 mt-1">{new Date(msg.createdAt).toLocaleString()}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {/* BLOQUEIO DE ENVIO DE MENSAGEM */}
+                {selectedTicket.status !== 'open' || !selectedTicket.acceptedBy ? (
+                  <div className="text-yellow-400 text-sm mt-4">
+                    O chat será liberado após o ticket ser aceito pelo suporte.
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={e => {
+                      e.preventDefault();
+                      const form = e.target as HTMLFormElement;
+                      const input = form.elements.namedItem('message') as HTMLInputElement;
+                      if (input.value.trim()) {
+                        handleSendTicketMessage(input.value.trim());
+                        input.value = '';
+                      }
+                    }}
+                    className="flex gap-2"
+                  >
+                    <input
+                      name="message"
+                      type="text"
+                      placeholder="Digite sua mensagem..."
+                      className="flex-1 p-2 rounded bg-black/30 border border-gray-700 text-white"
+                      disabled={isSendingTicketMessage}
+                      autoComplete="off"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
+                      disabled={isSendingTicketMessage}
+                    >
+                      Enviar
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          ) : supportSectionActive === 'create' ? (
+            <div className="bg-black/50 p-6 rounded-lg">
+              <h3 className="text-xl font-semibold text-orange-500 mb-4">Novo Ticket de Suporte</h3>
+              <form onSubmit={handleCreateTicket} className="space-y-4">
+                <input
+                  type="text"
+                  value={newTicketData.subject}
+                  onChange={e => setNewTicketData({ ...newTicketData, subject: e.target.value })}
+                  placeholder="Assunto do ticket"
+                  className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-white"
+                  required
+                />
+                <textarea
+                  value={newTicketData.description}
+                  onChange={e => setNewTicketData({ ...newTicketData, description: e.target.value })}
+                  placeholder="Descreva seu problema ou dúvida"
+                  className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-white h-32"
+                  required
+                />
+                <select
+                  value={newTicketData.category}
+                  onChange={e => setNewTicketData({ ...newTicketData, category: e.target.value })}
+                  className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-white"
+                >
+                  <option value="general">Geral</option>
+                  <option value="pagamento">Pagamento</option>
+                  <option value="tecnico">Técnico</option>
+                  <option value="outro">Outro</option>
+                </select>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSupportSectionActive('list')}
+                    className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-orange-500 text-white px-6 py-2 rounded hover:bg-orange-600"
+                  >
+                    Enviar Ticket
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-300 text-lg min-h-200px">
+              Selecione um ticket para ver detalhes e chat.
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Layout>
       <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex">
@@ -3159,15 +3615,19 @@ const manualSyncStatuses = async () => {
             <ul className="space-y-4 flex-grow w-full mt-6">
               <li>
                 <button
-                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "notifications" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
-                  onClick={() => setActiveTab("notifications")}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${
+                    activeTab === "profile" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
+                  }`}
+                  onClick={() => setActiveTab("profile")}
                 >
-                  Notifications
+                  Profile
                 </button>
               </li>
               <li>
                 <button
-                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "myJobs" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${
+                    activeTab === "myJobs" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
+                  }`}
                   onClick={() => setActiveTab("myJobs")}
                 >
                   My Jobs
@@ -3175,24 +3635,29 @@ const manualSyncStatuses = async () => {
               </li>
               <li>
                 <button
-                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "newJob" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${
+                    activeTab === "newJob" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
+                  }`}
                   onClick={() => setActiveTab("newJob")}
                 >
-                  New Jobs
+                  New Job
                 </button>
               </li>
               <li>
                 <button
-                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${
+                    activeTab === "instantJobs" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
+                  }`}
                   onClick={() => setActiveTab("instantJobs")}
                 >
                   Instant Jobs
                 </button>
               </li>
-              {/* Add new Learn2Earn tab */}
               <li>
                 <button
-                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${
+                    activeTab === "learn2earn" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
+                  }`}
                   onClick={() => setActiveTab("learn2earn")}
                 >
                   Learn2Earn
@@ -3200,10 +3665,39 @@ const manualSyncStatuses = async () => {
               </li>
               <li>
                 <button
-                  className={`w-full text-center p-3 rounded-lg transition-colors flex items-center justify-center ${activeTab === "settings" ? "bg-orange-500 text-white" : "bg-black/50 hover:bg-orange-500/30"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${
+                    activeTab === "support" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
+                  }`}
+                  onClick={() => {
+                    setActiveTab("support");
+                    fetchSupportTickets();
+                    setSupportSectionActive('list');
+                  }}
+                >
+                  Support
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${
+                    activeTab === "settings" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
+                  }`}
                   onClick={() => setActiveTab("settings")}
                 >
                   Settings
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${
+                    activeTab === "notifications" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
+                  }`}
+                  onClick={() => {
+                    setActiveTab("notifications");
+                    fetchNotifications();
+                  }}
+                >
+                  Notifications
                 </button>
               </li>
             </ul>
