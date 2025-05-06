@@ -7,6 +7,7 @@
 import dotenv from 'dotenv';
 import { initializeContractMonitoring } from '../utils/monitors/contractMonitor';
 import { logSystem } from '../utils/logSystem';
+import { getWsRpcUrls, getHttpRpcUrls, getAllRpcUrls } from '../config/rpcConfig';
 
 dotenv.config();
 
@@ -47,18 +48,10 @@ export const serverStatus: ServerStatus = {
 // Flag to ensure initialization only happens once
 let isInitialized = false;
 
-// Constants for trying other RPC providers
-const ADDITIONAL_RPC_ENDPOINTS = [
-  // More reliable public endpoints for Polygon
-  'https://polygon.drpc.org',
-  'https://polygon.blockpi.network/v1/rpc/public',
-  'https://polygon.api.onfinality.io/public',
-  'https://1rpc.io/matic',
-  // Endpoints with API keys - add your own key here
-  process.env.INFURA_URL || `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_KEY || "7b71460a7cfd447295a93a1d76a71ed6"}`,
-  // Polygon  (mainnet) WebSocket endpoint da Infura
-  'wss://polygon-mainnet.infura.io/ws/v3/7b71460a7cfd447295a93a1d76a71ed6',
-];
+// Exemplo de uso centralizado:
+const WS_RPC_ENDPOINTS = getWsRpcUrls();
+const HTTP_RPC_ENDPOINTS = getHttpRpcUrls();
+const ALL_RPC_ENDPOINTS = getAllRpcUrls();
 
 /**
  * Starts all server-side services

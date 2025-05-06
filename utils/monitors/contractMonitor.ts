@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { logSystem } from '../logSystem';
 import { monitorLearn2EarnContracts, monitorAllLearn2EarnFromFirestore } from './learn2earnMonitor';
+import { getWsRpcUrls, getHttpRpcUrls } from '../../config/rpcConfig';
 
 // Configuration
 const ALERT_THRESHOLD_ETH = 0.1;  // Alert if spending is greater than this value in ETH
@@ -39,23 +40,12 @@ if (!serviceWalletAddress && process.env.OWNER_PRIVATE_KEY) {
 }
 const tokenDistributorAddress = process.env.TOKEN_DISTRIBUTOR_ADDRESS || process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS || '';
 
-// Define valid RPC URLs
-const validRpcUrls = [
-  process.env.CUSTOM_POLYGON_RPC,
-  'https://polygon-rpc.com',
-  'https://polygon-mainnet.public.blastapi.io',
-  'https://polygon.llamarpc.com',
-  'https://rpc-mainnet.maticvigil.com',
-  'https://polygon-bor.publicnode.com',
-  `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_KEY || '9aa3d95b3bc440fa88ea12eaa4456161'}`,
-  `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY || 'demo'}`,
-  'wss://polygon-mainnet.g.alchemy.com/v2/demo',
-  'wss://ws-matic-mainnet.chainstacklabs.com',
-].filter((url): url is string => typeof url === 'string' && url.length > 0);
+// Obter endpoints centralizados
+const wsRpcUrls = getWsRpcUrls();
+const httpRpcUrls = getHttpRpcUrls();
 
-// Separar URLs por tipo para melhor organização
-const httpRpcUrls = validRpcUrls.filter((url): url is string => typeof url === 'string' && url.startsWith('http'));
-const wsRpcUrls = validRpcUrls.filter((url): url is string => typeof url === 'string' && url.startsWith('wss://'));
+console.log('WebSocket RPC URLs (prioridade):', wsRpcUrls);
+console.log('HTTP RPC URLs (fallback):', httpRpcUrls);
 
 // Helper for sending email
 const sendEmail = async (to: string, subject: string, message: string): Promise<void> => {
