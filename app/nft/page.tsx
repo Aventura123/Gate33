@@ -96,8 +96,11 @@ export default function NFTPage() {
   };
 
   const handleNFTClick = (nft: NFT) => {
-    if (typeof window !== "undefined") {
-      router.push(`/nft/${encodeURIComponent(nft.title)}`);
+    if (typeof window !== "undefined" && nft.link) {
+      // Abrir o link do NFT em uma nova aba
+      window.open(nft.link, "_blank", "noopener,noreferrer");
+    } else {
+      console.warn("Este NFT não tem um link válido", nft);
     }
   };
 
