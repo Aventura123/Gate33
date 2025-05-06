@@ -94,8 +94,8 @@ function UnifiedLoginPage() {
     setError("");
     setIsLoading(true);
     try {
-      console.log("Tentando fazer login com:", { companyUsername });
-      // Enviar email e password conforme backend espera
+      console.log("Trying to log in with:", { companyUsername });
+      // Send email and password as expected by backend
       const res = await fetch("/api/company/login", {
         method: "POST",
         headers: { 
@@ -105,31 +105,31 @@ function UnifiedLoginPage() {
         body: JSON.stringify({ email: companyUsername, password: companyPassword })
       });
 
-      console.log("Status da resposta:", res.status);
+      console.log("Response status:", res.status);
       const data = await res.json();
-      console.log("Resposta recebida:", data);
+      console.log("Response received:", data);
 
       if (res.ok) {
-        console.log("Login bem-sucedido!");
+        console.log("Login successful!");
 
-        // Salvar token no localStorage
+        // Save token in localStorage
         if (data.token) {
           localStorage.setItem("token", data.token);
-          console.log("Token salvo no localStorage");
+          console.log("Token saved in localStorage");
           
           // Extract company ID from token if possible (it's often base64 encoded)
           try {
             const decodedToken = atob(data.token);
             localStorage.setItem("companyId", decodedToken);
-            console.log("CompanyId extraído do token:", decodedToken);
+            console.log("CompanyId extracted from token:", decodedToken);
           } catch (err) {
             console.warn("Couldn't decode token to extract companyId:", err);
           }
         }
 
-        // CORREÇÃO: Procurar dados na propriedade 'company' em vez de 'userData'
+        // FIX: Look for data in the 'company' property instead of 'userData'
         if (data.company) {
-          console.log("Dados da empresa encontrados:", data.company);
+          console.log("Company data found:", data.company);
           localStorage.setItem("companyId", data.company.id);
           localStorage.setItem("companyName", data.company.name || companyUsername);
           
@@ -137,9 +137,9 @@ function UnifiedLoginPage() {
             localStorage.setItem("companyPhoto", data.company.photo);
           }
         } 
-        // Verificar também o formato antigo userData (para compatibilidade)
+        // Also check the old userData format (for compatibility)
         else if (data.userData) {
-          console.log("Dados da empresa encontrados em userData:", data.userData);
+          console.log("Company data found in userData:", data.userData);
           localStorage.setItem("companyId", data.userData.id);
           localStorage.setItem("companyName", data.userData.name || data.userData.username || companyUsername);
           
@@ -150,26 +150,26 @@ function UnifiedLoginPage() {
           }
         } 
         else {
-          console.warn("Dados do usuário não encontrados na resposta - usando username como fallback");
+          console.warn("User data not found in response - using username as fallback");
           // If we can't find structured data, at least save the username
           localStorage.setItem("companyName", companyUsername);
         }
 
-        console.log("Dados salvos no localStorage:", {
+        console.log("Data saved in localStorage:", {
           companyId: localStorage.getItem("companyId"),
           companyName: localStorage.getItem("companyName"),
           companyPhoto: localStorage.getItem("companyPhoto"),
         });
 
-        document.cookie = "isAuthenticated=true; path=/; max-age=86400"; // 24 horas
-        console.log("Cookie de autenticação definido, redirecionando para dashboard");
+        document.cookie = "isAuthenticated=true; path=/; max-age=86400"; // 24 hours
+        console.log("Authentication cookie set, redirecting to dashboard");
         router.replace("/company-dashboard");
       } else {
-        console.error("Erro no login:", data.error);
+        console.error("Login error:", data.error);
         setError(data.error || "Username or password invalid");
       }
     } catch (err: any) {
-      console.error("Erro durante login:", err);
+      console.error("Login error:", err);
       setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);

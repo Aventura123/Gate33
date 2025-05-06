@@ -28,7 +28,7 @@ const AdminLoginPage: React.FC = () => {
     try {
       console.log("Attempting admin login for:", username);
       
-      // Usar URL relativa para compatibilidade com qualquer ambiente
+      // Use relative URL for compatibility with any environment
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { 
@@ -40,7 +40,7 @@ const AdminLoginPage: React.FC = () => {
 
       console.log("Response status:", res.status);
       
-      // Verificar se a resposta é válida antes de tentar analisar JSON
+      // Check if the response is valid before trying to parse JSON
       if (!res.ok) {
         let errorMessage = `Error ${res.status}: ${res.statusText}`;
         try {
@@ -55,7 +55,7 @@ const AdminLoginPage: React.FC = () => {
         throw new Error(errorMessage);
       }
       
-      // Verificação mais segura para análise de JSON
+      // Safer check for JSON parsing
       const contentType = res.headers.get("content-type");
       let data;
       
@@ -65,7 +65,7 @@ const AdminLoginPage: React.FC = () => {
         console.warn("Response is not JSON. Content-Type:", contentType);
         data = await res.text();
         try {
-          // Tentar analisar manualmente se o corpo for JSON
+          // Try to manually parse if the body is JSON
           data = JSON.parse(data);
         } catch (e) {
           console.error("Failed to parse response as JSON:", e);
@@ -97,7 +97,7 @@ const AdminLoginPage: React.FC = () => {
             localStorage.setItem("userPhoto", data.admin.photoURL);
           }
           
-          // Registrar o login no sistema de logs
+          // Register login in the system logs
           await logSystemActivity(
             "login",
             data.admin.name || data.admin.username || username,
@@ -119,7 +119,7 @@ const AdminLoginPage: React.FC = () => {
         console.error("Error during login:", data.error);
         setError(data.error || "Invalid username or password");
         
-        // Registrar tentativa de login malsucedida
+        // Register failed login attempt
         await logSystemActivity(
           "login",
           username,
@@ -135,7 +135,7 @@ const AdminLoginPage: React.FC = () => {
       console.error("Error during login process:", err);
       setError(err.message || "An error occurred. Please try again.");
       
-      // Registrar erro de login
+      // Register login error
       await logSystemActivity(
         "login",
         username,
