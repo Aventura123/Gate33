@@ -1,7 +1,7 @@
 import nodemailer, { Transporter } from 'nodemailer';
 
-// Configuração do transporte de email
-// Estas configurações devem ser ajustadas para seu provedor de email
+// Email transport configuration
+// These settings should be adjusted for your email provider
 export const emailTransporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.EMAIL_PORT || '587'),
@@ -118,24 +118,15 @@ export async function sendContactFormConfirmation({
   email: string;
   subject?: string;
 }): Promise<{ success: boolean; message: string }> {
-  const text = `
-Hello ${name},
-
-We have received your message and thank you for contacting us!
-
-Our team will review your message and respond as soon as possible.
-
-Best regards,
-Gate33 Team
-  `;
+  const text = `Hello ${name},\n\nWe have received your message! Thank you for contacting Gate33.\n\nOur team will review and respond within 24/48 hours.\n\nIf you did not send this message, please ignore this email.\n\nBest regards,\nGate33 Team`;
 
   const html = `
-<h2>Hello ${name},</h2>
-<p>We have received your message and thank you for contacting us!</p>
-<p>Our team will review your message and respond as soon as possible.</p>
-<br>
-<p>Best regards,<br>
-<strong>Gate33 Team</strong></p>
+    <h2>Hello ${name},</h2>
+    <p>We have received your message! Thank you for contacting <strong>Gate33</strong>.</p>
+    <p>Our team will review and respond within <strong>24/48 hours</strong>.</p>
+    <p style="font-size:12px;color:#888;">If you did not send this message, please ignore this email.</p>
+    <br>
+    <p>Best regards,<br><strong>Gate33 Team</strong></p>
   `;
 
   return sendEmail({
@@ -143,5 +134,33 @@ Gate33 Team
     subject,
     text,
     html,
+    from: 'noreply@gate33.net',
+  });
+}
+
+/**
+ * Sends a password reset email with a unique link
+ */
+export async function sendResetPasswordEmail(email: string, token: string) {
+  const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://gate33.net"}/reset-password?token=${token}`;
+  const subject = "Password Reset - Gate33";
+  const text = `You requested a password reset for your Gate33 account.\n\nClick the link below to create a new password:\n${resetUrl}\n\nIf you did not request this, please ignore this email.`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #FF6B00; border-radius: 5px;">
+      <h2 style="color: #FF6B00;">Password Reset</h2>
+      <p>You requested a password reset for your Gate33 account.</p>
+      <p><a href="${resetUrl}" style="color: #FF6B00; font-weight: bold;">Click here to reset your password</a></p>
+      <p>Or copy and paste this link in your browser:<br/><span style="word-break: break-all;">${resetUrl}</span></p>
+      <br/>
+      <p style="font-size: 12px; color: #888;">If you did not request this, please ignore this email.</p>
+      <p style="font-size: 12px; color: #888;">This is an automated email, please do not reply.</p>
+    </div>
+  `;
+  return sendEmail({
+    to: email,
+    subject,
+    text,
+    html,
+    from: 'noreply@gate33.net',
   });
 }

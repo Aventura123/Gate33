@@ -19,14 +19,14 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Referência para o container do dropdown para detectar quando o mouse sai
+  // Reference for the dropdown container to detect mouse leave
   const dropdownRef = useRef<HTMLDivElement>(null);
-  // Referência para o timer de fechamento do dropdown
+  // Reference for the dropdown close timer
   const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const router = useRouter();
 
-  // Função para buscar dados do usuário do Firebase
+  // Function to fetch user data from Firebase
   const fetchUserDataFromFirebase = async (type: string, id: string) => {
     try {
       if (!db) return null;
@@ -65,7 +65,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
     }
   };
 
-  // Função para verificar o tipo de usuário logado com base nos valores armazenados no localStorage
+  // Function to check the logged-in user type based on localStorage values
   useEffect(() => {
     const checkLoggedInUser = async () => {
       setIsLoading(true);
@@ -83,7 +83,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
       console.log("- token:", localStorage.getItem("token"));
       
       try {
-        // Verificar seeker
+        // Check seeker
         if (localStorage.getItem("seekerToken")) {
           const seekerId = localStorage.getItem("seekerToken") 
             ? atob(localStorage.getItem("seekerToken") || "")
@@ -94,7 +94,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
             
             if (seekerData) {
               return {
-                name: seekerData.name || "Usuário",
+                name: seekerData.name || "User",
                 photo: seekerData.photoURL || "/logo.png",
                 role: "Job Seeker",
                 type: 'seeker' as const
@@ -103,18 +103,16 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
           }
         }
         
-        // Verificar admin ou support
+        // Check admin or support
         if (localStorage.getItem("userId") && localStorage.getItem("userRole")) {
           const userId = localStorage.getItem("userId");
           const userRole = localStorage.getItem("userRole") || "";
           
-          // Fixed: Check for userRole directly, prioritizing admin roles over support
+          // Ensure super_admin is never treated as support
           if (userRole === "super_admin" || userRole === "admin") {
             const adminData = await fetchUserDataFromFirebase('admin', userId || "");
-            
             const formattedRole = userRole === "super_admin" ? "Super Admin" : 
                                userRole.charAt(0).toUpperCase() + userRole.slice(1);
-            
             return {
               name: adminData?.name || localStorage.getItem("userName") || "Admin",
               photo: adminData?.photoURL || localStorage.getItem("userPhoto") || "/logo.png",
@@ -122,14 +120,12 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
               type: 'admin' as const
             };
           }
-          
-          // Verificar se é um usuário de suporte
+          // Only enter here if really support
           if (userRole === "support" && userId) {
             const supportData = await fetchUserDataFromFirebase('support', userId);
-            
             if (supportData) {
               return {
-                name: supportData.name || "Suporte",
+                name: supportData.name || "Support",
                 photo: supportData.photoURL || "/logo.png",
                 role: "Support",
                 type: 'support' as const
@@ -138,16 +134,16 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
           }
         }
         
-        // Verificar company
+        // Check company
         const companyId = localStorage.getItem("companyId") || 
           (localStorage.getItem("token") ? atob(localStorage.getItem("token") || "") : null);
           
         if (companyId) {
-          console.log("Buscando dados da empresa do Firebase, ID:", companyId);
+          console.log("Fetching company data from Firebase, ID:", companyId);
           const companyData = await fetchUserDataFromFirebase('company', companyId);
           
           if (companyData) {
-            console.log("Dados da empresa obtidos do Firebase:", companyData);
+            console.log("Company data obtained from Firebase:", companyData);
             return {
               name: companyData.name || "Company",
               photo: companyData.photoURL || companyData.photo || "/logo.png",
@@ -155,7 +151,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
               type: 'company' as const
             };
           } else {
-            // Fallback para dados do localStorage se o Firebase falhar
+            // Fallback to localStorage data if Firebase fails
             return {
               name: localStorage.getItem("companyName") || "Company",
               photo: localStorage.getItem("companyPhoto") || "/logo.png",
@@ -174,7 +170,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
       return null;
     };
 
-    // Executar apenas no cliente
+    // Only run on client
     if (typeof window !== 'undefined') {
       checkLoggedInUser().then(user => {
         setUserInfo(user);
@@ -183,7 +179,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
     }
   }, []);
 
-  // Adicionar event listener para lidar com cliques fora do dropdown
+  // Add event listener to handle clicks outside the dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -197,9 +193,9 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
     };
   }, []);
 
-  // Funções para manipular a abertura e fechamento do dropdown com delay
+  // Functions to handle opening and closing the dropdown with delay
   const handleMouseEnter = () => {
-    // Cancela qualquer timer de fechamento pendente
+    // Cancel any pending close timer
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
@@ -208,13 +204,13 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
   };
 
   const handleMouseLeave = () => {
-    // Define um timer para fechar o dropdown após 1.5 segundos
+    // Set a timer to close the dropdown after 1.5 seconds
     closeTimerRef.current = setTimeout(() => {
       setIsDropdownOpen(false);
-    }, 1500); // 1.5 segundos de delay para dar tempo de mover o cursor
+    }, 1500); // 1.5 seconds delay to allow cursor movement
   };
 
-  // Limpar o timer quando o componente é desmontado
+  // Clear the timer when the component is unmounted
   useEffect(() => {
     return () => {
       if (closeTimerRef.current) {
@@ -224,7 +220,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
   }, []);
 
   const handleLogout = () => {
-    // Limpar todos os possíveis tokens de autenticação
+    // Clear all possible authentication tokens
     localStorage.removeItem("seekerId");
     localStorage.removeItem("seekerName");
     localStorage.removeItem("seekerPhoto");
@@ -242,10 +238,10 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
     
     document.cookie = "isAuthenticated=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     
-    // Redirecionar para a página inicial
+    // Redirect to home page
     router.push("/");
     
-    // Recarregar a página para garantir que o estado do componente seja atualizado
+    // Reload the page to ensure the component state is updated
     setTimeout(() => {
       window.location.reload();
     }, 100);
@@ -270,7 +266,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
     }
   };
 
-  // Se não há usuário logado, não renderiza nada
+  // If not logged in, render nothing
   if (isLoading) {
     return (
       <div className={`relative ${className}`}>

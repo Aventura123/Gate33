@@ -1281,7 +1281,7 @@ export default function CryptoToolsPage() {
                 Currently, we're using free API tiers which have limitations, so most wallet-related information is simulated for demonstration purposes.
               </p>
               <p className="text-sm text-orange-200 ml-7">
-                If you'd like to help this project grow and support the implementation of advanced features with premium APIs, please <a href="#" className="text-orange-400 font-medium hover:text-orange-300 underline">donate here</a>. Your contribution will help us provide more accurate and reliable blockchain data!
+                If you'd like to help this project grow and support the implementation of advanced features with premium APIs, please <a href="/donate" className="text-orange-400 font-medium hover:text-orange-300 underline">donate here</a>. Your contribution will help us provide more accurate and reliable blockchain data!
               </p>
             </div>
           </div>

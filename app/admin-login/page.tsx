@@ -206,6 +206,12 @@ const AdminLoginPage: React.FC = () => {
               />
             </div>
             
+            <div className="mb-2 text-right">
+              <Link href="/forgot-password" className="text-xs text-orange-500 hover:text-orange-700 font-medium">
+                Forgot password?
+              </Link>
+            </div>
+            
             <div>
               <button
                 type="submit"
