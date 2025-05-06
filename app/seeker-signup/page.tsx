@@ -10,6 +10,7 @@ import 'react-phone-number-input/style.css';
 import '../../styles/phone-input.css'; // Custom styling for PhoneInput
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { FcGoogle } from "react-icons/fc";
+import Layout from '../../components/Layout';
 
 const SeekerSignupPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -106,7 +107,7 @@ const SeekerSignupPage: React.FC = () => {
   };
 
   return (
-    <>
+    <Layout>
       <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-orange-500 text-white p-4">
         <div className="absolute top-4 right-4">
           <a href="/" className="text-white text-lg font-semibold hover:underline">Back to Home &rarr;</a>
@@ -234,7 +235,7 @@ const SeekerSignupPage: React.FC = () => {
           </div>
         </div>
       </main>
-    </>
+    </Layout>
   );
 };
 

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Layout from '../../components/Layout';
 
 export const dynamic = "force-dynamic";
 
@@ -85,8 +86,10 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense>
-      <ResetPasswordForm />
-    </Suspense>
+    <Layout>
+      <Suspense>
+        <ResetPasswordForm />
+      </Suspense>
+    </Layout>
   );
 }
