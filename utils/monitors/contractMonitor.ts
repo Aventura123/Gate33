@@ -418,7 +418,7 @@ export function initializeContractMonitoring(
     // Importar o serverStatus dinamicamente para evitar problemas de importação circular
     let serverStatus: any;
     try {
-      const serverInit = require('../lib/server-init');
+      const serverInit = require('../../lib/server-init');
       serverStatus = serverInit.serverStatus;
       
       // Inicializar a estrutura de status se necessário
@@ -965,7 +965,7 @@ export function initializeContractMonitoring(
     
     // Atualizar status global
     try {
-      const { serverStatus } = require('../lib/server-init');
+      const { serverStatus } = require('../../lib/server-init');
       if (serverStatus && serverStatus.contractMonitoring) {
         serverStatus.contractMonitoring.initialized = false;
         serverStatus.contractMonitoring.errors = [

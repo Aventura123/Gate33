@@ -108,6 +108,21 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
           const userId = localStorage.getItem("userId");
           const userRole = localStorage.getItem("userRole") || "";
           
+          // Fixed: Check for userRole directly, prioritizing admin roles over support
+          if (userRole === "super_admin" || userRole === "admin") {
+            const adminData = await fetchUserDataFromFirebase('admin', userId || "");
+            
+            const formattedRole = userRole === "super_admin" ? "Super Admin" : 
+                               userRole.charAt(0).toUpperCase() + userRole.slice(1);
+            
+            return {
+              name: adminData?.name || localStorage.getItem("userName") || "Admin",
+              photo: adminData?.photoURL || localStorage.getItem("userPhoto") || "/logo.png",
+              role: formattedRole,
+              type: 'admin' as const
+            };
+          }
+          
           // Verificar se é um usuário de suporte
           if (userRole === "support" && userId) {
             const supportData = await fetchUserDataFromFirebase('support', userId);
@@ -118,23 +133,6 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
                 photo: supportData.photoURL || "/logo.png",
                 role: "Support",
                 type: 'support' as const
-              };
-            }
-          }
-          
-          // Se não for support, então é admin
-          if (userId) {
-            const adminData = await fetchUserDataFromFirebase('admin', userId);
-            
-            if (adminData) {
-              const formattedRole = userRole === "super_admin" ? "Super Admin" : 
-                                   userRole.charAt(0).toUpperCase() + userRole.slice(1);
-              
-              return {
-                name: adminData.name || "Admin",
-                photo: adminData.photoURL || "/logo.png",
-                role: formattedRole,
-                type: 'admin' as const
               };
             }
           }
