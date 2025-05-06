@@ -2,15 +2,23 @@ import { ethers } from 'ethers';
 import { logSystem } from '../logSystem';
 import { monitorLearn2EarnContracts, monitorAllLearn2EarnFromFirestore } from './learn2earnMonitor';
 
-// Configurações
-const ALERT_THRESHOLD_ETH = 0.1;  // Alerta se o gasto for maior que este valor em ETH
-const ALERT_THRESHOLD_TOKENS = 5000; // Alerta se mais de 50 tokens forem distribuídos em uma única operação
-const ADMIN_EMAIL = 'info@gate33.com'; // Email para receber alertas
+// Configuration
+const ALERT_THRESHOLD_ETH = 0.1;  // Alert if spending is greater than this value in ETH
+const ALERT_THRESHOLD_TOKENS = 5000; // Alert if more than 5000 tokens are distributed in a single operation
+const ADMIN_EMAIL = 'info@gate33.com'; // Email to receive alerts
 
 // Define missing variables
 const MAX_PROVIDER_RETRIES = 5; // Maximum retries for provider initialization
 let providerInitRetries = 0; // Counter for provider initialization retries
 let isMonitoringInitialized = false; // Flag to track monitoring initialization
+
+// New configuration for improved reliability
+const CONNECTION_RETRY_DELAY = 10000; // 10 seconds between reconnection attempts
+const MAX_CONNECTION_ATTEMPTS = 20; // Maximum connection attempts before falling back to HTTP
+const HTTP_FALLBACK_ENABLED = true; // Enable HTTP fallback when WebSocket fails
+let currentProvider: ethers.providers.Provider | null = null;
+let reconnectionAttempts = 0;
+let reconnectionTimer: NodeJS.Timeout | null = null;
 
 // Define active monitors state
 const activeMonitors = {
@@ -45,27 +53,27 @@ const validRpcUrls = [
   'wss://ws-matic-mainnet.chainstacklabs.com',
 ].filter((url): url is string => typeof url === 'string' && url.length > 0);
 
-// Fix implicit 'any' type for parameters
-validRpcUrls.filter((url: string) => url.startsWith('http'));
-validRpcUrls.filter((url: string) => url.startsWith('wss://'));
+// Separar URLs por tipo para melhor organização
+const httpRpcUrls = validRpcUrls.filter((url): url is string => typeof url === 'string' && url.startsWith('http'));
+const wsRpcUrls = validRpcUrls.filter((url): url is string => typeof url === 'string' && url.startsWith('wss://'));
 
-// Helper para enviar email
+// Helper for sending email
 const sendEmail = async (to: string, subject: string, message: string): Promise<void> => {
   try {
-    console.log(`Email enviado para ${to}: ${subject}`);
-    // Implementação real do envio de email seria feita aqui
+    console.log(`Email sent to ${to}: ${subject}`);
+    // Real email sending implementation would be done here
   } catch (error: any) {
-    console.error("Erro ao enviar email:", error);
+    console.error("Error sending email:", error);
   }
 };
 
-// Monitorar o contrato Learn2Earn para atividades suspeitas
+// Monitor the Learn2Earn contract for suspicious activities
 export async function monitorLearn2EarnActivity(
   contractAddress: string, 
   provider: ethers.providers.Provider
 ): Promise<void> {
   try {
-    // ABI simplificado apenas para os eventos que queremos monitorar
+    // Simplified ABI just for the events we want to monitor
     const abi = [
       "event Learn2EarnClaimed(uint256 indexed learn2earnId, address indexed user, uint256 amount)",
       "event Learn2EarnEnded(uint256 indexed learn2earnId)",
@@ -73,11 +81,11 @@ export async function monitorLearn2EarnActivity(
     
     const contract = new ethers.Contract(contractAddress, abi, provider);
     
-    // Configurar listener para eventos de reivindicação
+    // Set up listener for claim events
     contract.on('Learn2EarnClaimed', async (learn2earnId, user, amount, event) => {
       const amountFormatted = ethers.utils.formatEther(amount);
       
-      // Registrar todas as reivindicações no sistema de logs
+      // Log all claims in the log system
       await logSystem.contractActivity("Learn2EarnContract", "claim", {
         learn2earnId: learn2earnId.toString(),
         user,
@@ -85,15 +93,15 @@ export async function monitorLearn2EarnActivity(
         transactionHash: event.transactionHash
       });
       
-      // Alertar se o valor for acima do limite
+      // Alert if the value is above the threshold
       if (parseFloat(amountFormatted) > ALERT_THRESHOLD_TOKENS) {
-        const message = `ALERTA: Reivindicação grande detectada em Learn2Earn!\n` + 
+        const message = `ALERT: Large claim detected in Learn2Earn!\n` + 
                        `ID: ${learn2earnId}\n` +
-                       `Usuário: ${user}\n` + 
-                       `Valor: ${amountFormatted} tokens\n` +
-                       `Hash da transação: ${event.transactionHash}`;
+                       `User: ${user}\n` + 
+                       `Amount: ${amountFormatted} tokens\n` +
+                       `Transaction hash: ${event.transactionHash}`;
         
-        // Registrar alerta no sistema
+        // Register alert in the system
         await logSystem.warn(message, {
           contractAddress,
           learn2earnId: learn2earnId.toString(),
@@ -103,75 +111,75 @@ export async function monitorLearn2EarnActivity(
           alertType: 'large_claim'
         });
                        
-        await sendEmail(ADMIN_EMAIL, 'Alerta de Segurança Gate33 - Learn2Earn', message);
+        await sendEmail(ADMIN_EMAIL, 'Gate33 Security Alert - Learn2Earn', message);
       }
     });
     
-    // Configurar listener para eventos de encerramento
+    // Set up listener for end events
     contract.on('Learn2EarnEnded', async (learn2earnId, event) => {
-      const message = `Learn2Earn ID ${learn2earnId} foi encerrado. Hash: ${event.transactionHash}`;
+      const message = `Learn2Earn ID ${learn2earnId} has been ended. Hash: ${event.transactionHash}`;
       
-      // Registrar no sistema de logs
+      // Log in the log system
       await logSystem.contractActivity("Learn2EarnContract", "ended", {
         learn2earnId: learn2earnId.toString(),
         transactionHash: event.transactionHash
       });
       
-      // Sempre notificar quando um programa é encerrado
-      await sendEmail(ADMIN_EMAIL, 'Learn2Earn Encerrado', message);
+      // Always notify when a program ends
+      await sendEmail(ADMIN_EMAIL, 'Learn2Earn Ended', message);
     });
     
-    await logSystem.info(`Monitoramento de Learn2Earn iniciado para o contrato ${contractAddress}`);
+    await logSystem.info(`Learn2Earn monitoring started for contract ${contractAddress}`);
   } catch (error: any) {
-    await logSystem.error(`Erro ao configurar monitoramento de Learn2Earn: ${error.message}`);
+    await logSystem.error(`Error configuring Learn2Earn monitoring: ${error.message}`);
   }
 }
 
-// Monitorar os gastos de gas da carteira de serviço
+// Monitor gas spending of the service wallet
 export async function monitorServiceWallet(
   walletAddress: string,
   provider: ethers.providers.Provider
 ): Promise<void> {
   try {
-    // Verificar saldo a cada 4 horas
+    // Check balance every 4 hours
     setInterval(async () => {
       const balance = await provider.getBalance(walletAddress);
       const balanceEth = parseFloat(ethers.utils.formatEther(balance));
       
-      // Registrar saldo no sistema de logs
-      await logSystem.info(`Saldo da carteira de serviço: ${balanceEth} ETH`, {
+      // Log balance in the log system
+      await logSystem.info(`Service wallet balance: ${balanceEth} ETH`, {
         walletAddress,
         balance: balanceEth,
         checkType: 'scheduled'
       });
       
-      // Alertar se o saldo estiver muito baixo (menos de 0.01 ETH)
+      // Alert if balance is too low (less than 0.01 ETH)
       if (balanceEth < 0.01) {
-        const message = `ALERTA: Saldo baixo na carteira de serviço!\n` +
-                       `Endereço: ${walletAddress}\n` +
-                       `Saldo atual: ${balanceEth} ETH\n` +
-                       `É necessário recarregar a carteira para continuar operando.`;
+        const message = `ALERT: Low balance in service wallet!\n` +
+                       `Address: ${walletAddress}\n` +
+                       `Current balance: ${balanceEth} ETH\n` +
+                       `Wallet needs to be recharged to continue operating.`;
         
-        // Registrar alerta no sistema
+        // Record alert in the system
         await logSystem.walletAlert(walletAddress, "low_balance", {
           balance: balanceEth,
           threshold: 0.01
         });
                        
-        await sendEmail(ADMIN_EMAIL, 'Alerta - Saldo Baixo na Carteira de Serviço', message);
+        await sendEmail(ADMIN_EMAIL, 'Alert - Low Balance in Service Wallet', message);
       }
-    }, 4 * 60 * 60 * 1000); // 4 horas
+    }, 4 * 60 * 60 * 1000); // 4 hours
     
-    // Monitorar transações enviadas
+    // Monitor sent transactions
     provider.on({ address: walletAddress }, async (log) => {
-      // Verificar apenas transações enviadas (onde a carteira é o 'from')
+      // Only check sent transactions (where the wallet is the 'from')
       const tx = await provider.getTransaction(log.transactionHash);
       if (tx && tx.from.toLowerCase() === walletAddress.toLowerCase()) {
         const gasUsed = tx.gasLimit.mul(tx.gasPrice || ethers.BigNumber.from(0));
         const gasUsedEth = parseFloat(ethers.utils.formatEther(gasUsed));
         
-        // Registrar transação no sistema de logs
-        await logSystem.info(`Transação enviada: ${tx.hash}, Gas usado: ${gasUsedEth} ETH`, {
+        // Log transaction in the log system
+        await logSystem.info(`Transaction sent: ${tx.hash}, Gas used: ${gasUsedEth} ETH`, {
           transactionHash: tx.hash,
           from: tx.from,
           to: tx.to,
@@ -179,15 +187,15 @@ export async function monitorServiceWallet(
           walletAddress
         });
         
-        // Alertar se o gasto com gas for alto
+        // Alert if gas spending is high
         if (gasUsedEth > ALERT_THRESHOLD_ETH) {
-          const message = `ALERTA: Alto gasto com gas detectado!\n` +
-                         `Hash da transação: ${tx.hash}\n` +
-                         `Gas usado: ${gasUsedEth} ETH\n` +
-                         `De: ${tx.from}\n` +
-                         `Para: ${tx.to}`;
+          const message = `ALERT: High gas spending detected!\n` +
+                         `Transaction hash: ${tx.hash}\n` +
+                         `Gas used: ${gasUsedEth} ETH\n` +
+                         `From: ${tx.from}\n` +
+                         `To: ${tx.to}`;
           
-          // Registrar alerta no sistema
+          // Record alert in the system
           await logSystem.walletAlert(walletAddress, "high_gas", {
             transactionHash: tx.hash,
             from: tx.from,
@@ -196,35 +204,35 @@ export async function monitorServiceWallet(
             threshold: ALERT_THRESHOLD_ETH
           });
                          
-          await sendEmail(ADMIN_EMAIL, 'Alerta - Alto Gasto com Gas', message);
+          await sendEmail(ADMIN_EMAIL, 'Alert - High Gas Spending', message);
         }
       }
     });
     
-    await logSystem.info(`Monitoramento da carteira de serviço iniciado para ${walletAddress}`);
+    await logSystem.info(`Service wallet monitoring started for ${walletAddress}`);
   } catch (error: any) {
-    await logSystem.error(`Erro ao configurar monitoramento da carteira: ${error.message}`);
+    await logSystem.error(`Error configuring wallet monitoring: ${error.message}`);
   }
 }
 
-// Monitorar distribuição de tokens G33
+// Monitor G33 token distribution
 export async function monitorTokenDistribution(
   contractAddress: string,
   provider: ethers.providers.Provider
 ): Promise<void> {
   try {
     if (!contractAddress) {
-      throw new Error("Endereço do contrato de distribuição de tokens não fornecido");
+      throw new Error("Token distribution contract address not provided");
     }
 
-    console.log(`Iniciando monitoramento do Distribuidor de Tokens G33: ${contractAddress}`);
+    console.log(`Starting monitoring of G33 Token Distributor: ${contractAddress}`);
 
-    // ABI mais completo para melhor compatibilidade com o contrato
+    // More complete ABI for better contract compatibility
     const abi = [
-      // Eventos principais
+      // Main events
       "event TokensDistributed(address indexed donor, uint256 tokenAmount, uint256 donationAmountUsd)",
       "event DonationReceived(address indexed donor, uint256 donationAmountUsd)",
-      // Funções que podem ajudar na validação
+      // Functions that can help with validation
       "function tokenAddress() view returns (address)",
       "function availableTokensForDistribution() view returns (uint256)",
       "function totalDistributed() view returns (uint256)"
@@ -232,52 +240,52 @@ export async function monitorTokenDistribution(
     
     const contract = new ethers.Contract(contractAddress, abi, provider);
     
-    // Verificar se o contrato é válido consultando uma função básica
+    // Verify if the contract is valid by querying a basic function
     try {
-      // Tentar verificar se o contrato responde - primeiro com tokenAddress
+      // Try to verify if the contract responds - first with tokenAddress
       let isValid = false;
       try {
         const tokenAddress = await contract.tokenAddress();
-        console.log(`Endereço do token G33 confirmado: ${tokenAddress}`);
+        console.log(`G33 token address confirmed: ${tokenAddress}`);
         isValid = true;
       } catch (err: any) {
-        console.log(`Função tokenAddress não encontrada, tentando outra verificação...`);
-        // Se tokenAddress falhar, tentar outras funções
+        console.log(`Function tokenAddress not found, trying another verification...`);
+        // If tokenAddress fails, try other functions
         try {
           const totalDistributed = await contract.totalDistributed();
-          console.log(`Total distribuído confirmado: ${ethers.utils.formatEther(totalDistributed)} tokens`);
+          console.log(`Total distributed confirmed: ${ethers.utils.formatEther(totalDistributed)} tokens`);
           isValid = true;
         } catch (err2: any) {
-          // Última tentativa - verificar se o endereço tem código
+          // Last attempt - check if the address has code
           const code = await provider.getCode(contractAddress);
           if (code !== '0x') {
-            console.log('Contrato possui código implantado, prosseguindo com monitoramento');
+            console.log('Contract has deployed code, proceeding with monitoring');
             isValid = true;
           } else {
-            throw new Error("Endereço não contém código de contrato");
+            throw new Error("Address does not contain contract code");
           }
         }
       }
       
       if (!isValid) {
-        throw new Error("Não foi possível validar o contrato do distribuidor de tokens");
+        throw new Error("Could not validate token distributor contract");
       }
       
-      console.log(`Contrato G33 validado com sucesso em: ${contractAddress}`);
+      console.log(`G33 contract successfully validated at: ${contractAddress}`);
     } catch (contractErr: any) {
-      console.error(`Erro ao verificar contrato de distribuição: ${contractErr.message}`);
-      throw new Error(`Contrato de distribuição de tokens inválido ou inacessível: ${contractErr.message}`);
+      console.error(`Error verifying distribution contract: ${contractErr.message}`);
+      throw new Error(`Invalid or inaccessible token distribution contract: ${contractErr.message}`);
     }
     
-    // Configurar listener para eventos de distribuição
+    // Set up listener for distribution events
     contract.on('TokensDistributed', async (donor, tokenAmount, donationAmountUsd, event) => {
       try {
         const tokens = ethers.utils.formatEther(tokenAmount);
-        const usdValue = donationAmountUsd.toNumber() / 100; // Convertendo de centavos para dólares
+        const usdValue = donationAmountUsd.toNumber() / 100; // Converting from cents to dollars
         
-        console.log(`Evento TokensDistributed detectado: ${tokens} tokens para ${donor}, valor USD: ${usdValue}`);
+        console.log(`TokensDistributed event detected: ${tokens} tokens to ${donor}, USD value: ${usdValue}`);
         
-        // Registrar distribuição no sistema de logs
+        // Register distribution in the log system
         try {
           await logSystem.tokenDistribution(donor, parseFloat(tokens), {
             transactionHash: event.transactionHash,
@@ -285,74 +293,74 @@ export async function monitorTokenDistribution(
             donationAmountUsd: usdValue
           });
         } catch (logErr: any) {
-          console.error("Erro ao registrar token distribution no log:", logErr);
+          console.error("Error logging token distribution:", logErr);
         }
-        // Enviar alerta por e-mail se distribuição for muito grande
+        // Send email alert if distribution is very large
         if (parseFloat(tokens) > ALERT_THRESHOLD_TOKENS) {
-          const message = `Grande distribuição de tokens G33 detectada!\n` +
-            `Doador: ${donor}\n` +
+          const message = `Large G33 token distribution detected!\n` +
+            `Donor: ${donor}\n` +
             `Tokens: ${tokens} G33\n` +
-            `Valor da doação: $${usdValue.toFixed(2)} USD\n` +
-            `Hash da transação: ${event.transactionHash}`;
+            `Donation value: $${usdValue.toFixed(2)} USD\n` +
+            `Transaction hash: ${event.transactionHash}`;
           try {
-            await sendEmail(ADMIN_EMAIL, 'Alerta - Grande distribuição de tokens G33', message);
+            await sendEmail(ADMIN_EMAIL, 'Alert - Large G33 token distribution', message);
           } catch (emailErr) {
-            console.error('Erro ao enviar alerta de distribuição de tokens por e-mail:', emailErr);
+            console.error('Error sending token distribution alert email:', emailErr);
           }
         }
       } catch (eventErr: any) {
-        console.error(`Erro ao processar evento TokensDistributed: ${eventErr.message}`);
+        console.error(`Error processing TokensDistributed event: ${eventErr.message}`);
       }
     });
     
-    // Adicionar um listener para eventos de doação também (para redundância)
+    // Add a listener for donation events as well (for redundancy)
     try {
       contract.on('DonationReceived', async (donor, donationAmountUsd, event) => {
-        console.log(`Evento DonationReceived detectado de ${donor}, valor USD: ${donationAmountUsd.toNumber() / 100}`);
+        console.log(`DonationReceived event detected from ${donor}, USD value: ${donationAmountUsd.toNumber() / 100}`);
       });
     } catch (listenerErr: any) {
-      console.warn("Erro ao configurar listener para DonationReceived (não crítico):", listenerErr.message);
+      console.warn("Error setting up listener for DonationReceived (non-critical):", listenerErr.message);
     }
     
-    console.log(`Monitoramento de distribuição de tokens G33 iniciado para o contrato ${contractAddress}`);
+    console.log(`G33 token distribution monitoring started for contract ${contractAddress}`);
     try {
-      await logSystem.info(`Monitoramento de distribuição de tokens G33 iniciado para o contrato ${contractAddress}`);
+      await logSystem.info(`G33 token distribution monitoring started for contract ${contractAddress}`);
     } catch (logErr: any) {
-      console.error("Erro ao registrar info no log:", logErr);
+      console.error("Error logging info:", logErr);
     }
     
-    // Verificar status inicial do contrato para confirmar que está funcionando
+    // Check initial contract status to confirm it's working
     try {
       const totalDistributed = await contract.totalDistributed();
       const formattedTotal = ethers.utils.formatEther(totalDistributed);
-      console.log(`Status inicial do contrato G33: Total distribuído = ${formattedTotal} tokens`);
+      console.log(`Initial G33 contract status: Total distributed = ${formattedTotal} tokens`);
       
       try {
         const availableTokens = await contract.availableTokensForDistribution();
         const formattedAvailable = ethers.utils.formatEther(availableTokens);
-        console.log(`Tokens disponíveis para distribuição: ${formattedAvailable}`);
+        console.log(`Tokens available for distribution: ${formattedAvailable}`);
       } catch (err: any) {
-        console.warn("Não foi possível verificar tokens disponíveis (não crítico)");
+        console.warn("Could not verify available tokens (non-critical)");
       }
     } catch (statusErr: any) {
-      console.warn("Não foi possível verificar status do contrato (não crítico):", statusErr.message);
+      console.warn("Could not verify contract status (non-critical):", statusErr.message);
     }
     
   } catch (error: any) {
-    console.error(`Erro ao configurar monitoramento de distribuição de tokens G33: ${error.message}`);
+    console.error(`Error setting up G33 token distribution monitoring: ${error.message}`);
     try {
-      await logSystem.error(`Erro ao configurar monitoramento de distribuição de tokens G33: ${error.message}`);
+      await logSystem.error(`Error setting up G33 token distribution monitoring: ${error.message}`);
     } catch (logErr: any) {
-      console.error("Erro ao registrar error no log:", logErr);
+      console.error("Error logging error:", logErr);
     }
-    // Propagar o erro para que a inicialização saiba que este monitor falhou
+    // Propagate the error so initialization knows this monitor failed
     throw error;
   }
 }
 
 // Create a simulated provider that can work offline
 function createSimulatedProvider(): ethers.providers.Provider {
-  console.log('⚠️ CRIANDO PROVIDER SIMULADO - O monitoramento funcionará em modo offline');
+  console.log('⚠️ CREATING SIMULATED PROVIDER - Monitoring will work in offline mode');
   
   // Simulate the basic provider interface needed for monitoring
   const simulatedProvider: any = {
@@ -402,8 +410,197 @@ function createSimulatedProvider(): ethers.providers.Provider {
   return simulatedProvider as ethers.providers.Provider;
 }
 
-// Inicializar monitoramento (chamar esta função ao iniciar o servidor)
+/**
+ * Tenta estabelecer uma conexão WebSocket estável, com reconexão automática
+ * @returns Uma Promise que resolve para uma instância de WebSocketProvider ou null em caso de falha
+ */
+async function createStableWebSocketProvider(): Promise<ethers.providers.WebSocketProvider | null> {
+  if (wsRpcUrls.length === 0) {
+    console.warn('Nenhum URL WebSocket disponível para conexão');
+    return null;
+  }
+  
+  // Tentar cada URL de WebSocket em ordem
+  for (const wsUrl of wsRpcUrls) {
+    try {
+      console.log(`Tentando conexão WebSocket com: ${wsUrl}`);
+      
+      // Criar o provider WebSocket
+      const wsProvider = new ethers.providers.WebSocketProvider(wsUrl);
+      
+      // Configurar handlers para reconexão
+      const setupReconnection = (provider: ethers.providers.WebSocketProvider) => {
+        const ws = (provider as any)._websocket;
+        
+        if (!ws) {
+          console.warn('WebSocket não encontrado no provider, reconexão automática pode não funcionar');
+          return;
+        }
+        
+        ws.onclose = (event: any) => {
+          console.log(`WebSocket fechado (código: ${event.code}). Tentando reconexão em ${CONNECTION_RETRY_DELAY / 1000} segundos...`);
+          
+          // Limpar o timer existente, se houver
+          if (reconnectionTimer) {
+            clearTimeout(reconnectionTimer);
+            reconnectionTimer = null;
+          }
+          
+          // Incrementar contador de tentativas
+          reconnectionAttempts++;
+          
+          // Verificar se atingimos o limite de tentativas
+          if (reconnectionAttempts > MAX_CONNECTION_ATTEMPTS) {
+            console.warn(`Máximo de ${MAX_CONNECTION_ATTEMPTS} tentativas de reconexão WebSocket atingido. Alternando para HTTP...`);
+            
+            // Notificar o sistema sobre a mudança
+            try {
+              logSystem.warn(`WebSocket instável após ${MAX_CONNECTION_ATTEMPTS} tentativas. Alternando para HTTP.`);
+            } catch (logErr) {
+              console.error('Erro ao registrar alerta de reconexão:', logErr);
+            }
+            
+            // Se HTTP fallback estiver habilitado, reiniciar o monitoramento com HTTP
+            if (HTTP_FALLBACK_ENABLED) {
+              // Limpar quaisquer monitoramentos ativos
+              try {
+                provider.removeAllListeners();
+              } catch (clearErr) {
+                console.warn('Erro ao limpar listeners:', clearErr);
+              }
+              
+              console.log('Reiniciando monitoramento com providers HTTP...');
+              initializeContractMonitoring(true); // true indica que está usando fallback HTTP
+              return;
+            }
+          }
+          
+          // Tentar reconexão após o delay
+          reconnectionTimer = setTimeout(() => {
+            console.log(`Tentativa de reconexão ${reconnectionAttempts}...`);
+            try {
+              // Para websockets, é melhor reiniciar o monitoramento totalmente
+              initializeContractMonitoring();
+            } catch (err) {
+              console.error('Erro ao reiniciar monitoramento:', err);
+            }
+          }, CONNECTION_RETRY_DELAY);
+        };
+        
+        ws.onerror = (error: any) => {
+          console.error('Erro no WebSocket:', error);
+          // Quando ocorre um erro, o onclose geralmente é chamado logo em seguida
+        };
+      };
+      
+      // Configurar reconexão
+      setupReconnection(wsProvider);
+      
+      // Testar a conexão
+      const blockNumber = await Promise.race([
+        wsProvider.getBlockNumber(),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout na conexão WebSocket')), 10000)
+        ),
+      ]);
+      
+      console.log(`✅ Conexão WebSocket bem-sucedida. Bloco atual: ${blockNumber}`);
+      
+      // Resetar contador de tentativas ao estabelecer uma conexão
+      reconnectionAttempts = 0;
+      
+      // Registrar no sistema
+      try {
+        await logSystem.info(`Conexão WebSocket estabelecida com: ${wsUrl}`);
+      } catch (logErr) {
+        console.error('Erro ao registrar sucesso de conexão:', logErr);
+      }
+      
+      return wsProvider;
+    } catch (error) {
+      console.warn(`Falha ao conectar WebSocket com ${wsUrl}:`, error);
+    }
+  }
+  
+  console.warn('Não foi possível estabelecer uma conexão WebSocket. Tentando alternativas...');
+  return null;
+}
+
+/**
+ * Cria uma instância de FallbackProvider com múltiplos endpoints HTTP
+ * Esta abordagem é mais confiável que depender de um único provider
+ */
+async function createFallbackHttpProvider(): Promise<ethers.providers.Provider | null> {
+  try {
+    if (httpRpcUrls.length === 0) {
+      console.warn('Nenhum URL HTTP disponível para FallbackProvider');
+      return null;
+    }
+    
+    console.log('Criando FallbackProvider com múltiplos endpoints HTTP...');
+    
+    const providerConfigs = [];
+    let priority = 1;
+    
+    // Adicionar até 5 HTTP providers para fallback
+    for (const url of httpRpcUrls.slice(0, 5)) {
+      try {
+        const provider = new ethers.providers.JsonRpcProvider(url);
+        providerConfigs.push({
+          provider,
+          priority: priority++,
+          weight: 1,
+          stallTimeout: 5000
+        });
+      } catch (e) {
+        console.warn(`Erro ao criar provider para ${url}:`, e);
+      }
+    }
+    
+    if (providerConfigs.length === 0) {
+      throw new Error('Não foi possível criar nenhum provider para o FallbackProvider');
+    }
+    
+    const fallbackProvider = new ethers.providers.FallbackProvider(providerConfigs, 1);
+    
+    // Testar o FallbackProvider
+    const blockNumber = await Promise.race([
+      fallbackProvider.getBlockNumber(),
+      new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout na conexão com FallbackProvider')), 15000)
+      ),
+    ]);
+    
+    console.log(`✅ FallbackProvider conectado com sucesso. Bloco atual: ${blockNumber}`);
+    
+    // Registrar no sistema
+    try {
+      await logSystem.info(`FallbackProvider criado com ${providerConfigs.length} endpoints.`);
+    } catch (logErr) {
+      console.error('Erro ao registrar criação de FallbackProvider:', logErr);
+    }
+    
+    // Configurar verificação periódica de saúde do FallbackProvider
+    setInterval(async () => {
+      try {
+        await fallbackProvider.getBlockNumber();
+      } catch (healthCheckError) {
+        console.warn('Verificação de saúde do FallbackProvider falhou:', healthCheckError);
+        console.log('Reiniciando monitoramento...');
+        initializeContractMonitoring();
+      }
+    }, 3 * 60 * 1000); // Verificar a cada 3 minutos
+    
+    return fallbackProvider;
+  } catch (error) {
+    console.error('Falha ao criar FallbackProvider:', error);
+    return null;
+  }
+}
+
+// Configure a interface do callback corretamente
 export function initializeContractMonitoring(
+  useHttpFallback: boolean = false,
   statusCallback?: (
     success: boolean,
     providerType: string | null,
@@ -415,13 +612,13 @@ export function initializeContractMonitoring(
   ) => void
 ): void {
   try {
-    // Importar o serverStatus dinamicamente para evitar problemas de importação circular
+    // Dynamically import serverStatus to avoid circular import issues
     let serverStatus: any;
     try {
       const serverInit = require('../../lib/server-init');
       serverStatus = serverInit.serverStatus;
       
-      // Inicializar a estrutura de status se necessário
+      // Initialize status structure if necessary
       if (!serverStatus.contractMonitoring) {
         serverStatus.contractMonitoring = {
           initialized: false,
@@ -434,8 +631,8 @@ export function initializeContractMonitoring(
       }
       
     } catch (importErr) {
-      console.warn("Não foi possível importar serverStatus, continuando sem ele:", importErr);
-      // Criar um objeto simulado para não quebrar o código
+      console.warn("Could not import serverStatus, continuing without it:", importErr);
+      // Create a simulated object to avoid breaking the code
       serverStatus = {
         contractMonitoring: {
           initialized: false,
@@ -445,178 +642,56 @@ export function initializeContractMonitoring(
       };
     }
 
-    console.log("Iniciando sistema de monitoramento de contratos...");
-
-    // Lista de RPCs confiáveis para backup em caso de falha
-    const rpcUrls = [
-      process.env.CUSTOM_POLYGON_RPC, // RPC personalizado (se configurado)
-      
-      // HTTP RPCs - melhor compatibilidade inicial
-      'https://polygon-rpc.com',
-      'https://polygon-mainnet.public.blastapi.io',
-      'https://polygon.llamarpc.com',
-      'https://rpc-mainnet.maticvigil.com',
-      'https://polygon-bor.publicnode.com',
-      
-      // RPCs com APIs
-      `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_KEY || "9aa3d95b3bc440fa88ea12eaa4456161"}`,
-      `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY || "demo"}`,
-      
-      // WebSockets - tentar após os HTTP providers
-      "wss://polygon-mainnet.g.alchemy.com/v2/demo",
-      "wss://ws-matic-mainnet.chainstacklabs.com",
-    ];
+    console.log("Starting contract monitoring system...");
     
-    // Verificar e logar os endereços de contratos disponíveis
-    console.log("Verificando endereços de contratos...");
-    
-    const learn2earnAddress = process.env.LEARN2EARN_CONTRACT_ADDRESS;
-    if (learn2earnAddress) {
-      console.log(`✅ Contrato Learn2Earn encontrado: ${learn2earnAddress}`);
-    } else {
-      console.warn("⚠️ Endereço do contrato Learn2Earn não encontrado nas variáveis de ambiente");
+    // Verificar se já há uma tentativa de inicialização em andamento
+    if (isMonitoringInitialized) {
+      console.log('Uma inicialização de monitoramento já está em andamento. Abortando nova tentativa.');
+      return;
     }
     
-    const createReliableProvider = async (): Promise<ethers.providers.Provider | null> => {
-      // Se já atingimos o número máximo de tentativas, não tentar novamente
-      if (providerInitRetries >= MAX_PROVIDER_RETRIES) {
-        console.warn(`Atingido o máximo de ${MAX_PROVIDER_RETRIES} tentativas para inicializar o provider. O monitoramento será desativado.`);
-        
-        // Atualizar status global
-        if (serverStatus && serverStatus.contractMonitoring) {
-          serverStatus.contractMonitoring.errors = serverStatus.contractMonitoring.errors || [];
-          serverStatus.contractMonitoring.errors.push(
-            `Atingido o limite máximo de ${MAX_PROVIDER_RETRIES} tentativas para conectar à blockchain.`
-          );
-        }
-        
-        return null;
-      }
-      
-      providerInitRetries++;
-      console.log(`Tentativa ${providerInitRetries}/${MAX_PROVIDER_RETRIES} para inicializar o provider`);
-      
-      // Primeiro tentar HTTP RPCs - mais estáveis para conexão inicial
-      const httpUrls = validRpcUrls.filter((url): url is string => typeof url === 'string' && url.startsWith('http'));
-      
-      for (const url of httpUrls) {
-        try {
-          console.log(`Tentando conectar ao HTTP RPC para monitoramento: ${url}`);
-          const provider = new ethers.providers.JsonRpcProvider(url);
-          
-          // Teste a conexão com o provider
-          const blockNumber = await Promise.race([
-            provider.getBlockNumber(),
-            new Promise<never>((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout ao conectar ao HTTP RPC')), 10000)
-            ),
-          ]);
-          
-          console.log(`✅ Conexão HTTP RPC bem-sucedida para monitoramento, bloco atual: ${blockNumber}`);
-          
-          // Atualizar status global
-          if (serverStatus && serverStatus.contractMonitoring) {
-            serverStatus.contractMonitoring.connectionType = "HTTP";
-            serverStatus.contractMonitoring.rpcUrl = url.replace(/\/v3\/.*/, '/v3/****'); // Ocultar chaves API
-          }
-          
-          return provider;
-        } catch (error) {
-          console.warn(`❌ Falha ao conectar ao HTTP RPC ${url} para monitoramento:`, error);
-        }
-      }
-      
-      // Se HTTP RPCs falharem, tente WebSockets
-      const wsUrls = validRpcUrls.filter((url): url is string => typeof url === 'string' && url.startsWith('wss://'));
-      
-      for (const url of wsUrls) {
-        try {
-          console.log(`Tentando conectar ao WebSocket RPC para monitoramento: ${url}`);
-          const provider = new ethers.providers.WebSocketProvider(url);
-          
-          // Teste a conexão com o provider
-          const blockNumber = await Promise.race([
-            provider.getBlockNumber(),
-            new Promise<never>((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout ao conectar ao WebSocket RPC')), 10000)
-            ),
-          ]);
-          
-          console.log(`✅ Conexão WebSocket RPC bem-sucedida para monitoramento, bloco atual: ${blockNumber}`);
-          
-          // Atualizar status global
-          if (serverStatus && serverStatus.contractMonitoring) {
-            serverStatus.contractMonitoring.connectionType = "WebSocket";
-            serverStatus.contractMonitoring.rpcUrl = url.replace(/\/v2\/.*/, '/v2/****'); // Ocultar chaves API
-          }
-          
-          return provider;
-        } catch (error) {
-          console.warn(`❌ Falha ao conectar ao WebSocket RPC ${url} para monitoramento:`, error);
-        }
-      }
-      
-      // Como último recurso, tentar um FallbackProvider com múltiplos provedores
+    // Limpar monitoramentos existentes antes de inicializar novos
+    if (currentProvider) {
+      console.log('Limpando provider existente antes da reinicialização...');
       try {
-        console.log('Tentando utilizar FallbackProvider com múltiplos endpoints...');
+        // Limpar todos os listeners do provider atual
+        if (typeof (currentProvider as any).removeAllListeners === 'function') {
+          (currentProvider as any).removeAllListeners();
+        }
+      } catch (clearErr) {
+        console.warn('Erro ao limpar provider existente:', clearErr);
+      }
+      currentProvider = null;
+    }
+
+    // Escolher estratégia de conexão baseada no parâmetro ou no histórico
+    const connectToBlockchain = async (): Promise<ethers.providers.Provider | null> => {
+      // Se especificado para usar HTTP ou após muitas falhas de websocket, ir direto para HTTP
+      if (useHttpFallback) {
+        console.log('Usando estratégia de conexão HTTP conforme solicitado');
+        return await createFallbackHttpProvider();
+      } else {
+        // Estratégia padrão: tentar WebSocket primeiro, depois fallback para HTTP
+        console.log('Tentando conexão WebSocket primeiro...');
+        const wsProvider = await createStableWebSocketProvider();
         
-        const providerConfigs = [];
-        let priority = 1;
-        
-        // Adicionar até 3 provedores HTTP para o fallback
-        for (const url of httpUrls.slice(0, 3)) {
-          try {
-            const provider = new ethers.providers.JsonRpcProvider(url);
-            providerConfigs.push({
-              provider,
-              priority: priority++,
-              weight: 1,
-              stallTimeout: 5000
-            });
-          } catch (e) {
-            // Ignorar erros de criação do provider
-            console.warn(`Não foi possível criar provider para ${url}:`, e);
-          }
+        if (wsProvider) {
+          return wsProvider;
         }
         
-        if (providerConfigs.length === 0) {
-          throw new Error('Não foi possível criar nenhum provider para o FallbackProvider');
-        }
-        
-        const fallbackProvider = new ethers.providers.FallbackProvider(providerConfigs, 1);
-        
-        // Testar o FallbackProvider
-        const blockNumber = await Promise.race([
-          fallbackProvider.getBlockNumber(),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout ao conectar com FallbackProvider')), 15000)
-          ),
-        ]);
-        
-        console.log(`✅ FallbackProvider conectado com sucesso, bloco atual: ${blockNumber}`);
-        
-        // Atualizar status global
-        if (serverStatus && serverStatus.contractMonitoring) {
-          serverStatus.contractMonitoring.connectionType = "FallbackProvider";
-          serverStatus.contractMonitoring.rpcUrl = "Multiple RPC endpoints";
-        }
-        
-        return fallbackProvider;
-      } catch (fallbackError) {
-        console.error('❌ Também falhou ao conectar usando FallbackProvider:', fallbackError);
-        return null;
+        console.log('WebSocket falhou, alternando para HTTP...');
+        return await createFallbackHttpProvider();
       }
     };
     
-    // Tente criar um provider confiável
-    createReliableProvider().then(provider => {
-      // Se não conseguimos um provider, não continue
+    // Tentar estabelecer conexão
+    connectToBlockchain().then(provider => {
       if (!provider) {
-        console.error('Não foi possível estabelecer conexão com nenhum provider. O monitoramento de contratos não será iniciado.');
+        console.error('Não foi possível estabelecer conexão com nenhum provider. Monitoramento de contratos não será iniciado.');
         try {
-          logSystem.error('Não foi possível estabelecer conexão com nenhum provider. O monitoramento de contratos não será iniciado.');
+          logSystem.error('Não foi possível estabelecer conexão com nenhum provider. Monitoramento de contratos não será iniciado.');
         } catch (logErr) {
-          console.error("Erro ao registrar error no log:", logErr);
+          console.error("Erro ao registrar log:", logErr);
         }
         
         // Atualizar status global
@@ -624,11 +699,17 @@ export function initializeContractMonitoring(
           serverStatus.contractMonitoring.initialized = false;
           serverStatus.contractMonitoring.errors = serverStatus.contractMonitoring.errors || [];
           serverStatus.contractMonitoring.errors.push(
-            'Falha ao conectar com qualquer provider blockchain. O monitoramento não será iniciado.'
+            'Falha ao conectar-se a qualquer provider blockchain. Monitoramento não será iniciado.'
           );
+          
+          // Definir como modo administrativo
+          if (typeof serverStatus.administrativeMode !== 'undefined') {
+            serverStatus.administrativeMode = true;
+            console.log('⚠️ Sistema entrando em modo administrativo devido a falhas de conexão.');
+          }
         }
         
-        // Informar o callback que falhou
+        // Informar o callback sobre a falha
         if (statusCallback) {
           statusCallback(false, null, {
             tokenDistribution: false,
@@ -640,98 +721,60 @@ export function initializeContractMonitoring(
         return;
       }
       
-      // Configurar manipuladores de eventos para reconexão automática
-      if ('_websocket' in provider) {
-        console.log('Configurando manipuladores de evento para o WebSocketProvider...');
-        
-        try {
-          // Definir função de reconexão para WebSocketProvider
-          const ws = (provider as any)._websocket;
-          
-          ws.onclose = () => {
-            console.log('Conexão WebSocket fechada. Tentando reconectar em 10 segundos...');
-            
-            // Atualizar status global
-            if (serverStatus && serverStatus.contractMonitoring) {
-              serverStatus.contractMonitoring.errors = serverStatus.contractMonitoring.errors || [];
-              serverStatus.contractMonitoring.errors.push(
-                `Conexão WebSocket fechada em ${new Date().toISOString()}. Tentando reconectar...`
-              );
-            }
-            
-            // Tentar reconectar após 10 segundos
-            setTimeout(() => {
-              console.log('Reiniciando monitoramento devido à desconexão do WebSocket...');
-              try {
-                initializeContractMonitoring();
-              } catch (restartErr) {
-                console.error("Erro ao reiniciar monitoramento:", restartErr);
-              }
-            }, 10000);
-          };
-        } catch (wsError) {
-          console.error("Erro ao configurar eventos WebSocket:", wsError);
-        }
-      } else {
-        // Para providers que não são WebSocket, configurar verificações periódicas
-        try {
-          const healthCheckInterval = setInterval(async () => {
-            try {
-              await provider.getBlockNumber();
-              // Se a chamada acima não lançar exceção, o provider está funcionando
-            } catch (error) {
-              console.log('Falha na verificação de saúde do provider. Tentando reiniciar o monitoramento...');
-              
-              // Atualizar status global
-              if (serverStatus && serverStatus.contractMonitoring) {
-                serverStatus.contractMonitoring.errors = serverStatus.contractMonitoring.errors || [];
-                serverStatus.contractMonitoring.errors.push(
-                  `Falha na verificação de saúde do provider em ${new Date().toISOString()}. Reiniciando monitoramento...`
-                );
-              }
-              
-              clearInterval(healthCheckInterval);
-              try {
-                initializeContractMonitoring();
-              } catch (restartErr) {
-                console.error("Erro ao reiniciar monitoramento:", restartErr);
-              }
-            }
-          }, 5 * 60 * 1000); // Verificar a cada 5 minutos
-        } catch (healthCheckError) {
-          console.error("Erro ao configurar verificação de saúde:", healthCheckError);
-        }
-      }
+      // Armazenar o provider atual para referência e limpeza em reinicializações
+      currentProvider = provider;
       
+      // Marcar como inicializado
       isMonitoringInitialized = true;
       
-      // Inicializar cada monitor com tratamento de erros independente
+      // Identificar o tipo de provider para logs
+      const providerType = ('_websocket' in provider) ? 'WebSocket' : 'HTTP';
+      console.log(`Usando provider tipo ${providerType} para monitoramento`);
       
-      // 1. Monitor Learn2Earn (Firestore)
-      monitorAllLearn2EarnFromFirestore();
+      // Configurar saída do modo administrativo
+      if (serverStatus && typeof serverStatus.administrativeMode !== 'undefined') {
+        serverStatus.administrativeMode = false;
+        console.log('✅ Sistema saindo do modo administrativo após estabelecer conexão.');
+      }
+      
+      // Inicializar cada monitor com tratamento de erro independente
+      
+      // 1. Learn2Earn Monitor (Firestore)
+      console.log('Iniciando monitoramento de Learn2Earn via Firestore...');
+      try {
+        monitorAllLearn2EarnFromFirestore();
+      } catch (l2eErr) {
+        console.error('Erro ao iniciar monitoramento Learn2Earn via Firestore:', l2eErr);
+      }
 
-      // 1. Monitor Learn2Earn
+      // Learn2Earn Monitor (Blockchain)
       const learn2earnContracts = [];
       if (process.env.LEARN2EARN_CONTRACT_ADDRESS) {
         learn2earnContracts.push({
           contractAddress: process.env.LEARN2EARN_CONTRACT_ADDRESS,
           provider,
-          network: 'polygon' // ou outro identificador
+          network: 'polygon'
         });
       }
-      // Adicione outros contratos aqui, se necessário
+      
       if (learn2earnContracts.length > 0) {
-        monitorLearn2EarnContracts(learn2earnContracts);
-        activeMonitors.learn2earn = true;
+        console.log('Iniciando monitoramento de Learn2Earn via Blockchain...');
+        try {
+          monitorLearn2EarnContracts(learn2earnContracts);
+          activeMonitors.learn2earn = true;
+        } catch (l2eBlockchainErr) {
+          console.error('Erro ao iniciar monitoramento Learn2Earn via Blockchain:', l2eBlockchainErr);
+        }
       }
       
-      // 2. Monitor de carteira de serviço
+      // 2. Service wallet monitor
       if (serviceWalletAddress) {
+        console.log(`Iniciando monitoramento de carteira de serviço: ${serviceWalletAddress}`);
         try {
           monitorServiceWallet(serviceWalletAddress, provider)
             .then(() => {
               activeMonitors.wallet = true;
-              console.log(`✅ Monitoramento de carteira de serviço ativo para ${serviceWalletAddress}`);
+              console.log(`✅ Monitoramento de carteira ativo para ${serviceWalletAddress}`);
               
               // Atualizar status global
               if (serverStatus && serverStatus.contractMonitoring) {
@@ -739,12 +782,12 @@ export function initializeContractMonitoring(
               }
             })
             .catch((err: any) => {
-              console.error(`❌ Falha ao inicializar monitoramento da carteira de serviço: ${err.message}`);
+              console.error(`❌ Falha ao inicializar monitoramento de carteira: ${err.message}`);
               
               // Atualizar status global
               if (serverStatus && serverStatus.contractMonitoring) {
                 serverStatus.contractMonitoring.errors.push(
-                  `Falha ao inicializar monitoramento da carteira: ${err.message}`
+                  `Falha ao inicializar monitoramento de carteira: ${err.message}`
                 );
               }
             });
@@ -753,11 +796,11 @@ export function initializeContractMonitoring(
         }
       }
       
-      // 3. Monitor de distribuição de tokens - FOCO PRINCIPAL DA CORREÇÃO
+      // 3. Token distribution monitor
       if (tokenDistributorAddress) {
+        console.log(`🔍 Iniciando monitoramento do distribuidor de tokens G33 em ${tokenDistributorAddress}...`);
+        
         try {
-          console.log(`🔍 Inicializando monitoramento do distribuidor de tokens G33 em ${tokenDistributorAddress}...`);
-          
           monitorTokenDistribution(tokenDistributorAddress, provider)
             .then(() => {
               activeMonitors.tokenDistribution = true;
@@ -771,7 +814,7 @@ export function initializeContractMonitoring(
             .catch((err: any) => {
               console.error(`❌ Falha ao inicializar monitoramento de distribuição de tokens: ${err.message}`);
               
-              // Registro de erro detalhado para diagnóstico
+              // Diagnóstico detalhado para erros
               console.error('Detalhes do erro:', err);
               
               // Atualizar status global
@@ -781,11 +824,11 @@ export function initializeContractMonitoring(
                 );
               }
               
-              // Tentar nova inicialização com abordagem alternativa após um breve intervalo
-              console.log('Tentando abordagem alternativa para inicializar o monitoramento de tokens...');
+              // Tentar abordagem alternativa após um breve intervalo
+              console.log('Tentando abordagem alternativa para inicializar monitoramento de tokens...');
               setTimeout(() => {
                 try {
-                  // Tente com um ABI mínimo para reduzir problemas de compatibilidade
+                  // Tentar com ABI mínima para reduzir problemas de compatibilidade
                   const minimalAbi = [
                     "event TokensDistributed(address indexed donor, uint256 tokenAmount, uint256 donationAmountUsd)"
                   ];
@@ -808,7 +851,7 @@ export function initializeContractMonitoring(
                           donationAmountUsd: usdValue
                         });
                       } catch (logErr: any) {
-                        console.error("Erro ao registrar token distribution no log:", logErr);
+                        console.error("Erro ao registrar distribuição de tokens:", logErr);
                       }
                     } catch (eventErr: any) {
                       console.error(`Erro ao processar evento TokensDistributed: ${eventErr.message}`);
@@ -824,15 +867,15 @@ export function initializeContractMonitoring(
                   
                   activeMonitors.tokenDistribution = true;
                   
-                  // Registrar no sistema de logs
+                  // Registrar no sistema
                   try {
                     logSystem.info(`Monitoramento de distribuição de tokens G33 reinicializado com sucesso para ${tokenDistributorAddress}`);
                   } catch (logErr: any) {
-                    console.error("Erro ao registrar info no log:", logErr);
+                    console.error("Erro ao registrar info:", logErr);
                   }
                   
                 } catch (retryErr: any) {
-                  console.error(`Falha na abordagem alternativa: ${retryErr.message}`);
+                  console.error(`Abordagem alternativa falhou: ${retryErr.message}`);
                 }
               }, 3000);
             });
@@ -847,26 +890,25 @@ export function initializeContractMonitoring(
           }
         }
       } else {
-        console.error("❌ Endereço do distribuidor de tokens não configurado. O monitoramento não será iniciado.");
+        console.error("❌ Endereço do distribuidor de tokens não configurado. Monitoramento não será iniciado.");
         
         // Atualizar status global
         if (serverStatus && serverStatus.contractMonitoring) {
           serverStatus.contractMonitoring.errors.push(
-            'Endereço do distribuidor de tokens não configurado. O monitoramento não será iniciado.'
+            'Endereço do distribuidor de tokens não configurado. Monitoramento não será iniciado.'
           );
         }
       }
       
-      // Após tentar inicializar todos os monitores, atualizar o status global
+      // Após tentar inicializar todos os monitores, atualizar status global
       if (serverStatus && serverStatus.contractMonitoring) {
         serverStatus.contractMonitoring.initialized = true;
       }
       
-      // IMPORTANTE: Chamar o callback somente depois de iniciar todos os monitores
+      // IMPORTANTE: Chamar o callback apenas após iniciar todos os monitores
       setTimeout(() => {
-        // Esperar um pouco para que os processos de monitoramento possam ser iniciados
+        // Aguardar um pouco para que os processos de monitoramento sejam iniciados
         if (statusCallback) {
-          const providerType = ('_websocket' in provider) ? 'WebSocket' : 'HTTP';
           statusCallback(true, providerType, {
             tokenDistribution: activeMonitors.tokenDistribution,
             learn2earn: activeMonitors.learn2earn,
@@ -874,21 +916,21 @@ export function initializeContractMonitoring(
           });
         }
         
-        // Independente do callback, forçar a atualização do status global
+        // Atualizar status global independentemente do callback
         if (serverStatus && serverStatus.contractMonitoring) {
           serverStatus.contractMonitoring.initialized = true;
           serverStatus.contractMonitoring.tokenDistributionActive = activeMonitors.tokenDistribution;
           serverStatus.contractMonitoring.learn2earnActive = activeMonitors.learn2earn;
           serverStatus.contractMonitoring.walletMonitoringActive = activeMonitors.wallet;
         }
-      }, 5000); // Esperar 5 segundos para garantir que os monitores tiveram tempo de iniciar
+      }, 5000); // Aguardar 5 segundos para garantir que os monitores tiveram tempo para iniciar
       
       try {
         logSystem.info('Sistema de monitoramento de contratos inicializado', {
           rpcUrl: 'Conexão estabelecida com sucesso',
-          providerType: ('_websocket' in provider) ? 'WebSocket' : 'HTTP',
+          providerType,
           contracts: {
-            learn2earn: learn2earnAddress || 'não configurado',
+            learn2earn: process.env.LEARN2EARN_CONTRACT_ADDRESS || 'não configurado',
             tokenDistributor: tokenDistributorAddress || 'não configurado'
           },
           serviceWallet: serviceWalletAddress || 'não configurado',
@@ -899,14 +941,14 @@ export function initializeContractMonitoring(
           }
         });
       } catch (logErr: any) {
-        console.error("Erro ao registrar info no log:", logErr);
+        console.error("Erro ao registrar info:", logErr);
       }
     }).catch(error => {
       console.error(`Falha ao criar provider para monitoramento: ${error.message}`);
       try {
         logSystem.error(`Falha ao criar provider para monitoramento: ${error.message}`);
       } catch (logErr) {
-        console.error("Erro ao registrar error no log:", logErr);
+        console.error("Erro ao registrar erro:", logErr);
       }
       
       // Atualizar status global
@@ -917,7 +959,7 @@ export function initializeContractMonitoring(
         );
       }
       
-      // Informar o callback que falhou
+      // Informar o callback sobre a falha
       if (statusCallback) {
         statusCallback(false, null, {
           tokenDistribution: false,
@@ -927,24 +969,24 @@ export function initializeContractMonitoring(
       }
     });
     
-    // Define um tempo limite geral para o processo de inicialização
+    // Definir um timeout geral para o processo de inicialização
     setTimeout(() => {
       if (!isMonitoringInitialized) {
-        console.error(`Tempo limite excedido para inicializar o monitoramento de contratos. O processo foi cancelado.`);
+        console.error(`Tempo excedido para inicialização do monitoramento de contratos. O processo foi cancelado.`);
         try {
-          logSystem.error(`Tempo limite excedido para inicializar o monitoramento de contratos. O processo foi cancelado.`);
+          logSystem.error(`Tempo excedido para inicialização do monitoramento de contratos. O processo foi cancelado.`);
         } catch (logErr) {
-          console.error("Erro ao registrar error no log:", logErr);
+          console.error("Erro ao registrar erro:", logErr);
         }
         
         // Atualizar status global
         if (serverStatus && serverStatus.contractMonitoring) {
           serverStatus.contractMonitoring.errors.push(
-            'Timeout ao inicializar monitoramento. O processo foi cancelado.'
+            'Timeout na inicialização do monitoramento. O processo foi cancelado.'
           );
         }
         
-        // Informar o callback que falhou
+        // Informar o callback sobre a falha
         if (statusCallback) {
           statusCallback(false, null, {
             tokenDistribution: false,
@@ -953,14 +995,14 @@ export function initializeContractMonitoring(
           });
         }
       }
-    }, 45000); // 45 segundos para o timeout geral
+    }, 45000); // 45 segundos para timeout geral
     
   } catch (error: any) {
     console.error(`Erro ao inicializar monitoramento de contratos: ${error.message}`);
     try {
       logSystem.error(`Erro ao inicializar monitoramento de contratos: ${error.message}`);
     } catch (logErr: any) {
-      console.error("Erro ao registrar error no log:", logErr);
+      console.error("Erro ao registrar erro:", logErr);
     }
     
     // Atualizar status global
@@ -976,7 +1018,7 @@ export function initializeContractMonitoring(
       console.error("Erro ao importar serverStatus:", importError);
     }
     
-    // Informar o callback que falhou
+    // Informar o callback sobre a falha
     if (statusCallback) {
       statusCallback(false, null, {
         tokenDistribution: false,
@@ -987,7 +1029,7 @@ export function initializeContractMonitoring(
   }
 }
 
-// Interface para o estado de monitoramento do contrato
+// Interface for contract monitoring state
 export interface ContractMonitoringState {
   isLearn2EarnMonitoring: boolean;
   isWalletMonitoring: boolean;
@@ -1006,11 +1048,11 @@ export interface ContractMonitoringState {
   errors: string[];
 }
 
-// Função para obter o estado atual do monitoramento (usada no componente)
+// Function to get the current monitoring state (used in the component)
 export async function getMonitoringState(): Promise<ContractMonitoringState> {
   try {
-    // No lado do cliente, não temos acesso às variáveis de ambiente do servidor
-    // Vamos fazer uma chamada para nossa API de diagnóstico
+    // On the client side, we don't have access to server environment variables
+    // Let's make a call to our diagnostics API
     let isLearn2EarnMonitoring = false;
     let isWalletMonitoring = false;
     let isTokenDistributionMonitoring = false;
@@ -1025,20 +1067,20 @@ export async function getMonitoringState(): Promise<ContractMonitoringState> {
         if (response.ok) {
           const data = await response.json();
           console.log("Received diagnostics data:", data);
-          // Só considerar ativo se não estiver em modo administrativo
+          // Only consider active if not in administrative mode
           isTokenDistributionMonitoring = !!data.tokensConfig?.distributorAddress &&
             data.tokensConfig?.distributorAddress !== "Not configured" &&
             data.monitoringStatus?.tokenDistributionActive === true &&
             data.administrativeMode === false;
-          // Usar APENAS dados reais da blockchain, sem simulação
+          // Use ONLY real blockchain data, no simulation
           if (data.tokenDistribution) {
             const availableTokens = parseFloat(data.tokenDistribution.availableTokens) || 0;
             const totalDistributed = parseFloat(data.tokenDistribution.totalDistributed) || 0;
             
-            // Apenas definir tokenDistributions se realmente houver tokens distribuídos
+            // Only set tokenDistributions if there are actually tokens distributed
             if (totalDistributed > 0) {
-              // Assumir que cada doação média é de 50 tokens para estimar o número de doadores
-              // (essa é uma estimativa temporária, idealmente buscaríamos o número real de doadores)
+              // Assume each average donation is 50 tokens to estimate the number of donors
+              // (this is a temporary estimate, ideally we would fetch the real number of donors)
               const estimatedDonors = Math.max(1, Math.ceil(totalDistributed / 50));
               
               tokenDistributions = {
@@ -1048,34 +1090,34 @@ export async function getMonitoringState(): Promise<ContractMonitoringState> {
             }
           }
           
-          // Adicionar erros do diagnóstico
+          // Add diagnostic errors
           if (data.errors && data.errors.length > 0) {
             errors = [...data.errors];
           }
           
-          // Obter status de monitoramento de outros serviços
+          // Get monitoring status of other services
           isLearn2EarnMonitoring = data.monitoringStatus?.learn2earnActive === true;
           isWalletMonitoring = data.monitoringStatus?.walletMonitoringActive === true;
           
         } else {
           console.error("Failed to fetch diagnostics data");
-          errors.push("Falha ao obter dados de diagnóstico da API");
-          // Fallback para verificações baseadas em localStorage apenas para status, sem dados simulados
+          errors.push("Failed to fetch diagnostics data from API");
+          // Fallback to localStorage-based checks for status only, no simulation
           isTokenDistributionMonitoring = localStorage.getItem('TOKEN_DISTRIBUTOR_ADDRESS_CONFIGURED') === 'true';
         }
       } catch (err) {
         console.error("Error fetching monitoring data:", err);
-        errors.push("Erro ao conectar com a API de diagnóstico");
-        // Fallback para verificações baseadas em localStorage apenas para status, sem dados simulados
+        errors.push("Error connecting to diagnostics API");
+        // Fallback to localStorage-based checks for status only, no simulation
         isTokenDistributionMonitoring = localStorage.getItem('TOKEN_DISTRIBUTOR_ADDRESS_CONFIGURED') === 'true';
       }
     } else {
-      // No lado do servidor, podemos verificar as variáveis de ambiente
+      // On the server side, we can check environment variables
       isLearn2EarnMonitoring = !!process.env.LEARN2EARN_CONTRACT_ADDRESS;
       isWalletMonitoring = !!process.env.SERVICE_WALLET_ADDRESS;
       isTokenDistributionMonitoring = !!process.env.TOKEN_DISTRIBUTOR_ADDRESS;
       
-      // Armazenar em localStorage para que o cliente saiba da configuração
+      // Store in localStorage so the client knows about the configuration
       if (typeof window !== 'undefined') {
         localStorage.setItem('TOKEN_DISTRIBUTOR_ADDRESS_CONFIGURED', isTokenDistributionMonitoring ? 'true' : 'false');
       }
@@ -1085,20 +1127,20 @@ export async function getMonitoringState(): Promise<ContractMonitoringState> {
       isLearn2EarnMonitoring,
       isWalletMonitoring,
       isTokenDistributionMonitoring,
-      // Learn2Earn e Wallet dados só existirão quando recebermos dados reais do sistema
-      lastLearn2EarnEvent: undefined, // Removido dados simulados
+      // Learn2Earn and Wallet data will only exist when we receive real system data
+      lastLearn2EarnEvent: undefined, // Removed simulated data
       walletBalance: isWalletMonitoring ? "Waiting for data..." : undefined,
-      // Apenas mostrar tokenDistributions se tiver dados reais
+      // Only show tokenDistributions if we have real data
       tokenDistributions,
       errors
     };
   } catch (error: any) {
-    console.error("Erro ao obter estado de monitoramento:", error);
+    console.error("Error getting monitoring state:", error);
     return {
       isLearn2EarnMonitoring: false,
       isWalletMonitoring: false,
       isTokenDistributionMonitoring: false,
-      errors: [error.message || "Erro desconhecido ao obter estado"]
+      errors: [error.message || "Unknown error getting state"]
     };
   }
 }

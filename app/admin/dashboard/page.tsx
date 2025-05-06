@@ -82,10 +82,10 @@ const AdminDashboard: React.FC = () => {
   // Use the permissions hook
   const { role, permissions, loading: permissionsLoading, hasPermission } = useAdminPermissions();
 
-  // Definir um estado inicial consistente para evitar problemas de hidratação SSR vs CSR
+  // Define a consistent initial state to avoid SSR vs CSR hydration problems
   const [isClient, setIsClient] = useState(false);
   
-  // Certificar-se de que a renderização no cliente seja consistente com o servidor
+  // Ensure client-side rendering is consistent with the server
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -2127,7 +2127,7 @@ const fetchEmployersList = async () => {
         <aside className="w-1/4 bg-black/70 p-6 flex flex-col items-start min-h-screen">
           <div className="flex flex-col items-center mb-6">
           </div>
-            {/* Foto do Usuário */}
+            {/* User Photo */}
             <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
               <img
                 src={userPhoto}
@@ -2287,7 +2287,7 @@ const fetchEmployersList = async () => {
                 }`}
                 onClick={() => {
                   setActiveTab("instantJobs");
-                  // Não definir um subtab específico, deixar null para mostrar tudo
+                  // Don't set a specific subtab, leave as null to show everything
                 }}
               >
                 Manage Instant Jobs
@@ -2431,7 +2431,7 @@ const fetchEmployersList = async () => {
             </div>
           )}
           
-          {/* Mostrar conteúdo apenas se não estiver carregando permissões */}
+          {/* Show content only if permissions are not loading */}
           {!permissionsLoading && (
             <>
               {/* Add Loading and Error states display */}
@@ -2443,7 +2443,7 @@ const fetchEmployersList = async () => {
                   <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Manage Users</h2>
                   <p className="text-gray-300 text-left"></p>
                   <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                    {/* Lista de empregadores é visível para todos os níveis */}
+                    {/* Employer list is visible for all levels */}
                     {activeSubTab === "employers-list" && (
                       <div>
                         <div className="flex justify-between items-center mb-4">
@@ -2456,7 +2456,7 @@ const fetchEmployersList = async () => {
                             className="border border-gray-300 rounded-lg px-3 py-1 text-black w-1/3"
                           />
                         </div>
-                        {/* Formulário para criar novo employer */}
+                        {/* Form to create new employer */}
                         <form onSubmit={handleCreateEmployer} className="mb-6 flex gap-2 items-end flex-wrap">
                           <input
                             type="text"
@@ -2541,7 +2541,7 @@ const fetchEmployersList = async () => {
                         )}
                       </div>
                     )}
-                    {/* Aprovação de empresas pendentes */}
+                    {/* Pending company approvals */}
                     {activeSubTab === "employers-approve" && hasPermission('canApproveCompanies') && (
                       <div>
                         <h3 className="text-xl text-orange-400 mb-4">Pending Companies for Approval</h3>
@@ -2578,7 +2578,7 @@ const fetchEmployersList = async () => {
                         )}
                       </div>
                     )}
-                    {/* Mostrar subtab "seekers" apenas se tiver permissão */}
+                    {/* Show "seekers" subtab only if you have permission */}
                     {activeSubTab === "seekers" && hasPermission('canEditContent') && (
                       <div>
                         <form onSubmit={handleCreateSeeker} className="mb-6 flex gap-2 items-end flex-wrap">
@@ -2653,7 +2653,7 @@ const fetchEmployersList = async () => {
                 </div>
               )}
 
-              {/* Mostrar tab "settings" apenas se tiver permissão */}
+              {/* Show "settings" tab only if you have permission */}
               {activeTab === "settings" && hasPermission('canAccessSettings') && (
                 <div>
                   <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Settings</h2>
@@ -2687,7 +2687,7 @@ const fetchEmployersList = async () => {
 
                             {/* Editable fields */}
                              <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Last Name (Apelido)</label>
+                              <label className="block text-sm font-medium text-gray-300 mb-1">Last Name</label>
                               <input
                                 type="text"
                                 name="lastName"
@@ -2873,7 +2873,7 @@ const fetchEmployersList = async () => {
                 </div>
               )}
 
-              {/* Mostrar tab "nfts" apenas se tiver permissão */}
+              {/* Show "nfts" tab only if you have permission */}
               {activeTab === "nfts" && hasPermission('canEditContent') && (
                 <div>
                   <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Manage NFTs</h2>
@@ -3298,16 +3298,16 @@ const fetchEmployersList = async () => {
                 </div>
               )}
 
-              {/* Renderização do InstantJobsManager quando a aba Instant Jobs estiver ativa */}
+              {/* Rendering of InstantJobsManager when the Instant Jobs tab is active */}
               {activeTab === "instantJobs" && (
                 <div>
                   <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Manage Instant Jobs</h2>
                   <div className="mt-6 bg-black/50 p-6 rounded-lg">
                     <p className="text-gray-300 mb-4">
-                      Gerencie trabalhos instantâneos e suas configurações associadas.
+                      Manage instant jobs and their associated settings.
                     </p>
                     
-                    {/* Componente principal é carregado diretamente sem verificar subtab */}
+                    {/* Main component loaded directly without checking subtab */}
                     <InstantJobsManager />
                   </div>
                 </div>
@@ -3319,23 +3319,23 @@ const fetchEmployersList = async () => {
                   <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Ads Manager</h2>
                   <div className="mt-6 bg-black/50 p-6 rounded-lg">
                     <p className="text-gray-300 mb-4">
-                      Gerencie campanhas publicitárias e anúncios para exibição no site e aplicativo.
+                      Manage advertising campaigns and ads for display on the website and app.
                     </p>
                     
-                    {/* Componente principal para gerenciamento de anúncios */}
+                    {/* Main component for ad management */}
                     <AdManager />
                   </div>
                 </div>
               )}
 
-              {/* Renderização da seção "Smart Contracts" dentro do Learn2Earn na área principal do dashboard */}
+              {/* Rendering of the "Smart Contracts" section within Learn2Earn in the main dashboard area */}
               {activeTab === "learn2earn" && activeSubTab === "contracts" && (
                 <div>
                   <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Smart Contracts Management</h2>
                   <div className="mt-6 bg-black/50 p-6 rounded-lg">
                     {/* Learn2Earn Fee Management Panel */}
                     <Learn2EarnFeePanel />
-                    {/* Formulário para adicionar ou atualizar contratos */}
+                    {/* Form to add or update contracts */}
                     <div className="bg-black/30 p-5 rounded-lg border border-gray-700 mb-6">
                       <h3 className="text-xl text-orange-400 mb-4">Add/Update Network Contract</h3>
                       <form onSubmit={handleAddNetworkContract} className="space-y-4">
@@ -3396,7 +3396,7 @@ const fetchEmployersList = async () => {
                       </form>
                     </div>
 
-                    {/* Lista de contratos existentes */}
+                    {/* List of existing contracts */}
                     <div>
                       <h3 className="text-xl text-orange-400 mb-4">Current Smart Contracts</h3>
                       {networkContracts.length === 0 ? (
@@ -3422,7 +3422,7 @@ const fetchEmployersList = async () => {
                                   </p>
                                 </div>
                                 <div className="flex mt-3 md:mt-0">
-                                  {/* Removido o botão "Edit" pois temos o formulário Add/Update acima */}
+                                  {/* Removed the "Edit" button as we have the Add/Update form above */}
                                   <Learn2EarnTestButton 
                                     network={contract.network}
                                     contractAddress={contract.contractAddress}
@@ -3438,7 +3438,7 @@ const fetchEmployersList = async () => {
                 </div>
               )}
 
-              {/* Seção do Accounting Dashboard */}
+              {/* Accounting Dashboard Section */}
               {activeTab === "accounting" && (
                 <div>
                   <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Accounting Dashboard</h2>
@@ -3448,7 +3448,7 @@ const fetchEmployersList = async () => {
                 </div>
               )}
 
-              {/* Seção de Configurações de Pagamento */}
+              {/* Payment Settings Section */}
               {activeTab === "payments" && activeSubTab === "config" && (
                 <div>
                   <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Payment Configuration</h2>

@@ -1,8 +1,8 @@
 /**
- * Inicialização do lado do servidor para o Gate33
+ * Server-side initialization for Gate33
  * 
- * Este arquivo contém a lógica para iniciar serviços que devem ser executados
- * apenas uma vez quando o servidor inicia, como o monitoramento de contratos blockchain.
+ * This file contains the logic to start services that should be executed
+ * only once when the server starts, such as blockchain contract monitoring.
  */
 import dotenv from 'dotenv';
 import { initializeContractMonitoring } from '../utils/monitors/contractMonitor';
@@ -10,7 +10,7 @@ import { logSystem } from '../utils/logSystem';
 
 dotenv.config();
 
-// Status global para rastreamento do estado do serviço
+// Global status for service state tracking
 interface ServerStatus {
   contractMonitoring: {
     initialized: boolean;
@@ -27,7 +27,7 @@ interface ServerStatus {
   }
 }
 
-// Status global do servidor - será acessado pela API de diagnóstico
+// Global server status - will be accessed by the diagnostic API
 export const serverStatus: ServerStatus = {
   contractMonitoring: {
     initialized: false,
@@ -44,45 +44,50 @@ export const serverStatus: ServerStatus = {
   }
 };
 
-// Flag para garantir que a inicialização ocorra apenas uma vez
+// Flag to ensure initialization only happens once
 let isInitialized = false;
 
-// Constantes para tentar outros provedores RPC
+// Constants for trying other RPC providers
 const ADDITIONAL_RPC_ENDPOINTS = [
-  // Endpoints públicos mais confiáveis para Polygon
+  // More reliable public endpoints for Polygon
   'https://polygon.drpc.org',
   'https://polygon.blockpi.network/v1/rpc/public',
   'https://polygon.api.onfinality.io/public',
   'https://1rpc.io/matic',
-  // Endpoints com API keys - adicionar sua própria chave aqui
-  process.env.ALCHEMY_URL || `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY || "demo"}`,
-  process.env.INFURA_URL || `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_KEY || "9aa3d95b3bc440fa88ea12eaa4456161"}`,
+  // Endpoints with API keys - add your own key here
+  process.env.INFURA_URL || `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_KEY || "7b71460a7cfd447295a93a1d76a71ed6"}`,
+  // Polygon  (mainnet) WebSocket endpoint da Infura
+  'wss://polygon-mainnet.infura.io/ws/v3/7b71460a7cfd447295a93a1d76a71ed6',
 ];
 
 /**
- * Inicia todos os serviços do lado do servidor
- * Esta função só deve ser chamada uma vez quando o servidor inicia
+ * Starts all server-side services
+ * This function should only be called once when the server starts
  */
 export function initializeServer() {
-  // Garantir que a inicialização ocorra apenas uma vez
+  // Ensure initialization happens only once
   if (isInitialized) {
-    console.log('Servidor já foi inicializado anteriormente. Ignorando solicitação de inicialização duplicada.');
+    console.log('Server has already been initialized. Ignoring duplicate initialization request.');
     return;
   }
 
-  console.log('🚀 Iniciando serviços do servidor Gate33...');
+  console.log('🚀 Starting Gate33 server services...');
   
   try {
-    // Iniciar monitoramento de contratos blockchain
-    console.log('📊 Iniciando monitoramento de contratos blockchain...');
+    // Start blockchain contract monitoring
+    console.log('📊 Starting blockchain contract monitoring...');
     
-    // Atualizando o status antes de iniciar
+    // Updating status before starting
     serverStatus.contractMonitoring.startTime = Date.now();
     
-    // Iniciar o monitoramento de contratos com a função de callback que atualiza o status
-    initializeContractMonitoring((success, providerType, activeMonitors) => {
+    // Start contract monitoring with a callback function that updates the status
+    initializeContractMonitoring(false, (success: boolean, providerType: string | null, activeMonitors: {
+      tokenDistribution: boolean;
+      learn2earn: boolean;
+      wallet: boolean;
+    }) => {
       if (success) {
-        console.log('✅ Monitoramento de contratos blockchain inicializado com sucesso!');
+        console.log('✅ Blockchain contract monitoring initialized successfully!');
         serverStatus.contractMonitoring.initialized = true;
         serverStatus.contractMonitoring.connectionType = providerType;
         serverStatus.contractMonitoring.tokenDistributionActive = activeMonitors.tokenDistribution;
@@ -90,106 +95,106 @@ export function initializeServer() {
         serverStatus.contractMonitoring.walletMonitoringActive = activeMonitors.wallet;
         serverStatus.contractMonitoring.lastStatus = 'active';
         
-        logSystem.info('Monitoramento de contratos ativado com sucesso', {
+        logSystem.info('Contract monitoring successfully activated', {
           connectionType: providerType,
           activeMonitors
         });
       } else {
-        console.error('❌ Falha ao inicializar monitoramento de contratos blockchain');
+        console.error('❌ Failed to initialize blockchain contract monitoring');
         serverStatus.contractMonitoring.initialized = false;
         serverStatus.contractMonitoring.errors.push(
-          `Falha na inicialização em ${new Date().toISOString()}`
+          `Initialization failure at ${new Date().toISOString()}`
         );
         serverStatus.contractMonitoring.lastStatus = 'inactive';
         
-        logSystem.error('Falha ao inicializar monitoramento de contratos', {
+        logSystem.error('Failed to initialize contract monitoring', {
           timestamp: new Date().toISOString()
         });
 
-        // Tentar mecanismo alternativo de inicialização
+        // Try alternative initialization mechanism
         tryAlternativeRpcInit();
       }
     });
     
-    // Definir um timeout para verificar se o monitoramento foi inicializado
+    // Set a timeout to check if monitoring was initialized
     setTimeout(() => {
       if (!serverStatus.contractMonitoring.initialized) {
-        console.warn('⚠️ O monitoramento de contratos não foi confirmado como inicializado após 30 segundos.');
+        console.warn('⚠️ Contract monitoring was not confirmed as initialized after 30 seconds.');
         
-        // Força a ativação dos monitores para exibição na UI, mesmo sem conexão RPC
+        // Force monitor activation for UI display, even without RPC connection
         forceActivateMonitors();
       }
-    }, 30000); // 30 segundos para verificar se o monitoramento foi inicializado
+    }, 30000); // 30 seconds to check if monitoring was initialized
     
-    // Quaisquer outros serviços do lado do servidor podem ser iniciados aqui
+    // Any other server-side services can be started here
     
-    // Marcar como inicializado
+    // Mark as initialized
     isInitialized = true;
     
-    console.log('✅ Inicialização do servidor concluída!');
+    console.log('✅ Server initialization completed!');
   } catch (error: any) {
-    console.error('❌ Erro durante a inicialização do servidor:', error);
+    console.error('❌ Error during server initialization:', error);
     serverStatus.contractMonitoring.errors.push(
-      `Erro na inicialização: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      `Initialization error: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
     serverStatus.contractMonitoring.lastStatus = 'inactive';
     
-    // Tentar mecanismo alternativo de inicialização
+    // Try alternative initialization mechanism
     tryAlternativeRpcInit();
   }
 }
 
 /**
- * Tenta inicializar usando provedores RPC alternativos quando os padrão falham
+ * Attempts to initialize using alternative RPC providers when the default ones fail
  */
 async function tryAlternativeRpcInit() {
-  console.log('🔄 Tentando inicialização com provedores RPC alternativos...');
-  serverStatus.contractMonitoring.warnings.push('Tentando conexão com provedores RPC alternativos');
+  console.log('🔄 Trying initialization with alternative RPC providers...');
+  serverStatus.contractMonitoring.warnings.push('Attempting connection with alternative RPC providers');
 
-  // Primeiro, verificar se os endereços dos contratos estão configurados
+  // First, check if contract addresses are configured
   const hasTokenDistributor = !!process.env.TOKEN_DISTRIBUTOR_ADDRESS || !!process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS;
   const hasLearn2Earn = !!process.env.LEARN2EARN_CONTRACT_ADDRESS;
   const hasServiceWallet = !!process.env.SERVICE_WALLET_ADDRESS;
 
   if (!hasTokenDistributor && !hasLearn2Earn && !hasServiceWallet) {
-    console.error('❌ Nenhum endereço de contrato configurado nas variáveis de ambiente');
-    serverStatus.contractMonitoring.errors.push('Nenhum endereço de contrato configurado');
+    console.error('❌ No contract addresses configured in environment variables');
+    serverStatus.contractMonitoring.errors.push('No contract addresses configured');
     return;
   }
 
-  // Forçar a ativação dos monitores para que a UI mostre como ativos
+  // Force monitor activation so the UI shows them as active
   forceActivateMonitors();
 
-  // Programar verificação periódica de conectividade
+  // Schedule periodic connectivity check
   scheduleConnectivityCheck();
 
-  console.log('✅ Monitores ativados forçadamente para exibição na UI');
-  serverStatus.contractMonitoring.warnings.push('Monitores ativados administrativamente');
+  console.log('✅ Monitors forcibly activated for UI display');
+  serverStatus.contractMonitoring.warnings.push('Monitors administratively activated');
 }
 
 /**
- * Força a ativação dos monitores baseado nas configurações disponíveis
+ * Forces monitor activation based on available configurations
  */
 function forceActivateMonitors() {
-  console.log('🔧 Ativando monitores administrativamente baseado em configurações disponíveis');
+  console.log('🔧 Administratively activating monitors based on available configurations');
   
-  // Atualizar status para melhorar a experiência do usuário
+  // Update status to improve user experience
   serverStatus.contractMonitoring.initialized = true;
   
-  // Verificar configurações de endereços e ativar monitores correspondentes
+  // Check address configurations and activate corresponding monitors
   if (process.env.TOKEN_DISTRIBUTOR_ADDRESS || process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS) {
     serverStatus.contractMonitoring.tokenDistributionActive = true;
-    console.log('✅ Monitor de distribuição de tokens ativado administrativamente');
+    console.log('✅ Token distribution monitor administratively activated');
   }
   
   if (process.env.LEARN2EARN_CONTRACT_ADDRESS) {
     serverStatus.contractMonitoring.learn2earnActive = true;
-    console.log('✅ Monitor Learn2Earn ativado administrativamente');
+    console.log('✅ Learn2Earn monitor administratively activated');
   }
   
   if (process.env.SERVICE_WALLET_ADDRESS) {
     serverStatus.contractMonitoring.walletMonitoringActive = true;
-    console.log('✅ Monitor de carteira de serviço ativado administrativamente');
+    console.log('✅ Service wallet monitor administratively activated');
   }
 
   serverStatus.contractMonitoring.connectionType = 'Administrative';
@@ -197,39 +202,39 @@ function forceActivateMonitors() {
 }
 
 /**
- * Programa verificação periódica de conectividade com a blockchain
+ * Schedules periodic blockchain connectivity checks
  */
 function scheduleConnectivityCheck() {
-  // Tentar reconectar a cada 10 minutos
-  console.log('⏰ Programando verificação periódica de conectividade');
+  // Try to reconnect every 10 minutes
+  console.log('⏰ Scheduling periodic connectivity check');
   
   const checkInterval = setInterval(() => {
-    console.log('🔍 Verificando conectividade com RPC endpoints...');
+    console.log('🔍 Checking connectivity with RPC endpoints...');
     
-    // Tentar apenas forçar atualização do status para o usuário
+    // Just try to force status update for the user
     restartContractMonitoring().then(result => {
       if (result.success) {
-        console.log('✅ Verificação de conectividade concluída com sucesso');
+        console.log('✅ Connectivity check completed successfully');
       } else {
-        console.warn('⚠️ Verificação de conectividade falhou:', result.message);
+        console.warn('⚠️ Connectivity check failed:', result.message);
       }
     });
-  }, 10 * 60 * 1000); // a cada 10 minutos
+  }, 10 * 60 * 1000); // every 10 minutes
 }
 
-// Se este arquivo for importado diretamente no servidor, iniciar imediatamente
+// If this file is imported directly on the server, start immediately
 if (typeof window === 'undefined') {
-  console.log('📝 server-init.ts carregado no ambiente servidor');
+  console.log('📝 server-init.ts loaded in server environment');
   initializeServer();
 }
 
-// Exportar função para reiniciar o monitoramento em caso de falha
+// Export function to restart monitoring in case of failure
 export async function restartContractMonitoring() {
   try {
-    console.log('🔄 Tentando reiniciar monitoramento de contratos...');
+    console.log('🔄 Attempting to restart contract monitoring...');
     serverStatus.contractMonitoring.lastRestart = Date.now();
     
-    // Não limpar o estado atual até termos certeza que a reinicialização foi bem-sucedida
+    // Don't clear the current state until we're sure the restart was successful
     const previousStatus = {
       initialized: serverStatus.contractMonitoring.initialized,
       tokenDistributionActive: serverStatus.contractMonitoring.tokenDistributionActive,
@@ -237,42 +242,46 @@ export async function restartContractMonitoring() {
       walletMonitoringActive: serverStatus.contractMonitoring.walletMonitoringActive,
     };
     
-    // Registrar tentativa de reinicialização
-    await logSystem.info('Tentativa de reinicialização do monitoramento de contratos', {
+    // Log restart attempt
+    await logSystem.info('Attempt to restart contract monitoring', {
       timestamp: new Date().toISOString(),
       previousErrors: [...serverStatus.contractMonitoring.errors]
     });
     
-    // Limpar erros anteriores antes da reinicialização
+    // Clear previous errors before restarting
     serverStatus.contractMonitoring.errors = [];
     
-    // Criar Promise para controlar o timeout
+    // Create Promise to control timeout
     return new Promise<{success: boolean, message: string}>((resolve) => {
-      // Controlar timeout para não ficar esperando indefinidamente
+      // Control timeout to avoid waiting indefinitely
       const timeoutId = setTimeout(() => {
-        console.warn('⚠️ Timeout na reinicialização do monitoramento');
+        console.warn('⚠️ Timeout in monitoring restart');
         
-        // Como timeout ocorreu, mantenha os monitores ativos na interface
+        // Since timeout occurred, keep monitors active in the interface
         forceActivateMonitors();
         
         serverStatus.contractMonitoring.warnings.push(
-          'Timeout na reinicialização, mantendo status anterior'
+          'Timeout in restart, maintaining previous status'
         );
         
         resolve({
-          success: true, // Reportar como sucesso para não alarmar o usuário
-          message: 'Monitores ativados administrativamente após timeout'
+          success: true, // Report as success to not alarm the user
+          message: 'Monitors administratively activated after timeout'
         });
-      }, 15000); // 15 segundos timeout
+      }, 15000); // 15 seconds timeout
       
-      // Tentar reiniciar o monitoramento
+      // Try to restart monitoring
       try {
-        initializeContractMonitoring((success, providerType, activeMonitors) => {
-          // Limpar o timeout já que o callback foi chamado
+        initializeContractMonitoring(false, (success: boolean, providerType: string | null, activeMonitors: {
+          tokenDistribution: boolean;
+          learn2earn: boolean;
+          wallet: boolean;
+        }) => {
+          // Clear the timeout since the callback was called
           clearTimeout(timeoutId);
           
           if (success) {
-            console.log('✅ Monitoramento de contratos reinicializado com sucesso!');
+            console.log('✅ Contract monitoring restarted successfully!');
             serverStatus.contractMonitoring.initialized = true;
             serverStatus.contractMonitoring.connectionType = providerType;
             serverStatus.contractMonitoring.tokenDistributionActive = activeMonitors.tokenDistribution;
@@ -282,51 +291,51 @@ export async function restartContractMonitoring() {
             
             resolve({
               success: true,
-              message: 'Monitoramento reiniciado com sucesso'
+              message: 'Monitoring restarted successfully'
             });
           } else {
-            console.error('❌ Falha ao reinicializar monitoramento de contratos');
+            console.error('❌ Failed to restart contract monitoring');
             serverStatus.contractMonitoring.errors.push(
-              `Falha na reinicialização em ${new Date().toISOString()}`
+              `Restart failure at ${new Date().toISOString()}`
             );
             
-            // Manter os monitores ativos na interface mesmo se a inicialização falhar
+            // Keep monitors active in the interface even if initialization fails
             forceActivateMonitors();
             
             resolve({
-              success: true, // Reportar como sucesso para não alarmar o usuário
-              message: 'Monitores ativados administrativamente após falha na reconexão'
+              success: true, // Report as success to not alarm the user
+              message: 'Monitors administratively activated after reconnection failure'
             });
           }
         });
       } catch (error) {
-        // Em caso de exceção, limpar timeout
+        // In case of exception, clear timeout
         clearTimeout(timeoutId);
         
-        console.error('❌ Erro ao tentar reiniciar monitoramento:', error);
+        console.error('❌ Error trying to restart monitoring:', error);
         
-        // Manter os monitores ativos na interface
+        // Keep monitors active in the interface
         forceActivateMonitors();
         
         resolve({
-          success: true, // Reportar como sucesso para não alarmar o usuário
-          message: 'Monitores ativados administrativamente após erro'
+          success: true, // Report as success to not alarm the user
+          message: 'Monitors administratively activated after error'
         });
       }
     });
     
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('❌ Erro ao tentar reiniciar monitoramento:', errorMessage);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Error trying to restart monitoring:', errorMessage);
     
-    serverStatus.contractMonitoring.errors.push(`Erro na reinicialização: ${errorMessage}`);
+    serverStatus.contractMonitoring.errors.push(`Restart error: ${errorMessage}`);
     
-    // Mesmo com erro, mantenha os monitores ativos na interface
+    // Even with error, keep monitors active in the interface
     forceActivateMonitors();
     
     return { 
-      success: true, // Reportar como sucesso para não alarmar o usuário
-      message: `Monitores ativados administrativamente após erro: ${errorMessage}`
+      success: true, // Report as success to not alarm the user
+      message: `Monitors administratively activated after error: ${errorMessage}`
     };
   }
 }
