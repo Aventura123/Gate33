@@ -5,6 +5,8 @@ import { db } from "../../lib/firebase";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import "../../components/global.css";
 import Layout from '../../components/Layout';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
 
 const CompanyRegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -150,7 +152,17 @@ const CompanyRegisterPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <input type="text" name="responsibleName" placeholder="Full Name" value={formData.responsibleName} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
               <input type="email" name="responsibleEmail" placeholder="Email" value={formData.responsibleEmail} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="tel" name="responsiblePhone" placeholder="Phone" value={formData.responsiblePhone} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
+              <div className="col-span-2">
+                <PhoneInput
+                  country={'pt'}
+                  value={formData.responsiblePhone}
+                  onChange={phone => setFormData({ ...formData, responsiblePhone: phone })}
+                  inputClass="w-full p-2 border rounded text-black bg-white text-sm"
+                  inputStyle={{ width: '100%' }}
+                  inputProps={{ name: 'responsiblePhone', required: true }}
+                  placeholder="Phone"
+                />
+              </div>
               <input type="text" name="responsiblePosition" placeholder="Position" value={formData.responsiblePosition} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
               <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
               <input type="password" name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />

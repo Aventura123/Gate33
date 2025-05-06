@@ -18,3 +18,33 @@ button {
 .progress-bar {
   transition: width 0.5s ease-in-out;
 }
+
+/* Ajuste para o dropdown do react-phone-input-2 */
+.react-phone-input-2 .country-list .country {
+  color: #222 !important;
+  background: #fff !important;
+}
+.react-phone-input-2 .country-list .country .country-name {
+  color: #222 !important;
+}
+.react-phone-input-2 .country-list .country.highlight {
+  background: #f3f4f6 !important;
+  color: #222 !important;
+}
+.react-phone-input-2 .country-list {
+  background: #fff !important;
+  color: #222 !important;
+}
+
+.react-phone-input-2 .country-list .country .country-name, 
+.react-phone-input-2 .country-list .country .country-name * {
+  color: #111 !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+
+.react-phone-input-2 .country-list .country.disabled .country-name {
+  color: #111 !important;
+  opacity: 1 !important;
+  font-weight: 600 !important;
+}
