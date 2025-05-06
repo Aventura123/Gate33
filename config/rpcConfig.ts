@@ -5,12 +5,12 @@ const CUSTOM_POLYGON_RPC = process.env.CUSTOM_POLYGON_RPC;
 
 // Lista de endpoints WebSocket (prioridade: custom, privados, públicos gratuitos)
 const wsRpcUrls = [
-  CUSTOM_POLYGON_RPC,
+  CUSTOM_POLYGON_RPC && CUSTOM_POLYGON_RPC.startsWith('wss://') ? CUSTOM_POLYGON_RPC : undefined,
   `wss://polygon-mainnet.infura.io/ws/v3/${INFURA_KEY}`,
   'wss://ws-matic-mainnet.chainstacklabs.com',
   'wss://polygon-bor.publicnode.com',
   'wss://polygon-rpc.com/ws',
-  // Adicione outros endpoints gratuitos ou privados aqui
+  // Adicione outros endpoints WebSocket válidos aqui
 ].filter((url): url is string => typeof url === 'string' && url.length > 0);
 
 // Lista de endpoints HTTP (fallback)
