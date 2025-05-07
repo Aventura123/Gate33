@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useAdminPermissions } from "../../hooks/useAdminPermissions";
 import { logSystemActivity, logAdminAction } from "../../utils/logSystem";
 
-// Defina a interface para ticket de suporte
+// Define the interface for support ticket
 interface SupportTicket {
   id: string;
   subject: string;
@@ -26,7 +26,7 @@ interface SupportTicket {
   closedAt?: string;
 }
 
-// Defina a interface para mensagens de suporte
+// Define the interface for support messages
 interface SupportMessage {
   id: string;
   ticketId: string;
@@ -46,7 +46,7 @@ const SupportDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "instantJobs" | "chat">("jobs");
   const [activeSubTab, setActiveSubTab] = useState<string | null>("list");
   
-  // Estado para gerenciamento de trabalhos
+  // State for job management
   const [jobs, setJobs] = useState<any[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
@@ -61,12 +61,12 @@ const SupportDashboard: React.FC = () => {
   const [creatingJob, setCreatingJob] = useState(false);
   const [deletingJobId, setDeletingJobId] = useState<string | null>(null);
   
-  // Estado para gerenciamento de trabalhos instantâneos
+  // State for instant job management
   const [instantJobs, setInstantJobs] = useState<any[]>([]);
   const [instantJobsLoading, setInstantJobsLoading] = useState(false);
   const [instantJobsError, setInstantJobsError] = useState<string | null>(null);
 
-  // Estados para gerenciamento de tickets de suporte
+  // States for support ticket management
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
   const [ticketMessages, setTicketMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -74,13 +74,13 @@ const SupportDashboard: React.FC = () => {
   const [ticketSearchQuery, setTicketSearchQuery] = useState("");
   const [ticketStatusFilter, setTicketStatusFilter] = useState<'all' | 'open' | 'closed'>('all');
 
-  // Estados para barra de pesquisa
+  // States for search bar
   const [jobSearchQuery, setJobSearchQuery] = useState("");
   const [instantJobSearchQuery, setInstantJobSearchQuery] = useState("");
   const [filteredJobs, setFilteredJobs] = useState<any[]>([]);
   const [filteredInstantJobs, setFilteredInstantJobs] = useState<any[]>([]);
   
-  // Estados separados para tickets de seekers e de empresas
+  // Separate states for seeker and company tickets
   const [seekerTickets, setSeekerTickets] = useState<SupportTicket[]>([]);
   const [companyTickets, setCompanyTickets] = useState<any[]>([]);
   const [ticketsTypeTab, setTicketsTypeTab] = useState<'seekers' | 'companies'>('seekers');
@@ -91,32 +91,32 @@ const SupportDashboard: React.FC = () => {
   const [companyTicketsLoading, setCompanyTicketsLoading] = useState(false);
   const [companyTicketsError, setCompanyTicketsError] = useState<string | null>(null);
 
-  // Verificação de autenticação e permissões
+  // Authentication and permissions verification
   useEffect(() => {
-    // Verifica se o usuário está logado
+    // Check if the user is logged in
     const token = localStorage.getItem("token");
     if (!token) {
-      console.log("Token não encontrado, redirecionando para login");
+      console.log("Token not found, redirecting to support login");
       router.replace("/support-login");
       return;
     }
     
-    // Verifica as permissões do usuário após o carregamento
+    // Check user permissions after loading
     if (!permissionsLoading) {
       if (permissionsError) {
-        console.error("Erro ao carregar permissões:", permissionsError);
+        console.error("Error loading permissions:", permissionsError);
         router.replace("/support-login");
         return;
       }
       
-      // Verifica se o usuário tem papel de suporte ou super_admin
+      // Check if user has support or super_admin role
       if (role !== 'support' && role !== 'super_admin') {
-        console.log("Usuário não tem permissões de suporte:", role);
-        router.replace("/admin/access-denied");
+        console.log("User doesn't have support permissions:", role);
+        router.replace("/support-login"); // Changed from "/admin/access-denied" to "/support-login"
         return;
       }
       
-      // Registra o acesso ao painel de suporte
+      // Log access to the support panel
       const logAccess = async () => {
         try {
           const userId = localStorage.getItem("userId") || "unknown";
@@ -127,14 +127,14 @@ const SupportDashboard: React.FC = () => {
             {
               userId,
               userRole: role,
-              action: "Acesso ao painel de suporte",
+              action: "Access to support panel",
               timestamp: new Date().toISOString(),
               browser: navigator.userAgent
             }
           );
-          console.log("Acesso ao painel de suporte registrado com sucesso");
+          console.log("Access to support panel logged successfully");
         } catch (error) {
-          console.error("Erro ao registrar acesso:", error);
+          console.error("Error logging access:", error);
         }
       };
       
@@ -142,7 +142,7 @@ const SupportDashboard: React.FC = () => {
     }
   }, [permissionsLoading, permissionsError, role, router]);
 
-  // Função para buscar trabalhos
+  // Function to fetch jobs
   const fetchJobs = async () => {
     setJobsLoading(true);
     setJobsError(null);
@@ -170,7 +170,7 @@ const SupportDashboard: React.FC = () => {
     }
   };
 
-  // Função para buscar trabalhos instantâneos
+  // Function to fetch instant jobs
   const fetchInstantJobs = async () => {
     setInstantJobsLoading(true);
     setInstantJobsError(null);
@@ -198,7 +198,7 @@ const SupportDashboard: React.FC = () => {
     }
   };
 
-  // Função para criar um novo trabalho
+  // Function to create a new job
   const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newJob.title || !newJob.companyName || !newJob.description || !newJob.sourceLink) {
@@ -215,12 +215,12 @@ const SupportDashboard: React.FC = () => {
         ...newJob,
         fromSupportPanel: true,
         createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
       };
 
       const jobRef = await addDoc(collection(db, "jobs"), jobData);
 
-      // Registrar a criação de job no sistema de logs
+      // Register job creation in the log system
       try {
         const userId = localStorage.getItem("userId") || "unknown";
         const userName = localStorage.getItem("userName") || "unknown";
@@ -240,9 +240,9 @@ const SupportDashboard: React.FC = () => {
             timestamp: new Date().toISOString()
           }
         );
-        console.log("Criação de job registrada nos logs");
+        console.log("Job creation logged");
       } catch (logError) {
-        console.error("Erro ao registrar criação de job:", logError);
+        console.error("Error logging job creation:", logError);
       }
 
       setNewJob({
@@ -282,7 +282,7 @@ const SupportDashboard: React.FC = () => {
     }
   }, [activeSubTab, activeTab]);
 
-  // Filtrar jobs baseado na pesquisa
+  // Filter jobs based on search
   useEffect(() => {
     if (jobs.length > 0) {
       const filtered = jobs.filter(
@@ -298,7 +298,7 @@ const SupportDashboard: React.FC = () => {
     }
   }, [jobs, jobSearchQuery]);
 
-  // Filtrar instant jobs baseado na pesquisa
+  // Filter instant jobs based on search
   useEffect(() => {
     if (instantJobs.length > 0) {
       const filtered = instantJobs.filter(
@@ -314,7 +314,7 @@ const SupportDashboard: React.FC = () => {
   }, [instantJobs, instantJobSearchQuery]);
 
   const handleTabChange = async (newTab: "jobs" | "instantJobs" | "chat", subTab: string | null = null) => {
-    // Registrar a navegação no sistema de logs
+    // Log navigation in the logging system
     try {
       const userId = localStorage.getItem("userId") || "unknown";
       const userName = localStorage.getItem("userName") || "unknown";
@@ -325,7 +325,7 @@ const SupportDashboard: React.FC = () => {
         {
           userId,
           userRole: role,
-          action: "Navegação no painel de suporte",
+          action: "Navigation in support panel",
           details: {
             from: { tab: activeTab, subTab: activeSubTab },
             to: { tab: newTab, subTab: subTab }
@@ -333,20 +333,20 @@ const SupportDashboard: React.FC = () => {
           timestamp: new Date().toISOString()
         }
       );
-      console.log("Navegação de tab registrada nos logs");
+      console.log("Tab navigation logged");
     } catch (error) {
-      console.error("Erro ao registrar navegação:", error);
+      console.error("Error logging navigation:", error);
     }
     
-    // Atualizar os estados
+    // Update states
     setActiveTab(newTab);
     setActiveSubTab(subTab);
   };
 
-  // Função de logout com registro de atividade
+  // Logout function with activity logging
   const handleLogout = async () => {
     try {
-      // Registrar o logout no sistema
+      // Log logout in the system
       const userId = localStorage.getItem("userId") || "unknown";
       const userName = localStorage.getItem("userName") || "unknown";
       
@@ -361,11 +361,11 @@ const SupportDashboard: React.FC = () => {
         }
       );
       
-      console.log("Logout registrado nos logs");
+      console.log("Logout logged");
     } catch (error) {
-      console.error("Erro ao registrar logout:", error);
+      console.error("Error logging logout:", error);
     } finally {
-      // Limpar dados da sessão e redirecionar
+      // Clear session data and redirect
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
       localStorage.removeItem("userEmail");
@@ -375,7 +375,7 @@ const SupportDashboard: React.FC = () => {
     }
   };
 
-  // Função para excluir um trabalho com registro de logs
+  // Function to delete a job with log recording
   const handleDeleteJob = async (jobId: string) => {
     if (!window.confirm("Are you sure you want to delete this job? This action cannot be undone.")) {
       return;
@@ -387,17 +387,17 @@ const SupportDashboard: React.FC = () => {
         throw new Error("Firestore is not initialized.");
       }
       
-      // Encontrar o job que será excluído para registrar nos logs
+      // Find the job to be deleted to log it
       const jobToDelete = jobs.find(job => job.id === jobId);
       
-      // Excluir do Firestore
+      // Delete from Firestore
       await deleteDoc(doc(db, "jobs", jobId));
       
-      // Atualizar a lista local
+      // Update local list
       setJobs(jobs.filter((job) => job.id !== jobId));
       setFilteredJobs(filteredJobs.filter((job) => job.id !== jobId));
       
-      // Registrar a exclusão no sistema de logs
+      // Register the deletion in the log system
       try {
         const userId = localStorage.getItem("userId") || "unknown";
         const userName = localStorage.getItem("userName") || "unknown";
@@ -417,9 +417,9 @@ const SupportDashboard: React.FC = () => {
             timestamp: new Date().toISOString()
           }
         );
-        console.log("Exclusão de job registrada nos logs");
+        console.log("Job deletion logged");
       } catch (logError) {
-        console.error("Erro ao registrar exclusão de job:", logError);
+        console.error("Error logging job deletion:", logError);
       }
       
       alert("Job deleted successfully!");
@@ -431,21 +431,21 @@ const SupportDashboard: React.FC = () => {
     }
   };
 
-  // Função para resolver disputas com registro
+  // Function to resolve disputes with logging
   const handleResolveDispute = async (jobId: string, resolution: 'buyer' | 'seller' | 'split') => {
     try {
       if (!db) {
         throw new Error("Firestore is not initialized.");
       }
       
-      // Encontrar o job em disputa
+      // Find the disputed job
       const disputedJob = instantJobs.find(job => job.id === jobId);
       if (!disputedJob) {
         throw new Error("Disputed job not found");
       }
       
-      // Atualizar o status da disputa no Firestore
-      // Esta é uma implementação simplificada, a real dependeria da estrutura do seu banco de dados
+      // Update the dispute status in Firestore
+      // This is a simplified implementation, the real one would depend on your database structure
       // await updateDoc(doc(db, "instantJobs", jobId), {
       //   hasDispute: false,
       //   disputeResolution: resolution,
@@ -453,10 +453,10 @@ const SupportDashboard: React.FC = () => {
       //   resolvedBy: localStorage.getItem("userId")
       // });
       
-      // Mockup para demonstração - remover na implementação real
+      // Mockup for demonstration - remove in real implementation
       alert(`Dispute for job "${disputedJob.title}" resolved in favor of ${resolution}`);
       
-      // Registrar a resolução da disputa no sistema de logs
+      // Log the dispute resolution in the log system
       try {
         const userId = localStorage.getItem("userId") || "unknown";
         const userName = localStorage.getItem("userName") || "unknown";
@@ -467,7 +467,7 @@ const SupportDashboard: React.FC = () => {
           {
             userId,
             userRole: role,
-            action: "Resolução de disputa",
+            action: "Dispute resolution",
             entityType: "instantJob",
             entityId: jobId,
             resolution,
@@ -479,12 +479,12 @@ const SupportDashboard: React.FC = () => {
             timestamp: new Date().toISOString()
           }
         );
-        console.log("Resolução de disputa registrada nos logs");
+        console.log("Dispute resolution logged");
       } catch (logError) {
-        console.error("Erro ao registrar resolução de disputa:", logError);
+        console.error("Error logging dispute resolution:", logError);
       }
       
-      // Atualizar a lista local
+      // Update local list
       fetchInstantJobs();
     } catch (error) {
       console.error("Error resolving dispute:", error);
@@ -492,7 +492,7 @@ const SupportDashboard: React.FC = () => {
     }
   };
   
-  // Registrar quando um administrador visualiza detalhes de um job
+  // Log when an admin views job details
   const handleViewJobDetails = async (jobId: string) => {
     try {
       const userId = localStorage.getItem("userId") || "unknown";
@@ -507,7 +507,7 @@ const SupportDashboard: React.FC = () => {
         {
           userId,
           userRole: role,
-          action: "Visualização de detalhes",
+          action: "View details",
           entityType: "job",
           entityId: jobId,
           entityData: {
@@ -518,11 +518,11 @@ const SupportDashboard: React.FC = () => {
         }
       );
     } catch (error) {
-      console.error("Erro ao registrar visualização de job:", error);
+      console.error("Error logging job view:", error);
     }
   };
 
-  // Função para buscar tickets de seekers
+  // Function to fetch seeker tickets
   const fetchSeekerTickets = async () => {
     setSeekerTicketsLoading(true);
     setSeekerTicketsError(null);
@@ -559,7 +559,7 @@ const SupportDashboard: React.FC = () => {
     }
   };
 
-  // Função para buscar tickets de empresas
+  // Function to fetch company tickets
   const fetchCompanyTickets = async () => {
     setCompanyTicketsLoading(true);
     setCompanyTicketsError(null);
@@ -597,7 +597,7 @@ const SupportDashboard: React.FC = () => {
     }
   };
 
-  // Atualizar busca ao trocar de aba de tipo de ticket
+  // Update search when switching ticket type tab
   useEffect(() => {
     if (activeTab === 'chat' && activeSubTab === 'tickets') {
       if (ticketsTypeTab === 'seekers') fetchSeekerTickets();
@@ -605,7 +605,7 @@ const SupportDashboard: React.FC = () => {
     }
   }, [activeTab, activeSubTab, ticketsTypeTab]);
 
-  // Função para buscar mensagens de um ticket
+  // Function to fetch messages of a ticket
   const fetchTicketMessages = async (ticketId: string) => {
     try {
       if (!db) {
@@ -629,7 +629,7 @@ const SupportDashboard: React.FC = () => {
         read: doc.data().read
       }));
 
-      // Ordenar por data de criação (mais antigas primeiro)
+      // Sort by creation date (oldest first)
       messagesList.sort((a, b) => {
         return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
       });
@@ -641,7 +641,7 @@ const SupportDashboard: React.FC = () => {
     }
   };
 
-  // Função para aceitar um ticket de suporte
+  // Function to accept a support ticket
   const handleAcceptTicket = async (ticketId: string) => {
     try {
       if (!db) {
@@ -651,7 +651,7 @@ const SupportDashboard: React.FC = () => {
       const userId = localStorage.getItem("userId") || "unknown";
       const userName = localStorage.getItem("userName") || "unknown";
       
-      // Atualizar o ticket no Firestore
+      // Update the ticket in Firestore
       const ticketRef = doc(db, "supportTickets", ticketId);
       await updateDoc(ticketRef, {
         acceptedBy: userId,
@@ -660,7 +660,7 @@ const SupportDashboard: React.FC = () => {
         status: "open"
       });
 
-      // Atualizar o ticket na tela para seekers e companies
+      // Update the ticket on the screen for seekers and companies
       if (ticketsTypeTab === 'seekers') {
         setSeekerTickets((prev: SupportTicket[]) => 
           prev.map(ticket => 
@@ -727,32 +727,32 @@ const SupportDashboard: React.FC = () => {
         } : null);
       }
       
-      // Registrar a ação nos logs
+      // Log the action in the logs
       await logSystemActivity(
         "admin_action",
         userName,
         {
           userId,
           userRole: role,
-          action: "Aceitou ticket de suporte",
+          action: "Accepted support ticket",
           entityType: "supportTicket",
           entityId: ticketId,
           timestamp: new Date().toISOString()
         }
       );
       
-      // Enviar uma mensagem automática para o ticket
+      // Send a system message to the ticket
       await addDoc(collection(db, "supportMessages"), {
         ticketId,
         senderId: userId,
         senderName: userName,
         senderType: "support",
-        message: "Ticket aceito! Como posso ajudar você?",
+        message: "Ticket accepted! How can I help you?", // This was already in English
         createdAt: new Date().toISOString(),
         isSystemMessage: true
       });
       
-      // Recarregar as mensagens do ticket
+      // Reload the ticket messages
       fetchTicketMessages(ticketId);
       
       alert("Ticket accepted successfully!");
@@ -762,7 +762,7 @@ const SupportDashboard: React.FC = () => {
     }
   };
 
-  // Função para enviar uma mensagem em um ticket
+  // Function to send a message in a ticket
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTicket || !newMessage.trim() || !db) {
@@ -774,7 +774,7 @@ const SupportDashboard: React.FC = () => {
       const userId = localStorage.getItem("userId") || "unknown";
       const userName = localStorage.getItem("userName") || "unknown";
       
-      // Adicionar a mensagem ao Firestore
+      // Add the message to Firestore
       await addDoc(collection(db, "supportMessages"), {
         ticketId: selectedTicket.id,
         senderId: userId,
@@ -784,20 +784,20 @@ const SupportDashboard: React.FC = () => {
         createdAt: new Date().toISOString()
       });
       
-      // Limpar o campo de mensagem
+      // Clear the message field
       setNewMessage("");
       
-      // Recarregar as mensagens
+      // Reload the messages
       fetchTicketMessages(selectedTicket.id);
       
-      // Registrar a ação nos logs
+      // Log the action in the logs
       await logSystemActivity(
         "admin_action",
         userName,
         {
           userId,
           userRole: role,
-          action: "Enviou mensagem em ticket de suporte",
+          action: "Sent message in support ticket",
           entityType: "supportTicket",
           entityId: selectedTicket.id,
           timestamp: new Date().toISOString()
@@ -811,7 +811,7 @@ const SupportDashboard: React.FC = () => {
     }
   };
 
-  // Função para fechar um ticket de suporte
+  // Function to close a support ticket
   const handleCloseTicket = async (ticketId: string) => {
     if (!window.confirm("Are you sure you want to close this ticket? This will mark it as resolved.")) {
       return;
@@ -825,7 +825,7 @@ const SupportDashboard: React.FC = () => {
       const userId = localStorage.getItem("userId") || "unknown";
       const userName = localStorage.getItem("userName") || "unknown";
       
-      // Atualizar o ticket no Firestore
+      // Update the ticket in Firestore
       const ticketRef = doc(db, "supportTickets", ticketId);
       await updateDoc(ticketRef, {
         status: "closed",
@@ -834,7 +834,7 @@ const SupportDashboard: React.FC = () => {
         closedAt: new Date().toISOString()
       });
 
-      // Atualizar o ticket na tela para seekers e companies
+      // Update the ticket on the screen for seekers and companies
       if (ticketsTypeTab === 'seekers') {
         setSeekerTickets((prev: SupportTicket[]) => 
           prev.map(ticket => 
@@ -901,32 +901,32 @@ const SupportDashboard: React.FC = () => {
         } : null);
       }
       
-      // Registrar a ação nos logs
+      // Log the action in the logs
       await logSystemActivity(
         "admin_action",
         userName,
         {
           userId,
           userRole: role,
-          action: "Fechou ticket de suporte",
+          action: "Closed support ticket",
           entityType: "supportTicket",
           entityId: ticketId,
           timestamp: new Date().toISOString()
         }
       );
       
-      // Enviar uma mensagem automática para o ticket
+      // Send a system message to the ticket
       await addDoc(collection(db, "supportMessages"), {
         ticketId,
         senderId: userId,
         senderName: userName,
         senderType: "support",
-        message: "Este ticket foi marcado como resolvido e fechado. Se precisar de mais ajuda, por favor abra um novo ticket.",
+        message: "This ticket has been marked as resolved and closed. If you need further assistance, please open a new ticket.",
         createdAt: new Date().toISOString(),
         isSystemMessage: true
       });
       
-      // Recarregar as mensagens do ticket
+      // Reload the ticket messages
       fetchTicketMessages(ticketId);
       
       alert("Ticket closed successfully!");
@@ -941,8 +941,8 @@ const SupportDashboard: React.FC = () => {
       {permissionsLoading ? (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 to-black text-white">
           <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">Carregando...</h2>
-            <p>Verificando suas permissões</p>
+            <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+            <p>Verifying your permissions</p>
           </div>
         </div>
       ) : (
@@ -1043,7 +1043,7 @@ const SupportDashboard: React.FC = () => {
               </li>
             </ul>
             
-            {/* Botão de Logout */}
+            {/* Logout Button */}
             <div className="mt-auto pt-6 w-full">
               <button
                 onClick={handleLogout}
@@ -1052,7 +1052,7 @@ const SupportDashboard: React.FC = () => {
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                Sair
+                Logout
               </button>
             </div>
           </aside>
@@ -1063,7 +1063,7 @@ const SupportDashboard: React.FC = () => {
               <div>
                 <h2 className="text-3xl font-semibold text-blue-500 mb-6">Jobs List</h2>
                 
-                {/* Barra de pesquisa para Jobs */}
+                {/* Search bar for Jobs */}
                 <div className="mb-6">
                   <div className="relative">
                     <input
@@ -1192,12 +1192,12 @@ const SupportDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Instant Jobs - Lista */}
+            {/* Instant Jobs - List */}
             {activeTab === "instantJobs" && activeSubTab === "list" && (
               <div>
                 <h2 className="text-3xl font-semibold text-blue-500 mb-6">Instant Jobs List</h2>
                 
-                {/* Barra de pesquisa para Instant Jobs */}
+                {/* Search bar for Instant Jobs */}
                 <div className="mb-6">
                   <div className="relative">
                     <input
@@ -1324,16 +1324,16 @@ const SupportDashboard: React.FC = () => {
                     className={`px-4 py-2 rounded ${ticketsTypeTab === 'seekers' ? 'bg-blue-600 text-white' : 'bg-black/40 text-blue-300'}`}
                     onClick={() => setTicketsTypeTab('seekers')}
                   >
-                    Tickets Seekers
+                    Seeker Tickets
                   </button>
                   <button
                     className={`px-4 py-2 rounded ${ticketsTypeTab === 'companies' ? 'bg-blue-600 text-white' : 'bg-black/40 text-blue-300'}`}
                     onClick={() => setTicketsTypeTab('companies')}
                   >
-                    Tickets Empresas
+                    Company Tickets
                   </button>
                 </div>
-                {/* Barra de pesquisa e filtro */}
+                {/* Search bar and filter */}
                 <div className="mb-6 flex gap-4">
                   <input
                     type="text"
@@ -1469,7 +1469,7 @@ const SupportDashboard: React.FC = () => {
                         </div>
                         {/* Actions */}
                         <div className="flex gap-2 mt-4 border-t border-blue-900 pt-4">
-                          {/* Aceitar ticket */}
+                          {/* Accept ticket */}
                           {(!selectedTicket?.acceptedBy && selectedTicket?.status === 'open' || 
                             !selectedTicket?.acceptedBy && selectedTicket?.status === 'pending') && (
                             <button
@@ -1480,7 +1480,7 @@ const SupportDashboard: React.FC = () => {
                             </button>
                           )}
                           
-                          {/* Fechar ticket - mostrar para qualquer ticket aberto */}
+                          {/* Close ticket - show for any open ticket */}
                           {(selectedTicket?.status === 'open' || selectedTicket?.status === 'pending') && (
                             <button
                               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"

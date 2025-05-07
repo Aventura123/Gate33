@@ -15,13 +15,13 @@ export async function POST(request: NextRequest) {
       createdAt
     } = data;
 
-    // Permitir tanto seekerEmail quanto companyEmail
+    // Allow both seekerEmail and companyEmail
     const recipientEmail = seekerEmail || companyEmail;
     if (!recipientEmail || !ticketId || !area || !subject || !description) {
       return NextResponse.json({ success: false, message: 'Missing required fields.' }, { status: 400 });
     }
 
-    // Montar corpo do e-mail (genérico para seeker/company)
+    // Build email body (generic for seeker/company)
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #FF6B00; border-radius: 5px;">
         <h2 style="color: #FF6B00; border-bottom: 2px solid #FF6B00; padding-bottom: 10px;">🎫 Gate33 Support Ticket Confirmation</h2>
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
-    // Enviar para o usuário (seeker ou company) e cópia para info@gate33.net
+    // Send to the user (seeker or company) and copy to info@gate33.net
     await sendEmail({
       to: `${recipientEmail},info@gate33.net`,
       subject: `Gate33 Support Ticket Confirmation (#${ticketId})`,

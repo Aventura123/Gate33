@@ -142,7 +142,7 @@ const PostJobPage = (): JSX.Element => {
   const [jobSubmissionStep, setJobSubmissionStep] = useState<'form' | 'payment' | 'confirmation'>('form');
   const [tempJobData, setTempJobData] = useState<any>(null); // To store job data before payment
 
-  const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]); // Estado para armazenar os planos de preços
+  const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]); // State to store pricing plans
 
   // Add Web3 state
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -229,7 +229,7 @@ const PostJobPage = (): JSX.Element => {
     try {
       if (!db) throw new Error("Firestore is not initialized");
 
-      const pricingPlansCollection = collection(db, "jobPlans"); // Corrigido para "jobPlans"
+      const pricingPlansCollection = collection(db, "jobPlans"); // Changed to "jobPlans"
       const pricingPlansSnapshot = await getDocs(pricingPlansCollection);
 
       const fetchedPlans = pricingPlansSnapshot.docs.map((doc) => ({
@@ -585,9 +585,9 @@ const PostJobPage = (): JSX.Element => {
 
   // Modified processPayment function to use your smart contract correctly
   const processPayment = async () => {
-    console.log("[processPayment] Iniciando fluxo de pagamento...");
+    console.log("[processPayment] Starting payment flow...");
     if (!selectedPlan) {
-      console.error("[processPayment] Nenhum plano selecionado");
+      console.error("[processPayment] No plan selected");
       setPaymentError("Please select a pricing plan");
       return;
     }
@@ -596,30 +596,30 @@ const PostJobPage = (): JSX.Element => {
     setIsProcessingPayment(true);
     setPaymentStep('processing');
     try {
-      // 1. Garantir que a carteira está conectada
+      // 1. Ensure wallet is connected
       let currentAddress = walletAddress;
       if (!currentAddress) {
-        console.log("[processPayment] Nenhuma carteira conectada, conectando...");
+        console.log("[processPayment] No wallet connected, connecting...");
         try {
           await connectWallet();
           currentAddress = await getCurrentAddress();
           if (currentAddress) {
             setWalletAddress(currentAddress);
-            console.log("[processPayment] Carteira conectada:", currentAddress);
+            console.log("[processPayment] Wallet connected:", currentAddress);
           } else {
             throw new Error("Could not get wallet address");
           }
         } catch (error: any) {
-          console.error("[processPayment] Falha ao conectar carteira:", error);
+          console.error("[processPayment] Failed to connect wallet:", error);
           throw new Error(`Failed to connect wallet: ${error.message}`);
         }
       }
       if (!currentAddress) {
         throw new Error("Wallet connection is required to complete payment");
       }
-      console.log("[processPayment] Endereço da carteira para pagamento:", currentAddress);
+      console.log("[processPayment] Wallet address for payment:", currentAddress);
 
-      // 2. Executar pagamento via smart contract
+      // 2. Execute payment via smart contract
       let transaction;
       try {
         // Check if the plan requires USDT payment
@@ -648,16 +648,16 @@ const PostJobPage = (): JSX.Element => {
           );
         }
         
-        console.log("[processPayment] Transação recebida:", transaction);
+        console.log("[processPayment] Transaction received:", transaction);
       } catch (error: any) {
-        console.error("[processPayment] Erro ao processar pagamento no contrato:", error);
-        throw new Error(error.message || "Erro ao processar pagamento no contrato");
+        console.error("[processPayment] Error processing payment in contract:", error);
+        throw new Error(error.message || "Error processing payment in contract");
       }
       if (!transaction || !transaction.transactionHash) {
         throw new Error("Transaction failed - no transaction hash received");
       }
 
-      // 3. Salvar registro de pagamento no Firestore
+      // 3. Save payment record in Firestore
       if (!db) throw new Error("Firestore is not initialized");
       let paymentRef;
       try {
@@ -672,13 +672,13 @@ const PostJobPage = (): JSX.Element => {
           transactionHash: transaction.transactionHash,
           blockNumber: transaction.blockNumber
         });
-        console.log("[processPayment] Pagamento salvo no Firestore, paymentId:", paymentRef.id);
+        console.log("[processPayment] Payment saved in Firestore, paymentId:", paymentRef.id);
       } catch (error: any) {
-        console.error("[processPayment] Erro ao salvar pagamento no Firestore:", error);
-        throw new Error("Erro ao salvar pagamento no banco de dados. O pagamento foi realizado, mas o job não foi salvo.");
+        console.error("[processPayment] Error saving payment in Firestore:", error);
+        throw new Error("Error saving payment in database. Payment was made, but the job was not saved.");
       }
 
-      // 4. Salvar o job no Firestore
+      // 4. Save the job in Firestore
       let jobRef;
       try {
         const now = new Date();
@@ -698,10 +698,10 @@ const PostJobPage = (): JSX.Element => {
           priorityListing: selectedPlan.name.toLowerCase().includes('premium'),
         };
         jobRef = await addDoc(jobCollection, jobToSave);
-        console.log("[processPayment] Job salvo no Firestore, jobId:", jobRef.id);
+        console.log("[processPayment] Job saved in Firestore, jobId:", jobRef.id);
       } catch (error: any) {
-        console.error("[processPayment] Erro ao salvar job no Firestore:", error);
-        throw new Error("Erro ao salvar o job no banco de dados. O pagamento foi realizado, mas o job não foi salvo.");
+        console.error("[processPayment] Error saving job in Firestore:", error);
+        throw new Error("Error saving the job in the database. Payment was made, but the job was not saved.");
       }
 
       setJobData(prev => ({
@@ -711,7 +711,7 @@ const PostJobPage = (): JSX.Element => {
       }));
       setPaymentStep('completed');
 
-      // 5. Notificação para admin
+      // 5. Notification for admin
       try {
         const notificationsCollection = collection(db, "adminNotifications");
         await addDoc(notificationsCollection, {
@@ -723,16 +723,16 @@ const PostJobPage = (): JSX.Element => {
           read: false,
           createdAt: new Date()
         });
-        console.log("[processPayment] Notificação de admin criada");
+        console.log("[processPayment] Admin notification created");
       } catch (error: any) {
-        console.error("[processPayment] Erro ao criar notificação de admin:", error);
-        // Não interrompe o fluxo principal
+        console.error("[processPayment] Error creating admin notification:", error);
+        // Do not interrupt the main flow
       }
 
       setJobSubmissionStep('confirmation');
       reloadData();
     } catch (error: any) {
-      console.error("[processPayment] Erro geral:", error);
+      console.error("[processPayment] General error:", error);
       setPaymentError(error.message || "Payment failed. Please try again.");
       setJobData(prev => ({
         ...prev,
@@ -740,7 +740,7 @@ const PostJobPage = (): JSX.Element => {
       }));
     } finally {
       setIsProcessingPayment(false);
-      console.log("[processPayment] Fluxo de pagamento finalizado");
+      console.log("[processPayment] Payment flow completed");
     }
   };
 
@@ -2889,7 +2889,7 @@ const renderMyLearn2Earn = (syncWarnings: {id:string; msg:string}[], syncing: bo
       <div className="flex justify-between items-center mb-4">
         {syncWarnings.length > 0 && (
           <div className="bg-yellow-900/40 border border-yellow-600 text-yellow-300 p-3 rounded flex-1 mr-4">
-            <b>Sincronização de status:</b>
+            <b>Status synchronization:</b>
             <ul className="list-disc ml-5">
               {syncWarnings.map(w => <li key={w.id}>{w.msg}</li>)}
             </ul>
@@ -2900,7 +2900,7 @@ const renderMyLearn2Earn = (syncWarnings: {id:string; msg:string}[], syncing: bo
           disabled={syncing}
           onClick={manualSyncStatuses}
         >
-          {syncing ? 'Sincronizando...' : 'Sincronizar status'}
+          {syncing ? 'Synchronizing...' : 'Status synchronization'}
         </button>
       </div>
       {/* ...rest of renderMyLearn2Earn... */}
@@ -3229,12 +3229,12 @@ const manualSyncStatuses = async () => {
     e.preventDefault();
     
     if (!db || !companyId || !companyProfile.name) {
-      alert("Você precisa estar logado para criar um ticket de suporte.");
+      alert("You need to be logged in to create a support ticket.");
       return;
     }
     
     if (!newTicketData.subject || !newTicketData.description) {
-      alert("Por favor, preencha todos os campos obrigatórios.");
+      alert("Please fill in all required fields.");
       return;
     }
     
@@ -3261,9 +3261,9 @@ const manualSyncStatuses = async () => {
       await addDoc(messagesCollection, {
         ticketId: docRef.id,
         senderId: "system",
-        senderName: "Sistema",
+        senderName: "System",
         senderType: "system",
-        message: "Ticket criado. Nossa equipe de suporte responderá em breve.",
+        message: "Ticket created. Our support team will respond shortly.",
         createdAt: serverTimestamp(),
         isSystemMessage: true
       });
@@ -3291,10 +3291,10 @@ const manualSyncStatuses = async () => {
       setSupportSectionActive("list");
       fetchSupportTickets();
       
-      alert("Ticket de suporte criado com sucesso!");
+      alert("Support ticket created successfully!");
     } catch (error) {
       console.error("Error creating support ticket:", error);
-      alert("Erro ao criar ticket de suporte. Por favor, tente novamente.");
+      alert("Error creating support ticket. Please try again.");
     }
   };
 
@@ -3310,7 +3310,7 @@ const manualSyncStatuses = async () => {
       await addDoc(messagesCollection, {
         ticketId: selectedTicketId,
         senderId: companyId,
-        senderName: companyProfile.name || "Empresa",
+        senderName: companyProfile.name || "Company",
         senderType: "company",
         message: message,
         createdAt: serverTimestamp(),
@@ -3328,7 +3328,7 @@ const manualSyncStatuses = async () => {
       await addDoc(notificationsCollection, {
         ticketId: selectedTicketId,
         userId: companyId,
-        userName: companyProfile.name || "Empresa",
+        userName: companyProfile.name || "Company",
         userType: "company",
         message: message,
         status: "reply",
@@ -3340,7 +3340,7 @@ const manualSyncStatuses = async () => {
       fetchTicketMessages(selectedTicketId);
     } catch (error) {
       console.error("Error sending message:", error);
-      alert("Erro ao enviar mensagem. Por favor, tente novamente.");
+      alert("Error sending message. Please try again.");
     } finally {
       setIsSendingTicketMessage(false);
     }
@@ -3390,7 +3390,7 @@ const manualSyncStatuses = async () => {
               onClick={() => setSupportSectionActive('create')}
               className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
             >
-              Novo Ticket
+              New Ticket
             </button>
           </div>
           {/* Notificações no topo */}
@@ -3409,7 +3409,7 @@ const manualSyncStatuses = async () => {
           <div className="space-y-2">
             {supportTickets.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-300">Você não possui tickets de suporte.</p>
+                <p className="text-gray-300">You have no support tickets.</p>
               </div>
             ) : (
               supportTickets.map((ticket) => (
@@ -3432,10 +3432,10 @@ const manualSyncStatuses = async () => {
                         : 'bg-yellow-900/30 text-yellow-400'
                     }`}>
                       {ticket.status === 'resolved' 
-                        ? 'Resolvido' 
+                        ? 'Resolved' 
                         : ticket.status === 'open' 
-                        ? 'Em Andamento' 
-                        : 'Pendente'}
+                        ? 'In Progress' 
+                        : 'Pending'}
                     </span>
                   </div>
                 </div>
@@ -3447,11 +3447,11 @@ const manualSyncStatuses = async () => {
         <div className="w-full md:w-2/3">
           {supportSectionActive === 'detail' && selectedTicket ? (
             <div className="bg-black/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-orange-500 mb-2">Detalhes do Ticket</h3>
+              <h3 className="text-xl font-semibold text-orange-500 mb-2">Ticket Details</h3>
               <div className="mb-4">
                 <div className="font-bold text-white">{selectedTicket.subject}</div>
-                <div className="text-gray-400 text-sm mb-1">Categoria: {selectedTicket.category}</div>
-                <div className="text-gray-500 text-xs mb-1">Aberto em: {new Date(selectedTicket.createdAt).toLocaleString()}</div>
+                <div className="text-gray-400 text-sm mb-1">Category: {selectedTicket.category}</div>
+                <div className="text-gray-500 text-xs mb-1">Opened on: {new Date(selectedTicket.createdAt).toLocaleString()}</div>
                 <div className="text-gray-300 mt-2">{selectedTicket.description}</div>
                 <div className="mt-2">
                   <span className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -3462,18 +3462,18 @@ const manualSyncStatuses = async () => {
                       : 'bg-yellow-900/30 text-yellow-400'
                   }`}>
                     {selectedTicket.status === 'resolved' 
-                      ? 'Resolvido' 
+                      ? 'Resolved' 
                       : selectedTicket.status === 'open' 
-                      ? 'Em Andamento' 
-                      : 'Pendente'}
+                      ? 'In Progress' 
+                      : 'Pending'}
                   </span>
                 </div>
               </div>
               <div className="border-t border-gray-700 pt-4">
-                <h4 className="text-orange-400 font-semibold mb-2">Mensagens</h4>
+                <h4 className="text-orange-400 font-semibold mb-2">Messages</h4>
                 <div className="max-h-64 overflow-y-auto space-y-3 mb-4">
                   {ticketMessages.length === 0 ? (
-                    <div className="text-gray-400">Nenhuma mensagem ainda.</div>
+                    <div className="text-gray-400">No messages yet.</div>
                   ) : (
                     ticketMessages.map(msg => (
                       <div key={msg.id} className={`p-2 rounded ${msg.senderType === 'company' ? 'bg-orange-900/30 text-orange-200' : msg.isSystemMessage ? 'bg-gray-800 text-gray-400' : 'bg-gray-700 text-white'}`}>
@@ -3487,7 +3487,7 @@ const manualSyncStatuses = async () => {
                 {/* BLOQUEIO DE ENVIO DE MENSAGEM */}
                 {selectedTicket.status !== 'open' || !selectedTicket.acceptedBy ? (
                   <div className="text-yellow-400 text-sm mt-4">
-                    O chat será liberado após o ticket ser aceito pelo suporte.
+                    The chat will be available once the ticket is accepted by support.
                   </div>
                 ) : (
                   <form
@@ -3505,7 +3505,7 @@ const manualSyncStatuses = async () => {
                     <input
                       name="message"
                       type="text"
-                      placeholder="Digite sua mensagem..."
+                      placeholder="Type your message..."
                       className="flex-1 p-2 rounded bg-black/30 border border-gray-700 text-white"
                       disabled={isSendingTicketMessage}
                       autoComplete="off"
@@ -3515,7 +3515,7 @@ const manualSyncStatuses = async () => {
                       className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
                       disabled={isSendingTicketMessage}
                     >
-                      Enviar
+                      Send
                     </button>
                   </form>
                 )}
@@ -3523,20 +3523,20 @@ const manualSyncStatuses = async () => {
             </div>
           ) : supportSectionActive === 'create' ? (
             <div className="bg-black/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-orange-500 mb-4">Novo Ticket de Suporte</h3>
+              <h3 className="text-xl font-semibold text-orange-500 mb-4">New Support Ticket</h3>
               <form onSubmit={handleCreateTicket} className="space-y-4">
                 <input
                   type="text"
                   value={newTicketData.subject}
                   onChange={e => setNewTicketData({ ...newTicketData, subject: e.target.value })}
-                  placeholder="Assunto do ticket"
+                  placeholder="Ticket subject"
                   className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-white"
                   required
                 />
                 <textarea
                   value={newTicketData.description}
                   onChange={e => setNewTicketData({ ...newTicketData, description: e.target.value })}
-                  placeholder="Descreva seu problema ou dúvida"
+                  placeholder="Describe your issue or question"
                   className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-white h-32"
                   required
                 />
@@ -3545,10 +3545,10 @@ const manualSyncStatuses = async () => {
                   onChange={e => setNewTicketData({ ...newTicketData, category: e.target.value })}
                   className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-white"
                 >
-                  <option value="general">Geral</option>
-                  <option value="pagamento">Pagamento</option>
-                  <option value="tecnico">Técnico</option>
-                  <option value="outro">Outro</option>
+                  <option value="general">General</option>
+                  <option value="payment">Payment</option>
+                  <option value="technical">Technical</option>
+                  <option value="other">Other</option>
                 </select>
                 <div className="flex justify-end gap-2">
                   <button
@@ -3556,20 +3556,20 @@ const manualSyncStatuses = async () => {
                     onClick={() => setSupportSectionActive('list')}
                     className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600"
                   >
-                    Cancelar
+                    Cancel
                   </button>
                   <button
                     type="submit"
                     className="bg-orange-500 text-white px-6 py-2 rounded hover:bg-orange-600"
                   >
-                    Enviar Ticket
+                    Submit Ticket
                   </button>
                 </div>
               </form>
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-gray-300 text-lg min-h-200px">
-              Selecione um ticket para ver detalhes e chat.
+              Select a ticket to view details and chat.
             </div>
           )}
         </div>
