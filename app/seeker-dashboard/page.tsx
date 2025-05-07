@@ -1006,289 +1006,281 @@ const SeekerDashboard = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto py-10">
-        <h1 className="text-4xl font-bold text-orange-500 mb-8">Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Sidebar Navigation */}
-          <div className="md:col-span-1">
-            <div className="bg-black rounded-lg shadow-lg border border-orange-800">
-              {/* User Profile Section */}
-              <div className="p-5 border-b border-orange-800 flex flex-col items-center">
-                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-orange-500 mb-3">
-                  <img 
-                    src={userPhoto || "/images/default-avatar.png"} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
+      <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex">
+        {/* Sidebar */}
+        <aside className="w-full md:w-1/4 bg-black/70 p-6 flex flex-col">
+          {/* Profile Photo Section */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
+              {(isUploading || isLoadingProfile) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
                 </div>
-                <h2 className="text-xl font-semibold text-orange-400">{seekerProfile.name || "User"}</h2>
-                <p className="text-gray-400 text-sm truncate w-full text-center">{seekerProfile.email}</p>
-              </div>
-              
-              {/* Navigation Menu */}
-              <nav className="p-2">
-                <button 
-                  onClick={() => setActiveTab("myProfile")} 
-                  className={`w-full text-left px-4 py-3 rounded-md mb-2 transition-colors ${
-                    activeTab === "myProfile" 
-                      ? "bg-orange-500 text-white" 
-                      : "text-gray-300 hover:bg-orange-500/20"
-                  }`}
+              )}
+              <img
+                src={userPhoto || "/images/default-avatar.png"}
+                alt="Profile"
+                className="w-full h-full object-cover rounded-full"
+              />
+            </div>
+            <h2 className="text-xl font-semibold text-orange-400 mb-1">{seekerProfile.name || "User"}</h2>
+            <p className="text-gray-400 text-sm truncate w-full text-center">{seekerProfile.email}</p>
+            {/* Discreet Connect Wallet Button */}
+            <button
+              onClick={handleConnectWallet}
+              disabled={isConnectingWallet}
+              className="mt-2 mb-4 px-3 py-1 rounded bg-black/30 border border-orange-500/30 text-orange-400 text-xs flex items-center justify-center mx-auto hover:bg-orange-900/20 transition-all"
+            >
+              {walletAddress ? (
+                <span className="flex items-center gap-2">
+                  <span className="truncate max-w-[100px]">{walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}</span>
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); setWalletAddress(null); }}
+                    className="ml-1 p-0.5 rounded hover:bg-orange-900/30 text-orange-400 hover:text-orange-200 transition"
+                    title="Disconnect Wallet"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              ) : isConnectingWallet ? (
+                <span>Connecting...</span>
+              ) : (
+                <span>Connect Wallet</span>
+              )}
+            </button>
+            {walletError && <p className="text-red-400 text-xs mt-1">{walletError}</p>}
+            {walletAddress && <p className="text-green-400 text-xs mt-1">Wallet connected</p>}
+          </div>
+          {/* Navigation Menu */}
+          <nav className="flex-1">
+            <ul className="space-y-2">
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "myProfile" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  onClick={() => setActiveTab("myProfile")}
                 >
                   My Profile
                 </button>
-                <button 
-                  onClick={() => setActiveTab("myApplications")} 
-                  className={`w-full text-left px-4 py-3 rounded-md mb-2 transition-colors ${
-                    activeTab === "myApplications" 
-                      ? "bg-orange-500 text-white" 
-                      : "text-gray-300 hover:bg-orange-500/20"
-                  }`}
+              </li>
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "myApplications" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  onClick={() => setActiveTab("myApplications")}
                 >
                   My Applications
                 </button>
-                <button 
-                  onClick={() => setActiveTab("instantJobs")} 
-                  className={`w-full text-left px-4 py-3 rounded-md mb-2 transition-colors ${
-                    activeTab === "instantJobs" 
-                      ? "bg-orange-500 text-white" 
-                      : "text-gray-300 hover:bg-orange-500/20"
-                  }`}
+              </li>
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  onClick={() => setActiveTab("instantJobs")}
                 >
                   Instant Jobs
                 </button>
-                <button 
-                  onClick={() => setActiveTab("settings")} 
-                  className={`w-full text-left px-4 py-3 rounded-md mb-2 transition-colors ${
-                    activeTab === "settings" 
-                      ? "bg-orange-500 text-white" 
-                      : "text-gray-300 hover:bg-orange-500/20"
-                  }`}
+              </li>
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "settings" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  onClick={() => setActiveTab("settings")}
                 >
                   Settings
                 </button>
-                <button 
+              </li>
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "support" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => setActiveTab("support")}
-                  className={`w-full text-left px-4 py-3 rounded-md mb-2 transition-colors ${
-                    activeTab === "support" 
-                      ? "bg-orange-500 text-white" 
-                      : "text-gray-300 hover:bg-orange-500/20"
-                  }`}
                 >
                   Support
                 </button>
-                
-                {/* Wallet Connection Button */}
-                <div className="px-3 py-4 border-t border-orange-800/50 mt-2">
-                  <button 
-                    onClick={handleConnectWallet} 
-                    disabled={isConnectingWallet}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-4 rounded-md hover:from-orange-600 hover:to-orange-700 transition-all flex items-center justify-center space-x-2"
-                  >
-                    {walletAddress ? (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="truncate max-w-[120px]">
-                          {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
-                        </span>
-                      </>
-                    ) : isConnectingWallet ? (
-                      <span>Connecting...</span>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                        </svg>
-                        <span>Connect Wallet</span>
-                      </>
-                    )}
-                  </button>
-                  {walletError && <p className="text-red-400 text-xs mt-1">{walletError}</p>}
-                  {walletAddress && <p className="text-green-400 text-xs mt-1">Wallet connected</p>}
-                </div>
-                
-                <button 
-                  onClick={handleLogout} 
-                  className="w-full text-left px-4 py-3 rounded-md mb-2 text-red-400 hover:bg-red-900/20 transition-colors mt-2"
+              </li>
+            </ul>
+            <button
+              onClick={handleLogout}
+              className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center justify-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4a1 1 0 10-2 0v4.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L14 11.586V7z" clipRule="evenodd" />
+              </svg>
+              Logout
+            </button>
+          </nav>
+        </aside>
+        {/* Main Content Area */}
+        <section className="w-full md:w-3/4 p-6 overflow-y-auto">
+          {/* Mantém o render dos conteúdos principais */}
+          {activeTab === "myProfile" && renderMyProfile()}
+          {activeTab === "myApplications" && renderMyApplications()}
+          {activeTab === "instantJobs" && renderInstantJobsTab()}
+          {activeTab === "settings" && renderSettings()}
+          {activeTab === "support" && (
+            <div className="bg-black/70 p-10 rounded-lg shadow-lg">
+              {/* ...existing support tab content... */}
+              {/* Mantém o conteúdo já existente para suporte */}
+              <div className="flex gap-4 mb-6">
+                <button
+                  className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${activeSupportTab === 'new' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
+                  onClick={() => setActiveSupportTab('new')}
                 >
-                  Logout
+                  New Ticket
                 </button>
-              </nav>
-            </div>
-          </div>
-
-          {/* Main Content Area */}
-          <div className="md:col-span-3">
-            {activeTab === "myProfile" && renderMyProfile()}
-            {activeTab === "myApplications" && renderMyApplications()}
-            {activeTab === "instantJobs" && renderInstantJobsTab()}
-            {activeTab === "settings" && renderSettings()}
-            {activeTab === "support" && (
-              <div className="bg-black/70 p-10 rounded-lg shadow-lg">
-                <div className="flex gap-4 mb-6">
-                  <button
-                    className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${activeSupportTab === 'new' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
-                    onClick={() => setActiveSupportTab('new')}
-                  >
-                    New Ticket
-                  </button>
-                  <button
-                    className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${activeSupportTab === 'my' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
-                    onClick={() => setActiveSupportTab('my')}
-                  >
-                    My Tickets
-                  </button>
-                </div>
-                {/* Render content for each support tab here (to be implemented next) */}
-                {activeSupportTab === 'new' && (
-                  <form onSubmit={handleSubmitTicket} className="space-y-6 max-w-lg">
-                    <div>
-                      <label className="block text-sm text-gray-300 mb-1">Platform Area/Function <span className="text-red-400">*</span></label>
-                      <select
-                        className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
-                        value={ticketArea}
-                        onChange={e => setTicketArea(e.target.value)}
-                        required
-                      >
-                        <option value="">Select an area</option>
-                        {supportAreas.map(area => (
-                          <option key={area} value={area}>{area}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-300 mb-1">Subject <span className="text-red-400">*</span></label>
-                      <input
-                        type="text"
-                        className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
-                        value={ticketSubject}
-                        onChange={e => setTicketSubject(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-300 mb-1">Description <span className="text-red-400">*</span></label>
-                      <textarea
-                        className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
-                        value={ticketDescription}
-                        onChange={e => setTicketDescription(e.target.value)}
-                        rows={5}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-300 mb-1">Attachment (optional)</label>
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        onChange={handleTicketFileChange}
-                        className="w-full text-white"
-                      />
-                    </div>
-                    {ticketError && <div className="text-red-400">{ticketError}</div>}
-                    {ticketSuccess && <div className="text-green-400">{ticketSuccess}</div>}
-                    <button
-                      type="submit"
-                      className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 disabled:opacity-60"
-                      disabled={ticketLoading}
+                <button
+                  className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${activeSupportTab === 'my' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
+                  onClick={() => setActiveSupportTab('my')}
+                >
+                  My Tickets
+                </button>
+              </div>
+              {/* Render content for each support tab here (to be implemented next) */}
+              {activeSupportTab === 'new' && (
+                <form onSubmit={handleSubmitTicket} className="space-y-6 max-w-lg">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-1">Platform Area/Function <span className="text-red-400">*</span></label>
+                    <select
+                      className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
+                      value={ticketArea}
+                      onChange={e => setTicketArea(e.target.value)}
+                      required
                     >
-                      {ticketLoading ? "Submitting..." : "Submit Ticket"}
-                    </button>
-                  </form>
-                )}
-                {activeSupportTab === 'my' && (
-                  <div className="flex gap-6">
-                    {/* Ticket list */}
-                    <div className="w-1/3 min-w-[220px] max-w-xs border-r border-orange-900 pr-4 overflow-y-auto ticket-list">
-                      {loadingTickets ? (
-                        <div className="text-gray-400">Loading tickets...</div>
-                      ) : myTickets.length === 0 ? (
-                        <div className="text-gray-400">No support tickets found.</div>
-                      ) : (
-                        <ul className="space-y-2">
-                          {myTickets.map(ticket => (
-                            <li key={ticket.id}>
-                              <button
-                                className={`w-full text-left p-3 rounded-lg border border-orange-700/30 bg-black/40 hover:bg-orange-900/30 transition-colors ${selectedTicket?.id === ticket.id ? 'border-orange-500 bg-orange-900/40' : ''}`}
-                                onClick={() => setSelectedTicket(ticket)}
-                              >
-                                <div className="font-semibold text-orange-400 truncate">{ticket.subject}</div>
-                                <div className="text-xs text-gray-400 truncate">{ticket.area}</div>
-                                <div className="text-xs text-gray-500">{new Date(ticket.createdAt || Date.now()).toLocaleString()}</div>
-                                <div className="text-xs mt-1"><span className={`px-2 py-0.5 rounded ${ticket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{ticket.status}</span></div>
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                    {/* Ticket chat/details */}
-                    <div className="flex-1 min-w-0">
-                      {selectedTicket ? (
-                        <div className="bg-black/60 rounded-lg p-6 h-full flex flex-col ticket-details">
-                          <div className="mb-2">
-                            <div className="text-lg font-bold text-orange-400">{selectedTicket.subject}</div>
-                            <div className="text-sm text-gray-400">Area: {selectedTicket.area}</div>
-                            <div className="text-xs text-gray-500">Opened: {new Date(selectedTicket.createdAt || Date.now()).toLocaleString()}</div>
-                            <div className="text-xs mt-1"><span className={`px-2 py-0.5 rounded ${selectedTicket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{selectedTicket.status}</span></div>
-                            <div className="mt-2 text-gray-300">{selectedTicket.description}</div>
-                            {selectedTicket.attachmentUrl && (
-                              <div className="mt-2"><a href={selectedTicket.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">View Attachment</a></div>
-                            )}
-                          </div>
-                          <div className="flex-1 overflow-y-auto border-t border-orange-900 pt-4 mb-2 ticket-messages">
-                            {ticketMessages.length === 0 ? (
-                              <div className="text-gray-400">No messages yet.</div>
-                            ) : (
-                              <ul className="space-y-3">
-                                {ticketMessages.map(msg => (
-                                  <li key={msg.id} className={`flex ${msg.senderType === 'seeker' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.senderType === 'seeker' ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-100'}`}>
-                                      {msg.message}
-                                      <div className="text-xs text-gray-300 mt-1 text-right">{new Date(msg.createdAt).toLocaleString()}</div>
-                                    </div>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                          {selectedTicket.status === 'open' && canSendMessage && (
-                            <form onSubmit={handleSendTicketMessage} className="flex gap-2 mt-auto">
-                              <input
-                                type="text"
-                                className="flex-1 p-2 rounded bg-black/40 border border-orange-500/30 text-white"
-                                placeholder="Type your message..."
-                                value={newMessage}
-                                onChange={e => setNewMessage(e.target.value)}
-                                disabled={sendingMessage}
-                                required
-                              />
-                              <button
-                                type="submit"
-                                className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-60"
-                                disabled={sendingMessage || !newMessage.trim()}
-                              >
-                                {sendingMessage ? 'Sending...' : 'Send'}
-                              </button>
-                            </form>
-                          )}
-                          {selectedTicket.status === 'open' && !canSendMessage && (
-                            <div className="text-yellow-400 text-sm mt-4">You can send messages after a support agent accepts your ticket.</div>
+                      <option value="">Select an area</option>
+                      {supportAreas.map(area => (
+                        <option key={area} value={area}>{area}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-1">Subject <span className="text-red-400">*</span></label>
+                    <input
+                      type="text"
+                      className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
+                      value={ticketSubject}
+                      onChange={e => setTicketSubject(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-1">Description <span className="text-red-400">*</span></label>
+                    <textarea
+                      className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
+                      value={ticketDescription}
+                      onChange={e => setTicketDescription(e.target.value)}
+                      rows={5}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-1">Attachment (optional)</label>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleTicketFileChange}
+                      className="w-full text-white"
+                    />
+                  </div>
+                  {ticketError && <div className="text-red-400">{ticketError}</div>}
+                  {ticketSuccess && <div className="text-green-400">{ticketSuccess}</div>}
+                  <button
+                    type="submit"
+                    className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 disabled:opacity-60"
+                    disabled={ticketLoading}
+                  >
+                    {ticketLoading ? "Submitting..." : "Submit Ticket"}
+                  </button>
+                </form>
+              )}
+              {activeSupportTab === 'my' && (
+                <div className="flex gap-6">
+                  {/* Ticket list */}
+                  <div className="w-1/3 min-w-[220px] max-w-xs border-r border-orange-900 pr-4 overflow-y-auto ticket-list">
+                    {loadingTickets ? (
+                      <div className="text-gray-400">Loading tickets...</div>
+                    ) : myTickets.length === 0 ? (
+                      <div className="text-gray-400">No support tickets found.</div>
+                    ) : (
+                      <ul className="space-y-2">
+                        {myTickets.map(ticket => (
+                          <li key={ticket.id}>
+                            <button
+                              className={`w-full text-left p-3 rounded-lg border border-orange-700/30 bg-black/40 hover:bg-orange-900/30 transition-colors ${selectedTicket?.id === ticket.id ? 'border-orange-500 bg-orange-900/40' : ''}`}
+                              onClick={() => setSelectedTicket(ticket)}
+                            >
+                              <div className="font-semibold text-orange-400 truncate">{ticket.subject}</div>
+                              <div className="text-xs text-gray-400 truncate">{ticket.area}</div>
+                              <div className="text-xs text-gray-500">{new Date(ticket.createdAt || Date.now()).toLocaleString()}</div>
+                              <div className="text-xs mt-1"><span className={`px-2 py-0.5 rounded ${ticket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{ticket.status}</span></div>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  {/* Ticket chat/details */}
+                  <div className="flex-1 min-w-0">
+                    {selectedTicket ? (
+                      <div className="bg-black/60 rounded-lg p-6 h-full flex flex-col ticket-details">
+                        <div className="mb-2">
+                          <div className="text-lg font-bold text-orange-400">{selectedTicket.subject}</div>
+                          <div className="text-sm text-gray-400">Area: {selectedTicket.area}</div>
+                          <div className="text-xs text-gray-500">Opened: {new Date(selectedTicket.createdAt || Date.now()).toLocaleString()}</div>
+                          <div className="text-xs mt-1"><span className={`px-2 py-0.5 rounded ${selectedTicket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{selectedTicket.status}</span></div>
+                          <div className="mt-2 text-gray-300">{selectedTicket.description}</div>
+                          {selectedTicket.attachmentUrl && (
+                            <div className="mt-2"><a href={selectedTicket.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">View Attachment</a></div>
                           )}
                         </div>
-                      ) : (
-                        <div className="text-gray-400 flex items-center justify-center h-full">Select a ticket to view details and chat.</div>
-                      )}
-                    </div>
+                        <div className="flex-1 overflow-y-auto border-t border-orange-900 pt-4 mb-2 ticket-messages">
+                          {ticketMessages.length === 0 ? (
+                            <div className="text-gray-400">No messages yet.</div>
+                          ) : (
+                            <ul className="space-y-3">
+                              {ticketMessages.map(msg => (
+                                <li key={msg.id} className={`flex ${msg.senderType === 'seeker' ? 'justify-end' : 'justify-start'}`}>
+                                  <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.senderType === 'seeker' ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-100'}`}>
+                                    {msg.message}
+                                    <div className="text-xs text-gray-300 mt-1 text-right">{new Date(msg.createdAt).toLocaleString()}</div>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                        {selectedTicket.status === 'open' && canSendMessage && (
+                          <form onSubmit={handleSendTicketMessage} className="flex gap-2 mt-auto">
+                            <input
+                              type="text"
+                              className="flex-1 p-2 rounded bg-black/40 border border-orange-500/30 text-white"
+                              placeholder="Type your message..."
+                              value={newMessage}
+                              onChange={e => setNewMessage(e.target.value)}
+                              disabled={sendingMessage}
+                              required
+                            />
+                            <button
+                              type="submit"
+                              className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-60"
+                              disabled={sendingMessage || !newMessage.trim()}
+                            >
+                              {sendingMessage ? 'Sending...' : 'Send'}
+                            </button>
+                          </form>
+                        )}
+                        {selectedTicket.status === 'open' && !canSendMessage && (
+                          <div className="text-yellow-400 text-sm mt-4">You can send messages after a support agent accepts your ticket.</div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 flex items-center justify-center h-full">Select a ticket to view details and chat.</div>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      </main>
     </Layout>
   );
 };
