@@ -3,12 +3,57 @@
 import React, { useState, useEffect, JSX, useCallback } from "react";
 import Layout from "../../components/Layout"; // Assuming Layout component exists and is suitable
 import { useRouter } from "next/navigation";
-import { collection, getDocs, doc, getDoc, updateDoc, query, where, addDoc, serverTimestamp } from "firebase/firestore"; // Add necessary imports
+import { collection, getDocs, doc, getDoc, updateDoc, query, where, addDoc, serverTimestamp, onSnapshot, orderBy } from "firebase/firestore"; // Add necessary imports
 import { db } from "../../lib/firebase"; // Assuming db instance is correctly configured
 import instantJobsService, { InstantJob, JobMessage } from '../../services/instantJobsService';
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
 import { connectWallet, getCurrentAddress, getWeb3Provider } from "../../services/crypto";
+import { BellIcon } from '@heroicons/react/24/outline';
+
+// Function to create a notification for seeker
+async function createSeekerNotification({
+  userId,
+  title,
+  body,
+  type = "general",
+  extra = {},
+}: {
+  userId: string;
+  title: string;
+  body: string;
+  type?: string;
+  extra?: Record<string, any>;
+}) {
+  if (!db) throw new Error("Firestore não inicializado");
+  // Fetch seeker's notification preferences
+  const seekerRef = doc(db, "seekers", userId);
+  const seekerSnap = await getDoc(seekerRef);
+  let prefs = { supportReplies: true, instantJobs: true, marketing: false };
+  if (seekerSnap.exists() && seekerSnap.data().notificationPreferences) {
+    prefs = { ...prefs, ...seekerSnap.data().notificationPreferences };
+  }
+  // Map notification type to preference key
+  const typeToPref: Record<string, keyof typeof prefs> = {
+    support: "supportReplies",
+    instantJob: "instantJobs",
+    marketing: "marketing",
+    general: "supportReplies" // fallback: show general as supportReplies
+  };
+  const prefKey = typeToPref[type] || "supportReplies";
+  if (!prefs[prefKey]) return; // Do not send if user opted out
+  const notif = {
+    userId,
+    userType: "seeker",
+    title,
+    body,
+    type,
+    read: false,
+    createdAt: new Date().toISOString(),
+    ...extra,
+  };
+  await addDoc(collection(db, "notifications"), notif);
+}
 
 // Interface for Button component
 interface ButtonProps {
@@ -76,6 +121,19 @@ interface SupportMessage {
   message: string;
   createdAt: string;
   read?: boolean;
+}
+
+// Definição do tipo Notification para tipagem correta
+interface Notification {
+  id: string;
+  userId: string;
+  userType: string;
+  title: string;
+  body: string;
+  type?: string;
+  read: boolean;
+  createdAt: string;
+  [key: string]: any;
 }
 
 const SeekerDashboard = () => {
@@ -643,102 +701,182 @@ const SeekerDashboard = () => {
     );
   };
 
+  // Estado para sub-aba de settings
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'notifications'>('profile');
+  // Estado para preferências de notificações
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    supportReplies: true,
+    instantJobs: true,
+    marketing: false
+  });
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  // Carregar preferências do Firestore ao abrir settings
+  useEffect(() => {
+    if (activeTab === 'settings' && seekerId && db) {
+      getDoc(doc(db, 'seekers', seekerId)).then(snap => {
+        if (snap.exists() && snap.data().notificationPreferences) {
+          setNotificationPrefs({
+            ...notificationPrefs,
+            ...snap.data().notificationPreferences
+          });
+        }
+      });
+    }
+    // eslint-disable-next-line
+  }, [activeTab, seekerId]);
+  // Salvar preferências no Firestore
+  const handleSaveNotificationPrefs = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!seekerId || !db) return;
+    setSavingPrefs(true);
+    try {
+      await updateDoc(doc(db, 'seekers', seekerId), {
+        notificationPreferences: notificationPrefs
+      });
+      alert('Preferences saved!');
+    } catch (err) {
+      alert('Error saving preferences');
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
 
   // Render Settings Tab Content (Editable Form)
   const renderSettings = () => {
     return (
       <div className="bg-black/70 p-10 rounded-lg shadow-lg">
         <h2 className="text-3xl font-semibold text-orange-500 mb-6">Settings</h2>
-        <form className="space-y-6" onSubmit={handleProfileSubmit}>
-          {/* Name */}
-          <input
-            type="text"
-            name="name"
-            value={seekerProfile.name ?? ""}
-            onChange={handleProfileChange}
-            placeholder="Your Name"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-            required
-          />
-          {/* Email (Read Only) */}
-           <input
-            type="email"
-            name="email"
-            value={seekerProfile.email ?? ""}
-            placeholder="Your Email"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-            readOnly
-            title="Email cannot be changed here"
-          />
-          {/* Location */}
-          <input
-            type="text"
-            name="location"
-            value={seekerProfile.location ?? ""}
-            onChange={handleProfileChange}
-            placeholder="Your Location (e.g., City, Country)"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-          />
-          {/* Skills */}
-          <textarea
-            name="skills"
-            value={seekerProfile.skills ?? ""}
-            onChange={handleProfileChange}
-            placeholder="Your Skills (comma-separated, e.g., React, Node.js, Solidity)"
-            rows={3}
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-          ></textarea>
-          {/* Resume URL */}
-          <input
-            type="url"
-            name="resumeUrl"
-            value={seekerProfile.resumeUrl ?? ""}
-            onChange={handleProfileChange}
-            placeholder="Link to your Resume (e.g., Google Drive, Dropbox, personal site)"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-          />
-          {/* Portfolio URL */}
-          <input
-            type="url"
-            name="portfolioUrl"
-            value={seekerProfile.portfolioUrl ?? ""}
-            onChange={handleProfileChange}
-            placeholder="Link to your Portfolio or GitHub profile"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-          />
-
-          {/* Password */}
-          <input
-            type="password"
-            name="password"
-            placeholder="New Password"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-          />
-
-          {/* Upload CV */}
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">Upload CV (PDF only):</label>
+        <div className="flex gap-4 mb-6">
+          <button
+            className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${settingsTab === 'profile' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
+            onClick={() => setSettingsTab('profile')}
+          >
+            Profile
+          </button>
+          <button
+            className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${settingsTab === 'notifications' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
+            onClick={() => setSettingsTab('notifications')}
+          >
+            Notifications
+          </button>
+        </div>
+        {settingsTab === 'profile' && (
+          <form className="space-y-6" onSubmit={handleProfileSubmit}>
+            {/* Name */}
             <input
-              type="file"
-              accept="application/pdf"
+              type="text"
+              name="name"
+              value={seekerProfile.name ?? ""}
+              onChange={handleProfileChange}
+              placeholder="Your Name"
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+              required
+            />
+            {/* Email (Read Only) */}
+            <input
+              type="email"
+              name="email"
+              value={seekerProfile.email ?? ""}
+              placeholder="Your Email"
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+              readOnly
+              title="Email cannot be changed here"
+            />
+            {/* Location */}
+            <input
+              type="text"
+              name="location"
+              value={seekerProfile.location ?? ""}
+              onChange={handleProfileChange}
+              placeholder="Your Location (e.g., City, Country)"
               className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
             />
-          </div>
+            {/* Skills */}
+            <textarea
+              name="skills"
+              value={seekerProfile.skills ?? ""}
+              onChange={handleProfileChange}
+              placeholder="Your Skills (comma-separated, e.g., React, Node.js, Solidity)"
+              rows={3}
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+            ></textarea>
+            {/* Resume URL */}
+            <input
+              type="url"
+              name="resumeUrl"
+              value={seekerProfile.resumeUrl ?? ""}
+              onChange={handleProfileChange}
+              placeholder="Link to your Resume (e.g., Google Drive, Dropbox, personal site)"
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+            />
+            {/* Portfolio URL */}
+            <input
+              type="url"
+              name="portfolioUrl"
+              value={seekerProfile.portfolioUrl ?? ""}
+              onChange={handleProfileChange}
+              placeholder="Link to your Portfolio or GitHub profile"
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+            />
 
-          {/* Password Note */}
-          <p className="text-sm text-gray-400">
-            Password changes are handled through a separate secure process (if applicable).
-          </p>
+            {/* Password */}
+            <input
+              type="password"
+              name="password"
+              placeholder="New Password"
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+            />
 
-          {/* Save Button */}
-          <button
-            type="submit"
-            disabled={isLoadingProfile}
-            className={`bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-colors hover:bg-orange-300 border-none w-full mt-5 ${isLoadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {isLoadingProfile ? 'Saving...' : 'Save Profile'}
-          </button>
-        </form>
+            {/* Upload CV */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">Upload CV (PDF only):</label>
+              <input
+                type="file"
+                accept="application/pdf"
+                className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+              />
+            </div>
+
+            {/* Password Note */}
+            <p className="text-sm text-gray-400">
+              Password changes are handled through a separate secure process (if applicable).
+            </p>
+
+            {/* Save Button */}
+            <button
+              type="submit"
+              disabled={isLoadingProfile}
+              className={`bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-colors hover:bg-orange-300 border-none w-full mt-5 ${isLoadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {isLoadingProfile ? 'Saving...' : 'Save Profile'}
+            </button>
+          </form>
+        )}
+        {settingsTab === 'notifications' && (
+          <form className="space-y-6 max-w-lg" onSubmit={handleSaveNotificationPrefs}>
+            <div>
+              <label className="flex items-center gap-2 text-white">
+                <input type="checkbox" checked={notificationPrefs.supportReplies} onChange={e => setNotificationPrefs(p => ({...p, supportReplies: e.target.checked}))} />
+                Receive support replies notifications
+              </label>
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-white">
+                <input type="checkbox" checked={notificationPrefs.instantJobs} onChange={e => setNotificationPrefs(p => ({...p, instantJobs: e.target.checked}))} />
+                Receive Instant Jobs notifications
+              </label>
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-white">
+                <input type="checkbox" checked={notificationPrefs.marketing} onChange={e => setNotificationPrefs(p => ({...p, marketing: e.target.checked}))} />
+                Receive marketing communications
+              </label>
+            </div>
+            <button type="submit" className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 disabled:opacity-60" disabled={savingPrefs}>
+              {savingPrefs ? 'Saving...' : 'Save Preferences'}
+            </button>
+          </form>
+        )}
       </div>
     );
   };
@@ -928,15 +1066,10 @@ const SeekerDashboard = () => {
         status: doc.data().status || 'open',
         area: doc.data().area || '',
         subject: doc.data().subject || '',
-        description: doc.data().description || ''
-      } as SupportTicket));
-      
-      // Sort by createdAt desc
-      tickets.sort((a, b) => new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime());
+      })) as SupportTicket[];
       setMyTickets(tickets);
     } catch (err) {
-      setMyTickets([]);
-      console.error("Error fetching tickets:", err);
+      console.error("Error fetching support tickets:", err);
     } finally {
       setLoadingTickets(false);
     }
@@ -944,38 +1077,44 @@ const SeekerDashboard = () => {
 
   // Fetch messages for a ticket
   const fetchTicketMessages = useCallback(async (ticketId: string) => {
-    if (!ticketId || !db) return;
+    if (!db) return;
     try {
-      const q = query(collection(db, "supportMessages"), where("ticketId", "==", ticketId));
+      const q = query(
+        collection(db, "supportMessages"), 
+        where("ticketId", "==", ticketId),
+        // Order by createdAt for chronological display
+        orderBy("createdAt", "asc")
+      );
       const snapshot = await getDocs(q);
-      const messages = snapshot.docs.map(doc => ({ 
+      const messages = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        createdAt: doc.data().createdAt || new Date().toISOString()
-      } as SupportMessage));
-      
-      // Sort by createdAt asc
-      messages.sort((a, b) => new Date(a.createdAt || Date.now()).getTime() - new Date(b.createdAt || Date.now()).getTime());
+        createdAt: doc.data().createdAt || new Date().toISOString(),
+      })) as SupportMessage[];
       setTicketMessages(messages);
     } catch (err) {
-      setTicketMessages([]);
       console.error("Error fetching ticket messages:", err);
+      setTicketMessages([]);
     }
   }, [db]);
 
-  // Send a new message in the ticket chat
+  // Handle sending a message to support
   const handleSendTicketMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedTicket || !db) return;
+    if (!selectedTicket || !newMessage.trim() || !seekerId || !db) return;
+    
     setSendingMessage(true);
     try {
-      await addDoc(collection(db, "supportMessages"), {
+      const messageData = {
         ticketId: selectedTicket.id,
         senderId: seekerId,
         senderType: "seeker",
         message: newMessage,
         createdAt: new Date().toISOString(),
-      });
+        read: false,
+      };
+      
+      await addDoc(collection(db, "supportMessages"), messageData);
       setNewMessage("");
       await fetchTicketMessages(selectedTicket.id);
     } catch (err) {
@@ -1004,13 +1143,65 @@ const SeekerDashboard = () => {
   // Only allow sending messages if ticket is open AND acceptedBy is set
   const canSendMessage = selectedTicket && selectedTicket.status === 'open' && selectedTicket.acceptedBy;
 
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // Buscar notificações do seeker na coleção notifications a cada 10s
+  useEffect(() => {
+    if (!seekerId || !db) return;
+    let interval: NodeJS.Timeout;
+    
+    const fetchNotifications = async () => {
+      try {
+        const q = query(
+          collection(db, "notifications"),
+          where("userId", "==", seekerId)
+        );
+        const snapshot = await getDocs(q);
+        const notifs: Notification[] = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as Notification));
+        notifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setNotifications(notifs);
+        setUnreadCount(notifs.filter(n => !n.read).length);
+      } catch (err) {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
+    };
+
+    fetchNotifications();
+    interval = setInterval(fetchNotifications, 10000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [seekerId, db]);
+
+  // Mark all as read when opening the notification panel
+  const handleOpenNotifications = async () => {
+    setShowNotifications(true);
+    const unread = notifications.filter(n => !n.read);
+    for (const notif of unread) {
+      await updateDoc(doc(db, 'notifications', notif.id), { read: true });
+    }
+  };
+
+  // Mark notification as read when it is viewed (e.g., on click or scroll into view)
+  const markNotificationAsRead = async (notifId: string) => {
+    if (!db) return;
+    await updateDoc(doc(db, 'notifications', notifId), { read: true });
+  };
+
   return (
     <Layout>
       <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex">
         {/* Sidebar */}
         <aside className="w-full md:w-1/4 bg-black/70 p-6 flex flex-col">
           {/* Profile Photo Section */}
-          <div className="flex flex-col items-center mb-6">
+          <div className="relative flex flex-col items-center mb-6">
             <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
               {(isUploading || isLoadingProfile) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
@@ -1023,7 +1214,19 @@ const SeekerDashboard = () => {
                 className="w-full h-full object-cover rounded-full"
               />
             </div>
-            <h2 className="text-xl font-semibold text-orange-400 mb-1">{seekerProfile.name || "User"}</h2>
+            {/* Notification bell absolutely positioned top right */}
+            <button
+              className="absolute top-0 right-0 mt-2 mr-2 z-10"
+              onClick={showNotifications ? () => setShowNotifications(false) : handleOpenNotifications}
+              title="Notifications"
+              aria-label="Notifications"
+            >
+              <BellIcon className="h-7 w-7 text-orange-400 hover:text-orange-300 transition" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold">{unreadCount}</span>
+              )}
+            </button>
+            <h2 className="text-xl font-semibold text-orange-400 w-full text-center mt-2">{seekerProfile.name || "User"}</h2>
             <p className="text-gray-400 text-sm truncate w-full text-center">{seekerProfile.email}</p>
             {/* Discreet Connect Wallet Button */}
             <button
@@ -1039,6 +1242,7 @@ const SeekerDashboard = () => {
                     onClick={e => { e.stopPropagation(); setWalletAddress(null); }}
                     className="ml-1 p-0.5 rounded hover:bg-orange-900/30 text-orange-400 hover:text-orange-200 transition"
                     title="Disconnect Wallet"
+                    aria-label="Disconnect Wallet"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1280,6 +1484,38 @@ const SeekerDashboard = () => {
             </div>
           )}
         </section>
+        {/* Notification panel (right side) */}
+        {showNotifications && (
+          <div className="fixed top-0 right-0 w-full md:w-96 h-full bg-black/90 z-50 shadow-lg border-l border-orange-900 flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-orange-900">
+              <span className="text-lg font-bold text-orange-400">Notifications</span>
+              <button onClick={() => setShowNotifications(false)} className="text-orange-400 hover:text-orange-200" title="Close notifications panel" aria-label="Close notifications panel">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {notifications.length === 0 ? (
+                <div className="text-gray-400 text-center mt-10">No notifications.</div>
+              ) : (
+                notifications.map(n => (
+                  <div
+                    key={n.id}
+                    className={`p-3 rounded-lg border ${n.read ? 'border-gray-700 bg-black/40' : 'border-orange-500 bg-orange-900/20'} text-white shadow-sm`}
+                    tabIndex={0}
+                    onClick={() => !n.read && markNotificationAsRead(n.id)}
+                    onFocus={() => !n.read && markNotificationAsRead(n.id)}
+                  >
+                    <div className="font-semibold text-orange-300 mb-1">{n.title || 'Notification'}</div>
+                    <div className="text-sm text-gray-200">{n.body}</div>
+                    <div className="text-xs text-gray-400 mt-1">{n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </Layout>
   );

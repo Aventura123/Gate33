@@ -2,11 +2,12 @@
 
 import Layout from "../../components/Layout";
 import { useState, useEffect, useCallback } from "react";
-import { collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { useRouter } from "next/navigation";
 import { useAdminPermissions } from "../../hooks/useAdminPermissions";
 import { logSystemActivity, logAdminAction } from "../../utils/logSystem";
+import { createNotification, createSupportMessageNotification } from "../../lib/notifications";
 
 // Define the interface for support ticket
 interface SupportTicket {
@@ -660,6 +661,20 @@ const SupportDashboard: React.FC = () => {
         status: "open"
       });
 
+      // Fetch ticket to get seekerId
+      const ticketSnap = await getDoc(ticketRef);
+      if (ticketSnap.exists()) {
+        const ticket = ticketSnap.data();
+        if (ticket.seekerId) {
+          await createNotification({
+            userId: ticket.seekerId,
+            title: "Your support ticket was accepted",
+            body: "A support agent has accepted your ticket and will assist you soon.",
+            type: "support"
+          });
+        }
+      }
+
       // Update the ticket on the screen for seekers and companies
       if (ticketsTypeTab === 'seekers') {
         setSeekerTickets((prev: SupportTicket[]) => 
@@ -774,6 +789,18 @@ const SupportDashboard: React.FC = () => {
       const userId = localStorage.getItem("userId") || "unknown";
       const userName = localStorage.getItem("userName") || "unknown";
       
+      // First get the latest ticket data to ensure we have seekerId
+      const ticketRef = doc(db, "supportTickets", selectedTicket.id);
+      const ticketSnap = await getDoc(ticketRef);
+      
+      // Get seekerId, may be in different fields depending on ticket type
+      let seekerId = selectedTicket.seekerId;
+      
+      if (ticketSnap.exists()) {
+        const ticketData = ticketSnap.data();
+        seekerId = ticketData.seekerId || ticketData.userId || selectedTicket.seekerId;
+      }
+      
       // Add the message to Firestore
       await addDoc(collection(db, "supportMessages"), {
         ticketId: selectedTicket.id,
@@ -783,6 +810,40 @@ const SupportDashboard: React.FC = () => {
         message: newMessage,
         createdAt: new Date().toISOString()
       });
+      
+      // Notify seeker of new support message
+      if (seekerId) {
+        await createSupportMessageNotification(
+          selectedTicket.id,
+          seekerId,
+          newMessage,
+          userName
+        );
+        console.log(`Support message notification sent to seeker ${seekerId}`);
+      } else {
+        console.log("No seekerId found for notification in ticket", selectedTicket.id);
+        
+        // Fallback - try to find seekerId from ticket email
+        if (selectedTicket.seekerEmail) {
+          const usersRef = collection(db, "users");
+          const emailQuery = query(usersRef, where("email", "==", selectedTicket.seekerEmail));
+          const userSnap = await getDocs(emailQuery);
+          
+          if (!userSnap.empty) {
+            const userDocId = userSnap.docs[0].id;
+            
+            await createSupportMessageNotification(
+              selectedTicket.id,
+              userDocId,
+              newMessage,
+              userName
+            );
+            console.log(`Support message notification sent to seeker ${userDocId} (found by email)`);
+          } else {
+            console.log("Could not find user by email:", selectedTicket.seekerEmail);
+          }
+        }
+      }
       
       // Clear the message field
       setNewMessage("");
