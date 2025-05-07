@@ -25,7 +25,7 @@ async function createSeekerNotification({
   type?: string;
   extra?: Record<string, any>;
 }) {
-  if (!db) throw new Error("Firestore não inicializado");
+  if (!db) throw new Error("Firestore not initialized");
   // Fetch seeker's notification preferences
   const seekerRef = doc(db, "seekers", userId);
   const seekerSnap = await getDoc(seekerRef);
@@ -76,15 +76,114 @@ const Button = ({ onClick, children, className = "", disabled = false }: ButtonP
 
 // Interface for Seeker Profile
 interface SeekerProfile {
-  id: string; // Add id field
+  id: string;
   name: string;
-  email: string; // Assuming email is stored
+  fullName: string;
+  email: string;
   location: string;
-  skills: string; // Comma-separated or array? Assuming string for now
-  resumeUrl?: string; // Optional field for resume link
-  portfolioUrl?: string; // Optional field for portfolio link
-  fullName?: string; // Adicionar o campo fullName que está faltando
-  // Add other relevant fields as needed
+  phone?: string;
+  title?: string; // Professional title (e.g., "Senior React Developer")
+  skills: string; // Comma-separated list of skills
+  yearsOfExperience?: number;
+  bio?: string; // Short professional bio/summary
+  hourlyRate?: number; // Expected hourly rate
+  availability?: string; // Availability status (e.g., "Full-time", "Part-time", "Weekends only")
+  
+  // Education
+  education?: {
+    degree: string;
+    institution: string;
+    year: string;
+    description?: string;
+  }[];
+  
+  // Work experience
+  experience?: {
+    position: string;
+    company: string;
+    location?: string;
+    startDate: string;
+    endDate?: string;
+    current: boolean;
+    description?: string;
+  }[];
+  
+  // Projects
+  projects?: {
+    name: string;
+    description: string;
+    url?: string;
+    technologies?: string;
+    startDate?: string;
+    endDate?: string;
+  }[];
+  
+  // Social & Professional links
+  resumeUrl?: string; // Link to uploaded CV
+  portfolioUrl?: string; // Main portfolio link
+  githubUrl?: string;
+  linkedinUrl?: string;
+  websiteUrl?: string; // Personal website
+  dribbbleUrl?: string;
+  behanceUrl?: string;
+  mediumUrl?: string;
+  twitterUrl?: string;
+  telegramUrl?: string;
+
+  // Certifications
+  certifications?: {
+    name: string;
+    issuer: string;
+    date: string;
+    expiryDate?: string;
+    credentialId?: string;
+    url?: string;
+  }[];
+
+  // Preferences
+  remoteOnly?: boolean;
+  willingToRelocate?: boolean;
+  preferredLocations?: string[];
+  cryptoPaymentPreference?: boolean;
+
+  // Languages
+  languages?: {
+    language: string;
+    proficiency: string; // "Native", "Fluent", "Intermediate", "Basic"
+  }[];
+
+  // Additional fields
+  completionRate?: number; // Percentage of profile completed
+  verifiedSkills?: string[]; // Skills verified through tests or endorsements
+  averageRating?: number; // Average rating from previous employers
+  instantJobsCompleted?: number; // Count of completed instant jobs
+  endorsements?: string[]; // Endorsements from other users or companies
+  profileCreatedAt?: string;
+  profileUpdatedAt?: string;
+
+  // New fields
+  birthDate?: string;
+  nationality?: string;
+  gender?: string;
+  altContact?: string;
+  presentationVideoUrl?: string;
+  references?: {
+    name: string;
+    contact: string;
+    relation: string;
+  }[];
+  salaryExpectation?: string;
+  contractType?: string;
+  workPreference?: string;
+  address?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  interestArea?: string;
+  shareProfile?: boolean;
+  surname?: string;
+  phoneCountryCode?: string;
+  zipCode?: string;
+  altContactCountryCode?: string;
 }
 
 // Interface for Job Application (Example)
@@ -151,6 +250,7 @@ const SeekerDashboard = () => {
     skills: "",
     resumeUrl: "",
     portfolioUrl: "",
+    fullName: "",
   });
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null); // Add state for fetch errors
@@ -330,11 +430,17 @@ const SeekerDashboard = () => {
           skills: data.skills || "",
           resumeUrl: data.resumeUrl || "",
           portfolioUrl: data.portfolioUrl || "",
+          fullName: data.fullName || "",
+          birthDate: data.birthDate || "",
+          nationality: data.nationality || "",
+          gender: data.gender || "",
+          altContact: data.altContact || "",
+          presentationVideoUrl: data.presentationVideoUrl || "",
         });
       } else {
         console.log("No such seeker document!");
         // Initialize profile state with empty strings if document doesn't exist
-        setSeekerProfile({ id: "", name: "", email: "", location: "", skills: "", resumeUrl: "", portfolioUrl: "" });
+        setSeekerProfile({ id: "", name: "", email: "", location: "", skills: "", resumeUrl: "", portfolioUrl: "", fullName: "" });
       }
     } catch (error) {
       console.error("Error fetching seeker profile:", error);
@@ -419,7 +525,7 @@ const SeekerDashboard = () => {
   // }, [activeTab, reloadData]);
 
   // Handle changes in the profile/settings form
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setSeekerProfile({ ...seekerProfile, [name]: value ?? "" });
   };
@@ -475,14 +581,53 @@ const SeekerDashboard = () => {
     setIsLoadingProfile(true);
     try {
       const seekerRef = doc(db, "seekers", seekerId); // Use 'seekers' collection
-      // Prepare data, ensuring no undefined values are sent if not intended
+      // Prepare data, ensuring all fields are included
       const profileDataToUpdate = {
         name: seekerProfile.name || "",
-        // email: seekerProfile.email || "", // Usually email is not changed here
+        surname: seekerProfile.surname || "",
+        email: seekerProfile.email || "",
         location: seekerProfile.location || "",
-        skills: seekerProfile.skills || "",
+        address: seekerProfile.address || "",
+        phone: seekerProfile.phone || "",
+        birthDate: seekerProfile.birthDate || "",
+        nationality: seekerProfile.nationality || "",
+        gender: seekerProfile.gender || "",
+        altContact: seekerProfile.altContact || "",
         resumeUrl: seekerProfile.resumeUrl || "",
+        presentationVideoUrl: seekerProfile.presentationVideoUrl || "",
+        instagramUrl: seekerProfile.instagramUrl || "",
+        facebookUrl: seekerProfile.facebookUrl || "",
+        languages: seekerProfile.languages || [],
+        title: seekerProfile.title || "",
+        skills: seekerProfile.skills || "",
+        bio: seekerProfile.bio || "",
+        experience: seekerProfile.experience || [],
+        education: seekerProfile.education || [],
+        projects: seekerProfile.projects || [],
+        certifications: seekerProfile.certifications || [],
+        references: seekerProfile.references || [],
         portfolioUrl: seekerProfile.portfolioUrl || "",
+        githubUrl: seekerProfile.githubUrl || "",
+        linkedinUrl: seekerProfile.linkedinUrl || "",
+        twitterUrl: seekerProfile.twitterUrl || "",
+        websiteUrl: seekerProfile.websiteUrl || "",
+        dribbbleUrl: seekerProfile.dribbbleUrl || "",
+        behanceUrl: seekerProfile.behanceUrl || "",
+        mediumUrl: seekerProfile.mediumUrl || "",
+        availability: seekerProfile.availability || "",
+        salaryExpectation: seekerProfile.salaryExpectation || "",
+        contractType: seekerProfile.contractType || "",
+        workPreference: seekerProfile.workPreference || "",
+        interestArea: seekerProfile.interestArea || "",
+        remoteOnly: !!seekerProfile.remoteOnly,
+        willingToRelocate: !!seekerProfile.willingToRelocate,
+        preferredLocations: seekerProfile.preferredLocations || [],
+        cryptoPaymentPreference: !!seekerProfile.cryptoPaymentPreference,
+        shareProfile: !!seekerProfile.shareProfile,
+        phoneCountryCode: seekerProfile.phoneCountryCode || "+1",
+        telegramUrl: seekerProfile.telegramUrl || "",
+        zipCode: seekerProfile.zipCode || "",
+        altContactCountryCode: seekerProfile.altContactCountryCode || "+1",
       };
       await updateDoc(seekerRef, profileDataToUpdate);
       alert("Profile updated successfully!");
@@ -741,6 +886,34 @@ const SeekerDashboard = () => {
     }
   };
 
+  // Handle CV upload
+  const handleCVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && seekerId) {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("seekerId", seekerId); // Use seekerId
+
+      try {
+        // Adjust API endpoint for seekers
+        const response = await fetch("/api/seeker/cv", {
+          method: "POST",
+          body: formData,
+        });
+        const responseData = await response.json();
+        if (!response.ok) throw new Error(responseData.message || "Failed to upload CV");
+        setSeekerProfile({ ...seekerProfile, resumeUrl: responseData.url }); // Update CV URL with URL from server
+        console.log("Seeker CV upload successful!");
+      } catch (error: any) {
+        console.error("Error uploading seeker CV:", error);
+        alert(`Failed to upload CV: ${error.message || "Unknown error"}`);
+      } finally {
+        setIsUploading(false);
+      }
+    }
+  };
+
   // Render Settings Tab Content (Editable Form)
   const renderSettings = () => {
     return (
@@ -761,95 +934,294 @@ const SeekerDashboard = () => {
           </button>
         </div>
         {settingsTab === 'profile' && (
-          <form className="space-y-6" onSubmit={handleProfileSubmit}>
-            {/* Name */}
-            <input
-              type="text"
-              name="name"
-              value={seekerProfile.name ?? ""}
-              onChange={handleProfileChange}
-              placeholder="Your Name"
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-              required
-            />
-            {/* Email (Read Only) */}
-            <input
-              type="email"
-              name="email"
-              value={seekerProfile.email ?? ""}
-              placeholder="Your Email"
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-              readOnly
-              title="Email cannot be changed here"
-            />
-            {/* Location */}
-            <input
-              type="text"
-              name="location"
-              value={seekerProfile.location ?? ""}
-              onChange={handleProfileChange}
-              placeholder="Your Location (e.g., City, Country)"
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-            />
-            {/* Skills */}
-            <textarea
-              name="skills"
-              value={seekerProfile.skills ?? ""}
-              onChange={handleProfileChange}
-              placeholder="Your Skills (comma-separated, e.g., React, Node.js, Solidity)"
-              rows={3}
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-            ></textarea>
-            {/* Resume URL */}
-            <input
-              type="url"
-              name="resumeUrl"
-              value={seekerProfile.resumeUrl ?? ""}
-              onChange={handleProfileChange}
-              placeholder="Link to your Resume (e.g., Google Drive, Dropbox, personal site)"
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-            />
-            {/* Portfolio URL */}
-            <input
-              type="url"
-              name="portfolioUrl"
-              value={seekerProfile.portfolioUrl ?? ""}
-              onChange={handleProfileChange}
-              placeholder="Link to your Portfolio or GitHub profile"
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-            />
-
-            {/* Password */}
-            <input
-              type="password"
-              name="password"
-              placeholder="New Password"
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-            />
-
-            {/* Upload CV */}
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">Upload CV (PDF only):</label>
-              <input
-                type="file"
-                accept="application/pdf"
-                className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-              />
+          <form onSubmit={handleProfileSubmit}>
+            {/* Personal Data */}
+            <h3 className="text-lg font-bold text-orange-400 mb-4">Personal Data</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+              <div className="space-y-6 col-span-1 md:col-span-1">
+                {/* Name */}
+                <input type="text" name="name" value={seekerProfile.name ?? ""} onChange={handleProfileChange} placeholder="First Name" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
+                {/* Surname */}
+                <input type="text" name="surname" value={seekerProfile.surname ?? ""} onChange={handleProfileChange} placeholder="Surname" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
+                {/* Email (Read Only) */}
+                <input type="email" name="email" value={seekerProfile.email ?? ""} placeholder="Email" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" readOnly title="Email cannot be changed here" />
+                {/* Location */}
+                <input type="text" name="location" value={seekerProfile.location ?? ""} onChange={handleProfileChange} placeholder="Location (e.g., City, Country)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Address (optional) */}
+                <input type="text" name="address" value={seekerProfile.address ?? ""} onChange={handleProfileChange} placeholder="Full Address (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Zip Code */}
+                <input type="text" name="zipCode" value={seekerProfile.zipCode ?? ""} onChange={handleProfileChange} placeholder="Zip Code (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+              </div>
+              <div className="space-y-6 col-span-1 md:col-span-1">
+                {/* Phone with country code */}
+                <div className="flex gap-2">
+                  <select name="phoneCountryCode" value={seekerProfile.phoneCountryCode ?? "+1"} onChange={handleProfileChange} className="p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-28">
+                    <option value="+1">+1 (US)</option>
+                    <option value="+44">+44 (UK)</option>
+                    <option value="+351">+351 (PT)</option>
+                    <option value="+55">+55 (BR)</option>
+                    <option value="+33">+33 (FR)</option>
+                    <option value="+49">+49 (DE)</option>
+                    <option value="+34">+34 (ES)</option>
+                    <option value="+39">+39 (IT)</option>
+                    <option value="+91">+91 (IN)</option>
+                    <option value="+81">+81 (JP)</option>
+                    <option value="+86">+86 (CN)</option>
+                    <option value="+7">+7 (RU)</option>
+                    <option value="+61">+61 (AU)</option>
+                    <option value="+258">+258 (MZ)</option>
+                    <option value="+244">+244 (AO)</option>
+                    <option value="+27">+27 (ZA)</option>
+                    <option value="+358">+358 (FI)</option>
+                    <option value="+47">+47 (NO)</option>
+                    <option value="+46">+46 (SE)</option>
+                    <option value="+41">+41 (CH)</option>
+                    <option value="+31">+31 (NL)</option>
+                    <option value="+32">+32 (BE)</option>
+                    <option value="+420">+420 (CZ)</option>
+                    <option value="+48">+48 (PL)</option>
+                    <option value="+40">+40 (RO)</option>
+                    <option value="+90">+90 (TR)</option>
+                    {/* Add more as needed */}
+                  </select>
+                  <input type="text" name="phone" value={seekerProfile.phone ?? ""} onChange={handleProfileChange} placeholder="Phone (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                </div>
+                {/* Birth Date with clarification */}
+                <input type="date" name="birthDate" value={seekerProfile.birthDate ?? ""} onChange={handleProfileChange} placeholder="Birth Date" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                <span className="text-xs text-gray-400">Birth Date (for age verification)</span>
+                {/* Nacionalidade */}
+                <input type="text" name="nationality" value={seekerProfile.nationality ?? ""} onChange={handleProfileChange} placeholder="Nationality" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Gênero */}
+                <select name="gender" value={seekerProfile.gender ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm">
+                  <option value="">Gender (optional)</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="prefer_not_to_say">Prefer not to say</option>
+                </select>
+              </div>
+              <div className="space-y-6 col-span-1 md:col-span-1">
+                {/* Alternative Contact with country code */}
+                <div className="flex gap-2">
+                  <select
+                    name="altContactCountryCode"
+                    value={seekerProfile.altContactCountryCode ?? "+1"}
+                    onChange={handleProfileChange}
+                    className="p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-28"
+                  >
+                    <option value="+1">+1 (US)</option>
+                    <option value="+44">+44 (UK)</option>
+                    <option value="+351">+351 (PT)</option>
+                    <option value="+55">+55 (BR)</option>
+                    <option value="+33">+33 (FR)</option>
+                    <option value="+49">+49 (DE)</option>
+                    <option value="+34">+34 (ES)</option>
+                    <option value="+39">+39 (IT)</option>
+                    <option value="+91">+91 (IN)</option>
+                    <option value="+81">+81 (JP)</option>
+                    <option value="+86">+86 (CN)</option>
+                    <option value="+7">+7 (RU)</option>
+                    <option value="+61">+61 (AU)</option>
+                    <option value="+258">+258 (MZ)</option>
+                    <option value="+244">+244 (AO)</option>
+                    <option value="+27">+27 (ZA)</option>
+                    <option value="+358">+358 (FI)</option>
+                    <option value="+47">+47 (NO)</option>
+                    <option value="+46">+46 (SE)</option>
+                    <option value="+41">+41 (CH)</option>
+                    <option value="+31">+31 (NL)</option>
+                    <option value="+32">+32 (BE)</option>
+                    <option value="+420">+420 (CZ)</option>
+                    <option value="+48">+48 (PL)</option>
+                    <option value="+40">+40 (RO)</option>
+                    <option value="+90">+90 (TR)</option>
+                    {/* Add more as needed */}
+                  </select>
+                  <input
+                    type="text"
+                    name="altContact"
+                    value={seekerProfile.altContact ?? ""}
+                    onChange={handleProfileChange}
+                    placeholder="Alternative Contact (optional)"
+                    className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                  />
+                </div>
+                {/* ...existing code for CV upload, social, etc... */}
+                {/* Upload de CV */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Upload CV (PDF/DOC)</label>
+                  <input type="file" accept=".pdf,.doc,.docx" onChange={handleCVUpload} className="w-full text-white" />
+                  {seekerProfile.resumeUrl && (<a href={seekerProfile.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline block mt-1">View uploaded CV</a>)}
+                </div>
+                {/* Link para vídeo de apresentação */}
+                <input type="url" name="presentationVideoUrl" value={seekerProfile.presentationVideoUrl ?? ""} onChange={handleProfileChange} placeholder="Link to Presentation Video (YouTube, Loom, etc.)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Redes sociais pessoais */}
+                <input type="url" name="instagramUrl" value={seekerProfile.instagramUrl ?? ""} onChange={handleProfileChange} placeholder="Instagram URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                <input type="url" name="facebookUrl" value={seekerProfile.facebookUrl ?? ""} onChange={handleProfileChange} placeholder="Facebook URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Portfolio URL (optional) */}
+                <input type="url" name="portfolioUrl" value={seekerProfile.portfolioUrl ?? ""} onChange={handleProfileChange} placeholder="Portfolio URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Resume Link (optional) */}
+                <input type="url" name="resumeUrl" value={seekerProfile.resumeUrl ?? ""} onChange={handleProfileChange} placeholder="Resume Link (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Twitter URL (optional) */}
+                <input type="url" name="twitterUrl" value={seekerProfile.twitterUrl ?? ""} onChange={handleProfileChange} placeholder="Twitter URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Telegram URL (optional) */}
+                <input type="url" name="telegramUrl" value={seekerProfile.telegramUrl ?? ""} onChange={handleProfileChange} placeholder="Telegram URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+              </div>
             </div>
-
-            {/* Password Note */}
-            <p className="text-sm text-gray-400">
-              Password changes are handled through a separate secure process (if applicable).
-            </p>
-
-            {/* Save Button */}
-            <button
-              type="submit"
-              disabled={isLoadingProfile}
-              className={`bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-colors hover:bg-orange-300 border-none w-full mt-5 ${isLoadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {isLoadingProfile ? 'Saving...' : 'Save Profile'}
-            </button>
+            {/* Idiomas (full width) */}
+            <div className="mb-10">
+              <label className="block text-sm text-gray-400 mb-2">Languages</label>
+              {(seekerProfile.languages ?? []).map((lang, idx) => (
+                <div key={idx} className="flex gap-2 mb-2">
+                  <input type="text" name={`language-${idx}`} value={lang.language} onChange={e => { const updated = [...(seekerProfile.languages ?? [])]; updated[idx] = { ...updated[idx], language: e.target.value }; setSeekerProfile({ ...seekerProfile, languages: updated }); }} placeholder="Language (e.g., English)" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                  <select name={`proficiency-${idx}`} value={lang.proficiency} onChange={e => { const updated = [...(seekerProfile.languages ?? [])]; updated[idx] = { ...updated[idx], proficiency: e.target.value }; setSeekerProfile({ ...seekerProfile, languages: updated }); }} className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm">
+                    <option value="">Proficiency</option>
+                    <option value="Native">Native</option>
+                    <option value="Fluent">Fluent</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Basic">Basic</option>
+                  </select>
+                  <button type="button" onClick={() => { const updated = [...(seekerProfile.languages ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, languages: updated }); }} className="text-red-400 ml-2">Remove</button>
+                </div>
+              ))}
+              <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, languages: [...(seekerProfile.languages ?? []), { language: '', proficiency: '' }] }); }} className="text-orange-400 mt-2">+ Add Language</button>
+            </div>
+            {/* Career */}
+            <h3 className="text-lg font-bold text-orange-400 mb-4">Career</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+              <div className="space-y-6">
+                {/* Professional Title */}
+                <input type="text" name="title" value={seekerProfile.title ?? ""} onChange={handleProfileChange} placeholder="Professional Title (e.g., Frontend Developer)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Skills */}
+                <textarea name="skills" value={seekerProfile.skills ?? ""} onChange={handleProfileChange} placeholder="Your Skills (comma-separated, e.g., React, Node.js, Solidity)" rows={3} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"></textarea>
+                {/* Experiência Profissional */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Professional Experience</label>
+                  {(seekerProfile.experience ?? []).map((exp, idx) => (
+                    <div key={idx} className="flex flex-col md:flex-row gap-2 mb-2">
+                      <input type="text" name={`exp-position-${idx}`} value={exp.position} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], position: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Position" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="text" name={`exp-company-${idx}`} value={exp.company} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], company: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Company" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="text" name={`exp-location-${idx}`} value={exp.location} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], location: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Location" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="text" name={`exp-startDate-${idx}`} value={exp.startDate} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], startDate: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Start Date (YYYY-MM)" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="text" name={`exp-endDate-${idx}`} value={exp.endDate} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], endDate: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="End Date (YYYY-MM or Present)" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <textarea name={`exp-description-${idx}`} value={exp.description} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], description: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Description" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <button type="button" onClick={() => { const updated = [...(seekerProfile.experience ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, experience: updated }); }} className="text-red-400 ml-2">Remove</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, experience: [...(seekerProfile.experience ?? []), { position: '', company: '', location: '', startDate: '', endDate: '', current: false, description: '' }] }); }} className="text-orange-400 mt-2">+ Add Experience</button>
+                </div>
+                {/* Educação */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Education</label>
+                  {(seekerProfile.education ?? []).map((edu, idx) => (
+                    <div key={idx} className="flex flex-col md:flex-row gap-2 mb-2">
+                      <input type="text" name={`edu-degree-${idx}`} value={edu.degree} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], degree: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Degree" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="text" name={`edu-institution-${idx}`} value={edu.institution} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], institution: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Institution" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="text" name={`edu-year-${idx}`} value={edu.year} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], year: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Year" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <textarea name={`edu-description-${idx}`} value={edu.description} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], description: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Description" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <button type="button" onClick={() => { const updated = [...(seekerProfile.education ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, education: updated }); }} className="text-red-400 ml-2">Remove</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, education: [...(seekerProfile.education ?? []), { degree: '', institution: '', year: '', description: '' }] }); }} className="text-orange-400 mt-2">+ Add Education</button>
+                </div>
+              </div>
+              <div className="space-y-6">
+                {/* Projetos */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Projects</label>
+                  {(seekerProfile.projects ?? []).map((proj, idx) => (
+                    <div key={idx} className="flex flex-col md:flex-row gap-2 mb-2">
+                      <input type="text" name={`proj-name-${idx}`} value={proj.name} onChange={e => { const updated = [...(seekerProfile.projects ?? [])]; updated[idx] = { ...updated[idx], name: e.target.value }; setSeekerProfile({ ...seekerProfile, projects: updated }); }} placeholder="Project Name" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="url" name={`proj-url-${idx}`} value={proj.url} onChange={e => { const updated = [...(seekerProfile.projects ?? [])]; updated[idx] = { ...updated[idx], url: e.target.value }; setSeekerProfile({ ...seekerProfile, projects: updated }); }} placeholder="Project URL" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="text" name={`proj-technologies-${idx}`} value={proj.technologies} onChange={e => { const updated = [...(seekerProfile.projects ?? [])]; updated[idx] = { ...updated[idx], technologies: e.target.value }; setSeekerProfile({ ...seekerProfile, projects: updated }); }} placeholder="Technologies" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <textarea name={`proj-description-${idx}`} value={proj.description} onChange={e => { const updated = [...(seekerProfile.projects ?? [])]; updated[idx] = { ...updated[idx], description: e.target.value }; setSeekerProfile({ ...seekerProfile, projects: updated }); }} placeholder="Description" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <button type="button" onClick={() => { const updated = [...(seekerProfile.projects ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, projects: updated }); }} className="text-red-400 ml-2">Remove</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, projects: [...(seekerProfile.projects ?? []), { name: '', url: '', technologies: '', description: '' }] }); }} className="text-orange-400 mt-2">+ Add Project</button>
+                </div>
+                {/* Certificações */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Certifications</label>
+                  {(seekerProfile.certifications ?? []).map((cert, idx) => (
+                    <div key={idx} className="flex flex-wrap gap-2 mb-2">
+                      <input type="text" name={`cert-name-${idx}`} value={cert.name} onChange={e => { const updated = [...(seekerProfile.certifications ?? [])]; updated[idx] = { ...updated[idx], name: e.target.value }; setSeekerProfile({ ...seekerProfile, certifications: updated }); }} placeholder="Certification Name" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="text" name={`cert-issuer-${idx}`} value={cert.issuer} onChange={e => { const updated = [...(seekerProfile.certifications ?? [])]; updated[idx] = { ...updated[idx], issuer: e.target.value }; setSeekerProfile({ ...seekerProfile, certifications: updated }); }} placeholder="Issuer" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="text" name={`cert-date-${idx}`} value={cert.date} onChange={e => { const updated = [...(seekerProfile.certifications ?? [])]; updated[idx] = { ...updated[idx], date: e.target.value }; setSeekerProfile({ ...seekerProfile, certifications: updated }); }} placeholder="Date" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="url" name={`cert-url-${idx}`} value={cert.url} onChange={e => { const updated = [...(seekerProfile.certifications ?? [])]; updated[idx] = { ...updated[idx], url: e.target.value }; setSeekerProfile({ ...seekerProfile, certifications: updated }); }} placeholder="Credential URL" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <button type="button" onClick={() => { const updated = [...(seekerProfile.certifications ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, certifications: updated }); }} className="text-red-400 ml-2">Remove</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, certifications: [...(seekerProfile.certifications ?? []), { name: '', issuer: '', date: '', url: '' }] }); }} className="text-orange-400 mt-2">+ Add Certification</button>
+                </div>
+                {/* Referências profissionais */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Professional References</label>
+                  {(seekerProfile.references ?? []).map((ref, idx) => (
+                    <div key={idx} className="flex flex-col md:flex-row gap-2 mb-2">
+                      <input type="text" name={`ref-name-${idx}`} value={ref.name} onChange={e => { const updated = [...(seekerProfile.references ?? [])]; updated[idx] = { ...updated[idx], name: e.target.value }; setSeekerProfile({ ...seekerProfile, references: updated }); }} placeholder="Name" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="text" name={`ref-contact-${idx}`} value={ref.contact} onChange={e => { const updated = [...(seekerProfile.references ?? [])]; updated[idx] = { ...updated[idx], contact: e.target.value }; setSeekerProfile({ ...seekerProfile, references: updated }); }} placeholder="Contact" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <input type="text" name={`ref-relation-${idx}`} value={ref.relation} onChange={e => { const updated = [...(seekerProfile.references ?? [])]; updated[idx] = { ...updated[idx], relation: e.target.value }; setSeekerProfile({ ...seekerProfile, references: updated }); }} placeholder="Relation" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      <button type="button" onClick={() => { const updated = [...(seekerProfile.references ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, references: updated }); }} className="text-red-400 ml-2">Remove</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, references: [...(seekerProfile.references ?? []), { name: '', contact: '', relation: '' }] }); }} className="text-orange-400 mt-2">+ Add Reference</button>
+                </div>
+              </div>
+            </div>
+            {/* What I'm Looking For */}
+            <h3 className="text-lg font-bold text-orange-400 mb-4">What I'm Looking For</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+              <div className="space-y-6">
+                {/* Disponibilidade */}
+                <input type="text" name="availability" value={seekerProfile.availability ?? ""} onChange={handleProfileChange} placeholder="Availability (e.g., Immediate, 15 days notice)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Pretensão salarial */}
+                <input type="text" name="salaryExpectation" value={seekerProfile.salaryExpectation ?? ""} onChange={handleProfileChange} placeholder="Salary Expectation (e.g., $3000-4000/mo)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+              </div>
+              <div className="space-y-6">
+                {/* Contract Type */}
+                <select name="contractType" value={seekerProfile.contractType ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm">
+                  <option value="">Contract Type</option>
+                  <option value="Full Time">Full Time</option>
+                  <option value="Part Time">Part Time</option>
+                  <option value="Other">Other</option>
+                </select>
+                {/* Área de interesse */}
+                <input type="text" name="interestArea" value={seekerProfile.interestArea ?? ""} onChange={handleProfileChange} placeholder="Interest Area (e.g., Frontend, Blockchain, Design)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+              </div>
+              <div className="space-y-6">
+                {/* Preferências de trabalho */}
+                <select name="workPreference" value={seekerProfile.workPreference ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm">
+                  <option value="">Work Preference</option>
+                  <option value="Remote">Remote</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="Onsite">Onsite</option>
+                </select>
+                {/* Preferências extras */}
+                <div className="flex flex-wrap gap-4 mt-4">
+                  <label className="flex items-center gap-2 text-white">
+                    <input type="checkbox" name="remoteOnly" checked={!!seekerProfile.remoteOnly} onChange={e => setSeekerProfile({ ...seekerProfile, remoteOnly: e.target.checked })} /> Remote Only
+                  </label>
+                  <label className="flex items-center gap-2 text-white">
+                    <input type="checkbox" name="willingToRelocate" checked={!!seekerProfile.willingToRelocate} onChange={e => setSeekerProfile({ ...seekerProfile, willingToRelocate: e.target.checked })} /> Willing to Relocate
+                  </label>
+                  <label className="flex items-center gap-2 text-white">
+                    <input type="checkbox" name="cryptoPaymentPreference" checked={!!seekerProfile.cryptoPaymentPreference} onChange={e => setSeekerProfile({ ...seekerProfile, cryptoPaymentPreference: e.target.checked })} /> Accept Crypto Payment
+                  </label>
+                </div>
+              </div>
+            </div>
+            {/* Checkbox de compartilhamento de perfil */}
+            <div className="mb-8">
+              <label className="flex items-center gap-2 text-white">
+                <input type="checkbox" name="shareProfile" checked={!!seekerProfile.shareProfile} onChange={e => setSeekerProfile({ ...seekerProfile, shareProfile: e.target.checked })} />
+                Allow your full profile to be shared with hiring companies?
+              </label>
+            </div>
+            {/* Botão de salvar */}
+            <div className="col-span-1 md:col-span-2">
+              <button type="submit" disabled={isLoadingProfile} className={`bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-colors hover:bg-orange-300 border-none w-full mt-5 ${isLoadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}>{isLoadingProfile ? 'Saving...' : 'Save Profile'}</button>
+            </div>
           </form>
         )}
         {settingsTab === 'notifications' && (
@@ -1338,7 +1710,7 @@ const SeekerDashboard = () => {
                   My Tickets
                 </button>
               </div>
-              {/* Render content for each support tab here (to be implemented next) */}
+              {/* Render content for each support tab here */}
               {activeSupportTab === 'new' && (
                 <form onSubmit={handleSubmitTicket} className="space-y-6 max-w-lg">
                   <div>
@@ -1371,7 +1743,6 @@ const SeekerDashboard = () => {
                       className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
                       value={ticketDescription}
                       onChange={e => setTicketDescription(e.target.value)}
-                      rows={5}
                       required
                     />
                   </div>
@@ -1379,9 +1750,8 @@ const SeekerDashboard = () => {
                     <label className="block text-sm text-gray-300 mb-1">Attachment (optional)</label>
                     <input
                       type="file"
-                      accept="image/*,application/pdf"
-                      onChange={handleTicketFileChange}
                       className="w-full text-white"
+                      onChange={handleTicketFileChange}
                     />
                   </div>
                   {ticketError && <div className="text-red-400">{ticketError}</div>}
@@ -1391,24 +1761,22 @@ const SeekerDashboard = () => {
                     className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 disabled:opacity-60"
                     disabled={ticketLoading}
                   >
-                    {ticketLoading ? "Submitting..." : "Submit Ticket"}
+                    {ticketLoading ? 'Submitting...' : 'Submit Ticket'}
                   </button>
                 </form>
               )}
               {activeSupportTab === 'my' && (
-                <div className="flex gap-6">
+                <div className="flex flex-col md:flex-row gap-6">
                   {/* Ticket list */}
-                  <div className="w-1/3 min-w-[220px] max-w-xs border-r border-orange-900 pr-4 overflow-y-auto ticket-list">
+                  <div className="md:w-1/3">
                     {loadingTickets ? (
                       <div className="text-gray-400">Loading tickets...</div>
-                    ) : myTickets.length === 0 ? (
-                      <div className="text-gray-400">No support tickets found.</div>
                     ) : (
                       <ul className="space-y-2">
                         {myTickets.map(ticket => (
                           <li key={ticket.id}>
                             <button
-                              className={`w-full text-left p-3 rounded-lg border border-orange-700/30 bg-black/40 hover:bg-orange-900/30 transition-colors ${selectedTicket?.id === ticket.id ? 'border-orange-500 bg-orange-900/40' : ''}`}
+                              className={`w-full text-left p-3 rounded-lg border ${selectedTicket?.id === ticket.id ? 'border-orange-500 bg-black/60' : 'border-gray-700 bg-black/40'} transition`}
                               onClick={() => setSelectedTicket(ticket)}
                             >
                               <div className="font-semibold text-orange-400 truncate">{ticket.subject}</div>
