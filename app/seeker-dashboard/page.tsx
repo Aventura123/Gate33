@@ -992,30 +992,6 @@ const SeekerDashboard = () => {
                     </div>
                   )}
                 </div>
-                {/* Bio */}
-                <textarea
-                  name="bio"
-                  value={seekerProfile.bio ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="Short Bio (optional)"
-                  rows={3}
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                ></textarea>
-                {/* Presentation Video Link */}
-                <input
-                  type="url"
-                  name="presentationVideoUrl"
-                  value={seekerProfile.presentationVideoUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="Presentation Video Link (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
-                {/* Debug values */}
-                <div className="p-2 bg-black/70 border border-yellow-500 rounded text-yellow-500 text-xs">
-                  <p>Debug values:</p>
-                  <p>Bio: {JSON.stringify(seekerProfile.bio)}</p>
-                  <p>Video: {JSON.stringify(seekerProfile.presentationVideoUrl)}</p>
-                </div>
               </div>
               {/* COLUNA 2 */}
               <div className="space-y-6 col-span-1 md:col-span-1">
@@ -1038,31 +1014,15 @@ const SeekerDashboard = () => {
                   placeholder="Resume Link (optional)"
                   className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
                 />
-                {/* LinkedIn */}
+                {/* Presentation Video Link - MOVED HERE */}
                 <input
                   type="url"
-                  name="linkedinUrl"
-                  value={seekerProfile.linkedinUrl ?? ""}
+                  name="presentationVideoUrl"
+                  value={seekerProfile.presentationVideoUrl ?? ""}
                   onChange={handleProfileChange}
-                  placeholder="LinkedIn URL (optional)"
+                  placeholder="Presentation Video Link (optional)"
                   className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
                 />
-                {/* Twitter */}
-                <input
-                  type="url"
-                  name="twitterUrl"
-                  value={seekerProfile.twitterUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="Twitter URL (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
-                {/* Debug values */}
-                <div className="p-2 bg-black/70 border border-yellow-500 rounded text-yellow-500 text-xs">
-                  <p>Debug values:</p>
-                  <p>Resume: {JSON.stringify(seekerProfile.resumeUrl)}</p>
-                  <p>LinkedIn: {JSON.stringify(seekerProfile.linkedinUrl)}</p>
-                  <p>Twitter: {JSON.stringify(seekerProfile.twitterUrl)}</p>
-                </div>
               </div>
               {/* COLUNA 3 */}
               <div className="space-y-6 col-span-1 md:col-span-1">
@@ -1144,6 +1104,17 @@ const SeekerDashboard = () => {
                     className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
                   />
                 </div>
+                
+                {/* Telegram - MOVED HERE after Alternative Contact */}
+                <input
+                  type="url"
+                  name="telegramUrl"
+                  value={seekerProfile.telegramUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="Telegram URL (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
+                
                 {/* Instagram URL */}
                 <input type="url" name="instagramUrl" value={seekerProfile.instagramUrl ?? ""} onChange={handleProfileChange} placeholder="Instagram URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
                 {/* Facebook URL */}
@@ -1157,23 +1128,40 @@ const SeekerDashboard = () => {
                   placeholder="Website URL (optional)"
                   className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
                 />
-                {/* Telegram */}
+                {/* LinkedIn - MOVED HERE */}
                 <input
                   type="url"
-                  name="telegramUrl"
-                  value={seekerProfile.telegramUrl ?? ""}
+                  name="linkedinUrl"
+                  value={seekerProfile.linkedinUrl ?? ""}
                   onChange={handleProfileChange}
-                  placeholder="Telegram URL (optional)"
+                  placeholder="LinkedIn URL (optional)"
                   className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
                 />
-                {/* Debug values */}
-                <div className="p-2 bg-black/70 border border-yellow-500 rounded text-yellow-500 text-xs">
-                  <p>Debug values:</p>
-                  <p>Website: {JSON.stringify(seekerProfile.websiteUrl)}</p>
-                  <p>Telegram: {JSON.stringify(seekerProfile.telegramUrl)}</p>
-                </div>
+                {/* Twitter - MOVED HERE */}
+                <input
+                  type="url"
+                  name="twitterUrl"
+                  value={seekerProfile.twitterUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="Twitter URL (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
               </div>
             </div>
+            
+            {/* Bio - MOVED HERE with more space */}
+            <div className="mb-8">
+              <label className="block text-sm text-gray-400 mb-2">Short Bio</label>
+              <textarea
+                name="bio"
+                value={seekerProfile.bio ?? ""}
+                onChange={handleProfileChange}
+                placeholder="Write a short professional bio (optional)"
+                rows={5}
+                className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+              ></textarea>
+            </div>
+            
             {/* Idiomas (full width) */}
             <div className="mb-10">
               <label className="block text-sm text-gray-400 mb-2">Languages</label>
