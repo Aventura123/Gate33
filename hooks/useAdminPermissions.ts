@@ -1,9 +1,9 @@
-// Um hook personalizado para verificar permissões de administrador
+// A custom hook to check administrator permissions
 import { useState, useEffect, useCallback } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
-// Defina tipos para os papéis e permissões
+// Define types for roles and permissions
 export type AdminRole = 'super_admin' | 'admin' | 'support';
 
 export interface AdminPermissions {
@@ -13,11 +13,11 @@ export interface AdminPermissions {
   canAccessSettings: boolean;
   canViewAnalytics: boolean;
   canEditContent: boolean;
-  canManageNFTs: boolean;     // Nova permissão para NFTs
-  canManagePayments: boolean; // Nova permissão para pagamentos
+  canManageNFTs: boolean;     // New permission for NFTs
+  canManagePayments: boolean; // New permission for payments
 }
 
-// Mapeamento padrão de papéis para permissões
+// Default role to permissions mapping
 const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
   super_admin: {
     canManageUsers: true,
@@ -51,7 +51,7 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
   }
 };
 
-// Função segura para acessar localStorage (apenas no cliente)
+// Safe function to access localStorage (client-side only)
 const getLocalStorageItem = (key: string): string | null => {
   if (typeof window !== 'undefined') {
     return localStorage.getItem(key);
@@ -59,11 +59,19 @@ const getLocalStorageItem = (key: string): string | null => {
   return null;
 };
 
-export const useAdminPermissions = () => {
+// Interface for hook options
+interface UseAdminPermissionsOptions {
+  redirectUrl?: string; // URL for redirection in case of authentication error
+}
+
+export const useAdminPermissions = (options: UseAdminPermissionsOptions = {}) => {
   const [role, setRole] = useState<AdminRole | null>(null);
   const [permissions, setPermissions] = useState<AdminPermissions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Define default redirect URL as /admin-login if not specified
+  const redirectUrl = options.redirectUrl || "/admin-login";
 
   useEffect(() => {
     const fetchAdminPermissions = async () => {
@@ -75,23 +83,23 @@ export const useAdminPermissions = () => {
           throw new Error("Firebase is not initialized");
         }
         
-        // Verificação forçada para André Ventura (super_admin)
+        // Forced verification for André Ventura (super_admin)
         const adminId = getLocalStorageItem("userId");
         const userName = getLocalStorageItem("userName") || "Unknown User";
         
         console.log("Admin ID from localStorage:", adminId);
         console.log("User Name from localStorage:", userName);
         
-        // Verifica se é o usuário André Ventura e força super_admin
+        // Check if the user is André Ventura and force super_admin
         if (userName === "André Ventura" || adminId === "a4425bf7-3a96-4a94-a95c-51689181413e") {
-          console.log("Detectado usuário André Ventura - Aplicando permissões de super_admin");
+          console.log("Detected user André Ventura - Applying super_admin permissions");
           const superAdminRole: AdminRole = 'super_admin';
           
           if (typeof window !== 'undefined') {
             localStorage.setItem("userRole", superAdminRole);
           }
           
-          // Define todas as permissões como true
+          // Set all permissions to true
           const fullPermissions: AdminPermissions = {
             canManageUsers: true,
             canApproveCompanies: true,
@@ -111,7 +119,7 @@ export const useAdminPermissions = () => {
           return;
         }
         
-        // Processamento normal para outros usuários
+        // Normal processing for other users
         const userRole = getLocalStorageItem("userRole") || "viewer";
         console.log("User Role from localStorage:", userRole);
 
@@ -128,24 +136,25 @@ export const useAdminPermissions = () => {
             return;
           }
 
-          console.warn("Token also not found. Redirecting to login page.");
+          console.warn("Token also not found. Redirecting to login page:", redirectUrl);
           setError("Admin ID not found");
           setLoading(false);
           if (typeof window !== 'undefined') {
-            window.location.replace("/admin-login");
+            // Using the configurable redirect URL
+            window.location.replace(redirectUrl);
           }
           return;
         }
         
-        // Primeiro verificamos se há um role válido no localStorage
+        // First check if there's a valid role in localStorage
         let adminRole: AdminRole;
         
-        // Se o userRole do localStorage for válido (super_admin, admin, support), usamos ele
+        // If the userRole from localStorage is valid (super_admin, admin, support), use it
         if (['super_admin', 'admin', 'support'].includes(userRole)) {
           console.log(`Using role from localStorage: ${userRole}`);
           adminRole = userRole as AdminRole;
         } else {
-          // Caso contrário, buscamos no Firestore
+          // Otherwise, fetch from Firestore
           const adminDoc = await getDoc(doc(db, "admins", adminId));
           console.log("Admin document fetched:", adminDoc.exists() ? adminDoc.data() : "Not found");
           
@@ -157,13 +166,13 @@ export const useAdminPermissions = () => {
           adminRole = adminData.role as AdminRole;
           console.log("Admin role from Firestore:", adminRole);
           
-          // Validação do role obtido do Firestore
+          // Validation of the role obtained from Firestore
           if (!['super_admin', 'admin', 'support'].includes(adminRole)) {
             console.warn(`Invalid role "${adminRole}" found in Firestore, defaulting to admin`);
             adminRole = 'admin';
           }
           
-          // Sincronizamos o localStorage com o valor do Firestore
+          // Synchronize localStorage with the value from Firestore
           if (typeof window !== 'undefined') {
             localStorage.setItem("userRole", adminRole);
           }
@@ -175,7 +184,7 @@ export const useAdminPermissions = () => {
           ...defaultRolePermissions[adminRole]
         };
         
-        // Se o usuário for super_admin, garantimos todas as permissões
+        // If the user is super_admin, ensure all permissions are granted
         if (adminRole === 'super_admin') {
           Object.keys(adminPermissions).forEach(key => {
             adminPermissions[key as keyof AdminPermissions] = true;
@@ -204,27 +213,27 @@ export const useAdminPermissions = () => {
     if (typeof window !== 'undefined') {
       fetchAdminPermissions();
     } else {
-      // No servidor, definir valores padrão
+      // On the server, set default values
       setRole('admin');
       setPermissions(defaultRolePermissions.admin);
       setLoading(false);
     }
-  }, []);
+  }, [redirectUrl]);
   
-  // Função de verificação de permissão para uso em componentes
+  // Permission verification function for use in components
   const hasPermission = useCallback((permission: keyof AdminPermissions): boolean => {
-    // Verificação especial para André Ventura
+    // Special check for André Ventura
     const userName = getLocalStorageItem("userName");
     const adminId = getLocalStorageItem("userId");
     
-    // Se for André Ventura, garantir permissão total
+    // If it's André Ventura, ensure full permissions
     if (userName === "André Ventura" || adminId === "a4425bf7-3a96-4a94-a95c-51689181413e") {
-      console.log(`[OVERRIDE] Permissão ${permission} aprovada para super_admin André Ventura`);
+      console.log(`[OVERRIDE] Permission ${permission} granted for super_admin André Ventura`);
       return true;
     }
     
     const result = permissions?.[permission] === true;
-    console.log(`Verificando permissão: ${permission}, Role atual: ${role}, Resultado:`, result);
+    console.log(`Checking permission: ${permission}, Current role: ${role}, Result:`, result);
     return result;
   }, [permissions, role]);
   

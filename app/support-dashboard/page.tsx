@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useAdminPermissions } from "../../hooks/useAdminPermissions";
 import { logSystemActivity, logAdminAction } from "../../utils/logSystem";
 import { createNotification, createSupportMessageNotification } from "../../lib/notifications";
+import '../../styles/support-dashboard.css';
 
 // Define the interface for support ticket
 interface SupportTicket {
@@ -42,7 +43,9 @@ interface SupportMessage {
 
 const SupportDashboard: React.FC = () => {
   const router = useRouter();
-  const { role, loading: permissionsLoading, error: permissionsError } = useAdminPermissions();
+  const { role, loading: permissionsLoading, error: permissionsError } = useAdminPermissions({
+    redirectUrl: "/support-login" // Specify that we want to redirect to the support login
+  });
   
   const [activeTab, setActiveTab] = useState<"jobs" | "instantJobs" | "chat">("jobs");
   const [activeSubTab, setActiveSubTab] = useState<string | null>("list");
@@ -81,6 +84,12 @@ const SupportDashboard: React.FC = () => {
   const [filteredJobs, setFilteredJobs] = useState<any[]>([]);
   const [filteredInstantJobs, setFilteredInstantJobs] = useState<any[]>([]);
   
+  // State for tracking tickets with unread messages
+  const [ticketsWithUnreadMessages, setTicketsWithUnreadMessages] = useState<string[]>([]);
+  // State for controlling automatic refresh interval (every minute)
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [lastCheckTime, setLastCheckTime] = useState<Date | null>(null);
+  
   // Separate states for seeker and company tickets
   const [seekerTickets, setSeekerTickets] = useState<SupportTicket[]>([]);
   const [companyTickets, setCompanyTickets] = useState<any[]>([]);
@@ -91,6 +100,15 @@ const SupportDashboard: React.FC = () => {
   const [seekerTicketsError, setSeekerTicketsError] = useState<string | null>(null);
   const [companyTicketsLoading, setCompanyTicketsLoading] = useState(false);
   const [companyTicketsError, setCompanyTicketsError] = useState<string | null>(null);
+  
+  // State for closed tickets archive
+  const [ticketsSubSection, setTicketsSubSection] = useState<'active' | 'closed'>('active');
+  const [closedSeekerTickets, setClosedSeekerTickets] = useState<SupportTicket[]>([]);
+  const [closedCompanyTickets, setClosedCompanyTickets] = useState<any[]>([]);
+  const [filteredClosedSeekerTickets, setFilteredClosedSeekerTickets] = useState<SupportTicket[]>([]);
+  const [filteredClosedCompanyTickets, setFilteredClosedCompanyTickets] = useState<any[]>([]);
+  const [closedTicketsLoading, setClosedTicketsLoading] = useState(false);
+  const [closedTicketsError, setClosedTicketsError] = useState<string | null>(null);
 
   // Authentication and permissions verification
   useEffect(() => {
@@ -530,7 +548,12 @@ const SupportDashboard: React.FC = () => {
     try {
       if (!db) throw new Error("Firestore is not initialized.");
       const ticketsCollection = collection(db, "supportTickets");
-      const querySnapshot = await getDocs(ticketsCollection);
+      // Only fetch tickets that are not closed
+      const activeTicketsQuery = query(
+        ticketsCollection,
+        where("status", "!=", "closed")
+      );
+      const querySnapshot = await getDocs(activeTicketsQuery);
       const ticketsList: SupportTicket[] = querySnapshot.docs
         .map((doc) => ({
           id: doc.id,
@@ -567,7 +590,15 @@ const SupportDashboard: React.FC = () => {
     try {
       if (!db) throw new Error("Firestore is not initialized.");
       const ticketsCollection = collection(db, "supportTickets");
-      const querySnapshot = await getDocs(ticketsCollection);
+      
+      // Only fetch company tickets that are not closed
+      const activeCompanyTicketsQuery = query(
+        ticketsCollection,
+        where("userType", "==", "company"),
+        where("status", "!=", "closed")
+      );
+      
+      const querySnapshot = await getDocs(activeCompanyTicketsQuery);
       const ticketsList = querySnapshot.docs
         .map((doc) => ({
           id: doc.id,
@@ -585,8 +616,8 @@ const SupportDashboard: React.FC = () => {
           closedBy: doc.data().closedBy,
           closedByName: doc.data().closedByName,
           closedAt: doc.data().closedAt,
-        }))
-        .filter((t) => t.userType === 'company');
+        }));
+        
       setCompanyTickets(ticketsList);
       setFilteredCompanyTickets(ticketsList);
     } catch (error) {
@@ -595,6 +626,94 @@ const SupportDashboard: React.FC = () => {
       setFilteredCompanyTickets([]);
     } finally {
       setCompanyTicketsLoading(false);
+    }
+  };
+
+  // Function to fetch closed seeker tickets
+  const fetchClosedSeekerTickets = async () => {
+    setClosedTicketsLoading(true);
+    setClosedTicketsError(null);
+    try {
+      if (!db) throw new Error("Firestore is not initialized.");
+      const ticketsCollection = collection(db, "supportTickets");
+      const closedTicketsQuery = query(
+        ticketsCollection,
+        where("status", "==", "closed")
+      );
+      const querySnapshot = await getDocs(closedTicketsQuery);
+      
+      const closedTicketsList: SupportTicket[] = querySnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          subject: doc.data().subject || '',
+          area: doc.data().area || '',
+          seekerEmail: doc.data().seekerEmail || '',
+          description: doc.data().description || '',
+          status: doc.data().status || 'closed',
+          createdAt: doc.data().createdAt || '',
+          updatedAt: doc.data().updatedAt || '',
+          acceptedBy: doc.data().acceptedBy,
+          acceptedByName: doc.data().acceptedByName,
+          attachmentUrl: doc.data().attachmentUrl,
+          closedBy: doc.data().closedBy,
+          closedByName: doc.data().closedByName,
+          closedAt: doc.data().closedAt,
+        }))
+        .filter((t) => t.seekerEmail && t.area);
+        
+      setClosedSeekerTickets(closedTicketsList);
+      setFilteredClosedSeekerTickets(closedTicketsList);
+    } catch (error) {
+      setClosedTicketsError("Failed to fetch closed seeker tickets.");
+      setClosedSeekerTickets([]);
+      setFilteredClosedSeekerTickets([]);
+    } finally {
+      setClosedTicketsLoading(false);
+    }
+  };
+
+  // Function to fetch closed company tickets  
+  const fetchClosedCompanyTickets = async () => {
+    setClosedTicketsLoading(true);
+    setClosedTicketsError(null);
+    try {
+      if (!db) throw new Error("Firestore is not initialized.");
+      const ticketsCollection = collection(db, "supportTickets");
+      const closedTicketsQuery = query(
+        ticketsCollection,
+        where("status", "==", "closed"),
+        where("userType", "==", "company")
+      );
+      const querySnapshot = await getDocs(closedTicketsQuery);
+      
+      const closedTicketsList = querySnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          subject: doc.data().subject || '',
+          category: doc.data().category || '',
+          userName: doc.data().userName || '',
+          userType: doc.data().userType || '',
+          description: doc.data().description || '',
+          status: doc.data().status || 'closed',
+          createdAt: doc.data().createdAt || '',
+          updatedAt: doc.data().updatedAt || '',
+          acceptedBy: doc.data().acceptedBy,
+          acceptedByName: doc.data().acceptedByName,
+          attachmentUrl: doc.data().attachmentUrl,
+          closedBy: doc.data().closedBy,
+          closedByName: doc.data().closedByName,
+          closedAt: doc.data().closedAt,
+        }))
+        .filter((t) => t.userType === 'company');
+        
+      setClosedCompanyTickets(closedTicketsList);
+      setFilteredClosedCompanyTickets(closedTicketsList);
+    } catch (error) {
+      setClosedTicketsError("Failed to fetch closed company tickets.");
+      setClosedCompanyTickets([]);
+      setFilteredClosedCompanyTickets([]);
+    } finally {
+      setClosedTicketsLoading(false);
     }
   };
 
@@ -997,6 +1116,123 @@ const SupportDashboard: React.FC = () => {
     }
   };
 
+  // Function to check for unread messages from seekers
+  const checkUnreadMessages = async () => {
+    try {
+      if (!db) throw new Error("Firestore is not initialized.");
+      
+      // Array to store IDs of tickets with unread messages
+      const ticketsWithUnread: string[] = [];
+      
+      try {
+        // Fetch all open tickets
+        const ticketsRef = collection(db, "supportTickets");
+        const openTicketsQuery = query(ticketsRef, where("status", "!=", "closed"));
+        const ticketsSnapshot = await getDocs(openTicketsQuery);
+        
+        // For each ticket, check if there are unread messages
+        for (const ticketDoc of ticketsSnapshot.docs) {
+          const ticketId = ticketDoc.id;
+          
+          // Fetch the ticket messages - using a simplified approach
+          // to avoid the composite index error
+          const messagesRef = collection(db, "supportMessages");
+          const simpleMessagesQuery = query(
+            messagesRef, 
+            where("ticketId", "==", ticketId)
+          );
+          
+          const messagesSnapshot = await getDocs(simpleMessagesQuery);
+          
+          // Filter unread seeker messages in memory
+          const hasUnreadMessages = messagesSnapshot.docs.some(
+            doc => doc.data().senderType !== "support" && doc.data().read === false
+          );
+          
+          // If there are unread messages from the seeker, add to the list
+          if (hasUnreadMessages) {
+            ticketsWithUnread.push(ticketId);
+          }
+        }
+        
+      } catch (queryError: any) {
+        // If the specific index error occurs, show an alert with the link
+        if (queryError.code === 'failed-precondition' && queryError.message?.includes('index')) {
+          console.error("Firestore index error:", queryError.message);
+          
+          // Extract the index link from the error message, if present
+          const indexUrlMatch = queryError.message.match(/(https:\/\/console\.firebase\.google\.com\/.*?)\s/);
+          const indexUrl = indexUrlMatch ? indexUrlMatch[1] : null;
+          
+          if (indexUrl) {
+            console.warn("Você precisa criar um índice para esta consulta. Acesse:", indexUrl);
+            // Opcional: exibir uma notificação para o usuário sobre a necessidade do índice
+            // alert(`É necessário criar um índice para esta consulta. O administrador deve acessar: ${indexUrl}`);
+          }
+        } else {
+          console.error("Error checking for unread messages:", queryError);
+        }
+      }
+      
+      // Update state with the list of tickets that have unread messages
+      setTicketsWithUnreadMessages(ticketsWithUnread);
+      
+    } catch (error) {
+      console.error("Error checking for unread messages:", error);
+    }
+  };
+
+  // Refresh unread messages status when tickets are fetched
+  useEffect(() => {
+    if (activeTab === 'chat' && activeSubTab === 'tickets' && ticketsSubSection === 'active') {
+      checkUnreadMessages();
+    }
+  }, [seekerTickets, companyTickets, activeTab, activeSubTab, ticketsSubSection]);
+
+  // Implement mechanism to start/stop polling when necessary
+  useEffect(() => {
+    // Start polling only when on active tickets tab
+    if (activeTab === 'chat' && activeSubTab === 'tickets' && ticketsSubSection === 'active') {
+      // Clear any existing interval
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+      
+      // Start new polling interval every 1 minute exactly (60 seconds)
+      const interval = setInterval(() => {
+        console.log("Automatically checking for new messages (every 1 minute)");
+        setLastCheckTime(new Date());
+        
+        // Fetch tickets and check for unread messages
+        if (ticketsTypeTab === 'seekers') {
+          fetchSeekerTickets();
+        } else {
+          fetchCompanyTickets();
+        }
+        checkUnreadMessages();
+      }, 60000); // Exactly 60,000 milliseconds = 1 minute
+      
+      setPollingInterval(interval);
+      
+      // Clear interval when component is unmounted
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    } else if (pollingInterval) {
+      // If not on correct tab, clear the interval
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+  }, [activeTab, activeSubTab, ticketsSubSection, ticketsTypeTab]);
+
+  // Update search when switching ticket type tab
+  useEffect(() => {
+    if (activeTab === 'chat' && activeSubTab === 'tickets') {
+      if (ticketsTypeTab === 'seekers') fetchSeekerTickets();
+      else fetchCompanyTickets();
+    }
+  }, [activeTab, activeSubTab, ticketsTypeTab]);
+
   return (
     <Layout>
       {permissionsLoading ? (
@@ -1380,6 +1616,7 @@ const SupportDashboard: React.FC = () => {
             {activeTab === "chat" && activeSubTab === "tickets" && (
               <div>
                 <h2 className="text-3xl font-semibold text-blue-500 mb-6">Support Tickets</h2>
+                {/* Tickets type tabs */}
                 <div className="mb-4 flex gap-2">
                   <button
                     className={`px-4 py-2 rounded ${ticketsTypeTab === 'seekers' ? 'bg-blue-600 text-white' : 'bg-black/40 text-blue-300'}`}
@@ -1394,6 +1631,37 @@ const SupportDashboard: React.FC = () => {
                     Company Tickets
                   </button>
                 </div>
+                
+                {/* Active vs Closed tickets tabs */}
+                <div className="mb-4 flex gap-2">
+                  <button
+                    className={`px-4 py-2 rounded ${ticketsSubSection === 'active' ? 'bg-green-600 text-white' : 'bg-black/40 text-green-300'}`}
+                    onClick={() => {
+                      setTicketsSubSection('active');
+                      if (ticketsTypeTab === 'seekers') {
+                        fetchSeekerTickets();
+                      } else {
+                        fetchCompanyTickets();
+                      }
+                    }}
+                  >
+                    Active Tickets
+                  </button>
+                  <button
+                    className={`px-4 py-2 rounded ${ticketsSubSection === 'closed' ? 'bg-green-600 text-white' : 'bg-black/40 text-green-300'}`}
+                    onClick={() => {
+                      setTicketsSubSection('closed');
+                      if (ticketsTypeTab === 'seekers') {
+                        fetchClosedSeekerTickets();
+                      } else {
+                        fetchClosedCompanyTickets();
+                      }
+                    }}
+                  >
+                    Closed Tickets
+                  </button>
+                </div>
+                
                 {/* Search bar and filter */}
                 <div className="mb-6 flex gap-4">
                   <input
@@ -1404,92 +1672,176 @@ const SupportDashboard: React.FC = () => {
                     onChange={e => {
                       setTicketSearchQuery(e.target.value);
                       const q = e.target.value.toLowerCase();
-                      if (ticketsTypeTab === 'seekers') {
-                        setFilteredSeekerTickets(
-                          seekerTickets.filter(
-                            t => t.subject?.toLowerCase().includes(q) || t.area?.toLowerCase().includes(q) || t.seekerEmail?.toLowerCase().includes(q)
-                          )
-                        );
+                      if (ticketsSubSection === 'active') {
+                        if (ticketsTypeTab === 'seekers') {
+                          setFilteredSeekerTickets(
+                            seekerTickets.filter(
+                              t => t.subject?.toLowerCase().includes(q) || 
+                                t.area?.toLowerCase().includes(q) || 
+                                t.seekerEmail?.toLowerCase().includes(q) || 
+                                t.id.toLowerCase().includes(q)
+                            )
+                          );
+                        } else {
+                          setFilteredCompanyTickets(
+                            companyTickets.filter(
+                              t => t.subject?.toLowerCase().includes(q) || 
+                                t.category?.toLowerCase().includes(q) || 
+                                t.userName?.toLowerCase().includes(q) || 
+                                t.id.toLowerCase().includes(q)
+                            )
+                          );
+                        }
                       } else {
-                        setFilteredCompanyTickets(
-                          companyTickets.filter(
-                            t => t.subject?.toLowerCase().includes(q) || t.category?.toLowerCase().includes(q) || t.userName?.toLowerCase().includes(q)
-                          )
-                        );
+                        if (ticketsTypeTab === 'seekers') {
+                          setFilteredClosedSeekerTickets(
+                            closedSeekerTickets.filter(
+                              t => t.subject?.toLowerCase().includes(q) || 
+                                t.area?.toLowerCase().includes(q) || 
+                                t.seekerEmail?.toLowerCase().includes(q) || 
+                                t.id.toLowerCase().includes(q)
+                            )
+                          );
+                        } else {
+                          setFilteredClosedCompanyTickets(
+                            closedCompanyTickets.filter(
+                              t => t.subject?.toLowerCase().includes(q) || 
+                                t.category?.toLowerCase().includes(q) || 
+                                t.userName?.toLowerCase().includes(q) || 
+                                t.id.toLowerCase().includes(q)
+                            )
+                          );
+                        }
                       }
                     }}
                   />
-                  <select
-                    className="px-3 py-2 bg-black/50 border border-gray-600 rounded-lg text-white"
-                    value={ticketStatusFilter}
-                    onChange={e => {
-                      const status = e.target.value as 'all' | 'open' | 'closed';
-                      setTicketStatusFilter(status);
-                      if (ticketsTypeTab === 'seekers') {
-                        setFilteredSeekerTickets(
-                          status === 'all' ? seekerTickets : seekerTickets.filter(t => t.status === status)
-                        );
-                      } else {
-                        setFilteredCompanyTickets(
-                          status === 'all' ? companyTickets : companyTickets.filter(t => t.status === status)
-                        );
-                      }
-                    }}
-                  >
-                    <option value="all">All</option>
-                    <option value="open">Open</option>
-                    <option value="closed">Closed</option>
-                  </select>
                   <button
                     className="px-4 py-2 bg-blue-500 rounded text-white"
-                    onClick={ticketsTypeTab === 'seekers' ? fetchSeekerTickets : fetchCompanyTickets}
+                    onClick={() => {
+                      if (ticketsSubSection === 'active') {
+                        if (ticketsTypeTab === 'seekers') fetchSeekerTickets();
+                        else fetchCompanyTickets();
+                      } else {
+                        if (ticketsTypeTab === 'seekers') fetchClosedSeekerTickets();
+                        else fetchClosedCompanyTickets();
+                      }
+                    }}
                     type="button"
                   >
                     Refresh
                   </button>
                 </div>
+                
                 <div className="flex gap-6">
                   {/* Ticket List */}
                   <div className="w-1/3 min-w-[220px] max-w-xs border-r border-blue-900 pr-4 overflow-y-auto ticket-list">
-                    {(ticketsTypeTab === 'seekers' ? seekerTicketsLoading : companyTicketsLoading) ? (
-                      <div className="text-gray-400">Loading tickets...</div>
-                    ) : (ticketsTypeTab === 'seekers' ? seekerTicketsError : companyTicketsError) ? (
-                      <div className="text-red-400">{ticketsTypeTab === 'seekers' ? seekerTicketsError : companyTicketsError}</div>
-                    ) : (ticketsTypeTab === 'seekers' ? filteredSeekerTickets : filteredCompanyTickets).length === 0 ? (
-                      <div className="text-gray-400">No tickets found.</div>
+                    {ticketsSubSection === 'active' ? (
+                      // Active tickets list
+                      (ticketsTypeTab === 'seekers' ? seekerTicketsLoading : companyTicketsLoading) ? (
+                        <div className="text-gray-400">Loading tickets...</div>
+                      ) : (ticketsTypeTab === 'seekers' ? seekerTicketsError : companyTicketsError) ? (
+                        <div className="text-red-400">{ticketsTypeTab === 'seekers' ? seekerTicketsError : companyTicketsError}</div>
+                      ) : (ticketsTypeTab === 'seekers' ? filteredSeekerTickets : filteredCompanyTickets).length === 0 ? (
+                        <div className="text-gray-400">No active tickets found.</div>
+                      ) : (
+                        <ul className="space-y-2">
+                          {(ticketsTypeTab === 'seekers' ? filteredSeekerTickets : filteredCompanyTickets).map(ticket => (
+                            <li key={ticket.id}>
+                              <button
+                                className={`w-full text-left p-3 rounded-lg border ${ticketsWithUnreadMessages.includes(ticket.id) ? 'border-red-500' : 'border-blue-700/30'} bg-black/40 hover:bg-blue-900/30 transition-colors ${selectedTicket?.id === ticket.id ? 'border-blue-500 bg-blue-900/40' : ''}`}
+                                onClick={() => {
+                                  setSelectedTicket(ticket);
+                                  fetchTicketMessages(ticket.id);
+                                }}
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div className="font-semibold text-blue-400 truncate">{ticket.subject}</div>
+                                  <div className="text-xs text-gray-400 bg-gray-800/70 px-2 py-1 rounded">
+                                    ID: {ticket.id.substring(0, 8)}
+                                  </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <div className="text-xs text-gray-400 truncate">{ticketsTypeTab === 'seekers' ? ticket.area : ticket.category}</div>
+                                  {ticketsWithUnreadMessages.includes(ticket.id) && (
+                                    <div className="flex items-center">
+                                      <span className="animate-pulse inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                      </svg>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-500">{ticketsTypeTab === 'seekers' ? ticket.seekerEmail : ticket.userName}</div>
+                                <div className="text-xs text-gray-500">{typeof ticket.createdAt === 'string' && ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : new Date().toLocaleString()}</div>
+                                <div className="text-xs mt-1">
+                                  <span className={`px-2 py-0.5 rounded ${ticket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{ticket.status}</span>
+                                </div>
+                                {ticket.acceptedBy && (
+                                  <div className="text-xs text-blue-300 mt-1">Accepted</div>
+                                )}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )
                     ) : (
-                      <ul className="space-y-2">
-                        {(ticketsTypeTab === 'seekers' ? filteredSeekerTickets : filteredCompanyTickets).map(ticket => (
-                          <li key={ticket.id}>
-                            <button
-                              className={`w-full text-left p-3 rounded-lg border border-blue-700/30 bg-black/40 hover:bg-blue-900/30 transition-colors ${selectedTicket?.id === ticket.id ? 'border-blue-500 bg-blue-900/40' : ''}`}
-                              onClick={() => {
-                                setSelectedTicket(ticket);
-                                fetchTicketMessages(ticket.id);
-                              }}
-                            >
-                              <div className="font-semibold text-blue-400 truncate">{ticket.subject}</div>
-                              <div className="text-xs text-gray-400 truncate">{ticketsTypeTab === 'seekers' ? ticket.area : ticket.category}</div>
-                              <div className="text-xs text-gray-500">{ticketsTypeTab === 'seekers' ? ticket.seekerEmail : ticket.userName}</div>
-                              <div className="text-xs text-gray-500">{typeof ticket.createdAt === 'string' && ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : new Date().toLocaleString()}</div>
-                              <div className="text-xs mt-1">
-                                <span className={`px-2 py-0.5 rounded ${ticket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{ticket.status}</span>
-                              </div>
-                              {ticket.acceptedBy && (
-                                <div className="text-xs text-blue-300 mt-1">Accepted</div>
-                              )}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
+                      // Closed tickets list
+                      closedTicketsLoading ? (
+                        <div className="text-gray-400">Loading closed tickets...</div>
+                      ) : closedTicketsError ? (
+                        <div className="text-red-400">{closedTicketsError}</div>
+                      ) : (ticketsTypeTab === 'seekers' ? filteredClosedSeekerTickets : filteredClosedCompanyTickets).length === 0 ? (
+                        <div className="text-gray-400">No closed tickets found.</div>
+                      ) : (
+                        <ul className="space-y-2">
+                          {(ticketsTypeTab === 'seekers' ? filteredClosedSeekerTickets : filteredClosedCompanyTickets).map(ticket => (
+                            <li key={ticket.id}>
+                              <button
+                                className={`w-full text-left p-3 rounded-lg border border-green-700/30 bg-black/40 hover:bg-green-900/30 transition-colors ${selectedTicket?.id === ticket.id ? 'border-green-500 bg-green-900/40' : ''}`}
+                                onClick={() => {
+                                  setSelectedTicket(ticket);
+                                  fetchTicketMessages(ticket.id);
+                                }}
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div className="font-semibold text-green-400 truncate">{ticket.subject}</div>
+                                  <div className="text-xs text-gray-400 bg-gray-800/70 px-2 py-1 rounded">
+                                    ID: {ticket.id.substring(0, 8)}
+                                  </div>
+                                </div>
+                                <div className="text-xs text-gray-400 truncate">{ticketsTypeTab === 'seekers' ? ticket.area : ticket.category}</div>
+                                <div className="text-xs text-gray-500">{ticketsTypeTab === 'seekers' ? ticket.seekerEmail : ticket.userName}</div>
+                                <div className="text-xs text-gray-500">{typeof ticket.createdAt === 'string' && ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : new Date().toLocaleString()}</div>
+                                <div className="flex justify-between items-center text-xs mt-1">
+                                  <span className="px-2 py-0.5 rounded bg-green-900 text-green-300">closed</span>
+                                  <span className="text-xs text-gray-400">
+                                    {typeof ticket.closedAt === 'string' && ticket.closedAt ? 
+                                      new Date(ticket.closedAt).toLocaleDateString() : ''}
+                                  </span>
+                                </div>
+                                {ticket.closedByName && (
+                                  <div className="text-xs text-green-300 mt-1">Closed by: {ticket.closedByName}</div>
+                                )}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )
                     )}
                   </div>
-                  {/* Ticket Details & Chat */}
+                  
+                  {/* Ticket Details & Chat - This part remains the same */}
                   <div className="flex-1 min-w-0">
                     {selectedTicket ? (
-                      <div className="bg-black/60 rounded-lg p-6 h-full flex flex-col ticket-details">
-                        <div className="mb-2">
-                          <div className="text-lg font-bold text-blue-400">{selectedTicket.subject}</div>
+                      <div className="ticket-details-container">
+                        {/* Ticket header - fixed at top */}
+                        <div className="ticket-header">
+                          <div className="flex justify-between items-start">
+                            <div className="text-lg font-bold text-blue-400">{selectedTicket.subject}</div>
+                            <div className="text-xs text-gray-400 bg-gray-800/70 px-2 py-1 rounded">
+                              ID: {selectedTicket.id}
+                            </div>
+                          </div>
                           <div className="text-sm text-gray-400">
                             {ticketsTypeTab === 'seekers'
                               ? <>Area: {selectedTicket.area}</>
@@ -1511,15 +1863,22 @@ const SupportDashboard: React.FC = () => {
                           <div className="mt-2 text-xs text-blue-200">
                             {selectedTicket.acceptedByName && <>Accepted by: {selectedTicket.acceptedByName}</> }
                           </div>
+                          {selectedTicket.closedByName && (
+                            <div className="mt-2 text-xs text-green-200">
+                              Closed by: {selectedTicket.closedByName} on {typeof selectedTicket.closedAt === 'string' && selectedTicket.closedAt ? new Date(selectedTicket.closedAt).toLocaleString() : ''}
+                            </div>
+                          )}
                         </div>
-                        <div className="flex-1 overflow-y-auto border-t border-blue-900 pt-4 mb-2 ticket-messages">
+                        
+                        {/* Messages container with fixed height and scrollbar */}
+                        <div className="ticket-messages-container">
                           {ticketMessages.length === 0 ? (
                             <div className="text-gray-400">No messages yet.</div>
                           ) : (
                             <ul className="space-y-3">
                               {ticketMessages.map(msg => (
-                                <li key={msg.id} className={`flex ${msg.senderType === 'support' ? 'justify-end' : 'justify-start'}`}>
-                                  <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.senderType === 'support' ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-100'}`}>
+                                <li key={msg.id} className={msg.senderType === 'support' ? 'message-support' : 'message-seeker'}>
+                                  <div className={msg.senderType === 'support' ? 'message-bubble-support' : 'message-bubble-seeker'}>
                                     {msg.message}
                                     <div className="text-xs text-gray-300 mt-1 text-right">{new Date(msg.createdAt).toLocaleString()}</div>
                                   </div>
@@ -1528,56 +1887,63 @@ const SupportDashboard: React.FC = () => {
                             </ul>
                           )}
                         </div>
-                        {/* Actions */}
-                        <div className="flex gap-2 mt-4 border-t border-blue-900 pt-4">
-                          {/* Accept ticket */}
-                          {(!selectedTicket?.acceptedBy && selectedTicket?.status === 'open' || 
-                            !selectedTicket?.acceptedBy && selectedTicket?.status === 'pending') && (
-                            <button
-                              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                              onClick={() => handleAcceptTicket(selectedTicket.id)}
-                            >
-                              Accept Ticket
-                            </button>
-                          )}
+                        
+                        {/* Actions - fixed at bottom */}
+                        <div className="ticket-actions-container">
+                          {/* Actions */}
+                          <div className="flex gap-2 mt-4 border-t border-blue-900 pt-4">
+                            {/* Accept ticket - only for active tickets */}
+                            {(!selectedTicket?.acceptedBy && selectedTicket?.status === 'open' || 
+                              !selectedTicket?.acceptedBy && selectedTicket?.status === 'pending') && (
+                              <button
+                                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                onClick={() => handleAcceptTicket(selectedTicket.id)}
+                              >
+                                Accept Ticket
+                              </button>
+                            )}
+                            
+                            {/* Close ticket - only for active tickets */}
+                            {(selectedTicket?.status === 'open' || selectedTicket?.status === 'pending') && (
+                              <button
+                                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                onClick={() => handleCloseTicket(selectedTicket.id)}
+                              >
+                                Close Ticket
+                              </button>
+                            )}
+                          </div>
                           
-                          {/* Close ticket - show for any open ticket */}
-                          {(selectedTicket?.status === 'open' || selectedTicket?.status === 'pending') && (
-                            <button
-                              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                              onClick={() => handleCloseTicket(selectedTicket.id)}
-                            >
-                              Close Ticket
-                            </button>
+                          {/* Chat input - only for active tickets */}
+                          {selectedTicket.status === 'open' && selectedTicket.acceptedBy && (
+                            <form onSubmit={handleSendMessage} className="flex gap-2 mt-4">
+                              <input
+                                type="text"
+                                className="flex-1 p-2 rounded bg-black/40 border border-blue-500/30 text-white"
+                                placeholder="Type your message..."
+                                value={newMessage}
+                                onChange={e => setNewMessage(e.target.value)}
+                                disabled={sendingMessage}
+                                required
+                              />
+                              <button
+                                type="submit"
+                                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-60"
+                                disabled={sendingMessage || !newMessage.trim()}
+                              >
+                                {sendingMessage ? 'Sending...' : 'Send'}
+                              </button>
+                            </form>
+                          )}
+                          {selectedTicket.status === 'closed' && (
+                            <div className="text-green-400 text-sm mt-4">This ticket is closed.</div>
                           )}
                         </div>
-                        {/* Chat input */}
-                        {selectedTicket.status === 'open' && selectedTicket.acceptedBy && (
-                          <form onSubmit={handleSendMessage} className="flex gap-2 mt-4">
-                            <input
-                              type="text"
-                              className="flex-1 p-2 rounded bg-black/40 border border-blue-500/30 text-white"
-                              placeholder="Type your message..."
-                              value={newMessage}
-                              onChange={e => setNewMessage(e.target.value)}
-                              disabled={sendingMessage}
-                              required
-                            />
-                            <button
-                              type="submit"
-                              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-60"
-                              disabled={sendingMessage || !newMessage.trim()}
-                            >
-                              {sendingMessage ? 'Sending...' : 'Send'}
-                            </button>
-                          </form>
-                        )}
-                        {selectedTicket.status === 'closed' && (
-                          <div className="text-green-400 text-sm mt-4">This ticket is closed.</div>
-                        )}
                       </div>
                     ) : (
-                      <div className="text-gray-400 flex items-center justify-center h-full">Select a ticket to view details and chat.</div>
+                      <div className="text-gray-400 flex items-center justify-center h-full">
+                        Select a ticket to view details and chat history
+                      </div>
                     )}
                   </div>
                 </div>

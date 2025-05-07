@@ -1,0 +1,64 @@
+/* Support Dashboard Styles */
+
+/* Ticket Details Container */
+.ticket-details-container {
+  height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+/* Ticket Header */
+.ticket-header {
+  position: sticky;
+  top: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(30, 58, 138, 1);
+}
+
+/* Messages Container */
+.ticket-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  max-height: calc(100% - 220px);
+}
+
+/* Message Items */
+.message-support {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.message-seeker {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.message-bubble-support {
+  max-width: 20rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background-color: rgb(59, 130, 246);
+  color: white;
+  font-size: 0.875rem;
+}
+
+.message-bubble-seeker {
+  max-width: 20rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background-color: rgb(55, 65, 81);
+  color: rgb(243, 244, 246);
+  font-size: 0.875rem;
+}
+
+/* Actions Container */
+.ticket-actions-container {
+  margin-top: auto;
+}
