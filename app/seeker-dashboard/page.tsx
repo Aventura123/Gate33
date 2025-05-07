@@ -256,6 +256,15 @@ const SeekerDashboard = () => {
   const [fetchError, setFetchError] = useState<string | null>(null); // Add state for fetch errors
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
+  // Estado para sub-aba de settings - MOVED UP HERE
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'notifications'>('profile');
+  // Estado para preferências de notificações - MOVED UP with the settingsTab
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    supportReplies: true,
+    instantJobs: true,
+    marketing: false
+  });
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   // Add Web3 state
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -412,6 +421,21 @@ const SeekerDashboard = () => {
     }
   }, []); // No external dependencies needed within this function
 
+  // Add this function to log profile data when settings tab is active
+  useEffect(() => {
+    if (activeTab === 'settings' && settingsTab === 'profile') {
+      console.log("Debug - Current profile state:", {
+        bio: seekerProfile.bio,
+        presentationVideoUrl: seekerProfile.presentationVideoUrl,
+        resumeUrl: seekerProfile.resumeUrl,
+        linkedinUrl: seekerProfile.linkedinUrl,
+        twitterUrl: seekerProfile.twitterUrl,
+        websiteUrl: seekerProfile.websiteUrl,
+        telegramUrl: seekerProfile.telegramUrl
+      });
+    }
+  }, [activeTab, settingsTab, seekerProfile]);
+
   // Fetch seeker profile data - Wrapped in useCallback
   const fetchSeekerProfile = useCallback(async (id: string) => {
     if (!id || !db) return;
@@ -422,25 +446,40 @@ const SeekerDashboard = () => {
       const seekerSnap = await getDoc(seekerRef);
       if (seekerSnap.exists()) {
         const data = seekerSnap.data();
-        setSeekerProfile({
-          id: seekerSnap.id, // Set the id from the document
+        
+        // Debug log raw data from Firestore
+        console.log("Raw Firestore data:", data);
+        
+        // Create the profile object with explicit properties
+        const profileData = {
+          id: seekerSnap.id,
           name: data.name || "",
           email: data.email || "",
+          fullName: data.fullName || "",
           location: data.location || "",
           skills: data.skills || "",
+          // Missing fields with explicit undefined checks
+          bio: data.bio || "",
+          telegramUrl: data.telegramUrl || "",
           resumeUrl: data.resumeUrl || "",
-          portfolioUrl: data.portfolioUrl || "",
-          fullName: data.fullName || "",
-          birthDate: data.birthDate || "",
-          nationality: data.nationality || "",
-          gender: data.gender || "",
-          altContact: data.altContact || "",
           presentationVideoUrl: data.presentationVideoUrl || "",
-        });
+          linkedinUrl: data.linkedinUrl || "",
+          twitterUrl: data.twitterUrl || "",
+          websiteUrl: data.websiteUrl || "",
+          // Other fields
+          surname: data.surname || "",
+          // ...remaining fields with their default values
+        };
+        
+        console.log("Processed profile data:", profileData);
+        setSeekerProfile(profileData);
       } else {
         console.log("No such seeker document!");
         // Initialize profile state with empty strings if document doesn't exist
-        setSeekerProfile({ id: "", name: "", email: "", location: "", skills: "", resumeUrl: "", portfolioUrl: "", fullName: "" });
+        setSeekerProfile({ 
+          id: "", name: "", email: "", location: "", skills: "", resumeUrl: "", portfolioUrl: "", fullName: "",
+          bio: "", telegramUrl: "", twitterUrl: "", websiteUrl: "", linkedinUrl: "", githubUrl: ""
+        });
       }
     } catch (error) {
       console.error("Error fetching seeker profile:", error);
@@ -565,6 +604,34 @@ const SeekerDashboard = () => {
     }
   };
 
+  // Handle CV upload
+  const handleCVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && seekerId) {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("seekerId", seekerId); // Use seekerId
+
+      try {
+        // Adjust API endpoint for seekers
+        const response = await fetch("/api/seeker/cv", {
+          method: "POST",
+          body: formData,
+        });
+        const responseData = await response.json();
+        if (!response.ok) throw new Error(responseData.message || "Failed to upload CV");
+        setSeekerProfile({ ...seekerProfile, resumeUrl: responseData.url }); // Update CV URL with URL from server
+        console.log("Seeker CV upload successful!");
+      } catch (error: any) {
+        console.error("Error uploading seeker CV:", error);
+        alert(`Failed to upload CV: ${error.message || "Unknown error"}`);
+      } finally {
+        setIsUploading(false);
+      }
+    }
+  };
+
   // Handle seeker logout
   const handleLogout = () => {
     localStorage.removeItem("seekerToken"); // Remove seekerToken
@@ -636,6 +703,24 @@ const SeekerDashboard = () => {
       alert("Error updating profile. Please try again.");
     } finally {
       setIsLoadingProfile(false);
+    }
+  };
+
+  // Handle saving notification preferences
+  const handleSaveNotificationPrefs = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!seekerId || !db) return;
+    setSavingPrefs(true);
+    try {
+      await updateDoc(doc(db, 'seekers', seekerId), {
+        notificationPreferences: notificationPrefs
+      });
+      alert('Notification preferences saved successfully!');
+    } catch (err) {
+      console.error("Error saving notification preferences:", err);
+      alert('Error saving preferences. Please try again.');
+    } finally {
+      setSavingPrefs(false);
     }
   };
 
@@ -846,74 +931,6 @@ const SeekerDashboard = () => {
     );
   };
 
-  // Estado para sub-aba de settings
-  const [settingsTab, setSettingsTab] = useState<'profile' | 'notifications'>('profile');
-  // Estado para preferências de notificações
-  const [notificationPrefs, setNotificationPrefs] = useState({
-    supportReplies: true,
-    instantJobs: true,
-    marketing: false
-  });
-  const [savingPrefs, setSavingPrefs] = useState(false);
-  // Carregar preferências do Firestore ao abrir settings
-  useEffect(() => {
-    if (activeTab === 'settings' && seekerId && db) {
-      getDoc(doc(db, 'seekers', seekerId)).then(snap => {
-        if (snap.exists() && snap.data().notificationPreferences) {
-          setNotificationPrefs({
-            ...notificationPrefs,
-            ...snap.data().notificationPreferences
-          });
-        }
-      });
-    }
-    // eslint-disable-next-line
-  }, [activeTab, seekerId]);
-  // Salvar preferências no Firestore
-  const handleSaveNotificationPrefs = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!seekerId || !db) return;
-    setSavingPrefs(true);
-    try {
-      await updateDoc(doc(db, 'seekers', seekerId), {
-        notificationPreferences: notificationPrefs
-      });
-      alert('Preferences saved!');
-    } catch (err) {
-      alert('Error saving preferences');
-    } finally {
-      setSavingPrefs(false);
-    }
-  };
-
-  // Handle CV upload
-  const handleCVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && seekerId) {
-      setIsUploading(true);
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("seekerId", seekerId); // Use seekerId
-
-      try {
-        // Adjust API endpoint for seekers
-        const response = await fetch("/api/seeker/cv", {
-          method: "POST",
-          body: formData,
-        });
-        const responseData = await response.json();
-        if (!response.ok) throw new Error(responseData.message || "Failed to upload CV");
-        setSeekerProfile({ ...seekerProfile, resumeUrl: responseData.url }); // Update CV URL with URL from server
-        console.log("Seeker CV upload successful!");
-      } catch (error: any) {
-        console.error("Error uploading seeker CV:", error);
-        alert(`Failed to upload CV: ${error.message || "Unknown error"}`);
-      } finally {
-        setIsUploading(false);
-      }
-    }
-  };
-
   // Render Settings Tab Content (Editable Form)
   const renderSettings = () => {
     return (
@@ -964,8 +981,7 @@ const SeekerDashboard = () => {
                     type="file"
                     accept=".pdf,.doc,.docx,.odt,.rtf,.txt"
                     onChange={handleCVUpload}
-                    className="w-full text-white bg-black/50 border border-orange-500/30 rounded-lg"
-                    style={{ padding: "0.5rem" }}
+                    className="w-full text-white bg-black/50 border border-orange-500/30 rounded-lg p-2"
                   />
                   {isUploading && <span className="text-xs text-orange-400 ml-2">Uploading...</span>}
                   {seekerProfile.resumeUrl && (
@@ -975,6 +991,30 @@ const SeekerDashboard = () => {
                       </a>
                     </div>
                   )}
+                </div>
+                {/* Bio */}
+                <textarea
+                  name="bio"
+                  value={seekerProfile.bio ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="Short Bio (optional)"
+                  rows={3}
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                ></textarea>
+                {/* Presentation Video Link */}
+                <input
+                  type="url"
+                  name="presentationVideoUrl"
+                  value={seekerProfile.presentationVideoUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="Presentation Video Link (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
+                {/* Debug values */}
+                <div className="p-2 bg-black/70 border border-yellow-500 rounded text-yellow-500 text-xs">
+                  <p>Debug values:</p>
+                  <p>Bio: {JSON.stringify(seekerProfile.bio)}</p>
+                  <p>Video: {JSON.stringify(seekerProfile.presentationVideoUrl)}</p>
                 </div>
               </div>
               {/* COLUNA 2 */}
@@ -989,6 +1029,40 @@ const SeekerDashboard = () => {
                 <input type="text" name="zipCode" value={seekerProfile.zipCode ?? ""} onChange={handleProfileChange} placeholder="Zip Code (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
                 {/* Interest Area */}
                 <input type="text" name="interestArea" value={seekerProfile.interestArea ?? ""} onChange={handleProfileChange} placeholder="Interest Area (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Resume Link */}
+                <input
+                  type="url"
+                  name="resumeUrl"
+                  value={seekerProfile.resumeUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="Resume Link (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
+                {/* LinkedIn */}
+                <input
+                  type="url"
+                  name="linkedinUrl"
+                  value={seekerProfile.linkedinUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="LinkedIn URL (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
+                {/* Twitter */}
+                <input
+                  type="url"
+                  name="twitterUrl"
+                  value={seekerProfile.twitterUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="Twitter URL (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
+                {/* Debug values */}
+                <div className="p-2 bg-black/70 border border-yellow-500 rounded text-yellow-500 text-xs">
+                  <p>Debug values:</p>
+                  <p>Resume: {JSON.stringify(seekerProfile.resumeUrl)}</p>
+                  <p>LinkedIn: {JSON.stringify(seekerProfile.linkedinUrl)}</p>
+                  <p>Twitter: {JSON.stringify(seekerProfile.twitterUrl)}</p>
+                </div>
               </div>
               {/* COLUNA 3 */}
               <div className="space-y-6 col-span-1 md:col-span-1">
@@ -1074,6 +1148,30 @@ const SeekerDashboard = () => {
                 <input type="url" name="instagramUrl" value={seekerProfile.instagramUrl ?? ""} onChange={handleProfileChange} placeholder="Instagram URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
                 {/* Facebook URL */}
                 <input type="url" name="facebookUrl" value={seekerProfile.facebookUrl ?? ""} onChange={handleProfileChange} placeholder="Facebook URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Website */}
+                <input
+                  type="url"
+                  name="websiteUrl"
+                  value={seekerProfile.websiteUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="Website URL (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
+                {/* Telegram */}
+                <input
+                  type="url"
+                  name="telegramUrl"
+                  value={seekerProfile.telegramUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="Telegram URL (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
+                {/* Debug values */}
+                <div className="p-2 bg-black/70 border border-yellow-500 rounded text-yellow-500 text-xs">
+                  <p>Debug values:</p>
+                  <p>Website: {JSON.stringify(seekerProfile.websiteUrl)}</p>
+                  <p>Telegram: {JSON.stringify(seekerProfile.telegramUrl)}</p>
+                </div>
               </div>
             </div>
             {/* Idiomas (full width) */}
