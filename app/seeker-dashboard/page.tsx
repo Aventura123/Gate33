@@ -938,11 +938,47 @@ const SeekerDashboard = () => {
             {/* Personal Data */}
             <h3 className="text-lg font-bold text-orange-400 mb-4">Personal Data</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+              {/* COLUNA 1 */}
               <div className="space-y-6 col-span-1 md:col-span-1">
                 {/* Name */}
                 <input type="text" name="name" value={seekerProfile.name ?? ""} onChange={handleProfileChange} placeholder="First Name" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
                 {/* Surname */}
                 <input type="text" name="surname" value={seekerProfile.surname ?? ""} onChange={handleProfileChange} placeholder="Surname" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
+                {/* Birth Date */}
+                <input type="date" name="birthDate" value={seekerProfile.birthDate ?? ""} onChange={handleProfileChange} placeholder="Birth Date" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                <span className="text-xs text-gray-400">Birth Date (for age verification)</span>
+                {/* Gender */}
+                <select name="gender" value={seekerProfile.gender ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm">
+                  <option value="">Gender (optional)</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="prefer_not_to_say">Prefer not to say</option>
+                </select>
+                {/* Nationality */}
+                <input type="text" name="nationality" value={seekerProfile.nationality ?? ""} onChange={handleProfileChange} placeholder="Nationality" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* CV Upload */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Upload CV (PDF, DOC, etc.)</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.odt,.rtf,.txt"
+                    onChange={handleCVUpload}
+                    className="w-full text-white bg-black/50 border border-orange-500/30 rounded-lg"
+                    style={{ padding: "0.5rem" }}
+                  />
+                  {isUploading && <span className="text-xs text-orange-400 ml-2">Uploading...</span>}
+                  {seekerProfile.resumeUrl && (
+                    <div className="mt-1">
+                      <a href={seekerProfile.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs">
+                        View uploaded CV
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* COLUNA 2 */}
+              <div className="space-y-6 col-span-1 md:col-span-1">
                 {/* Email (Read Only) */}
                 <input type="email" name="email" value={seekerProfile.email ?? ""} placeholder="Email" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" readOnly title="Email cannot be changed here" />
                 {/* Location */}
@@ -951,7 +987,10 @@ const SeekerDashboard = () => {
                 <input type="text" name="address" value={seekerProfile.address ?? ""} onChange={handleProfileChange} placeholder="Full Address (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
                 {/* Zip Code */}
                 <input type="text" name="zipCode" value={seekerProfile.zipCode ?? ""} onChange={handleProfileChange} placeholder="Zip Code (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Interest Area */}
+                <input type="text" name="interestArea" value={seekerProfile.interestArea ?? ""} onChange={handleProfileChange} placeholder="Interest Area (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
               </div>
+              {/* COLUNA 3 */}
               <div className="space-y-6 col-span-1 md:col-span-1">
                 {/* Phone with country code */}
                 <div className="flex gap-2">
@@ -986,21 +1025,6 @@ const SeekerDashboard = () => {
                   </select>
                   <input type="text" name="phone" value={seekerProfile.phone ?? ""} onChange={handleProfileChange} placeholder="Phone (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
                 </div>
-                {/* Birth Date with clarification */}
-                <input type="date" name="birthDate" value={seekerProfile.birthDate ?? ""} onChange={handleProfileChange} placeholder="Birth Date" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                <span className="text-xs text-gray-400">Birth Date (for age verification)</span>
-                {/* Nacionalidade */}
-                <input type="text" name="nationality" value={seekerProfile.nationality ?? ""} onChange={handleProfileChange} placeholder="Nationality" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Gênero */}
-                <select name="gender" value={seekerProfile.gender ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm">
-                  <option value="">Gender (optional)</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                  <option value="prefer_not_to_say">Prefer not to say</option>
-                </select>
-              </div>
-              <div className="space-y-6 col-span-1 md:col-span-1">
                 {/* Alternative Contact with country code */}
                 <div className="flex gap-2">
                   <select
@@ -1046,26 +1070,10 @@ const SeekerDashboard = () => {
                     className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
                   />
                 </div>
-                {/* ...existing code for CV upload, social, etc... */}
-                {/* Upload de CV */}
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Upload CV (PDF/DOC)</label>
-                  <input type="file" accept=".pdf,.doc,.docx" onChange={handleCVUpload} className="w-full text-white" />
-                  {seekerProfile.resumeUrl && (<a href={seekerProfile.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline block mt-1">View uploaded CV</a>)}
-                </div>
-                {/* Link para vídeo de apresentação */}
-                <input type="url" name="presentationVideoUrl" value={seekerProfile.presentationVideoUrl ?? ""} onChange={handleProfileChange} placeholder="Link to Presentation Video (YouTube, Loom, etc.)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Redes sociais pessoais */}
+                {/* Instagram URL */}
                 <input type="url" name="instagramUrl" value={seekerProfile.instagramUrl ?? ""} onChange={handleProfileChange} placeholder="Instagram URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Facebook URL */}
                 <input type="url" name="facebookUrl" value={seekerProfile.facebookUrl ?? ""} onChange={handleProfileChange} placeholder="Facebook URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Portfolio URL (optional) */}
-                <input type="url" name="portfolioUrl" value={seekerProfile.portfolioUrl ?? ""} onChange={handleProfileChange} placeholder="Portfolio URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Resume Link (optional) */}
-                <input type="url" name="resumeUrl" value={seekerProfile.resumeUrl ?? ""} onChange={handleProfileChange} placeholder="Resume Link (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Twitter URL (optional) */}
-                <input type="url" name="twitterUrl" value={seekerProfile.twitterUrl ?? ""} onChange={handleProfileChange} placeholder="Twitter URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Telegram URL (optional) */}
-                <input type="url" name="telegramUrl" value={seekerProfile.telegramUrl ?? ""} onChange={handleProfileChange} placeholder="Telegram URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
               </div>
             </div>
             {/* Idiomas (full width) */}
