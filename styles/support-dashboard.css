@@ -18,6 +18,7 @@
   padding-bottom: 0.5rem;
   margin-bottom: 0.5rem;
   border-bottom: 1px solid rgba(30, 58, 138, 1);
+  z-index: 1;
 }
 
 /* Messages Container */
@@ -27,6 +28,26 @@
   padding-top: 0.5rem;
   margin-bottom: 0.5rem;
   max-height: calc(100% - 220px);
+  /* Removed Firefox-specific scrollbar properties */
+}
+
+/* WebKit browsers only (Chrome, Safari, newer Edge) */
+.ticket-messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ticket-messages-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+
+.ticket-messages-container::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 6px;
+}
+
+.ticket-messages-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.8);
 }
 
 /* Message Items */

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, JSX, useCallback } from "react";
+import React, { useState, useEffect, JSX, useCallback, useRef } from "react";
 import Layout from "../../components/Layout"; // Assuming Layout component exists and is suitable
 import { useRouter } from "next/navigation";
 import { collection, getDocs, doc, getDoc, updateDoc, query, where, addDoc, serverTimestamp, onSnapshot, orderBy } from "firebase/firestore"; // Add necessary imports
@@ -220,6 +220,7 @@ interface SupportMessage {
   message: string;
   createdAt: string;
   read?: boolean;
+  isSystemMessage?: boolean; // Adicionando esta propriedade que estava faltando
 }
 
 // Definição do tipo Notification para tipagem correta
@@ -1170,15 +1171,15 @@ const SeekerDashboard = () => {
             {seekerProfile.experience && seekerProfile.experience.length > 0 && (
               <div>
                 <div className="font-semibold text-orange-300 mb-1">Experience</div>
-                <ul className="space-y-2">
+                <div className="space-y-2">
                   {seekerProfile.experience.map((exp, idx) => (
-                    <li key={idx} className="bg-black/40 rounded p-3">
+                    <div key={idx} className="bg-black/40 rounded p-3">
                       <div className="font-semibold text-orange-200">{exp.position} <span className="text-gray-400 font-normal">@ {exp.company}</span></div>
                       <div className="text-xs text-gray-400 mb-1">{exp.startDate} - {exp.endDate || 'Present'} {exp.location && `| ${exp.location}`}</div>
                       {exp.description && <div className="text-sm text-gray-200">{exp.description}</div>}
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
             
@@ -1186,15 +1187,15 @@ const SeekerDashboard = () => {
             {seekerProfile.education && seekerProfile.education.length > 0 && (
               <div>
                 <div className="font-semibold text-orange-300 mb-1">Education</div>
-                <ul className="space-y-2">
+                <div className="space-y-2">
                   {seekerProfile.education.map((edu, idx) => (
-                    <li key={idx} className="bg-black/40 rounded p-3">
+                    <div key={idx} className="bg-black/40 rounded p-3">
                       <div className="font-semibold text-orange-200">{edu.degree} <span className="text-gray-400 font-normal">@ {edu.institution}</span></div>
                       <div className="text-xs text-gray-400 mb-1">{edu.year}</div>
                       {edu.description && <div className="text-sm text-gray-200">{edu.description}</div>}
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
             
@@ -1202,16 +1203,16 @@ const SeekerDashboard = () => {
             {seekerProfile.projects && seekerProfile.projects.length > 0 && (
               <div>
                 <div className="font-semibold text-orange-300 mb-1">Projects</div>
-                <ul className="space-y-2">
+                <div className="space-y-2">
                   {seekerProfile.projects.map((proj, idx) => (
-                    <li key={idx} className="bg-black/40 rounded p-3">
+                    <div key={idx} className="bg-black/40 rounded p-3">
                       <div className="font-semibold text-orange-200">{proj.name}</div>
                       {proj.url && <a href={proj.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs">{proj.url}</a>}
                       <div className="text-xs text-gray-400 mb-1">{proj.technologies}</div>
                       {proj.description && <div className="text-sm text-gray-200">{proj.description}</div>}
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
             
@@ -1219,15 +1220,15 @@ const SeekerDashboard = () => {
             {seekerProfile.certifications && seekerProfile.certifications.length > 0 && (
               <div>
                 <div className="font-semibold text-orange-300 mb-1">Certifications</div>
-                <ul className="space-y-2">
+                <div className="space-y-2">
                   {seekerProfile.certifications.map((cert, idx) => (
-                    <li key={idx} className="bg-black/40 rounded p-3">
+                    <div key={idx} className="bg-black/40 rounded p-3">
                       <div className="font-semibold text-orange-200">{cert.name}</div>
                       <div className="text-xs text-gray-400 mb-1">{cert.issuer} | {cert.date}</div>
                       {cert.url && <a href={cert.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs">{cert.url}</a>}
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
             
@@ -1235,14 +1236,14 @@ const SeekerDashboard = () => {
             {seekerProfile.references && seekerProfile.references.length > 0 && (
               <div>
                 <div className="font-semibold text-orange-300 mb-1">References</div>
-                <ul className="space-y-2">
+                <div className="space-y-2">
                   {seekerProfile.references.map((ref, idx) => (
-                    <li key={idx} className="bg-black/40 rounded p-3">
+                    <div key={idx} className="bg-black/40 rounded p-3">
                       <div className="font-semibold text-orange-200">{ref.name}</div>
                       <div className="text-xs text-gray-400 mb-1">{ref.relation} | {ref.contact}</div>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
             
@@ -1664,7 +1665,6 @@ const SeekerDashboard = () => {
                 {/* Extra Preferences */}
                 <div className="flex flex-wrap gap-4 mt-4">
                   <label className="flex items-center gap-2 text-white">
-                    <input type="checkbox" name="remoteOnly" checked={!!seekerProfile.remoteOnly} onChange={e => setSeekerProfile({ ...seekerProfile, remoteOnly: e.target.checked })} /> Remote Only
                   </label>
                   <label className="flex items-center gap-2 text-white">
                     <input type="checkbox" name="willingToRelocate" checked={!!seekerProfile.willingToRelocate} onChange={e => setSeekerProfile({ ...seekerProfile, willingToRelocate: e.target.checked })} /> Willing to Relocate
@@ -1984,6 +1984,14 @@ const SeekerDashboard = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  
+  // Referência para o elemento do final das mensagens (para scroll automático)
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Scroll para a última mensagem quando novas mensagens são carregadas
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [ticketMessages]);
 
   // Buscar notificações do seeker na coleção notifications a cada 10s
   useEffect(() => {
@@ -2170,8 +2178,8 @@ const SeekerDashboard = () => {
           {activeTab === "settings" && renderSettings()}
           {activeTab === "support" && (
             <div className="bg-black/70 p-10 rounded-lg shadow-lg">
-              {/* ...existing support tab content... */}
-              {/* Mantém o conteúdo já existente para suporte */}
+              <h2 className="text-3xl font-semibold text-orange-500 mb-6">Support</h2>
+              {/* Tabs for New Ticket and My Tickets */}
               <div className="flex gap-4 mb-6">
                 <button
                   className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${activeSupportTab === 'new' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
@@ -2186,7 +2194,8 @@ const SeekerDashboard = () => {
                   My Tickets
                 </button>
               </div>
-              {/* Render content for each support tab here */}
+              
+              {/* New Ticket Form */}
               {activeSupportTab === 'new' && (
                 <form onSubmit={handleSubmitTicket} className="space-y-6 max-w-lg">
                   <div>
@@ -2241,16 +2250,18 @@ const SeekerDashboard = () => {
                   </button>
                 </form>
               )}
+              
+              {/* My Tickets View */}
               {activeSupportTab === 'my' && (
                 <div className="flex flex-col md:flex-row gap-6">
-                  {/* Ticket list */}
-                  <div className="md:w-1/3">
+                  {/* Tickets List - Left Side */}
+                  <div className="md:w-1/3 max-h-[600px] overflow-y-auto">
                     {loadingTickets ? (
                       <div className="text-gray-400">Loading tickets...</div>
                     ) : (
-                      <ul className="space-y-2">
+                      <div className="space-y-2">
                         {myTickets.map(ticket => (
-                          <li key={ticket.id}>
+                          <div key={ticket.id}>
                             <button
                               className={`w-full text-left p-3 rounded-lg border ${selectedTicket?.id === ticket.id ? 'border-orange-500 bg-black/60' : 'border-gray-700 bg-black/40'} transition`}
                               onClick={() => setSelectedTicket(ticket)}
@@ -2260,16 +2271,18 @@ const SeekerDashboard = () => {
                               <div className="text-xs text-gray-500">{new Date(ticket.createdAt || Date.now()).toLocaleString()}</div>
                               <div className="text-xs mt-1"><span className={`px-2 py-0.5 rounded ${ticket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{ticket.status}</span></div>
                             </button>
-                          </li>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     )}
                   </div>
-                  {/* Ticket chat/details */}
+                  
+                  {/* Ticket Details and Chat - Right Side */}
                   <div className="flex-1 min-w-0">
                     {selectedTicket ? (
-                      <div className="bg-black/60 rounded-lg p-6 h-full flex flex-col ticket-details">
-                        <div className="mb-2">
+                      <div className="bg-black/60 rounded-lg p-6 flex flex-col h-[600px]">
+                        {/* Ticket Header */}
+                        <div className="mb-4">
                           <div className="text-lg font-bold text-orange-400">{selectedTicket.subject}</div>
                           <div className="text-sm text-gray-400">Area: {selectedTicket.area}</div>
                           <div className="text-xs text-gray-500">Opened: {new Date(selectedTicket.createdAt || Date.now()).toLocaleString()}</div>
@@ -2279,22 +2292,27 @@ const SeekerDashboard = () => {
                             <div className="mt-2"><a href={selectedTicket.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">View Attachment</a></div>
                           )}
                         </div>
-                        <div className="flex-1 overflow-y-auto border-t border-orange-900 pt-4 mb-2 ticket-messages">
+                        
+                        {/* Messages Container with Fixed Height and Scrollbar */}
+                        <div className="flex-1 overflow-y-auto border-t border-orange-900 pt-4 mb-4 custom-scrollbar">
                           {ticketMessages.length === 0 ? (
                             <div className="text-gray-400">No messages yet.</div>
                           ) : (
-                            <ul className="space-y-3">
+                            <div className="space-y-3">
                               {ticketMessages.map(msg => (
-                                <li key={msg.id} className={`flex ${msg.senderType === 'seeker' ? 'justify-end' : 'justify-start'}`}>
-                                  <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.senderType === 'seeker' ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-100'}`}>
+                                <div key={msg.id} className={`flex ${msg.senderType === 'seeker' ? 'justify-end' : 'justify-start'}`}>
+                                  <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.senderType === 'seeker' ? 'bg-orange-500 text-white' : msg.isSystemMessage ? 'bg-gray-700/50 text-gray-300 italic' : 'bg-gray-700 text-gray-100'}`}>
                                     {msg.message}
                                     <div className="text-xs text-gray-300 mt-1 text-right">{new Date(msg.createdAt).toLocaleString()}</div>
                                   </div>
-                                </li>
+                                </div>
                               ))}
-                            </ul>
+                              <div ref={messagesEndRef} />
+                            </div>
                           )}
                         </div>
+                        
+                        {/* Message Input Form */}
                         {selectedTicket.status === 'open' && canSendMessage && (
                           <form onSubmit={handleSendTicketMessage} className="flex gap-2 mt-auto">
                             <input
@@ -2315,12 +2333,19 @@ const SeekerDashboard = () => {
                             </button>
                           </form>
                         )}
+                        
                         {selectedTicket.status === 'open' && !canSendMessage && (
-                          <div className="text-yellow-400 text-sm mt-4">You can send messages after a support agent accepts your ticket.</div>
+                          <div className="text-yellow-400 text-sm mt-auto">You can send messages after a support agent accepts your ticket.</div>
+                        )}
+                        
+                        {selectedTicket.status === 'closed' && (
+                          <div className="text-green-400 text-sm mt-auto">This ticket has been resolved and closed.</div>
                         )}
                       </div>
                     ) : (
-                      <div className="text-gray-400 flex items-center justify-center h-full">Select a ticket to view details and chat.</div>
+                      <div className="text-gray-400 flex items-center justify-center h-[600px] bg-black/40 rounded-lg">
+                        Select a ticket to view details and chat history
+                      </div>
                     )}
                   </div>
                 </div>

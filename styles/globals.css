@@ -52,6 +52,7 @@ button {
 /* Add styles for seeker-dashboard */
 .ticket-list {
   max-height: 500px;
+  overflow-y: auto;
 }
 
 .ticket-details {
@@ -59,5 +60,27 @@ button {
 }
 
 .ticket-messages {
-  max-height: 220px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin-bottom: 12px;
+}
+
+/* Estilização da scrollbar para as mensagens */
+.ticket-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ticket-messages::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.ticket-messages::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, 0.5);
+  border-radius: 10px;
+}
+
+.ticket-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(249, 115, 22, 0.8);
 }

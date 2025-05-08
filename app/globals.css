@@ -16,3 +16,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .min-h-200px {
   min-height: 200px;
 }
+
+/* Custom scrollbar styling - browser compatible version */
+.custom-scrollbar {
+  overflow-y: auto; /* Default scrollbar for Firefox and others that don't support custom styling */
+}
+
+/* WebKit browsers only (Chrome, Safari, newer Edge) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, 0.5);
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(249, 115, 22, 0.7);
+}
+
+/* Add this class to elements that need scrolling */
+.ticket-messages,
+.notification-container {
+  @apply custom-scrollbar;
+}
