@@ -1,8 +1,8 @@
 import "./globals.css";
 import { metadata } from "./metadata";
 
-// A inicialização do monitoramento de contratos foi movida para o arquivo server-init.ts
-// Isso evita múltiplas inicializações conflitantes durante as renderizações do Next.js
+// Contract monitoring initialization has been moved to the server-init.ts file
+// This prevents multiple conflicting initializations during Next.js renderings
 
 export default function RootLayout({
   children,

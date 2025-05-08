@@ -220,10 +220,10 @@ interface SupportMessage {
   message: string;
   createdAt: string;
   read?: boolean;
-  isSystemMessage?: boolean; // Adicionando esta propriedade que estava faltando
+  isSystemMessage?: boolean; // Adding this property that was missing
 }
 
-// Definição do tipo Notification para tipagem correta
+// Definition of the Notification type for correct typing
 interface Notification {
   id: string;
   userId: string;
@@ -257,9 +257,9 @@ const SeekerDashboard = () => {
   const [fetchError, setFetchError] = useState<string | null>(null); // Add state for fetch errors
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
-  // Estado para sub-aba de settings - MOVED UP HERE
+  // State for settings sub-tab - MOVED UP HERE
   const [settingsTab, setSettingsTab] = useState<'profile' | 'notifications'>('profile');
-  // Estado para preferências de notificações - MOVED UP with the settingsTab
+  // State for notification preferences - MOVED UP with the settingsTab
   const [notificationPrefs, setNotificationPrefs] = useState({
     supportReplies: true,
     instantJobs: true,
@@ -272,10 +272,10 @@ const SeekerDashboard = () => {
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [walletError, setWalletError] = useState<string | null>(null);
 
-  // Estados para a funcionalidade de Instant Jobs
+  // States for Instant Jobs functionality
   const [instantJobs, setInstantJobs] = useState<InstantJob[]>([]);
   const [availableInstantJobs, setAvailableInstantJobs] = useState<InstantJob[]>([]);
-  const [activeSection, setActiveSection] = useState<'available' | 'myJobs' | 'detail'>('available');
+  const [activeSection, setActiveSection] = useState<'available' | 'myJobs' | 'detail'>('myJobs');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<InstantJob | null>(null);
   const [jobMessages, setJobMessages] = useState<JobMessage[]>([]);
@@ -554,7 +554,7 @@ const SeekerDashboard = () => {
     } catch (error) {
       console.error("Error decoding seeker token or initial fetch:", error);
       // Redirect immediately if token is invalid or missing
-      router.replace("/login"); // Corrigido: redirecionando para /login em vez de /admin-login
+      router.replace("/login"); // Corrected: redirecting to /login instead of /admin-login
     }
   }, [router, fetchSeekerPhoto, fetchSeekerProfile, fetchApplications]); // Add memoized fetch functions to dependencies
 
@@ -834,12 +834,12 @@ const SeekerDashboard = () => {
     try {
       setIsApplyingForJob(true);
       
-      // Aplicar para o trabalho sem exigir carteira
+      // Apply for the job without requiring a wallet
       await instantJobsService.applyForInstantJob(
         jobId, 
         seekerId, 
         seekerProfile.fullName || seekerProfile.name || seekerProfile.email,
-        null // Não exigimos mais a carteira na candidatura
+        null // No longer requiring wallet in the application
       );
       
       console.log("Applied for micro task successfully!");
@@ -866,7 +866,7 @@ const SeekerDashboard = () => {
     }
   }, [activeTab, seekerId]);
   
-  // Carregar instantJobs quando necessário
+  // Load instantJobs when needed
   useEffect(() => {
     if (activeTab === "instantJobs" && seekerId) {
       loadAvailableInstantJobs();
@@ -874,13 +874,13 @@ const SeekerDashboard = () => {
     }
   }, [activeTab, seekerId]);
   
-  // Carregar detalhes do job quando selecionar um
+  // Load job details when selecting one
   useEffect(() => {
     if (selectedJobId) {
-      // Verificar primeiro em myInstantJobs
+      // Check first in myInstantJobs
       let job = instantJobs.find(job => job.id === selectedJobId);
       
-      // Se não encontrar, verificar em availableInstantJobs
+      // If not found, check in availableInstantJobs
       if (!job) {
         job = availableInstantJobs.find(job => job.id === selectedJobId);
       }
@@ -888,7 +888,7 @@ const SeekerDashboard = () => {
       if (job) {
         setSelectedJob(job);
         
-        // Só carregar mensagens se a tarefa não estiver no status 'open'
+        // Only load messages if the task is not in 'open' status
         if (job.status !== 'open') {
           loadJobMessages(selectedJobId);
         }
@@ -919,7 +919,7 @@ const SeekerDashboard = () => {
   // Render My Profile Tab Content (Professional, Expandable)
   const [showFullProfile, setShowFullProfile] = useState(false);
   const renderMyProfile = () => {
-    // Preparar links sociais/profissionais para exibição
+    // Prepare social/professional links for display
     type MainLink = { href: string; label: string; icon: string };
     const mainLinks: MainLink[] = [];
     if (seekerProfile.linkedinUrl) mainLinks.push({ href: seekerProfile.linkedinUrl, label: 'LinkedIn', icon: '🔗' });
@@ -934,15 +934,15 @@ const SeekerDashboard = () => {
     if (seekerProfile.dribbbleUrl) mainLinks.push({ href: seekerProfile.dribbbleUrl, label: 'Dribbble', icon: '🏀' });
     if (seekerProfile.behanceUrl) mainLinks.push({ href: seekerProfile.behanceUrl, label: 'Behance', icon: '🎨' });
 
-    // Dados para experiência e educação
+    // Data for experience and education
     const firstExperience = seekerProfile.experience && seekerProfile.experience.length > 0 ? seekerProfile.experience[0] : null;
     const firstEducation = seekerProfile.education && seekerProfile.education.length > 0 ? seekerProfile.education[0] : null;
 
     return (
       <div className="bg-black/80 p-8 rounded-xl shadow-2xl w-full max-w-5xl mx-auto">
-        {/* Top Section: Foto, Nome, Título */}
+        {/* Top Section: Photo, Name, Title */}
         <div className="flex flex-col md:flex-row items-center gap-8 mb-6">
-          {/* Foto do perfil */}
+          {/* Profile photo */}
           <div className="relative">
             <img
               src={userPhoto || "/images/default-avatar.png"}
@@ -953,18 +953,18 @@ const SeekerDashboard = () => {
             />
           </div>
           
-          {/* Informações principais */}
+          {/* Main information */}
           <div className="flex-1 text-center md:text-left">
             <h1 className="text-4xl font-bold text-orange-400 mb-1">
               {seekerProfile.fullName || (seekerProfile.name + (seekerProfile.surname ? ' ' + seekerProfile.surname : ''))}
             </h1>
             
-            {/* Título profissional */}
+            {/* Professional title */}
             {seekerProfile.title && 
               <div className="text-xl text-orange-200 font-semibold mb-1">{seekerProfile.title}</div>
             }
             
-            {/* Localização */}
+            {/* Location */}
             <div className="text-gray-400 mb-3">
               <span className="inline-flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -975,7 +975,7 @@ const SeekerDashboard = () => {
               </span>
             </div>
             
-            {/* Informações de contato importantes */}
+            {/* Important contact information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
               {seekerProfile.email && (
                 <div className="text-sm text-gray-300 flex items-center">
@@ -1014,7 +1014,7 @@ const SeekerDashboard = () => {
               )}
             </div>
 
-            {/* Bio curta */}
+            {/* Short bio */}
             {seekerProfile.bio && (
               <div className="text-gray-300 mb-3 text-sm italic border-l-2 border-orange-500 pl-3">
                 "{seekerProfile.bio.length > 150 ? `${seekerProfile.bio.substring(0, 150)}...` : seekerProfile.bio}"
@@ -1023,7 +1023,7 @@ const SeekerDashboard = () => {
           </div>
         </div>
         
-        {/* Links sociais/profissionais mostrados como botões */}
+        {/* Social/professional links shown as buttons */}
         {mainLinks.length > 0 && (
           <div className="mb-6">
             <div className="flex flex-wrap gap-2 justify-center md:justify-start">
@@ -1042,7 +1042,7 @@ const SeekerDashboard = () => {
           </div>
         )}
         
-        {/* Skills - Importantes para perfil profissional */}
+        {/* Skills - Important for professional profile */}
         {seekerProfile.skills && (
           <div className="mb-6">
             <div className="font-semibold text-orange-300 mb-1">Skills</div>
@@ -1054,7 +1054,7 @@ const SeekerDashboard = () => {
           </div>
         )}
         
-        {/* Seção de duas colunas com Experience e Education */}
+        {/* Two-column section with Experience and Education */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Main Experience */}
           {firstExperience && (
@@ -1077,7 +1077,7 @@ const SeekerDashboard = () => {
           )}
         </div>
         
-        {/* Work Preferences - Informações importantes para recrutadores */}
+        {/* Work Preferences - Important information for recruiters */}
         <div className="mb-6">
           <div className="font-semibold text-orange-300 mb-2">Work Preferences</div>
           <div className="bg-black/40 p-4 rounded grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1132,7 +1132,7 @@ const SeekerDashboard = () => {
           </div>
         </div>
 
-        {/* Botão de expansão */}
+        {/* Expand button */}
         <div className="flex justify-center my-4">
           <button
             onClick={() => setShowFullProfile(v => !v)}
@@ -1142,7 +1142,7 @@ const SeekerDashboard = () => {
           </button>
         </div>
 
-        {/* Full Profile Details (quando expandido) */}
+        {/* Full Profile Details (when expanded) */}
         {showFullProfile && (
           <div className="mt-6 space-y-6 animate-fade-in">
             {/* Languages */}
@@ -1298,7 +1298,7 @@ const SeekerDashboard = () => {
             {/* Personal Data */}
             <h3 className="text-lg font-bold text-orange-400 mb-4">Personal Data</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-              {/* COLUNA 1 - Personal Info */}
+              {/* COLUMN 1 - Personal Info */}
               <div className="space-y-6 col-span-1 md:col-span-1">
                 {/* Name */}
                 <input type="text" name="name" value={seekerProfile.name ?? ""} onChange={handleProfileChange} placeholder="First Name" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
@@ -1321,7 +1321,7 @@ const SeekerDashboard = () => {
                 <input type="text" name="nationality" value={seekerProfile.nationality ?? ""} onChange={handleProfileChange} placeholder="Nationality" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
               </div>
               
-              {/* COLUNA 2 - Contact & Location */}
+              {/* COLUMN 2 - Contact & Location */}
               <div className="space-y-6 col-span-1 md:col-span-1">
                 {/* Location */}
                 <input type="text" name="location" value={seekerProfile.location ?? ""} onChange={handleProfileChange} placeholder="Location (e.g., City, Country)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
@@ -1407,7 +1407,7 @@ const SeekerDashboard = () => {
                 </div>
               </div>
               
-              {/* COLUNA 3 - Profile Content */}
+              {/* COLUMN 3 - Profile Content */}
               <div className="space-y-6 col-span-1 md:col-span-1">
                 {/* Interest Area */}
                 <input type="text" name="interestArea" value={seekerProfile.interestArea ?? ""} onChange={handleProfileChange} placeholder="Interest Area (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
@@ -1975,15 +1975,15 @@ const SeekerDashboard = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   
-  // Referência para o elemento do final das mensagens (para scroll automático)
+  // Reference to the end of messages element (for auto-scroll)
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Scroll para a última mensagem quando novas mensagens são carregadas
+  // Scroll to the last message when new messages are loaded
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [ticketMessages]);
 
-  // Buscar notificações do seeker na coleção notifications a cada 10s
+  // Fetch seeker's notifications from the notifications collection every 10s
   useEffect(() => {
     if (!seekerId || !db) return;
     let interval: NodeJS.Timeout;
@@ -2031,11 +2031,11 @@ const SeekerDashboard = () => {
     await updateDoc(doc(db, 'notifications', notifId), { read: true });
   };
 
-  // Detectar e processar notificações que requerem conexão de carteira
+  // Detect and process notifications that require wallet connection
   useEffect(() => {
     if (!seekerId || !db) return;
     
-    // Verificar se existem notificações do tipo "wallet_needed"
+    // Check if there are notifications of type "wallet_needed"
     const checkForWalletNeededNotifications = async () => {
       try {
         const q = query(
@@ -2048,22 +2048,22 @@ const SeekerDashboard = () => {
         const notifSnapshot = await getDocs(q);
         
         if (!notifSnapshot.empty) {
-          // Existe pelo menos uma notificação solicitando conexão de carteira
-          // Mostrar um modal ou um alerta para o usuário
+          // There is at least one notification requesting wallet connection
+          // Show a modal or an alert to the user
           const walletNeededNotif = notifSnapshot.docs[0];
           const jobId = walletNeededNotif.data().jobId;
           
           if (!walletAddress) {
             const confirmConnect = window.confirm(
-              "Parabéns! Uma de suas aplicações para Instant Jobs foi aprovada. " +
-              "Para receber o pagamento quando o trabalho for concluído, você precisa conectar sua carteira. " +
-              "Deseja conectar agora?"
+              "Congratulations! One of your applications for Instant Jobs has been approved. " +
+              "To receive payment when the job is completed, you need to connect your wallet. " +
+              "Would you like to connect now?"
             );
             
             if (confirmConnect) {
               const address = await handleConnectWallet();
               if (address) {
-                // Buscar a aplicação aprovada para este job
+                // Fetch the approved application for this job
                 const applicationsCollection = collection(db, "jobApplications");
                 const appQuery = query(
                   applicationsCollection, 
@@ -2075,19 +2075,19 @@ const SeekerDashboard = () => {
                 const appSnapshot = await getDocs(appQuery);
                 if (!appSnapshot.empty) {
                   const application = appSnapshot.docs[0];
-                  // Atualizar o endereço da carteira na candidatura e no job
+                  // Update the wallet address in the application and job
                   await instantJobsService.updateApplicationWalletAddress(
                     application.id,
                     seekerId,
                     address
                   );
                   
-                  // Marcar notificação como lida
+                  // Mark notification as read
                   await updateDoc(doc(db, "notifications", walletNeededNotif.id), {
                     read: true
                   });
                   
-                  alert("Sua carteira foi conectada com sucesso e está pronta para receber pagamentos!");
+                  alert("Your wallet has been successfully connected and is ready to receive payments!");
                 }
               }
             }
@@ -2098,7 +2098,7 @@ const SeekerDashboard = () => {
       }
     };
     
-    // Verificar na inicialização e quando o wallet address mudar
+    // Check on initialization and when wallet address changes
     checkForWalletNeededNotifications();
     
   }, [seekerId, walletAddress, db]);
@@ -2231,7 +2231,7 @@ const SeekerDashboard = () => {
         </aside>
         {/* Main Content Area */}
         <section className="w-full md:w-3/4 p-6 overflow-y-auto">
-          {/* Mantém o render dos conteúdos principais */}
+          {/* Maintain the render of main contents */}
           {activeTab === "myProfile" && renderMyProfile()}
           {activeTab === "myApplications" && renderMyApplications()}
           {activeTab === "instantJobs" && renderInstantJobsTab()}

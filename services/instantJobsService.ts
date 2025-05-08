@@ -28,7 +28,7 @@ export interface InstantJob {
   contractAddress?: string;
   walletAddress?: string; // Worker's wallet address
   escrowDeposited?: boolean; // Whether the company has deposited funds
-  estimatedTime?: string; // Adicionado para suportar campo opcional
+  estimatedTime?: string; // Added to support optional field
 }
 
 export interface JobMessage {
@@ -510,7 +510,7 @@ class InstantJobsService {
         jobId,
         workerId,
         workerName,
-        walletAddress, // Agora pode ser null, será atualizado depois
+        walletAddress, // Can now be null, will be updated later
         jobTitle: jobData.title,
         companyId: jobData.companyId,
         companyName: jobData.companyName,
@@ -649,7 +649,7 @@ class InstantJobsService {
         });
       });
       
-      // Notify approved worker - Modificado para incluir solicitação de conexão de carteira
+      // Notify approved worker - Modified to include wallet connection request
       await addDoc(collection(db, "notifications"), {
         recipientId: application.workerId,
         recipientType: 'worker',
@@ -657,7 +657,7 @@ class InstantJobsService {
         message: `Congratulations! Your application for "${jobData.title}" has been approved. Please connect your wallet in your dashboard to receive payment when the job is completed.`,
         read: false,
         jobId: application.jobId,
-        type: "wallet_needed", // Adicionando um tipo especial para poder identificar esta notificação
+        type: "wallet_needed", // Adding a special type to identify this notification
         createdAt: serverTimestamp()
       });
     } catch (error) {
@@ -710,12 +710,12 @@ class InstantJobsService {
     }
   }
 
-  // Nova função para atualizar o endereço da carteira após a candidatura
+  // New function to update wallet address after application
   async updateApplicationWalletAddress(applicationId: string, workerId: string, walletAddress: string): Promise<void> {
     try {
       if (!db) throw new Error("Firestore is not initialized");
       
-      // Obter a aplicação
+      // Get the application
       const applicationRef = doc(db, "jobApplications", applicationId);
       const applicationSnap = await getDoc(applicationRef);
       
@@ -725,17 +725,17 @@ class InstantJobsService {
       
       const application = applicationSnap.data();
       
-      // Verificar se o trabalhador tem permissão
+      // Check if the worker has permission
       if (application.workerId !== workerId) {
         throw new Error("You don't have permission to update this application");
       }
       
-      // Atualizar o endereço da carteira na aplicação
+      // Update wallet address in the application
       await updateDoc(applicationRef, {
         walletAddress: walletAddress
       });
       
-      // Se a aplicação já foi aprovada, também atualizar no job
+      // If the application is already approved, also update in the job
       if (application.status === 'approved') {
         const jobRef = doc(db, "instantJobs", application.jobId);
         await updateDoc(jobRef, {

@@ -5,11 +5,11 @@ import jwt from "jsonwebtoken";
 import { getDoc, doc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
-// Interface para as opções de autenticação
+// Interface for authentication options
 interface AuthOptions {
-  // Tipo de usuário: 'admin', 'company', 'seeker', 'support'
+  // User type: 'admin', 'company', 'seeker', 'support'
   userType?: 'admin' | 'company' | 'seeker' | 'support';
-  // URL da página de login para redirecionamento, se não especificado, será determinado pelo userType
+  // Login page URL for redirection, if not specified, it will be determined by userType
   loginPath?: string;
 }
 
@@ -20,11 +20,11 @@ export default function withAuth<P extends object>(
   const WithAuth = (props: P) => {
     const router = useRouter();
     
-    // Determinar qual tipo de usuário e caminho de login usar
-    // Mudado o padrão para 'seeker' em vez de 'admin' quando não especificado
+    // Determine which user type and login path to use
+    // Changed the default to 'seeker' instead of 'admin' when not specified
     const userType = options.userType || 'seeker';
     
-    // Mapear tipos de usuário para caminhos de login e nomes de token
+    // Map user types to login paths and token names
     const typeToLoginPath = {
       'admin': '/admin-login',
       'company': '/login',
@@ -33,21 +33,21 @@ export default function withAuth<P extends object>(
     };
     
     const typeToTokenName = {
-      'admin': 'token',            // token JWT para admin
-      'company': 'companyToken',   // token específico para company
-      'seeker': 'seekerToken',     // token específico para seeker
-      'support': 'supportToken'    // token específico para support
+      'admin': 'token',            // JWT token for admin
+      'company': 'companyToken',   // specific token for company
+      'seeker': 'seekerToken',     // specific token for seeker
+      'support': 'supportToken'    // specific token for support
     };
     
-    // Determinar caminho de login adequado
+    // Determine appropriate login path
     const loginPath = options.loginPath || typeToLoginPath[userType];
     
-    // Determinar nome do token a ser verificado
+    // Determine token name to be verified
     const tokenName = typeToTokenName[userType];
 
     useEffect(() => {
       const checkToken = async () => {
-        // Verificar se existe um token para o tipo de usuário adequado
+        // Check if a token exists for the appropriate user type
         const token = localStorage.getItem(tokenName);
 
         if (!token || token === "null") {
@@ -57,7 +57,7 @@ export default function withAuth<P extends object>(
         }
 
         try {
-          // Admin usa token JWT que precisa ser verificado
+          // Admin uses JWT token that needs verification
           if (userType === 'admin') {
             if (!process.env.JWT_SECRET) {
               throw new Error("JWT_SECRET is not defined in the environment variables.");
@@ -72,7 +72,7 @@ export default function withAuth<P extends object>(
               return;
             }
 
-            // Verificar token do admin no Firestore
+            // Verify admin token in Firestore
             if (!db) {
               throw new Error("Firestore instance is not initialized.");
             }
@@ -85,12 +85,12 @@ export default function withAuth<P extends object>(
               return;
             }
           } 
-          // Para outros tipos de usuário, podemos implementar verificações específicas
-          // Por exemplo, para seekers e companies, podemos verificar se o ID decodificado existe no Firestore
+          // For other user types, we can implement specific verifications
+          // For example, for seekers and companies, we can check if the decoded ID exists in Firestore
           else if (userType === 'seeker') {
-            // Para seekers, o token geralmente é apenas o ID codificado em base64
+            // For seekers, the token is usually just the ID encoded in base64
             try {
-              const seekerId = atob(token); // Decodificar token base64
+              const seekerId = atob(token); // Decode base64 token
               
               if (!db) {
                 throw new Error("Firestore instance is not initialized.");
@@ -110,10 +110,10 @@ export default function withAuth<P extends object>(
               return;
             }
           }
-          // Verificação similar para companhias e suporte
+          // Similar verification for companies and support
           else if (userType === 'company' || userType === 'support') {
-            // Implementar verificações específicas conforme necessário
-            // Esta é uma verificação simplificada que apenas verifica se o token existe
+            // Implement specific checks as needed
+            // This is a simplified check that only verifies if the token exists
           }
 
           console.log(`${userType} token is valid.`);

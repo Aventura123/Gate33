@@ -558,17 +558,17 @@ const PostJobPage = (): JSX.Element => {
       setIsConnectingWallet(true);
       setWalletError(null);
       
-      // Importar o web3Service diretamente para garantir que estamos usando a mesma instância
+      // Import web3Service directly to ensure we're using the same instance
       const { web3Service } = await import('../../services/web3Service');
       
-      // Usar o web3Service para conectar a carteira
+      // Use web3Service to connect the wallet
       const walletInfo = await web3Service.connectWallet();
       
       if (walletInfo && walletInfo.address) {
         setWalletAddress(walletInfo.address);
         console.log("Wallet connected successfully:", walletInfo);
         
-        // Disparar evento para outros componentes saberem que a carteira foi conectada
+        // Dispatch event to let other components know the wallet was connected
         window.dispatchEvent(new CustomEvent('web3Connected', { 
           detail: { address: walletInfo.address, chainId: walletInfo.chainId } 
         }));
@@ -2006,13 +2006,13 @@ const PostJobPage = (): JSX.Element => {
     if (name === 'tokenAmount' || name === 'totalParticipants' || name === 'tokenPerParticipant') {
       const numValue = value ? Number(value) : 0;
       
-      // Criar um novo objeto com os valores atualizados
+      // Create a new object with updated values
       const updatedData = {...learn2earnData, [name]: numValue};
       
-      // Calcular automaticamente o maxParticipants quando tokenAmount ou tokenPerParticipant são alterados
+      // Automatically calculate maxParticipants when tokenAmount or tokenPerParticipant are changed
       if ((name === 'tokenAmount' || name === 'tokenPerParticipant') && 
           updatedData.tokenAmount > 0 && updatedData.tokenPerParticipant > 0) {
-        // Cálculo do máximo de participantes
+        // Calculate maximum participants
         const calculatedMaxParticipants = Math.floor(updatedData.tokenAmount / updatedData.tokenPerParticipant);
         updatedData.maxParticipants = calculatedMaxParticipants;
       }
@@ -3379,11 +3379,11 @@ const manualSyncStatuses = async () => {
     return () => unsubscribe();
   }, [db, selectedTicketId]);
 
-  // Função para renderizar o seção de tickets de suporte
+  // Function to render Support Tickets section
   const renderSupportTickets = () => {
     return (
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Coluna esquerda: notificações + lista de tickets + botão novo ticket */}
+        {/* Left column: notifications + ticket list + new ticket button */}
         <div className="w-full md:w-1/3">
           <div className="flex justify-between items-center mb-4">
             <button
@@ -3393,7 +3393,7 @@ const manualSyncStatuses = async () => {
               New Ticket
             </button>
           </div>
-          {/* Notificações no topo */}
+          {/* Notifications at the top */}
           {notifications.length > 0 && (
             <div className="mb-4">
               <ul className="space-y-2">
@@ -3405,7 +3405,7 @@ const manualSyncStatuses = async () => {
               </ul>
             </div>
           )}
-          {/* Lista de tickets */}
+          {/* Ticket list */}
           <div className="space-y-2">
             {supportTickets.length === 0 ? (
               <div className="text-center py-8">
@@ -3443,7 +3443,7 @@ const manualSyncStatuses = async () => {
             )}
           </div>
         </div>
-        {/* Coluna direita: detalhes do ticket ou mensagem padrão */}
+        {/* Right column: ticket details or default message */}
         <div className="w-full md:w-2/3">
           {supportSectionActive === 'detail' && selectedTicket ? (
             <div className="bg-black/50 p-6 rounded-lg">
@@ -3484,7 +3484,7 @@ const manualSyncStatuses = async () => {
                     ))
                   )}
                 </div>
-                {/* BLOQUEIO DE ENVIO DE MENSAGEM */}
+                {/* MESSAGE SENDING RESTRICTION */}
                 {selectedTicket.status !== 'open' || !selectedTicket.acceptedBy ? (
                   <div className="text-yellow-400 text-sm mt-4">
                     The chat will be available once the ticket is accepted by support.
