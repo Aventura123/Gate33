@@ -486,7 +486,7 @@ class InstantJobsService {
     }
   }
 
-  async applyForInstantJob(jobId: string, workerId: string, workerName: string, walletAddress: string): Promise<void> {
+  async applyForInstantJob(jobId: string, workerId: string, workerName: string, walletAddress: string | null = null): Promise<void> {
     try {
       if (!db) throw new Error("Firestore is not initialized");
       
@@ -510,7 +510,7 @@ class InstantJobsService {
         jobId,
         workerId,
         workerName,
-        walletAddress,
+        walletAddress, // Agora pode ser null, será atualizado depois
         jobTitle: jobData.title,
         companyId: jobData.companyId,
         companyName: jobData.companyName,
@@ -649,14 +649,15 @@ class InstantJobsService {
         });
       });
       
-      // Notify approved worker
+      // Notify approved worker - Modificado para incluir solicitação de conexão de carteira
       await addDoc(collection(db, "notifications"), {
         recipientId: application.workerId,
         recipientType: 'worker',
         title: "Application approved",
-        message: `Congratulations! Your application for "${jobData.title}" has been approved`,
+        message: `Congratulations! Your application for "${jobData.title}" has been approved. Please connect your wallet in your dashboard to receive payment when the job is completed.`,
         read: false,
-        jobId: application.workerId,
+        jobId: application.jobId,
+        type: "wallet_needed", // Adicionando um tipo especial para poder identificar esta notificação
         createdAt: serverTimestamp()
       });
     } catch (error) {
@@ -705,6 +706,45 @@ class InstantJobsService {
       } as InstantJob;
     } catch (error) {
       console.error("Error fetching micro-task by ID:", error);
+      throw error;
+    }
+  }
+
+  // Nova função para atualizar o endereço da carteira após a candidatura
+  async updateApplicationWalletAddress(applicationId: string, workerId: string, walletAddress: string): Promise<void> {
+    try {
+      if (!db) throw new Error("Firestore is not initialized");
+      
+      // Obter a aplicação
+      const applicationRef = doc(db, "jobApplications", applicationId);
+      const applicationSnap = await getDoc(applicationRef);
+      
+      if (!applicationSnap.exists()) {
+        throw new Error("Application not found");
+      }
+      
+      const application = applicationSnap.data();
+      
+      // Verificar se o trabalhador tem permissão
+      if (application.workerId !== workerId) {
+        throw new Error("You don't have permission to update this application");
+      }
+      
+      // Atualizar o endereço da carteira na aplicação
+      await updateDoc(applicationRef, {
+        walletAddress: walletAddress
+      });
+      
+      // Se a aplicação já foi aprovada, também atualizar no job
+      if (application.status === 'approved') {
+        const jobRef = doc(db, "instantJobs", application.jobId);
+        await updateDoc(jobRef, {
+          walletAddress: walletAddress
+        });
+      }
+      
+    } catch (error) {
+      console.error("Error updating wallet address:", error);
       throw error;
     }
   }

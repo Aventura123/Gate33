@@ -834,22 +834,12 @@ const SeekerDashboard = () => {
     try {
       setIsApplyingForJob(true);
       
-      // Check if user has connected wallet
-      let address = walletAddress;
-      if (!address) {
-        address = await handleConnectWallet();
-        if (!address) {
-          console.log("Wallet connection required to apply for micro tasks");
-          return;
-        }
-      }
-      
-      // Apply for the job
+      // Aplicar para o trabalho sem exigir carteira
       await instantJobsService.applyForInstantJob(
         jobId, 
         seekerId, 
         seekerProfile.fullName || seekerProfile.name || seekerProfile.email,
-        address
+        null // Não exigimos mais a carteira na candidatura
       );
       
       console.log("Applied for micro task successfully!");
@@ -2041,6 +2031,78 @@ const SeekerDashboard = () => {
     await updateDoc(doc(db, 'notifications', notifId), { read: true });
   };
 
+  // Detectar e processar notificações que requerem conexão de carteira
+  useEffect(() => {
+    if (!seekerId || !db) return;
+    
+    // Verificar se existem notificações do tipo "wallet_needed"
+    const checkForWalletNeededNotifications = async () => {
+      try {
+        const q = query(
+          collection(db, "notifications"),
+          where("userId", "==", seekerId),
+          where("type", "==", "wallet_needed"),
+          where("read", "==", false)
+        );
+        
+        const notifSnapshot = await getDocs(q);
+        
+        if (!notifSnapshot.empty) {
+          // Existe pelo menos uma notificação solicitando conexão de carteira
+          // Mostrar um modal ou um alerta para o usuário
+          const walletNeededNotif = notifSnapshot.docs[0];
+          const jobId = walletNeededNotif.data().jobId;
+          
+          if (!walletAddress) {
+            const confirmConnect = window.confirm(
+              "Parabéns! Uma de suas aplicações para Instant Jobs foi aprovada. " +
+              "Para receber o pagamento quando o trabalho for concluído, você precisa conectar sua carteira. " +
+              "Deseja conectar agora?"
+            );
+            
+            if (confirmConnect) {
+              const address = await handleConnectWallet();
+              if (address) {
+                // Buscar a aplicação aprovada para este job
+                const applicationsCollection = collection(db, "jobApplications");
+                const appQuery = query(
+                  applicationsCollection, 
+                  where("jobId", "==", jobId),
+                  where("workerId", "==", seekerId),
+                  where("status", "==", "approved")
+                );
+                
+                const appSnapshot = await getDocs(appQuery);
+                if (!appSnapshot.empty) {
+                  const application = appSnapshot.docs[0];
+                  // Atualizar o endereço da carteira na candidatura e no job
+                  await instantJobsService.updateApplicationWalletAddress(
+                    application.id,
+                    seekerId,
+                    address
+                  );
+                  
+                  // Marcar notificação como lida
+                  await updateDoc(doc(db, "notifications", walletNeededNotif.id), {
+                    read: true
+                  });
+                  
+                  alert("Sua carteira foi conectada com sucesso e está pronta para receber pagamentos!");
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking for wallet notifications:", error);
+      }
+    };
+    
+    // Verificar na inicialização e quando o wallet address mudar
+    checkForWalletNeededNotifications();
+    
+  }, [seekerId, walletAddress, db]);
+
   return (
     <Layout>
       <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex">
@@ -2085,17 +2147,13 @@ const SeekerDashboard = () => {
             <h2 className="text-xl font-semibold text-orange-400 w-full text-center mt-2">{seekerProfile.name || "User"}</h2>
             <p className="text-gray-400 text-sm truncate w-full text-center">{seekerProfile.email}</p>
             {/* Discreet Connect Wallet Button */}
-            <button
-              onClick={handleConnectWallet}
-              disabled={isConnectingWallet}
-              className="mt-2 mb-4 px-3 py-1 rounded bg-black/30 border border-orange-500/30 text-orange-400 text-xs flex items-center justify-center mx-auto hover:bg-orange-900/20 transition-all"
-            >
-              {walletAddress ? (
+            {walletAddress ? (
+              <div className="mt-2 mb-4 px-3 py-1 rounded bg-black/30 border border-orange-500/30 text-orange-400 text-xs flex items-center justify-center mx-auto hover:bg-orange-900/20 transition-all">
                 <span className="flex items-center gap-2">
                   <span className="truncate max-w-[100px]">{walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}</span>
                   <button
                     type="button"
-                    onClick={e => { e.stopPropagation(); setWalletAddress(null); }}
+                    onClick={() => setWalletAddress(null)}
                     className="ml-1 p-0.5 rounded hover:bg-orange-900/30 text-orange-400 hover:text-orange-200 transition"
                     title="Disconnect Wallet"
                     aria-label="Disconnect Wallet"
@@ -2105,14 +2163,16 @@ const SeekerDashboard = () => {
                     </svg>
                   </button>
                 </span>
-              ) : isConnectingWallet ? (
-                <span>Connecting...</span>
-              ) : (
-                <span>Connect Wallet</span>
-              )}
-            </button>
-            {walletError && <p className="text-red-400 text-xs mt-1">{walletError}</p>}
-            {walletAddress && <p className="text-green-400 text-xs mt-1">Wallet connected</p>}
+              </div>
+            ) : (
+              <button
+                onClick={handleConnectWallet}
+                disabled={isConnectingWallet}
+                className="mt-2 mb-4 px-3 py-1 rounded bg-black/30 border border-orange-500/30 text-orange-400 text-xs flex items-center justify-center mx-auto hover:bg-orange-900/20 transition-all"
+              >
+                {isConnectingWallet ? <span>Connecting...</span> : <span>Connect Wallet</span>}
+              </button>
+            )}
           </div>
           {/* Navigation Menu */}
           <nav className="flex-1">
