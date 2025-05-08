@@ -8,8 +8,6 @@ import bcrypt from "bcryptjs";
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import '../../styles/phone-input.css'; // Custom styling for PhoneInput
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { FcGoogle } from "react-icons/fc";
 import Layout from '../../components/Layout';
 
 const SeekerSignupPage: React.FC = () => {
@@ -69,46 +67,9 @@ const SeekerSignupPage: React.FC = () => {
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setError("");
-    setIsLoading(true);
-
-    try {
-      const auth = getAuth();
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      
-      // This gives you a Google Access Token, which you can use to access the Google API.
-      const user = result.user;
-      
-      // Check if user already exists in your database
-      if (user.email && db) { // Add null check for db
-        // Store user data in Firestore
-        const seekersRef = collection(db, "seekers");
-        await addDoc(seekersRef, {
-          email: user.email,
-          firstName: user.displayName?.split(' ')[0] || "",
-          lastName: user.displayName?.split(' ').slice(1).join(' ') || "",
-          phoneNumber: user.phoneNumber || "",
-          googleId: user.uid,
-          createdAt: new Date(),
-        });
-
-        router.replace("/admin-login");
-      } else {
-        setError("Unable to connect to database or missing email information.");
-      }
-    } catch (err: any) {
-      console.error("Google signup error:", err);
-      setError(err.message || "Failed to sign up with Google. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <Layout>
-      <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-orange-500 text-white p-4">
+      <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-orange-900 text-white p-4">
         <div className="absolute top-4 right-4">
           <a href="/" className="text-white text-lg font-semibold hover:underline">Back to Home &rarr;</a>
         </div>
@@ -210,15 +171,6 @@ const SeekerSignupPage: React.FC = () => {
               {isLoading ? "Signing up..." : "Sign Up"}
             </button>
           </form>
-          <button
-            onClick={handleGoogleSignup}
-            disabled={isLoading}
-            className={`w-full bg-white text-black py-2 px-6 rounded-full font-semibold text-sm cursor-pointer transition-colors hover:bg-gray-200 border-none mt-3 flex items-center justify-center ${
-              isLoading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            <FcGoogle className="mr-2 text-base" /> Sign Up with Google
-          </button>
           <div className="flex flex-row justify-between mt-3">
             <p className="text-center text-xs text-gray-400">
               Already have an account?{" "}
