@@ -436,7 +436,7 @@ const SeekerDashboard = () => {
     }
   }, [activeTab, settingsTab, seekerProfile]);
 
-  // Fetch seeker profile data - Wrapped in useCallback
+  // Fetch seeker profile data - Updated to ensure all data is correctly loaded
   const fetchSeekerProfile = useCallback(async (id: string) => {
     if (!id || !db) return;
     setIsLoadingProfile(true);
@@ -447,35 +447,55 @@ const SeekerDashboard = () => {
       if (seekerSnap.exists()) {
         const data = seekerSnap.data();
         
-        // Debug log raw data from Firestore
-        console.log("Raw Firestore data:", data);
-        
-        // Create the profile object with explicit properties
-        const profileData = {
+        // Ensure all fields are loaded with default values if missing
+        const profileData: SeekerProfile = {
           id: seekerSnap.id,
           name: data.name || "",
+          surname: data.surname || "",
+          fullName: data.fullName || `${data.name || ""} ${data.surname || ""}`.trim(),
           email: data.email || "",
-          fullName: data.fullName || "",
           location: data.location || "",
-          skills: data.skills || "",
-          // Missing fields with explicit undefined checks
-          bio: data.bio || "",
-          telegramUrl: data.telegramUrl || "",
+          address: data.address || "",
+          phone: data.phone || "",
+          phoneCountryCode: data.phoneCountryCode || "+1",
+          altContact: data.altContact || "",
+          altContactCountryCode: data.altContactCountryCode || "+1",
+          birthDate: data.birthDate || "",
+          nationality: data.nationality || "",
+          gender: data.gender || "",
           resumeUrl: data.resumeUrl || "",
           presentationVideoUrl: data.presentationVideoUrl || "",
+          instagramUrl: data.instagramUrl || "",
+          facebookUrl: data.facebookUrl || "",
           linkedinUrl: data.linkedinUrl || "",
           twitterUrl: data.twitterUrl || "",
           websiteUrl: data.websiteUrl || "",
-          // Other fields
-          surname: data.surname || "",
-          // ...remaining fields with their default values
+          telegramUrl: data.telegramUrl || "",
+          bio: data.bio || "",
+          skills: data.skills || "",
+          title: data.title || "",
+          availability: data.availability || "",
+          salaryExpectation: data.salaryExpectation || "",
+          contractType: data.contractType || "",
+          workPreference: data.workPreference || "",
+          interestArea: data.interestArea || "",
+          remoteOnly: !!data.remoteOnly,
+          willingToRelocate: !!data.willingToRelocate,
+          cryptoPaymentPreference: !!data.cryptoPaymentPreference,
+          shareProfile: !!data.shareProfile,
+          zipCode: data.zipCode || "",
+          education: data.education || [],
+          experience: data.experience || [],
+          projects: data.projects || [],
+          certifications: data.certifications || [],
+          references: data.references || [],
+          languages: data.languages || [],
+          preferredLocations: data.preferredLocations || [],
         };
-        
-        console.log("Processed profile data:", profileData);
+
         setSeekerProfile(profileData);
       } else {
         console.log("No such seeker document!");
-        // Initialize profile state with empty strings if document doesn't exist
         setSeekerProfile({ 
           id: "", name: "", email: "", location: "", skills: "", resumeUrl: "", portfolioUrl: "", fullName: "",
           bio: "", telegramUrl: "", twitterUrl: "", websiteUrl: "", linkedinUrl: "", githubUrl: ""
@@ -638,7 +658,7 @@ const SeekerDashboard = () => {
     router.replace("/login");
   };
 
-  // Handle profile update submission
+  // Handle profile update submission - Updated to ensure all data is properly saved
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!seekerId || !db) {
@@ -649,38 +669,30 @@ const SeekerDashboard = () => {
     try {
       const seekerRef = doc(db, "seekers", seekerId); // Use 'seekers' collection
       // Prepare data, ensuring all fields are included
-      const profileDataToUpdate = {
+      const profileDataToUpdate: Partial<SeekerProfile> = {
         name: seekerProfile.name || "",
         surname: seekerProfile.surname || "",
         email: seekerProfile.email || "",
         location: seekerProfile.location || "",
         address: seekerProfile.address || "",
         phone: seekerProfile.phone || "",
+        phoneCountryCode: seekerProfile.phoneCountryCode || "+1",
+        altContact: seekerProfile.altContact || "",
+        altContactCountryCode: seekerProfile.altContactCountryCode || "+1",
         birthDate: seekerProfile.birthDate || "",
         nationality: seekerProfile.nationality || "",
         gender: seekerProfile.gender || "",
-        altContact: seekerProfile.altContact || "",
         resumeUrl: seekerProfile.resumeUrl || "",
         presentationVideoUrl: seekerProfile.presentationVideoUrl || "",
         instagramUrl: seekerProfile.instagramUrl || "",
         facebookUrl: seekerProfile.facebookUrl || "",
-        languages: seekerProfile.languages || [],
-        title: seekerProfile.title || "",
-        skills: seekerProfile.skills || "",
-        bio: seekerProfile.bio || "",
-        experience: seekerProfile.experience || [],
-        education: seekerProfile.education || [],
-        projects: seekerProfile.projects || [],
-        certifications: seekerProfile.certifications || [],
-        references: seekerProfile.references || [],
-        portfolioUrl: seekerProfile.portfolioUrl || "",
-        githubUrl: seekerProfile.githubUrl || "",
         linkedinUrl: seekerProfile.linkedinUrl || "",
         twitterUrl: seekerProfile.twitterUrl || "",
         websiteUrl: seekerProfile.websiteUrl || "",
-        dribbbleUrl: seekerProfile.dribbbleUrl || "",
-        behanceUrl: seekerProfile.behanceUrl || "",
-        mediumUrl: seekerProfile.mediumUrl || "",
+        telegramUrl: seekerProfile.telegramUrl || "",
+        bio: seekerProfile.bio || "",
+        skills: seekerProfile.skills || "",
+        title: seekerProfile.title || "",
         availability: seekerProfile.availability || "",
         salaryExpectation: seekerProfile.salaryExpectation || "",
         contractType: seekerProfile.contractType || "",
@@ -688,13 +700,16 @@ const SeekerDashboard = () => {
         interestArea: seekerProfile.interestArea || "",
         remoteOnly: !!seekerProfile.remoteOnly,
         willingToRelocate: !!seekerProfile.willingToRelocate,
-        preferredLocations: seekerProfile.preferredLocations || [],
         cryptoPaymentPreference: !!seekerProfile.cryptoPaymentPreference,
         shareProfile: !!seekerProfile.shareProfile,
-        phoneCountryCode: seekerProfile.phoneCountryCode || "+1",
-        telegramUrl: seekerProfile.telegramUrl || "",
         zipCode: seekerProfile.zipCode || "",
-        altContactCountryCode: seekerProfile.altContactCountryCode || "+1",
+        education: seekerProfile.education || [],
+        experience: seekerProfile.experience || [],
+        projects: seekerProfile.projects || [],
+        certifications: seekerProfile.certifications || [],
+        references: seekerProfile.references || [],
+        languages: seekerProfile.languages || [],
+        preferredLocations: seekerProfile.preferredLocations || [],
       };
       await updateDoc(seekerRef, profileDataToUpdate);
       alert("Profile updated successfully!");
@@ -910,23 +925,248 @@ const SeekerDashboard = () => {
     );
   };
 
-  // Render My Profile Tab Content (Read-only view)
+  // Render My Profile Tab Content (Professional, Expandable)
+  const [showFullProfile, setShowFullProfile] = useState(false);
   const renderMyProfile = () => {
+    type MainLink = { href: string; label: string; icon: string };
+    const mainLinks: MainLink[] = [];
+    if (seekerProfile.linkedinUrl) mainLinks.push({ href: seekerProfile.linkedinUrl, label: 'LinkedIn', icon: '🔗' });
+    if (seekerProfile.githubUrl) mainLinks.push({ href: seekerProfile.githubUrl, label: 'GitHub', icon: '💻' });
+    if (seekerProfile.websiteUrl) mainLinks.push({ href: seekerProfile.websiteUrl, label: 'Website', icon: '🌐' });
+    if (seekerProfile.portfolioUrl) mainLinks.push({ href: seekerProfile.portfolioUrl, label: 'Portfolio', icon: '🖼️' });
+    if (seekerProfile.telegramUrl) mainLinks.push({ href: seekerProfile.telegramUrl, label: 'Telegram', icon: '✈️' });
+    if (seekerProfile.twitterUrl) mainLinks.push({ href: seekerProfile.twitterUrl, label: 'Twitter', icon: '🐦' });
+    if (seekerProfile.facebookUrl) mainLinks.push({ href: seekerProfile.facebookUrl, label: 'Facebook', icon: '📘' });
+    if (seekerProfile.instagramUrl) mainLinks.push({ href: seekerProfile.instagramUrl, label: 'Instagram', icon: '📸' });
+    if (seekerProfile.mediumUrl) mainLinks.push({ href: seekerProfile.mediumUrl, label: 'Medium', icon: '✍️' });
+    if (seekerProfile.dribbbleUrl) mainLinks.push({ href: seekerProfile.dribbbleUrl, label: 'Dribbble', icon: '🏀' });
+    if (seekerProfile.behanceUrl) mainLinks.push({ href: seekerProfile.behanceUrl, label: 'Behance', icon: '🎨' });
+
+    // Helper for showing only the first N items or all if expanded
+    const firstExperience = seekerProfile.experience && seekerProfile.experience.length > 0 ? seekerProfile.experience[0] : null;
+    const firstEducation = seekerProfile.education && seekerProfile.education.length > 0 ? seekerProfile.education[0] : null;
+
     return (
-      <div className="bg-black/70 p-10 rounded-lg shadow-lg space-y-4">
-        <h2 className="text-3xl font-semibold text-orange-500 mb-6">My Profile</h2>
-        <p><span className="font-semibold text-orange-300">Name:</span> {seekerProfile.name}</p>
-        <p><span className="font-semibold text-orange-300">Email:</span> {seekerProfile.email}</p>
-        <p><span className="font-semibold text-orange-300">Location:</span> {seekerProfile.location}</p>
-        <p><span className="font-semibold text-orange-300">Skills:</span> {seekerProfile.skills}</p>
-        <p><span className="font-semibold text-orange-300">Resume:</span> {seekerProfile.resumeUrl ? <a href={seekerProfile.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">{seekerProfile.resumeUrl}</a> : "Not provided"}</p>
-        <p><span className="font-semibold text-orange-300">Portfolio:</span> {seekerProfile.portfolioUrl ? <a href={seekerProfile.portfolioUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">{seekerProfile.portfolioUrl}</a> : "Not provided"}</p>
-        <button
-            onClick={() => setActiveTab("settings")}
-            className="mt-4 bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600"
+      <div className="bg-black/80 p-8 rounded-xl shadow-2xl w-full max-w-5xl mx-auto">
+        {/* Top Section: Photo, Name, Title, Location */}
+        <div className="flex flex-col md:flex-row items-center gap-8 mb-6">
+          <img
+            src={userPhoto || "/images/default-avatar.png"}
+            alt="Profile"
+            className="w-40 h-40 rounded-full border-4 border-orange-500 object-cover shadow-lg"
+          />
+          <div className="flex-1 text-center md:text-left">
+            <h1 className="text-4xl font-bold text-orange-400 mb-1">{seekerProfile.fullName || (seekerProfile.name + (seekerProfile.surname ? ' ' + seekerProfile.surname : ''))}</h1>
+            {seekerProfile.title && <div className="text-xl text-orange-200 font-semibold mb-1">{seekerProfile.title}</div>}
+            <div className="text-gray-400 mb-2">{seekerProfile.location}</div>
+            {seekerProfile.bio && <div className="text-lg text-white mb-2 italic">{seekerProfile.bio}</div>}
+            <div className="flex flex-wrap gap-2 justify-center md:justify-start mt-2">
+              {mainLinks.map(link => (
+                <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-3 py-1 bg-orange-900/40 text-orange-300 rounded-full text-xs hover:bg-orange-600/40 transition">
+                  <span>{link.icon}</span> {link.label}
+                </a>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start">
+              {seekerProfile.email && <span className="text-xs text-gray-300 bg-black/40 px-3 py-1 rounded-full">{seekerProfile.email}</span>}
+              {seekerProfile.phone && <span className="text-xs text-gray-300 bg-black/40 px-3 py-1 rounded-full">{seekerProfile.phoneCountryCode || ''} {seekerProfile.phone}</span>}
+              {seekerProfile.telegramUrl && <span className="text-xs text-gray-300 bg-black/40 px-3 py-1 rounded-full">Telegram</span>}
+            </div>
+          </div>
+        </div>
+        {/* Skills */}
+        {seekerProfile.skills && (
+          <div className="mb-4">
+            <div className="font-semibold text-orange-300 mb-1">Skills</div>
+            <div className="flex flex-wrap gap-2">
+              {seekerProfile.skills.split(',').map(skill => (
+                <span key={skill.trim()} className="bg-orange-700/40 text-orange-200 px-2 py-1 rounded text-xs font-medium">{skill.trim()}</span>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Languages */}
+        {seekerProfile.languages && seekerProfile.languages.length > 0 && (
+          <div className="mb-4">
+            <div className="font-semibold text-orange-300 mb-1">Languages</div>
+            <div className="flex flex-wrap gap-2">
+              {seekerProfile.languages.map((lang, idx) => (
+                <span key={idx} className="bg-orange-700/40 text-orange-200 px-2 py-1 rounded text-xs font-medium">{lang.language} ({lang.proficiency})</span>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Experience (first only) */}
+        {firstExperience && (
+          <div className="mb-4">
+            <div className="font-semibold text-orange-300 mb-1">Main Experience</div>
+            <div className="bg-black/40 rounded p-3">
+              <div className="font-semibold text-orange-200">{firstExperience.position} <span className="text-gray-400 font-normal">@ {firstExperience.company}</span></div>
+              <div className="text-xs text-gray-400 mb-1">{firstExperience.startDate} - {firstExperience.endDate || 'Present'} {firstExperience.location && `| ${firstExperience.location}`}</div>
+              {firstExperience.description && <div className="text-sm text-gray-200">{firstExperience.description}</div>}
+            </div>
+          </div>
+        )}
+        {/* Education (first only) */}
+        {firstEducation && (
+          <div className="mb-4">
+            <div className="font-semibold text-orange-300 mb-1">Main Education</div>
+            <div className="bg-black/40 rounded p-3">
+              <div className="font-semibold text-orange-200">{firstEducation.degree} <span className="text-gray-400 font-normal">@ {firstEducation.institution}</span></div>
+              <div className="text-xs text-gray-400 mb-1">{firstEducation.year}</div>
+              {firstEducation.description && <div className="text-sm text-gray-200">{firstEducation.description}</div>}
+            </div>
+          </div>
+        )}
+        {/* Resume Link */}
+        {seekerProfile.resumeUrl && (
+          <div className="mb-4">
+            <a href={seekerProfile.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-semibold">Download CV (PDF)</a>
+          </div>
+        )}
+        {/* Expand/Collapse Button */}
+        <div className="flex justify-center my-4">
+          <button
+            onClick={() => setShowFullProfile(v => !v)}
+            className="px-6 py-2 rounded-full bg-orange-500 text-white font-semibold shadow hover:bg-orange-600 transition"
           >
-            Edit Profile (Settings)
-        </button>
+            {showFullProfile ? 'Show Less' : 'Expand Full Profile'}
+          </button>
+        </div>
+        {/* Full Profile Details */}
+        {showFullProfile && (
+          <div className="mt-6 space-y-6 animate-fade-in">
+            {/* Contact & Links */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div className="font-semibold text-orange-300 mb-1">Contact</div>
+                <div className="text-sm text-gray-200">Email: {seekerProfile.email}</div>
+                {seekerProfile.phone && <div className="text-sm text-gray-200">Phone: {seekerProfile.phoneCountryCode || ''} {seekerProfile.phone}</div>}
+                {seekerProfile.altContact && <div className="text-sm text-gray-200">Alt. Contact: {seekerProfile.altContactCountryCode || ''} {seekerProfile.altContact}</div>}
+                {seekerProfile.telegramUrl && <div className="text-sm text-gray-200">Telegram: <a href={seekerProfile.telegramUrl} className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">{seekerProfile.telegramUrl}</a></div>}
+                {seekerProfile.birthDate && <div className="text-sm text-gray-200">Birth Date: {seekerProfile.birthDate}</div>}
+                {seekerProfile.nationality && <div className="text-sm text-gray-200">Nationality: {seekerProfile.nationality}</div>}
+                {seekerProfile.gender && <div className="text-sm text-gray-200">Gender: {seekerProfile.gender}</div>}
+                {seekerProfile.address && <div className="text-sm text-gray-200">Address: {seekerProfile.address}</div>}
+                {seekerProfile.zipCode && <div className="text-sm text-gray-200">Zip Code: {seekerProfile.zipCode}</div>}
+              </div>
+              <div>
+                <div className="font-semibold text-orange-300 mb-1">Links</div>
+                <ul className="text-sm text-gray-200 space-y-1">
+                  {mainLinks.map(link => (
+                    <li key={link.label}><a href={link.href} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">{link.label}</a></li>
+                  ))}
+                </ul>
+                {seekerProfile.presentationVideoUrl && <div className="mt-2"><a href={seekerProfile.presentationVideoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">Presentation Video</a></div>}
+              </div>
+            </div>
+            {/* Languages */}
+            {seekerProfile.languages && seekerProfile.languages.length > 0 && (
+              <div>
+                <div className="font-semibold text-orange-300 mb-1">Languages</div>
+                <div className="flex flex-wrap gap-2">
+                  {seekerProfile.languages.map((lang, idx) => (
+                    <span key={idx} className="bg-orange-700/40 text-orange-200 px-2 py-1 rounded text-xs font-medium">{lang.language} ({lang.proficiency})</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Experience */}
+            {seekerProfile.experience && seekerProfile.experience.length > 0 && (
+              <div>
+                <div className="font-semibold text-orange-300 mb-1">Experience</div>
+                <ul className="space-y-2">
+                  {seekerProfile.experience.map((exp, idx) => (
+                    <li key={idx} className="bg-black/40 rounded p-3">
+                      <div className="font-semibold text-orange-200">{exp.position} <span className="text-gray-400 font-normal">@ {exp.company}</span></div>
+                      <div className="text-xs text-gray-400 mb-1">{exp.startDate} - {exp.endDate || 'Present'} {exp.location && `| ${exp.location}`}</div>
+                      {exp.description && <div className="text-sm text-gray-200">{exp.description}</div>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* Education */}
+            {seekerProfile.education && seekerProfile.education.length > 0 && (
+              <div>
+                <div className="font-semibold text-orange-300 mb-1">Education</div>
+                <ul className="space-y-2">
+                  {seekerProfile.education.map((edu, idx) => (
+                    <li key={idx} className="bg-black/40 rounded p-3">
+                      <div className="font-semibold text-orange-200">{edu.degree} <span className="text-gray-400 font-normal">@ {edu.institution}</span></div>
+                      <div className="text-xs text-gray-400 mb-1">{edu.year}</div>
+                      {edu.description && <div className="text-sm text-gray-200">{edu.description}</div>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* Projects */}
+            {seekerProfile.projects && seekerProfile.projects.length > 0 && (
+              <div>
+                <div className="font-semibold text-orange-300 mb-1">Projects</div>
+                <ul className="space-y-2">
+                  {seekerProfile.projects.map((proj, idx) => (
+                    <li key={idx} className="bg-black/40 rounded p-3">
+                      <div className="font-semibold text-orange-200">{proj.name}</div>
+                      {proj.url && <a href={proj.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs">{proj.url}</a>}
+                      <div className="text-xs text-gray-400 mb-1">{proj.technologies}</div>
+                      {proj.description && <div className="text-sm text-gray-200">{proj.description}</div>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* Certifications */}
+            {seekerProfile.certifications && seekerProfile.certifications.length > 0 && (
+              <div>
+                <div className="font-semibold text-orange-300 mb-1">Certifications</div>
+                <ul className="space-y-2">
+                  {seekerProfile.certifications.map((cert, idx) => (
+                    <li key={idx} className="bg-black/40 rounded p-3">
+                      <div className="font-semibold text-orange-200">{cert.name}</div>
+                      <div className="text-xs text-gray-400 mb-1">{cert.issuer} | {cert.date}</div>
+                      {cert.url && <a href={cert.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs">{cert.url}</a>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* References */}
+            {seekerProfile.references && seekerProfile.references.length > 0 && (
+              <div>
+                <div className="font-semibold text-orange-300 mb-1">References</div>
+                <ul className="space-y-2">
+                  {seekerProfile.references.map((ref, idx) => (
+                    <li key={idx} className="bg-black/40 rounded p-3">
+                      <div className="font-semibold text-orange-200">{ref.name}</div>
+                      <div className="text-xs text-gray-400 mb-1">{ref.relation} | {ref.contact}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* Other Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {seekerProfile.availability && <div><span className="font-semibold text-orange-300">Availability:</span> <span className="text-gray-200">{seekerProfile.availability}</span></div>}
+              {seekerProfile.salaryExpectation && <div><span className="font-semibold text-orange-300">Salary Expectation:</span> <span className="text-gray-200">{seekerProfile.salaryExpectation}</span></div>}
+              {seekerProfile.contractType && <div><span className="font-semibold text-orange-300">Contract Type:</span> <span className="text-gray-200">{seekerProfile.contractType}</span></div>}
+              {seekerProfile.workPreference && <div><span className="font-semibold text-orange-300">Work Preference:</span> <span className="text-gray-200">{seekerProfile.workPreference}</span></div>}
+              {seekerProfile.interestArea && <div><span className="font-semibold text-orange-300">Interest Area:</span> <span className="text-gray-200">{seekerProfile.interestArea}</span></div>}
+              {seekerProfile.remoteOnly !== undefined && <div><span className="font-semibold text-orange-300">Remote Only:</span> <span className="text-gray-200">{seekerProfile.remoteOnly ? 'Yes' : 'No'}</span></div>}
+              {seekerProfile.willingToRelocate !== undefined && <div><span className="font-semibold text-orange-300">Willing to Relocate:</span> <span className="text-gray-200">{seekerProfile.willingToRelocate ? 'Yes' : 'No'}</span></div>}
+              {seekerProfile.cryptoPaymentPreference !== undefined && <div><span className="font-semibold text-orange-300">Accept Crypto Payment:</span> <span className="text-gray-200">{seekerProfile.cryptoPaymentPreference ? 'Yes' : 'No'}</span></div>}
+              {seekerProfile.shareProfile !== undefined && <div><span className="font-semibold text-orange-300">Share Profile:</span> <span className="text-gray-200">{seekerProfile.shareProfile ? 'Yes' : 'No'}</span></div>}
+            </div>
+          </div>
+        )}
+        {/* Reviews/Comments Placeholder */}
+        <div className="mt-10">
+          <div className="font-bold text-orange-400 text-lg mb-2">Reviews & Comments (Instant Jobs)</div>
+          <div className="bg-black/60 rounded-lg p-6 min-h-[120px] flex items-center justify-center text-gray-400 italic">
+            Reviews and comments from completed Instant Jobs will appear here soon!
+          </div>
+        </div>
       </div>
     );
   };
@@ -1088,7 +1328,7 @@ const SeekerDashboard = () => {
                     <option value="+46">+46 (SE)</option>
                     <option value="+41">+41 (CH)</option>
                     <option value="+31">+31 (NL)</option>
-                    <option value="+32">+32 (BE)</option>
+                    <option value="+32 (BE)">+32 (BE)</option>
                     <option value="+420">+420 (CZ)</option>
                     <option value="+48">+48 (PL)</option>
                     <option value="+40">+40 (RO)</option>
