@@ -928,6 +928,7 @@ const SeekerDashboard = () => {
   // Render My Profile Tab Content (Professional, Expandable)
   const [showFullProfile, setShowFullProfile] = useState(false);
   const renderMyProfile = () => {
+    // Preparar links sociais/profissionais para exibição
     type MainLink = { href: string; label: string; icon: string };
     const mainLinks: MainLink[] = [];
     if (seekerProfile.linkedinUrl) mainLinks.push({ href: seekerProfile.linkedinUrl, label: 'LinkedIn', icon: '🔗' });
@@ -942,41 +943,117 @@ const SeekerDashboard = () => {
     if (seekerProfile.dribbbleUrl) mainLinks.push({ href: seekerProfile.dribbbleUrl, label: 'Dribbble', icon: '🏀' });
     if (seekerProfile.behanceUrl) mainLinks.push({ href: seekerProfile.behanceUrl, label: 'Behance', icon: '🎨' });
 
-    // Helper for showing only the first N items or all if expanded
+    // Dados para experiência e educação
     const firstExperience = seekerProfile.experience && seekerProfile.experience.length > 0 ? seekerProfile.experience[0] : null;
     const firstEducation = seekerProfile.education && seekerProfile.education.length > 0 ? seekerProfile.education[0] : null;
 
     return (
       <div className="bg-black/80 p-8 rounded-xl shadow-2xl w-full max-w-5xl mx-auto">
-        {/* Top Section: Photo, Name, Title, Location */}
+        {/* Top Section: Foto, Nome, Título */}
         <div className="flex flex-col md:flex-row items-center gap-8 mb-6">
-          <img
-            src={userPhoto || "/images/default-avatar.png"}
-            alt="Profile"
-            className="w-40 h-40 rounded-full border-4 border-orange-500 object-cover shadow-lg"
-          />
+          {/* Foto do perfil */}
+          <div className="relative">
+            <img
+              src={userPhoto || "/images/default-avatar.png"}
+              alt="Profile"
+              className="w-40 h-40 rounded-full border-4 border-orange-500 object-cover shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => document.getElementById('profile-photo-upload')?.click()}
+              title="Click to change profile photo"
+            />
+          </div>
+          
+          {/* Informações principais */}
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-4xl font-bold text-orange-400 mb-1">{seekerProfile.fullName || (seekerProfile.name + (seekerProfile.surname ? ' ' + seekerProfile.surname : ''))}</h1>
-            {seekerProfile.title && <div className="text-xl text-orange-200 font-semibold mb-1">{seekerProfile.title}</div>}
-            <div className="text-gray-400 mb-2">{seekerProfile.location}</div>
-            {seekerProfile.bio && <div className="text-lg text-white mb-2 italic">{seekerProfile.bio}</div>}
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start mt-2">
+            <h1 className="text-4xl font-bold text-orange-400 mb-1">
+              {seekerProfile.fullName || (seekerProfile.name + (seekerProfile.surname ? ' ' + seekerProfile.surname : ''))}
+            </h1>
+            
+            {/* Título profissional */}
+            {seekerProfile.title && 
+              <div className="text-xl text-orange-200 font-semibold mb-1">{seekerProfile.title}</div>
+            }
+            
+            {/* Localização */}
+            <div className="text-gray-400 mb-3">
+              <span className="inline-flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {seekerProfile.location || "Location not specified"}
+              </span>
+            </div>
+            
+            {/* Informações de contato importantes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+              {seekerProfile.email && (
+                <div className="text-sm text-gray-300 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {seekerProfile.email}
+                </div>
+              )}
+              
+              {seekerProfile.phone && (
+                <div className="text-sm text-gray-300 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  {seekerProfile.phoneCountryCode || ''} {seekerProfile.phone}
+                </div>
+              )}
+              
+              {seekerProfile.nationality && (
+                <div className="text-sm text-gray-300 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                  </svg>
+                  {seekerProfile.nationality}
+                </div>
+              )}
+              
+              {seekerProfile.availability && (
+                <div className="text-sm text-gray-300 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {seekerProfile.availability}
+                </div>
+              )}
+            </div>
+
+            {/* Bio curta */}
+            {seekerProfile.bio && (
+              <div className="text-gray-300 mb-3 text-sm italic border-l-2 border-orange-500 pl-3">
+                "{seekerProfile.bio.length > 150 ? `${seekerProfile.bio.substring(0, 150)}...` : seekerProfile.bio}"
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Links sociais/profissionais mostrados como botões */}
+        {mainLinks.length > 0 && (
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-2 justify-center md:justify-start">
               {mainLinks.map(link => (
-                <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-3 py-1 bg-orange-900/40 text-orange-300 rounded-full text-xs hover:bg-orange-600/40 transition">
+                <a 
+                  key={link.label} 
+                  href={link.href} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-orange-900/40 text-orange-300 rounded-full text-xs hover:bg-orange-600/40 transition"
+                >
                   <span>{link.icon}</span> {link.label}
                 </a>
               ))}
             </div>
-            <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start">
-              {seekerProfile.email && <span className="text-xs text-gray-300 bg-black/40 px-3 py-1 rounded-full">{seekerProfile.email}</span>}
-              {seekerProfile.phone && <span className="text-xs text-gray-300 bg-black/40 px-3 py-1 rounded-full">{seekerProfile.phoneCountryCode || ''} {seekerProfile.phone}</span>}
-              {seekerProfile.telegramUrl && <span className="text-xs text-gray-300 bg-black/40 px-3 py-1 rounded-full">Telegram</span>}
-            </div>
           </div>
-        </div>
-        {/* Skills */}
+        )}
+        
+        {/* Skills - Importantes para perfil profissional */}
         {seekerProfile.skills && (
-          <div className="mb-4">
+          <div className="mb-6">
             <div className="font-semibold text-orange-300 mb-1">Skills</div>
             <div className="flex flex-wrap gap-2">
               {seekerProfile.skills.split(',').map(skill => (
@@ -985,46 +1062,86 @@ const SeekerDashboard = () => {
             </div>
           </div>
         )}
-        {/* Languages */}
-        {seekerProfile.languages && seekerProfile.languages.length > 0 && (
-          <div className="mb-4">
-            <div className="font-semibold text-orange-300 mb-1">Languages</div>
-            <div className="flex flex-wrap gap-2">
-              {seekerProfile.languages.map((lang, idx) => (
-                <span key={idx} className="bg-orange-700/40 text-orange-200 px-2 py-1 rounded text-xs font-medium">{lang.language} ({lang.proficiency})</span>
-              ))}
-            </div>
-          </div>
-        )}
-        {/* Experience (first only) */}
-        {firstExperience && (
-          <div className="mb-4">
-            <div className="font-semibold text-orange-300 mb-1">Main Experience</div>
-            <div className="bg-black/40 rounded p-3">
+        
+        {/* Seção de duas colunas com Experience e Education */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Main Experience */}
+          {firstExperience && (
+            <div className="bg-black/40 rounded p-4">
+              <div className="font-semibold text-orange-300 mb-2">Main Experience</div>
               <div className="font-semibold text-orange-200">{firstExperience.position} <span className="text-gray-400 font-normal">@ {firstExperience.company}</span></div>
               <div className="text-xs text-gray-400 mb-1">{firstExperience.startDate} - {firstExperience.endDate || 'Present'} {firstExperience.location && `| ${firstExperience.location}`}</div>
-              {firstExperience.description && <div className="text-sm text-gray-200">{firstExperience.description}</div>}
+              {firstExperience.description && <div className="text-sm text-gray-300">{firstExperience.description}</div>}
             </div>
-          </div>
-        )}
-        {/* Education (first only) */}
-        {firstEducation && (
-          <div className="mb-4">
-            <div className="font-semibold text-orange-300 mb-1">Main Education</div>
-            <div className="bg-black/40 rounded p-3">
+          )}
+          
+          {/* Main Education */}
+          {firstEducation && (
+            <div className="bg-black/40 rounded p-4">
+              <div className="font-semibold text-orange-300 mb-2">Main Education</div>
               <div className="font-semibold text-orange-200">{firstEducation.degree} <span className="text-gray-400 font-normal">@ {firstEducation.institution}</span></div>
               <div className="text-xs text-gray-400 mb-1">{firstEducation.year}</div>
-              {firstEducation.description && <div className="text-sm text-gray-200">{firstEducation.description}</div>}
+              {firstEducation.description && <div className="text-sm text-gray-300">{firstEducation.description}</div>}
             </div>
+          )}
+        </div>
+        
+        {/* Work Preferences - Informações importantes para recrutadores */}
+        <div className="mb-6">
+          <div className="font-semibold text-orange-300 mb-2">Work Preferences</div>
+          <div className="bg-black/40 p-4 rounded grid grid-cols-1 md:grid-cols-3 gap-4">
+            {seekerProfile.workPreference && (
+              <div>
+                <span className="text-xs text-gray-400">Work Mode:</span>
+                <div className="text-sm text-white">{seekerProfile.workPreference}</div>
+              </div>
+            )}
+            
+            {seekerProfile.contractType && (
+              <div>
+                <span className="text-xs text-gray-400">Contract Type:</span>
+                <div className="text-sm text-white">{seekerProfile.contractType}</div>
+              </div>
+            )}
+            
+            {seekerProfile.interestArea && (
+              <div>
+                <span className="text-xs text-gray-400">Interest Area:</span>
+                <div className="text-sm text-white">{seekerProfile.interestArea}</div>
+              </div>
+            )}
+            
+            {seekerProfile.salaryExpectation && (
+              <div>
+                <span className="text-xs text-gray-400">Salary Expectation:</span>
+                <div className="text-sm text-white">{seekerProfile.salaryExpectation}</div>
+              </div>
+            )}
+            
+            {seekerProfile.remoteOnly !== undefined && (
+              <div>
+                <span className="text-xs text-gray-400">Remote Only:</span>
+                <div className="text-sm text-white">{seekerProfile.remoteOnly ? '✓ Yes' : '✗ No'}</div>
+              </div>
+            )}
+            
+            {seekerProfile.willingToRelocate !== undefined && (
+              <div>
+                <span className="text-xs text-gray-400">Willing to Relocate:</span>
+                <div className="text-sm text-white">{seekerProfile.willingToRelocate ? '✓ Yes' : '✗ No'}</div>
+              </div>
+            )}
+            
+            {seekerProfile.cryptoPaymentPreference !== undefined && (
+              <div>
+                <span className="text-xs text-gray-400">Accept Crypto Payment:</span>
+                <div className="text-sm text-white">{seekerProfile.cryptoPaymentPreference ? '✓ Yes' : '✗ No'}</div>
+              </div>
+            )}
           </div>
-        )}
-        {/* Resume Link */}
-        {seekerProfile.resumeUrl && (
-          <div className="mb-4">
-            <a href={seekerProfile.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-semibold">Download CV (PDF)</a>
-          </div>
-        )}
-        {/* Expand/Collapse Button */}
+        </div>
+
+        {/* Botão de expansão */}
         <div className="flex justify-center my-4">
           <button
             onClick={() => setShowFullProfile(v => !v)}
@@ -1033,33 +1150,10 @@ const SeekerDashboard = () => {
             {showFullProfile ? 'Show Less' : 'Expand Full Profile'}
           </button>
         </div>
-        {/* Full Profile Details */}
+
+        {/* Full Profile Details (quando expandido) */}
         {showFullProfile && (
           <div className="mt-6 space-y-6 animate-fade-in">
-            {/* Contact & Links */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div className="font-semibold text-orange-300 mb-1">Contact</div>
-                <div className="text-sm text-gray-200">Email: {seekerProfile.email}</div>
-                {seekerProfile.phone && <div className="text-sm text-gray-200">Phone: {seekerProfile.phoneCountryCode || ''} {seekerProfile.phone}</div>}
-                {seekerProfile.altContact && <div className="text-sm text-gray-200">Alt. Contact: {seekerProfile.altContactCountryCode || ''} {seekerProfile.altContact}</div>}
-                {seekerProfile.telegramUrl && <div className="text-sm text-gray-200">Telegram: <a href={seekerProfile.telegramUrl} className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">{seekerProfile.telegramUrl}</a></div>}
-                {seekerProfile.birthDate && <div className="text-sm text-gray-200">Birth Date: {seekerProfile.birthDate}</div>}
-                {seekerProfile.nationality && <div className="text-sm text-gray-200">Nationality: {seekerProfile.nationality}</div>}
-                {seekerProfile.gender && <div className="text-sm text-gray-200">Gender: {seekerProfile.gender}</div>}
-                {seekerProfile.address && <div className="text-sm text-gray-200">Address: {seekerProfile.address}</div>}
-                {seekerProfile.zipCode && <div className="text-sm text-gray-200">Zip Code: {seekerProfile.zipCode}</div>}
-              </div>
-              <div>
-                <div className="font-semibold text-orange-300 mb-1">Links</div>
-                <ul className="text-sm text-gray-200 space-y-1">
-                  {mainLinks.map(link => (
-                    <li key={link.label}><a href={link.href} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">{link.label}</a></li>
-                  ))}
-                </ul>
-                {seekerProfile.presentationVideoUrl && <div className="mt-2"><a href={seekerProfile.presentationVideoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">Presentation Video</a></div>}
-              </div>
-            </div>
             {/* Languages */}
             {seekerProfile.languages && seekerProfile.languages.length > 0 && (
               <div>
@@ -1071,6 +1165,7 @@ const SeekerDashboard = () => {
                 </div>
               </div>
             )}
+            
             {/* Experience */}
             {seekerProfile.experience && seekerProfile.experience.length > 0 && (
               <div>
@@ -1086,6 +1181,7 @@ const SeekerDashboard = () => {
                 </ul>
               </div>
             )}
+            
             {/* Education */}
             {seekerProfile.education && seekerProfile.education.length > 0 && (
               <div>
@@ -1101,6 +1197,7 @@ const SeekerDashboard = () => {
                 </ul>
               </div>
             )}
+            
             {/* Projects */}
             {seekerProfile.projects && seekerProfile.projects.length > 0 && (
               <div>
@@ -1117,6 +1214,7 @@ const SeekerDashboard = () => {
                 </ul>
               </div>
             )}
+            
             {/* Certifications */}
             {seekerProfile.certifications && seekerProfile.certifications.length > 0 && (
               <div>
@@ -1132,6 +1230,7 @@ const SeekerDashboard = () => {
                 </ul>
               </div>
             )}
+            
             {/* References */}
             {seekerProfile.references && seekerProfile.references.length > 0 && (
               <div>
@@ -1146,21 +1245,34 @@ const SeekerDashboard = () => {
                 </ul>
               </div>
             )}
-            {/* Other Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {seekerProfile.availability && <div><span className="font-semibold text-orange-300">Availability:</span> <span className="text-gray-200">{seekerProfile.availability}</span></div>}
-              {seekerProfile.salaryExpectation && <div><span className="font-semibold text-orange-300">Salary Expectation:</span> <span className="text-gray-200">{seekerProfile.salaryExpectation}</span></div>}
-              {seekerProfile.contractType && <div><span className="font-semibold text-orange-300">Contract Type:</span> <span className="text-gray-200">{seekerProfile.contractType}</span></div>}
-              {seekerProfile.workPreference && <div><span className="font-semibold text-orange-300">Work Preference:</span> <span className="text-gray-200">{seekerProfile.workPreference}</span></div>}
-              {seekerProfile.interestArea && <div><span className="font-semibold text-orange-300">Interest Area:</span> <span className="text-gray-200">{seekerProfile.interestArea}</span></div>}
-              {seekerProfile.remoteOnly !== undefined && <div><span className="font-semibold text-orange-300">Remote Only:</span> <span className="text-gray-200">{seekerProfile.remoteOnly ? 'Yes' : 'No'}</span></div>}
-              {seekerProfile.willingToRelocate !== undefined && <div><span className="font-semibold text-orange-300">Willing to Relocate:</span> <span className="text-gray-200">{seekerProfile.willingToRelocate ? 'Yes' : 'No'}</span></div>}
-              {seekerProfile.cryptoPaymentPreference !== undefined && <div><span className="font-semibold text-orange-300">Accept Crypto Payment:</span> <span className="text-gray-200">{seekerProfile.cryptoPaymentPreference ? 'Yes' : 'No'}</span></div>}
-              {seekerProfile.shareProfile !== undefined && <div><span className="font-semibold text-orange-300">Share Profile:</span> <span className="text-gray-200">{seekerProfile.shareProfile ? 'Yes' : 'No'}</span></div>}
-            </div>
+            
+            {/* Download CV Link */}
+            {seekerProfile.resumeUrl && (
+              <div>
+                <a href={seekerProfile.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-semibold flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download CV (PDF)
+                </a>
+              </div>
+            )}
+            
+            {/* Presentation Video */}
+            {seekerProfile.presentationVideoUrl && (
+              <div>
+                <a href={seekerProfile.presentationVideoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-semibold flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  View Presentation Video
+                </a>
+              </div>
+            )}
           </div>
         )}
-        {/* Reviews/Comments Placeholder */}
+        
+        {/* Reviews/Comments Section */}
         <div className="mt-10">
           <div className="font-bold text-orange-400 text-lg mb-2">Reviews & Comments (Instant Jobs)</div>
           <div className="bg-black/60 rounded-lg p-6 min-h-[120px] flex items-center justify-center text-gray-400 italic">
@@ -1195,12 +1307,14 @@ const SeekerDashboard = () => {
             {/* Personal Data */}
             <h3 className="text-lg font-bold text-orange-400 mb-4">Personal Data</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-              {/* COLUNA 1 */}
+              {/* COLUNA 1 - Personal Info */}
               <div className="space-y-6 col-span-1 md:col-span-1">
                 {/* Name */}
                 <input type="text" name="name" value={seekerProfile.name ?? ""} onChange={handleProfileChange} placeholder="First Name" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
                 {/* Surname */}
                 <input type="text" name="surname" value={seekerProfile.surname ?? ""} onChange={handleProfileChange} placeholder="Surname" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
+                {/* Email (Read Only) */}
+                <input type="email" name="email" value={seekerProfile.email ?? ""} placeholder="Email" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" readOnly title="Email cannot be changed here" />
                 {/* Birth Date */}
                 <input type="date" name="birthDate" value={seekerProfile.birthDate ?? ""} onChange={handleProfileChange} placeholder="Birth Date" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
                 <span className="text-xs text-gray-400">Birth Date (for age verification)</span>
@@ -1214,58 +1328,16 @@ const SeekerDashboard = () => {
                 </select>
                 {/* Nationality */}
                 <input type="text" name="nationality" value={seekerProfile.nationality ?? ""} onChange={handleProfileChange} placeholder="Nationality" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* CV Upload */}
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Upload CV (PDF, DOC, etc.)</label>
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx,.odt,.rtf,.txt"
-                    onChange={handleCVUpload}
-                    className="w-full text-white bg-black/50 border border-orange-500/30 rounded-lg p-2"
-                  />
-                  {isUploading && <span className="text-xs text-orange-400 ml-2">Uploading...</span>}
-                  {seekerProfile.resumeUrl && (
-                    <div className="mt-1">
-                      <a href={seekerProfile.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs">
-                        View uploaded CV
-                      </a>
-                    </div>
-                  )}
-                </div>
               </div>
-              {/* COLUNA 2 */}
+              
+              {/* COLUNA 2 - Contact & Location */}
               <div className="space-y-6 col-span-1 md:col-span-1">
-                {/* Email (Read Only) */}
-                <input type="email" name="email" value={seekerProfile.email ?? ""} placeholder="Email" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" readOnly title="Email cannot be changed here" />
                 {/* Location */}
                 <input type="text" name="location" value={seekerProfile.location ?? ""} onChange={handleProfileChange} placeholder="Location (e.g., City, Country)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
                 {/* Address (optional) */}
                 <input type="text" name="address" value={seekerProfile.address ?? ""} onChange={handleProfileChange} placeholder="Full Address (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
                 {/* Zip Code */}
                 <input type="text" name="zipCode" value={seekerProfile.zipCode ?? ""} onChange={handleProfileChange} placeholder="Zip Code (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Interest Area */}
-                <input type="text" name="interestArea" value={seekerProfile.interestArea ?? ""} onChange={handleProfileChange} placeholder="Interest Area (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Resume Link */}
-                <input
-                  type="url"
-                  name="resumeUrl"
-                  value={seekerProfile.resumeUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="Resume Link (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
-                {/* Presentation Video Link - MOVED HERE */}
-                <input
-                  type="url"
-                  name="presentationVideoUrl"
-                  value={seekerProfile.presentationVideoUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="Presentation Video Link (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
-              </div>
-              {/* COLUNA 3 */}
-              <div className="space-y-6 col-span-1 md:col-span-1">
                 {/* Phone with country code */}
                 <div className="flex gap-2">
                   <select name="phoneCountryCode" value={seekerProfile.phoneCountryCode ?? "+1"} onChange={handleProfileChange} className="p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-28">
@@ -1295,7 +1367,6 @@ const SeekerDashboard = () => {
                     <option value="+48">+48 (PL)</option>
                     <option value="+40">+40 (RO)</option>
                     <option value="+90">+90 (TR)</option>
-                    {/* Add more as needed */}
                   </select>
                   <input type="text" name="phone" value={seekerProfile.phone ?? ""} onChange={handleProfileChange} placeholder="Phone (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
                 </div>
@@ -1317,7 +1388,7 @@ const SeekerDashboard = () => {
                     <option value="+39">+39 (IT)</option>
                     <option value="+91">+91 (IN)</option>
                     <option value="+81">+81 (JP)</option>
-                    <option value="+86">+86 (CN)</option>
+                    <option value="+86 (CN)">+86 (CN)</option>
                     <option value="+7">+7 (RU)</option>
                     <option value="+61">+61 (AU)</option>
                     <option value="+258">+258 (MZ)</option>
@@ -1328,12 +1399,11 @@ const SeekerDashboard = () => {
                     <option value="+46">+46 (SE)</option>
                     <option value="+41">+41 (CH)</option>
                     <option value="+31">+31 (NL)</option>
-                    <option value="+32 (BE)">+32 (BE)</option>
+                    <option value="+32">+32 (BE)</option>
                     <option value="+420">+420 (CZ)</option>
                     <option value="+48">+48 (PL)</option>
                     <option value="+40">+40 (RO)</option>
                     <option value="+90">+90 (TR)</option>
-                    {/* Add more as needed */}
                   </select>
                   <input
                     type="text"
@@ -1344,52 +1414,52 @@ const SeekerDashboard = () => {
                     className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
                   />
                 </div>
-                
-                {/* Telegram - MOVED HERE after Alternative Contact */}
+              </div>
+              
+              {/* COLUNA 3 - Profile Content */}
+              <div className="space-y-6 col-span-1 md:col-span-1">
+                {/* Interest Area */}
+                <input type="text" name="interestArea" value={seekerProfile.interestArea ?? ""} onChange={handleProfileChange} placeholder="Interest Area (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* CV Upload */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Upload CV (PDF, DOC, etc.)</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.odt,.rtf,.txt"
+                    onChange={handleCVUpload}
+                    className="w-full text-white bg-black/50 border border-orange-500/30 rounded-lg p-2"
+                  />
+                  {isUploading && <span className="text-xs text-orange-400 ml-2">Uploading...</span>}
+                  {seekerProfile.resumeUrl && (
+                    <div className="mt-1">
+                      <a href={seekerProfile.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs">
+                        View uploaded CV
+                      </a>
+                    </div>
+                  )}
+                </div>
+                {/* Resume Link */}
                 <input
                   type="url"
-                  name="telegramUrl"
-                  value={seekerProfile.telegramUrl ?? ""}
+                  name="resumeUrl"
+                  value={seekerProfile.resumeUrl ?? ""}
                   onChange={handleProfileChange}
-                  placeholder="Telegram URL (optional)"
+                  placeholder="Resume Link (optional)"
                   className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
                 />
-                
-                {/* Instagram URL */}
-                <input type="url" name="instagramUrl" value={seekerProfile.instagramUrl ?? ""} onChange={handleProfileChange} placeholder="Instagram URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Facebook URL */}
-                <input type="url" name="facebookUrl" value={seekerProfile.facebookUrl ?? ""} onChange={handleProfileChange} placeholder="Facebook URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Website */}
+                {/* Presentation Video Link */}
                 <input
                   type="url"
-                  name="websiteUrl"
-                  value={seekerProfile.websiteUrl ?? ""}
+                  name="presentationVideoUrl"
+                  value={seekerProfile.presentationVideoUrl ?? ""}
                   onChange={handleProfileChange}
-                  placeholder="Website URL (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
-                {/* LinkedIn - MOVED HERE */}
-                <input
-                  type="url"
-                  name="linkedinUrl"
-                  value={seekerProfile.linkedinUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="LinkedIn URL (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
-                {/* Twitter - MOVED HERE */}
-                <input
-                  type="url"
-                  name="twitterUrl"
-                  value={seekerProfile.twitterUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="Twitter URL (optional)"
+                  placeholder="Presentation Video Link (optional)"
                   className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
                 />
               </div>
             </div>
             
-            {/* Bio - MOVED HERE with more space */}
+            {/* Bio - After personal data */}
             <div className="mb-8">
               <label className="block text-sm text-gray-400 mb-2">Short Bio</label>
               <textarea
@@ -1402,7 +1472,58 @@ const SeekerDashboard = () => {
               ></textarea>
             </div>
             
-            {/* Idiomas (full width) */}
+            {/* Social Networks */}
+            <h3 className="text-lg font-bold text-orange-400 mb-4">Social Networks</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              <div className="space-y-6">
+                {/* LinkedIn */}
+                <input
+                  type="url"
+                  name="linkedinUrl"
+                  value={seekerProfile.linkedinUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="LinkedIn URL (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
+                {/* Twitter */}
+                <input
+                  type="url"
+                  name="twitterUrl"
+                  value={seekerProfile.twitterUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="Twitter URL (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
+              </div>
+              <div className="space-y-6">
+                {/* Website */}
+                <input
+                  type="url"
+                  name="websiteUrl"
+                  value={seekerProfile.websiteUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="Website URL (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
+                {/* Telegram */}
+                <input
+                  type="url"
+                  name="telegramUrl"
+                  value={seekerProfile.telegramUrl ?? ""}
+                  onChange={handleProfileChange}
+                  placeholder="Telegram URL (optional)"
+                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                />
+              </div>
+              <div className="space-y-6">
+                {/* Instagram URL */}
+                <input type="url" name="instagramUrl" value={seekerProfile.instagramUrl ?? ""} onChange={handleProfileChange} placeholder="Instagram URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                {/* Facebook URL */}
+                <input type="url" name="facebookUrl" value={seekerProfile.facebookUrl ?? ""} onChange={handleProfileChange} placeholder="Facebook URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+              </div>
+            </div>
+            
+            {/* Languages */}
             <div className="mb-10">
               <label className="block text-sm text-gray-400 mb-2">Languages</label>
               {(seekerProfile.languages ?? []).map((lang, idx) => (
@@ -1420,6 +1541,7 @@ const SeekerDashboard = () => {
               ))}
               <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, languages: [...(seekerProfile.languages ?? []), { language: '', proficiency: '' }] }); }} className="text-orange-400 mt-2">+ Add Language</button>
             </div>
+            
             {/* Career */}
             <h3 className="text-lg font-bold text-orange-400 mb-4">Career</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
@@ -1428,39 +1550,8 @@ const SeekerDashboard = () => {
                 <input type="text" name="title" value={seekerProfile.title ?? ""} onChange={handleProfileChange} placeholder="Professional Title (e.g., Frontend Developer)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
                 {/* Skills */}
                 <textarea name="skills" value={seekerProfile.skills ?? ""} onChange={handleProfileChange} placeholder="Your Skills (comma-separated, e.g., React, Node.js, Solidity)" rows={3} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"></textarea>
-                {/* Experiência Profissional */}
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Professional Experience</label>
-                  {(seekerProfile.experience ?? []).map((exp, idx) => (
-                    <div key={idx} className="flex flex-col md:flex-row gap-2 mb-2">
-                      <input type="text" name={`exp-position-${idx}`} value={exp.position} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], position: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Position" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="text" name={`exp-company-${idx}`} value={exp.company} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], company: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Company" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="text" name={`exp-location-${idx}`} value={exp.location} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], location: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Location" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="text" name={`exp-startDate-${idx}`} value={exp.startDate} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], startDate: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Start Date (YYYY-MM)" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="text" name={`exp-endDate-${idx}`} value={exp.endDate} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], endDate: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="End Date (YYYY-MM or Present)" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <textarea name={`exp-description-${idx}`} value={exp.description} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], description: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Description" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <button type="button" onClick={() => { const updated = [...(seekerProfile.experience ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, experience: updated }); }} className="text-red-400 ml-2">Remove</button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, experience: [...(seekerProfile.experience ?? []), { position: '', company: '', location: '', startDate: '', endDate: '', current: false, description: '' }] }); }} className="text-orange-400 mt-2">+ Add Experience</button>
-                </div>
-                {/* Educação */}
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Education</label>
-                  {(seekerProfile.education ?? []).map((edu, idx) => (
-                    <div key={idx} className="flex flex-col md:flex-row gap-2 mb-2">
-                      <input type="text" name={`edu-degree-${idx}`} value={edu.degree} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], degree: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Degree" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="text" name={`edu-institution-${idx}`} value={edu.institution} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], institution: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Institution" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="text" name={`edu-year-${idx}`} value={edu.year} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], year: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Year" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <textarea name={`edu-description-${idx}`} value={edu.description} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], description: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Description" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <button type="button" onClick={() => { const updated = [...(seekerProfile.education ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, education: updated }); }} className="text-red-400 ml-2">Remove</button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, education: [...(seekerProfile.education ?? []), { degree: '', institution: '', year: '', description: '' }] }); }} className="text-orange-400 mt-2">+ Add Education</button>
-                </div>
-              </div>
-              <div className="space-y-6">
-                {/* Projetos */}
+                
+                {/* Projects */}
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">Projects</label>
                   {(seekerProfile.projects ?? []).map((proj, idx) => (
@@ -1474,7 +1565,8 @@ const SeekerDashboard = () => {
                   ))}
                   <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, projects: [...(seekerProfile.projects ?? []), { name: '', url: '', technologies: '', description: '' }] }); }} className="text-orange-400 mt-2">+ Add Project</button>
                 </div>
-                {/* Certificações */}
+                
+                {/* Certifications */}
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">Certifications</label>
                   {(seekerProfile.certifications ?? []).map((cert, idx) => (
@@ -1488,7 +1580,8 @@ const SeekerDashboard = () => {
                   ))}
                   <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, certifications: [...(seekerProfile.certifications ?? []), { name: '', issuer: '', date: '', url: '' }] }); }} className="text-orange-400 mt-2">+ Add Certification</button>
                 </div>
-                {/* Referências profissionais */}
+                
+                {/* Professional References */}
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">Professional References</label>
                   {(seekerProfile.references ?? []).map((ref, idx) => (
@@ -1502,14 +1595,51 @@ const SeekerDashboard = () => {
                   <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, references: [...(seekerProfile.references ?? []), { name: '', contact: '', relation: '' }] }); }} className="text-orange-400 mt-2">+ Add Reference</button>
                 </div>
               </div>
+              
+              <div className="space-y-6">
+                {/* Professional Experience */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Professional Experience</label>
+                  {(seekerProfile.experience ?? []).map((exp, idx) => (
+                    <div key={idx} className="flex flex-col gap-2 mb-4 bg-black/30 p-3 rounded-lg">
+                      <input type="text" name={`exp-position-${idx}`} value={exp.position} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], position: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Position" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" />
+                      <input type="text" name={`exp-company-${idx}`} value={exp.company} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], company: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Company" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" />
+                      <div className="flex gap-2">
+                        <input type="text" name={`exp-location-${idx}`} value={exp.location} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], location: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Location" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                        <input type="text" name={`exp-startDate-${idx}`} value={exp.startDate} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], startDate: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Start Date (YYYY-MM)" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                        <input type="text" name={`exp-endDate-${idx}`} value={exp.endDate} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], endDate: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="End Date (YYYY-MM or Present)" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                      </div>
+                      <textarea name={`exp-description-${idx}`} value={exp.description} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], description: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Description" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" rows={3} />
+                      <button type="button" onClick={() => { const updated = [...(seekerProfile.experience ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, experience: updated }); }} className="text-red-400 self-end">Remove Experience</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, experience: [...(seekerProfile.experience ?? []), { position: '', company: '', location: '', startDate: '', endDate: '', current: false, description: '' }] }); }} className="text-orange-400 mt-2">+ Add Experience</button>
+                </div>
+                
+                {/* Education */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Education</label>
+                  {(seekerProfile.education ?? []).map((edu, idx) => (
+                    <div key={idx} className="flex flex-col gap-2 mb-4 bg-black/30 p-3 rounded-lg">
+                      <input type="text" name={`edu-degree-${idx}`} value={edu.degree} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], degree: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Degree" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" />
+                      <input type="text" name={`edu-institution-${idx}`} value={edu.institution} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], institution: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Institution" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" />
+                      <input type="text" name={`edu-year-${idx}`} value={edu.year} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], year: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Year" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" />
+                      <textarea name={`edu-description-${idx}`} value={edu.description} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], description: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Description" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" rows={2} />
+                      <button type="button" onClick={() => { const updated = [...(seekerProfile.education ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, education: updated }); }} className="text-red-400 self-end">Remove Education</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, education: [...(seekerProfile.education ?? []), { degree: '', institution: '', year: '', description: '' }] }); }} className="text-orange-400 mt-2">+ Add Education</button>
+                </div>
+              </div>
             </div>
+            
             {/* What I'm Looking For */}
             <h3 className="text-lg font-bold text-orange-400 mb-4">What I'm Looking For</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
               <div className="space-y-6">
-                {/* Disponibilidade */}
+                {/* Availability */}
                 <input type="text" name="availability" value={seekerProfile.availability ?? ""} onChange={handleProfileChange} placeholder="Availability (e.g., Immediate, 15 days notice)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Pretensão salarial */}
+                {/* Salary Expectation */}
                 <input type="text" name="salaryExpectation" value={seekerProfile.salaryExpectation ?? ""} onChange={handleProfileChange} placeholder="Salary Expectation (e.g., $3000-4000/mo)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
               </div>
               <div className="space-y-6">
@@ -1520,18 +1650,18 @@ const SeekerDashboard = () => {
                   <option value="Part Time">Part Time</option>
                   <option value="Other">Other</option>
                 </select>
-                {/* Área de interesse */}
+                {/* Interest Area (repeated) */}
                 <input type="text" name="interestArea" value={seekerProfile.interestArea ?? ""} onChange={handleProfileChange} placeholder="Interest Area (e.g., Frontend, Blockchain, Design)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
               </div>
               <div className="space-y-6">
-                {/* Preferências de trabalho */}
+                {/* Work Preference */}
                 <select name="workPreference" value={seekerProfile.workPreference ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm">
                   <option value="">Work Preference</option>
                   <option value="Remote">Remote</option>
                   <option value="Hybrid">Hybrid</option>
                   <option value="Onsite">Onsite</option>
                 </select>
-                {/* Preferências extras */}
+                {/* Extra Preferences */}
                 <div className="flex flex-wrap gap-4 mt-4">
                   <label className="flex items-center gap-2 text-white">
                     <input type="checkbox" name="remoteOnly" checked={!!seekerProfile.remoteOnly} onChange={e => setSeekerProfile({ ...seekerProfile, remoteOnly: e.target.checked })} /> Remote Only
@@ -1545,15 +1675,17 @@ const SeekerDashboard = () => {
                 </div>
               </div>
             </div>
-            {/* Checkbox de compartilhamento de perfil */}
+            
+            {/* Profile Sharing */}
             <div className="mb-8">
               <label className="flex items-center gap-2 text-white">
                 <input type="checkbox" name="shareProfile" checked={!!seekerProfile.shareProfile} onChange={e => setSeekerProfile({ ...seekerProfile, shareProfile: e.target.checked })} />
                 Allow your full profile to be shared with hiring companies?
               </label>
             </div>
-            {/* Botão de salvar */}
-            <div className="col-span-1 md:col-span-2">
+            
+            {/* Save Button */}
+            <div>
               <button type="submit" disabled={isLoadingProfile} className={`bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-colors hover:bg-orange-300 border-none w-full mt-5 ${isLoadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}>{isLoadingProfile ? 'Saving...' : 'Save Profile'}</button>
             </div>
           </form>
@@ -1917,7 +2049,17 @@ const SeekerDashboard = () => {
               <img
                 src={userPhoto || "/images/default-avatar.png"}
                 alt="Profile"
-                className="w-full h-full object-cover rounded-full"
+                className="w-full h-full object-cover rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => document.getElementById('profile-photo-upload')?.click()}
+                title="Click to change profile photo"
+              />
+              <input 
+                type="file"
+                id="profile-photo-upload"
+                accept="image/*"
+                onChange={handleUserPhotoChange}
+                className="hidden"
+                aria-label="Upload profile photo"
               />
             </div>
             {/* Notification bell absolutely positioned top right */}
