@@ -47,18 +47,20 @@ const SeekerSignupPage: React.FC = () => {
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const seekersRef = collection(db, "seekers");
-
-      await addDoc(seekersRef, {
+      const seekersRef = collection(db, "seekers");      // Create the seeker document
+      const docRef = await addDoc(seekersRef, {
         email,
         password: hashedPassword,
         firstName,
         lastName,
+        name: firstName,
+        surname: lastName,
         phoneNumber,
         createdAt: new Date(),
       });
 
-      router.replace("/admin-login");
+      // Create a token and store it or redirect to login page
+      router.replace("/login");
     } catch (err) {
       setError("An error occurred during signup. Please try again.");
       console.error("Signup error:", err);
@@ -171,10 +173,9 @@ const SeekerSignupPage: React.FC = () => {
               {isLoading ? "Signing up..." : "Sign Up"}
             </button>
           </form>
-          <div className="flex flex-row justify-between mt-3">
-            <p className="text-center text-xs text-gray-400">
+          <div className="flex flex-row justify-between mt-3">            <p className="text-center text-xs text-gray-400">
               Already have an account?{" "}
-              <a href="/admin-login" className="text-orange-400 hover:underline">
+              <a href="/login" className="text-orange-400 hover:underline">
                 Login
               </a>
             </p>

@@ -106,9 +106,9 @@ const CompanyRegisterPage: React.FC = () => {
         docUrl: docFile ? docFile.name : "", // Placeholder, should be URL after upload
         status: "pending",
         createdAt: new Date().toISOString(),
-      });
-      setMessage("Registration submitted successfully. Awaiting approval.");
-      setTimeout(() => window.location.reload(), 1500);
+      });      setMessage("Registration submitted successfully. Awaiting approval.");
+      // Instead of reloading the page, redirect to the login page after a short delay
+      setTimeout(() => window.location.href = "/login", 1500);
       console.log("Document written with ID: ", docRef.id);
     } catch (error) {
       console.error("Error adding document: ", error);
