@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase"; // Adjust path as needed
 import bcrypt from "bcryptjs";
 import PhoneInput from 'react-phone-number-input';
@@ -36,9 +36,7 @@ const SeekerSignupPage: React.FC = () => {
       setError("Passwords do not match.");
       setIsLoading(false);
       return;
-    }
-
-    if (!db) {
+    }    if (!db) {
       setError("Database connection is not available. Please try again later.");
       setIsLoading(false);
       console.error("Firestore not initialized in seeker signup");
@@ -46,8 +44,30 @@ const SeekerSignupPage: React.FC = () => {
     }
 
     try {
+      // Check if email or phone number already exists
+      const seekersRef = collection(db, "seekers");
+      const emailQuery = query(seekersRef, where("email", "==", email));
+      const phoneQuery = query(seekersRef, where("phoneNumber", "==", phoneNumber));
+      
+      const [emailSnapshot, phoneSnapshot] = await Promise.all([
+        getDocs(emailQuery),
+        getDocs(phoneQuery)
+      ]);      if (!emailSnapshot.empty) {
+        setError("An account with this email already exists.");
+        setIsLoading(false);
+        // Create element with recovery password link for rendering later
+        return;
+      }
+
+      if (!phoneSnapshot.empty) {
+        setError("An account with this phone number already exists.");
+        setIsLoading(false);
+        return;
+      }
+      
+      // If no duplicates found, proceed with registration
       const hashedPassword = await bcrypt.hash(password, 10);
-      const seekersRef = collection(db, "seekers");      // Create the seeker document
+      // Create the seeker document
       const docRef = await addDoc(seekersRef, {
         email,
         password: hashedPassword,
@@ -57,9 +77,7 @@ const SeekerSignupPage: React.FC = () => {
         surname: lastName,
         phoneNumber,
         createdAt: new Date(),
-      });
-
-      // Create a token and store it or redirect to login page
+      });      // Create a token and store it or redirect to login page
       router.replace("/login");
     } catch (err) {
       setError("An error occurred during signup. Please try again.");
@@ -162,7 +180,14 @@ const SeekerSignupPage: React.FC = () => {
                 required
               />
             </div>
-            {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+            {error && (
+              <div className="text-center mb-3">
+                <p className="text-red-500 text-xs">{error}</p>
+                <a href="/forgot-password" className="text-orange-400 text-xs hover:underline">
+                  Forgot your password? Click here to recover it
+                </a>
+              </div>
+            )}
             <button
               type="submit"
               disabled={isLoading}
