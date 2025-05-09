@@ -68,6 +68,27 @@ export default function Learn2EarnDetailPage() {
     fetchLearn2Earn();
   }, [id]);
 
+  // Block access if status is completed
+  if (learn2Earn && learn2Earn.status === "completed") {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gradient-to-b from-black to-orange-900 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="bg-green-500/20 border border-green-500 text-green-500 p-4 rounded-lg mb-6">
+              This Learn2Earn opportunity has already been completed. You can no longer access its details.
+            </div>
+            <Link
+              href="/learn2earn"
+              className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-6 rounded-lg inline-block"
+            >
+              Back to Learn2Earn
+            </Link>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   // Function to separate content and quiz tasks
   const getContentTasks = () => {
     return learn2Earn?.tasks.filter(task => task.type === 'content') || [];

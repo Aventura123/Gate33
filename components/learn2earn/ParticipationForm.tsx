@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { connectWallet, getCurrentAddress } from '../../services/crypto';
+import { web3Service } from '../../services/web3Service';
 import learn2earnContractService from '../../services/learn2earnContractService';
 import { collection, addDoc, query, where, getDocs, updateDoc, doc, increment, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -45,13 +45,11 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
     setInvalidSignature(false);
     
     try {
-      await connectWallet();
-      const address = await getCurrentAddress();
-      
-      if (address) {
-        setWalletAddress(address);
+      const walletInfo = await web3Service.connectWallet();
+      if (walletInfo && walletInfo.address) {
+        setWalletAddress(walletInfo.address);
         // Check if user has already registered participation
-        checkParticipation(address);
+        checkParticipation(walletInfo.address);
       } else {
         throw new Error('Unable to get wallet address');
       }
@@ -246,10 +244,10 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
   useEffect(() => {
     const checkWalletAndParticipation = async () => {
       try {
-        const address = await getCurrentAddress();
-        if (address) {
-          setWalletAddress(address);
-          checkParticipation(address);
+        const walletInfo = await web3Service.connectWallet();
+        if (walletInfo && walletInfo.address) {
+          setWalletAddress(walletInfo.address);
+          checkParticipation(walletInfo.address);
         }
       } catch (err) {
         console.error("Error checking wallet on load:", err);
@@ -387,7 +385,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
             >
               {isConnecting ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -397,7 +395,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
             </button>
           ) : !participationChecked ? (
             <div className="flex justify-center">
-              <svg className="animate-spin h-10 w-10 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-10 w-10 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -430,7 +428,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
               >
                 {registering ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
@@ -473,7 +471,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
               >
                 {submitting ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>

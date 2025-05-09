@@ -8,9 +8,9 @@ import { db } from "../../lib/firebase"; // Assuming db instance is correctly co
 import instantJobsService, { InstantJob, JobMessage } from '../../services/instantJobsService';
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
-import { connectWallet, getCurrentAddress, getWeb3Provider } from "../../services/crypto";
 import { BellIcon } from '@heroicons/react/24/outline';
 import WalletButton from '../../components/WalletButton';
+import { web3Service } from "../../services/web3Service";
 
 // Function to create a notification for seeker
 async function createSeekerNotification({
@@ -742,23 +742,19 @@ const SeekerDashboard = () => {
     }
   };
 
-  // Function to connect wallet
+  // Function to connect wallet (centralizada via web3Service)
   const handleConnectWallet = async () => {
     try {
       setIsConnectingWallet(true);
       setWalletError(null);
-      
-      // Use the wallet connection function from crypto.ts
-      await connectWallet();
-      const address = await getCurrentAddress();
-      
-      if (address) {
-        setWalletAddress(address);
-        console.log("Wallet connected:", address);
+      const walletInfo = await web3Service.connectWallet();
+      if (walletInfo && walletInfo.address) {
+        setWalletAddress(walletInfo.address);
+        console.log("Wallet connected:", walletInfo.address);
+        return walletInfo.address;
       } else {
         throw new Error("Could not get wallet address");
       }
-      return address;
     } catch (error: any) {
       console.error("Failed to connect wallet:", error);
       setWalletError(error.message || "Failed to connect wallet");

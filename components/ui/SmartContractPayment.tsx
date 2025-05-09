@@ -31,7 +31,6 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
   children,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -50,34 +49,6 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
 
     checkConnection();
   }, []);
-
-  // Conectar carteira
-  const connectWallet = async () => {
-    if (isConnecting) return;
-
-    setIsConnecting(true);
-    setError(null);
-
-    try {
-      const info = await web3Service.connectWallet();
-      setWalletConnected(true);
-      setWalletInfo(info);
-
-      // Verificar se está na rede correta
-      if (info.networkName.toLowerCase() !== network) {
-        await switchNetwork();
-      } else {
-        await initializeContract();
-      }
-    } catch (err: any) {
-      setError(err.message || "Falha ao conectar carteira");
-      if (onError) {
-        onError(err.message || "Falha ao conectar carteira");
-      }
-    } finally {
-      setIsConnecting(false);
-    }
-  };
 
   // Trocar para a rede correta
   const switchNetwork = async () => {
@@ -116,7 +87,7 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
   // Processar pagamento
   const handlePayment = async () => {
     if (!walletConnected) {
-      await connectWallet();
+      setError("Por favor, conecte sua carteira antes de prosseguir.");
       return;
     }
 
@@ -136,14 +107,14 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
       );
 
       setTxHash(result.transactionHash);
-      
+
       if (onSuccess) {
         onSuccess(result.transactionHash);
       }
     } catch (err: any) {
       const errorMessage = err.message || "Erro ao processar pagamento";
       setError(errorMessage);
-      
+
       if (onError) {
         onError(errorMessage);
       }
@@ -153,11 +124,9 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
   };
 
   const buttonLabel = () => {
-    if (isConnecting) return "Conectando...";
     if (isSwitchingNetwork) return "Trocando rede...";
     if (isLoading) return "Processando...";
     if (txHash) return "Pagamento Concluído";
-    if (!walletConnected) return "Conectar Carteira";
     return `${label} ${amount} ETH`;
   };
 
@@ -166,14 +135,14 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
     ${
       txHash
         ? "bg-green-500 hover:bg-green-600 text-white"
-        : isLoading || isConnecting || isSwitchingNetwork
+        : isLoading || isSwitchingNetwork
           ? "bg-gray-400 text-gray-800 cursor-not-allowed"
           : "bg-blue-600 hover:bg-blue-700 text-white"
     }
     ${className}
   `;
 
-  const isDisabled = isLoading || isConnecting || isSwitchingNetwork || !!txHash;
+  const isDisabled = isLoading || isSwitchingNetwork || !!txHash;
 
   return (
     <div className="smart-contract-payment-container">
@@ -182,7 +151,7 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
           Erro: {error}
         </div>
       )}
-      
+
       {walletConnected && walletInfo && (
         <div className="mb-2 text-sm text-gray-600">
           <div className="flex items-center gap-2">
@@ -208,7 +177,7 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
           )}
         </div>
       )}
-      
+
       <button
         type="button"
         className={buttonClass}
@@ -217,7 +186,7 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
       >
         {buttonLabel()}
       </button>
-      
+
       {txHash && (
         <div className="mt-2 text-sm">
           <p className="text-green-600">Transação enviada com sucesso!</p>
@@ -226,7 +195,7 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
           </p>
         </div>
       )}
-      
+
       {children}
     </div>
   );

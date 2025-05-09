@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { web3Service } from '../services/web3Service';
+import { web3Service, NetworkType } from '../services/web3Service';
 
 interface WalletButtonProps {
   onConnect?: (address: string) => void;
@@ -19,16 +19,22 @@ const WalletButton: React.FC<WalletButtonProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showWalletOptions, setShowWalletOptions] = useState(false);
+  const [availableNetworks, setAvailableNetworks] = useState<NetworkType[]>(["ethereum", "polygon", "binance"]);
+  const [currentNetwork, setCurrentNetwork] = useState<NetworkType>("ethereum");
 
   useEffect(() => {
-    // Verificar se já existe uma carteira conectada
+    // Map or validate networkName to ensure it matches NetworkType
     const checkConnection = async () => {
       if (web3Service.isWalletConnected()) {
         const walletInfo = web3Service.getWalletInfo();
         if (walletInfo) {
           setIsConnected(true);
           setWalletAddress(walletInfo.address);
-          
+          const validNetwork = availableNetworks.includes(walletInfo.networkName as NetworkType)
+            ? (walletInfo.networkName as NetworkType)
+            : "ethereum"; // Default to a valid NetworkType
+          setCurrentNetwork(validNetwork);
+
           if (onConnect) {
             onConnect(walletInfo.address);
           }
@@ -71,6 +77,19 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     };
   }, [onConnect, onDisconnect]);
 
+  useEffect(() => {
+    if (isConnected) {
+      const walletInfo = web3Service.getWalletInfo();
+      if (walletInfo) {
+        const validNetwork = availableNetworks.includes(walletInfo.networkName as NetworkType)
+          ? (walletInfo.networkName as NetworkType)
+          : "ethereum"; // Default to a valid NetworkType
+        setCurrentNetwork(validNetwork);
+      }
+    }
+  }, [isConnected]);
+
+  // Ensure networkName is validated or mapped to NetworkType
   const handleConnectMetaMask = async () => {
     setIsLoading(true);
     setError(null);
@@ -79,6 +98,14 @@ const WalletButton: React.FC<WalletButtonProps> = ({
       const walletInfo = await web3Service.connectWallet();
       setIsConnected(true);
       setWalletAddress(walletInfo.address);
+
+      // Validate or map networkName to NetworkType
+      const validNetwork = availableNetworks.find(
+        (network) => network === walletInfo.networkName
+      ) || "ethereum"; // Default to a valid NetworkType
+
+      setCurrentNetwork(validNetwork as NetworkType);
+
       if (onConnect) {
         onConnect(walletInfo.address);
       }
@@ -98,6 +125,14 @@ const WalletButton: React.FC<WalletButtonProps> = ({
       const walletInfo = await web3Service.connectWalletConnect();
       setIsConnected(true);
       setWalletAddress(walletInfo.address);
+
+      // Validate or map networkName to NetworkType
+      const validNetwork = availableNetworks.find(
+        (network) => network === walletInfo.networkName
+      ) || "ethereum"; // Default to a valid NetworkType
+
+      setCurrentNetwork(validNetwork as NetworkType);
+
       if (onConnect) {
         onConnect(walletInfo.address);
       }
@@ -113,9 +148,23 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     web3Service.disconnectWallet();
     setIsConnected(false);
     setWalletAddress('');
-    
+    setCurrentNetwork("ethereum"); // Default to a valid NetworkType
+
     if (onDisconnect) {
       onDisconnect();
+    }
+  };
+
+  const handleSwitchNetwork = async (network: NetworkType) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await web3Service.switchNetwork(network);
+      setCurrentNetwork(network);
+    } catch (err: any) {
+      setError(err.message || "Failed to switch network");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -125,6 +174,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
+  // Fix JSX structure by ensuring all tags are properly closed
   return (
     <div className="wallet-button-container relative">
       {error && (
@@ -132,7 +182,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
           {error}
         </div>
       )}
-      
+
       {!isConnected ? (
         <>
           <button 
@@ -162,17 +212,34 @@ const WalletButton: React.FC<WalletButtonProps> = ({
           )}
         </>
       ) : (
-        <div className="flex items-center gap-2">
-          <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
-            Connected
-          </span>
-          <span className="text-sm">{formatAddress(walletAddress)}</span>
-          <button
-            onClick={handleDisconnect}
-            className="text-xs text-red-500 hover:text-red-700"
-          >
-            Disconnect
-          </button>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
+              Connected
+            </span>
+            <span className="text-sm">{formatAddress(walletAddress)}</span>
+            <button
+              onClick={handleDisconnect}
+              className="text-xs text-red-500 hover:text-red-700"
+            >
+              Disconnect
+            </button>
+          </div>
+
+          <div className="network-selector">
+            <label className="text-xs text-gray-500">Network:</label>
+            <select
+              value={currentNetwork}
+              onChange={(e) => handleSwitchNetwork(e.target.value as NetworkType)}
+              className="text-sm border rounded px-2 py-1"
+            >
+              {availableNetworks.map((network) => (
+                <option key={network} value={network}>
+                  {network.charAt(0).toUpperCase() + network.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
     </div>

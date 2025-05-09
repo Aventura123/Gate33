@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { getDoc, doc, collection, query, where, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { getWeb3Provider } from "./crypto";
+import { web3Service } from "./web3Service";
 
 // Minimum ABI for ERC20 token operations
 const ERC20_ABI = [
@@ -198,7 +198,7 @@ class Learn2EarnContractService {
    */
   async checkTokenApproval(network: string, tokenAddress: string): Promise<boolean> {
     try {
-      const provider = await getWeb3Provider();
+      const provider = await web3Service.getWeb3Provider();
       if (!provider) throw new Error("Web3 provider not available");
       
       const signer = provider.getSigner();
@@ -225,7 +225,7 @@ class Learn2EarnContractService {
    */
   async approveToken(network: string, tokenAddress: string): Promise<any> {
     try {
-      const provider = await getWeb3Provider();
+      const provider = await web3Service.getWeb3Provider();
       if (!provider) throw new Error("Web3 provider not available");
       
       const signer = provider.getSigner();
@@ -290,7 +290,7 @@ class Learn2EarnContractService {
       const contractAddress = contractAddresses.contractAddress;
       console.log(`Using contract address: ${contractAddress}`);
       
-      const provider = await getWeb3Provider();
+      const provider = await web3Service.getWeb3Provider();
       if (!provider) throw new Error("Web3 provider not available");
       
       const signer = provider.getSigner();
@@ -712,7 +712,7 @@ class Learn2EarnContractService {
    */
   async depositTokens(network: string, learn2earnId: number, amount: number): Promise<any> {
     try {
-      const provider = await getWeb3Provider();
+      const provider = await web3Service.getWeb3Provider();
       if (!provider) throw new Error("Web3 provider not available");
       
       const signer = provider.getSigner();
@@ -811,7 +811,7 @@ class Learn2EarnContractService {
     try {
       console.log(`Claiming tokens from learn2earn with Firebase ID ${firebaseId} on network ${network}`);
       
-      const provider = await getWeb3Provider();
+      const provider = await web3Service.getWeb3Provider();
       if (!provider) throw new Error("Web3 provider not available");
       
       const contractAddress = await this.getContractAddress(network);
@@ -1087,7 +1087,7 @@ class Learn2EarnContractService {
             const firebaseStartTime = data.startDate?.seconds || 0;
             
             // Create a non-null provider
-            const web3Provider = await getWeb3Provider();
+            const web3Provider = await web3Service.getWeb3Provider();
             if (!web3Provider) {
               return {
                 success: false,

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, updateDoc, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 // Import payment related services
-import { connectWallet, getCurrentAddress, getWeb3Provider } from "../../services/crypto";
+import { web3Service } from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
 // Import learn2earnContractService
 // Import learn2earnContractService
@@ -17,6 +17,7 @@ import { Learn2Earn, Learn2EarnTask, NewLearn2Earn } from "../../types/learn2ear
 import instantJobsService, { InstantJob, JobMessage } from '../../services/instantJobsService';
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
+import WalletButton from '../../components/WalletButton';
 
 // Interface for Support Ticket
 interface SupportTicket {
@@ -601,8 +602,8 @@ const PostJobPage = (): JSX.Element => {
       if (!currentAddress) {
         console.log("[processPayment] No wallet connected, connecting...");
         try {
-          await connectWallet();
-          currentAddress = await getCurrentAddress();
+          const walletInfo = await web3Service.connectWallet();
+          currentAddress = walletInfo?.address;
           if (currentAddress) {
             setWalletAddress(currentAddress);
             console.log("[processPayment] Wallet connected:", currentAddress);
@@ -1105,7 +1106,7 @@ const PostJobPage = (): JSX.Element => {
             </div>
           </div>
           
-          {/* Wallet connection status */}
+          {/* Wallet connection status and button */}
           <div className="mb-4 p-3 rounded-lg border border-gray-700">
             <div className="flex justify-between items-center">
               <span className="text-gray-300">Wallet Connection:</span>
@@ -1113,11 +1114,9 @@ const PostJobPage = (): JSX.Element => {
                 {walletAddress ? "Connected" : "Not Connected"}
               </span>
             </div>
-            {walletAddress && (
-              <div className="mt-2 text-sm text-gray-400 break-all">
-                Address: {walletAddress}
-              </div>
-            )}
+            <div className="mt-2 text-sm text-gray-400 break-all">
+              Address: {walletAddress}
+            </div>
             {walletError && (
               <div className="mt-2 text-sm text-red-500">
                 Error: {walletError}
@@ -1125,52 +1124,25 @@ const PostJobPage = (): JSX.Element => {
             )}
           </div>
           
-          {/* Payment buttons */}
+          {/* Payment button sempre visível, só desabilitado se não conectado */}
           <div className="flex flex-col space-y-3">
-            {!walletAddress ? (
-              <button
-                onClick={handleConnectWallet}
-                disabled={isConnectingWallet}
-                className={`w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition ${
-                  isConnectingWallet ? "opacity-70 cursor-not-allowed" : ""
-                }`}
-              >
-                {isConnectingWallet ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Connecting Wallet...
-                  </span>
-                ) : (
-                  "Connect Wallet"
-                )}
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  console.log("Complete Payment button clicked");
-                  processPayment();
-                }}
-                disabled={isProcessingPayment}
-                className={`w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition ${
-                  isProcessingPayment ? "opacity-70 cursor-not-allowed" : ""
-                }`}
-              >
-                {isProcessingPayment ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing Payment...
-                  </span>
-                ) : (
-                  "Complete Payment & Post Job"
-                )}
-              </button>
-            )}
+            <button
+              onClick={processPayment}
+              disabled={!walletAddress || isProcessingPayment}
+              className={`w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition ${(!walletAddress || isProcessingPayment) ? "opacity-70 cursor-not-allowed" : ""}`}
+            >
+              {isProcessingPayment ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing Payment...
+                </span>
+              ) : (
+                "Complete Payment & Post Job"
+              )}
+            </button>
             
             <button
               onClick={resetPaymentFlow}
@@ -1949,10 +1921,10 @@ const PostJobPage = (): JSX.Element => {
   useEffect(() => {
     const checkWalletConnection = async () => {
       try {
-        const address = await getCurrentAddress();
-        if (address) {
-          setWalletAddress(address);
-          console.log("Wallet already connected:", address);
+        const walletInfo = web3Service.getWalletInfo();
+        if (walletInfo && walletInfo.address) {
+          setWalletAddress(walletInfo.address);
+          console.log("Wallet already connected:", walletInfo.address);
         }
       } catch (error) {
         console.error("Error checking wallet connection:", error);
@@ -3106,7 +3078,7 @@ const fetchL2LStats = (l2lId: string) => {
         try {
           const contractAddresses = await learn2earnContractService.getContractAddresses(l2l.network);
           if (!contractAddresses.contractAddress) continue;
-          const provider = await getWeb3Provider();
+          const provider = await web3Service.getWeb3Provider();
           if (!provider) continue;
           const contract = new (window as any).ethers.Contract(
             contractAddresses.contractAddress,
@@ -3145,7 +3117,7 @@ const manualSyncStatuses = async () => {
     try {
       const contractAddresses = await learn2earnContractService.getContractAddresses(l2l.network);
       if (!contractAddresses.contractAddress) continue;
-      const provider = await getWeb3Provider();
+      const provider = await web3Service.getWeb3Provider();
       if (!provider) continue;
       const contract = new (window as any).ethers.Contract(
         contractAddresses.contractAddress,
@@ -3610,7 +3582,7 @@ const manualSyncStatuses = async () => {
             <h2 className="text-xl font-bold text-orange-500 text-center break-words">
               {companyProfile.name || "Company Dashboard"}
             </h2>
-            
+            <WalletButton />
             {/* Navigation */}
             <ul className="space-y-4 flex-grow w-full mt-6">
               <li>
