@@ -162,53 +162,53 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <AdPopup />
 
       {/* Footer */}
-      <footer id="main-footer" className="bg-black text-white py-10 border-t-4 border-orange-500">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-5">
-          <div>
-            <h4 className="text-orange-500 font-bold text-lg mb-4">About Gate33</h4>
-            <p className="text-gray-400 text-sm">
+      <footer id="main-footer" className="bg-black text-white py-6 sm:py-10 border-t-4 border-orange-500">
+        <div className="max-w-6xl mx-auto px-4 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-2 md:grid-cols-5">
+          <div className="col-span-2 sm:col-span-1">
+            <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">About Gate33</h4>
+            <p className="text-gray-400 text-xs sm:text-sm">
               Your trusted partner for exchange listings.
             </p>
           </div>
           <div>
-            <h4 className="text-orange-500 font-bold text-lg mb-4">Quick Links</h4>
-            <nav className="text-gray-400 text-sm">
-              <a href="/jobs" className="block hover:text-orange-500 mb-2">Jobs</a>
-              <a href="/instant-jobs" className="block hover:text-orange-500 mb-2">Instant Jobs</a>
-              <a href="/learn2earn" className="block hover:text-orange-500 mb-2">Learn2Earn</a>
-              <a href="/nft" className="block hover:text-orange-500 mb-2">NFT</a>
-              <a href="/crypto-tools" className="block hover:text-orange-500 mb-2">Crypto Tools</a>
-              <a href="/bitcoin-analysis" className="block hover:text-orange-500 mb-2">Bitcoin Analysis</a>
-              <a href="/donate" className="block hover:text-orange-500 mb-2 font-medium">Donate</a>
+            <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">Quick Links</h4>
+            <nav className="text-gray-400 text-xs sm:text-sm">
+              <a href="/jobs" className="block hover:text-orange-500 mb-1 sm:mb-2">Jobs</a>
+              <a href="/instant-jobs" className="block hover:text-orange-500 mb-1 sm:mb-2">Instant Jobs</a>
+              <a href="/learn2earn" className="block hover:text-orange-500 mb-1 sm:mb-2">Learn2Earn</a>
+              <a href="/nft" className="block hover:text-orange-500 mb-1 sm:mb-2">NFT</a>
+              <a href="/crypto-tools" className="block hover:text-orange-500 mb-1 sm:mb-2">Crypto Tools</a>
+              <a href="/bitcoin-analysis" className="block hover:text-orange-500 mb-1 sm:mb-2">Bitcoin Analysis</a>
+              <a href="/donate" className="block hover:text-orange-500 mb-1 sm:mb-2 font-medium">Donate</a>
             </nav>
           </div>
           <div>
-            <h4 className="text-orange-500 font-bold text-lg mb-4">Services</h4>
-            <nav className="text-gray-400 text-sm">
-              <a href="/seeker-signup" className="block hover:text-orange-500 mb-2">For Job Seekers</a>
-              <a href="/company-register" className="block hover:text-orange-500 mb-2">For Companies</a>
-              <a href="/learn2earn" className="block hover:text-orange-500 mb-2">Learn2Earn</a>
+            <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">Services</h4>
+            <nav className="text-gray-400 text-xs sm:text-sm">
+              <a href="/seeker-signup" className="block hover:text-orange-500 mb-1 sm:mb-2">For Job Seekers</a>
+              <a href="/company-register" className="block hover:text-orange-500 mb-1 sm:mb-2">For Companies</a>
+              <a href="/learn2earn" className="block hover:text-orange-500 mb-1 sm:mb-2">Learn2Earn</a>
             </nav>
           </div>
           <div>
-            <h4 className="text-orange-500 font-bold text-lg mb-4">Contact</h4>
-            <nav className="text-gray-400 text-sm">
-              <a href="/contact" className="block hover:text-orange-500 mb-2">Contact Us</a>
-              <a href="/#about" className="block hover:text-orange-500 mb-2">About</a>
-              <a href="/#services" className="block hover:text-orange-500 mb-2">Services</a>
-              <a href="/#faq" className="block hover:text-orange-500 mb-2">FAQ</a> {/* Added FAQ link */}
+            <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">Contact</h4>
+            <nav className="text-gray-400 text-xs sm:text-sm">
+              <a href="/contact" className="block hover:text-orange-500 mb-1 sm:mb-2">Contact Us</a>
+              <a href="/#about" className="block hover:text-orange-500 mb-1 sm:mb-2">About</a>
+              <a href="/#services" className="block hover:text-orange-500 mb-1 sm:mb-2">Services</a>
+              <a href="/#faq" className="block hover:text-orange-500 mb-1 sm:mb-2">FAQ</a>
             </nav>
           </div>
           <div>
-            <h4 className="text-orange-500 font-bold text-lg mb-4">Socials</h4>
-            <nav className="text-gray-400 text-sm">
-              <a href="https://t.me/gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500 mb-2">Telegram</a>
-              <a href="https://twitter.com/gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500 mb-2">Twitter</a>
+            <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">Socials</h4>
+            <nav className="text-gray-400 text-xs sm:text-sm">
+              <a href="https://t.me/gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500 mb-1 sm:mb-2">Telegram</a>
+              <a href="https://twitter.com/gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500 mb-1 sm:mb-2">Twitter</a>
               <a href="https://linkedin.com/company/gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500">LinkedIn</a>
             </nav>
           </div>
         </div>
-        <div className="mt-8 pt-4 text-center text-gray-500 text-sm">
+        <div className="mt-6 sm:mt-8 pt-3 sm:pt-4 text-center text-gray-500 text-xs sm:text-sm">
           <p>© 2025 Gate33. All Rights Reserved.</p>
         </div>
       </footer>
