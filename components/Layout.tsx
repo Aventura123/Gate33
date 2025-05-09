@@ -155,7 +155,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </nav>
 
       {/* Main Content */}
-      <main className="pt-16">{children}</main>
+      <main className="pt-14 sm:pt-16 px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">{children}</main>
 
       {/* Advertisement Popup */}
       <AdPopup />
