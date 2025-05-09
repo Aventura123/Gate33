@@ -41,6 +41,7 @@ class Web3Service {
   fallbackProvider: ethers.providers.JsonRpcProvider | ethers.providers.InfuraProvider | null = null;
   isInitializing: boolean = false;
   connectionError: string | null = null;
+  wcV2Provider: any = null;
 
   // Network configurations imported from the configuration file
   networks = NETWORK_CONFIG;
@@ -48,6 +49,76 @@ class Web3Service {
   // Inicialize fallback providers
   constructor() {
     this.initializeFallbackProviders();
+  }
+
+  /**
+   * Gets the name of a network from its chainId
+   */
+  private getNetworkNameForChainId(chainId: number): string {
+    // Specific identification for BSC Testnet (97)
+    if (chainId === 97) return 'BSC Testnet';
+    // Other common networks
+    if (chainId === 1) return 'Ethereum Mainnet';
+    if (chainId === 56) return 'Binance Smart Chain';
+    if (chainId === 137) return 'Polygon Mainnet';
+    if (chainId === 43114) return 'Avalanche C-Chain';
+    if (chainId === 10) return 'Optimism';
+    if (chainId === 80001) return 'Polygon Mumbai Testnet';
+    if (chainId === 11155111) return 'Sepolia Testnet';
+    if (chainId === 5) return 'Goerli Testnet';
+    // Check configured network mapping
+    for (const [name, net] of Object.entries(this.networks)) {
+      if (net.chainId === chainId) {
+        return net.name;
+      }
+    }
+    return chainId > 0 ? `Network ${chainId}` : 'Unknown';
+  }
+
+  /**
+   * Listeners para eventos do WalletConnect v2
+   */
+  private setupWalletConnectV2Listeners() {
+    if (!this.wcV2Provider) return;
+    // Remove listeners antigos para evitar duplicidade
+    this.wcV2Provider.removeAllListeners?.('session_delete');
+    this.wcV2Provider.removeAllListeners?.('accountsChanged');
+    this.wcV2Provider.removeAllListeners?.('chainChanged');
+
+    // Listener para desconexão
+    this.wcV2Provider.on?.('session_delete', () => {
+      this.disconnectWallet();
+      window.dispatchEvent(new CustomEvent('web3WalletDisconnected'));
+    });
+
+    // Listener para troca de contas
+    this.wcV2Provider.on?.('accountsChanged', (accounts: string[]) => {
+      if (accounts.length === 0) {
+        this.disconnectWallet();
+        window.dispatchEvent(new CustomEvent('web3WalletDisconnected'));
+      } else {
+        if (this.provider && this.signer) {
+          this.signer = this.provider.getSigner();
+          if (this.walletInfo) {
+            this.walletInfo.address = accounts[0];
+          }
+        }
+        window.dispatchEvent(new CustomEvent('web3AccountChanged', { detail: accounts[0] }));
+      }
+    });
+
+    // Listener para troca de rede
+    this.wcV2Provider.on?.('chainChanged', async (chainId: number | string) => {
+      let numericChainId = typeof chainId === 'string' ? parseInt(chainId, 16) : chainId;
+      this.provider = new ethers.providers.Web3Provider(this.wcV2Provider as any, numericChainId);
+      this.signer = this.provider.getSigner();
+      const network = await this.provider.getNetwork();
+      if (this.walletInfo) {
+        this.walletInfo.chainId = network.chainId;
+        this.walletInfo.networkName = this.getNetworkNameForChainId(network.chainId);
+      }
+      window.dispatchEvent(new CustomEvent('web3NetworkChanged', { detail: this.walletInfo }));
+    });
   }
 
   /**
@@ -212,6 +283,45 @@ class Web3Service {
   }
 
   /**
+   * Connects to WalletConnect v2
+   */
+  async connectWalletConnect(): Promise<WalletInfo> {
+    if (typeof window === "undefined") {
+      throw new Error("WalletConnect can only be used in the browser");
+    }
+    const EthereumProvider = (await import("@walletconnect/ethereum-provider")).default;
+    const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+    if (!projectId) {
+      throw new Error("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set in .env.local");
+    }
+    const chains = [1, 137, 56];
+    this.wcV2Provider = await EthereumProvider.init({
+      projectId,
+      chains,
+      optionalChains: [1, 137, 56],
+      showQrModal: true,
+      rpcMap: {
+        1: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+        137: "https://polygon-rpc.com",
+        56: "https://bsc-dataseed.binance.org/",
+      },
+    });
+    await this.wcV2Provider.enable();
+    this.provider = new ethers.providers.Web3Provider(this.wcV2Provider as any);
+    this.signer = this.provider.getSigner();
+    const address = await this.signer.getAddress();
+    const network = await this.provider.getNetwork();
+    this.walletInfo = {
+      address,
+      chainId: network.chainId,
+      networkName: this.getNetworkNameForChainId(network.chainId)
+    };
+    // Adiciona listeners para eventos do WalletConnect v2
+    this.setupWalletConnectV2Listeners();
+    return this.walletInfo;
+  }
+
+  /**
    * Sets up listeners for network change events
    */
   private setupNetworkChangeListeners() {
@@ -307,105 +417,36 @@ class Web3Service {
   private async getReliableNetworkInfo() {
     let attempts = 0;
     const maxAttempts = 3;
-    
     while (attempts < maxAttempts) {
       try {
-        // Get network information safely
         let network;
-        try {
-          network = await this.provider!.getNetwork();
-          
-          // If the returned chainId is zero, try to get it directly from ethereum
-          if (!network.chainId || network.chainId === 0) {
-            const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
-            const chainId = parseInt(chainIdHex, 16);
-            
-            if (chainId && chainId > 0) {
-              network.chainId = chainId;
-              console.log('ChainId obtained directly from provider:', chainId);
-            } else {
-              // Try other detection methods for common networks
-              if (window.ethereum.networkVersion === '97') {
-                network.chainId = 97; // BSC Testnet
-                network.name = 'bnbt';
-              } else if (window.ethereum.networkVersion === '56') {
-                network.chainId = 56; // BSC Mainnet
-                network.name = 'bnb';
-              }
-            }
-          }
-        } catch (networkError) {
-          console.warn('Error getting network (attempt ' + (attempts + 1) + '):', networkError);
-          
-          // Try to get chainId directly
-          const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
-          const chainId = parseInt(chainIdHex, 16);
-          network = { 
-            chainId: chainId || 0, 
-            name: this.getNetworkNameForChainId(chainId)
-          };
+        if (this.provider) {
+          network = await this.provider.getNetwork();
+        } else {
+          throw new Error('No provider available');
         }
-        
-        // Map the network name
         let networkName = this.getNetworkNameForChainId(network.chainId);
-        
         if (network.chainId > 0) {
-          // Success in network detection
           this.walletInfo = {
             address: await this.signer!.getAddress(),
             chainId: network.chainId,
             networkName
           };
-          
           return this.walletInfo;
         }
-        
-        // If chainId is 0, increase attempt count
         attempts++;
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before next attempt
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
-        console.error('Error getting network information (attempt ' + (attempts + 1) + '):', error);
         attempts++;
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
-    
-    // If we got here, failed to detect the network after several attempts
     this.walletInfo = {
       address: await this.signer!.getAddress(),
       chainId: 0,
       networkName: 'Unknown'
     };
-    
-    console.warn('Could not detect the network correctly after multiple attempts.');
     return this.walletInfo;
-  }
-
-  /**
-   * Gets the name of a network from its chainId
-   */
-  private getNetworkNameForChainId(chainId: number): string {
-    // Specific identification for BSC Testnet (97)
-    if (chainId === 97) return 'BSC Testnet';
-    
-    // Other common networks
-    if (chainId === 1) return 'Ethereum Mainnet';
-    if (chainId === 56) return 'Binance Smart Chain';
-    if (chainId === 137) return 'Polygon Mainnet';
-    if (chainId === 43114) return 'Avalanche C-Chain';
-    if (chainId === 10) return 'Optimism';
-    if (chainId === 80001) return 'Polygon Mumbai Testnet';
-    if (chainId === 11155111) return 'Sepolia Testnet';
-    if (chainId === 5) return 'Goerli Testnet';
-    
-    // Check configured network mapping
-    for (const [name, net] of Object.entries(this.networks)) {
-      if (net.chainId === chainId) {
-        return net.name;
-      }
-    }
-    
-    return chainId > 0 ? `Network ${chainId}` : 'Unknown';
   }
 
   /**

@@ -10,6 +10,7 @@ import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
 import { connectWallet, getCurrentAddress, getWeb3Provider } from "../../services/crypto";
 import { BellIcon } from '@heroicons/react/24/outline';
+import WalletButton from '../../components/WalletButton';
 
 // Function to create a notification for seeker
 async function createSeekerNotification({
@@ -2181,32 +2182,13 @@ const SeekerDashboard = () => {
             <h2 className="text-xl font-semibold text-orange-400 w-full text-center mt-2">{seekerProfile.name || "User"}</h2>
             <p className="text-gray-400 text-sm truncate w-full text-center">{seekerProfile.email}</p>
             {/* Discreet Connect Wallet Button */}
-            {walletAddress ? (
-              <div className="mt-2 mb-4 px-3 py-1 rounded bg-black/30 border border-orange-500/30 text-orange-400 text-xs flex items-center justify-center mx-auto hover:bg-orange-900/20 transition-all">
-                <span className="flex items-center gap-2">
-                  <span className="truncate max-w-[100px]">{walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}</span>
-                  <button
-                    type="button"
-                    onClick={() => setWalletAddress(null)}
-                    className="ml-1 p-0.5 rounded hover:bg-orange-900/30 text-orange-400 hover:text-orange-200 transition"
-                    title="Disconnect Wallet"
-                    aria-label="Disconnect Wallet"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </span>
-              </div>
-            ) : (
-              <button
-                onClick={handleConnectWallet}
-                disabled={isConnectingWallet}
-                className="mt-2 mb-4 px-3 py-1 rounded bg-black/30 border border-orange-500/30 text-orange-400 text-xs flex items-center justify-center mx-auto hover:bg-orange-900/20 transition-all"
-              >
-                {isConnectingWallet ? <span>Connecting...</span> : <span>Connect Wallet</span>}
-              </button>
-            )}
+            <div className="flex justify-center">
+              <WalletButton
+                onConnect={(address) => setWalletAddress(address)}
+                onDisconnect={() => setWalletAddress(null)}
+                className="mt-2 mb-4 px-3 py-1 text-xs"
+              />
+            </div>
           </div>
           {/* Navigation Menu */}
           <nav className="flex-1">

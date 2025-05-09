@@ -18,6 +18,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showWalletOptions, setShowWalletOptions] = useState(false);
 
   useEffect(() => {
     // Verificar se já existe uma carteira conectada
@@ -70,21 +71,39 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     };
   }, [onConnect, onDisconnect]);
 
-  const handleConnect = async () => {
+  const handleConnectMetaMask = async () => {
     setIsLoading(true);
     setError(null);
-
+    setShowWalletOptions(false);
     try {
       const walletInfo = await web3Service.connectWallet();
       setIsConnected(true);
       setWalletAddress(walletInfo.address);
-      
       if (onConnect) {
         onConnect(walletInfo.address);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to connect wallet');
       console.error('Error connecting wallet:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConnectWalletConnect = async () => {
+    setIsLoading(true);
+    setError(null);
+    setShowWalletOptions(false);
+    try {
+      const walletInfo = await web3Service.connectWalletConnect();
+      setIsConnected(true);
+      setWalletAddress(walletInfo.address);
+      if (onConnect) {
+        onConnect(walletInfo.address);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to connect with WalletConnect');
+      console.error('Error connecting WalletConnect:', err);
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +126,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
   };
 
   return (
-    <div className="wallet-button-container">
+    <div className="wallet-button-container relative">
       {error && (
         <div className="text-red-500 text-xs mb-1">
           {error}
@@ -115,13 +134,33 @@ const WalletButton: React.FC<WalletButtonProps> = ({
       )}
       
       {!isConnected ? (
-        <button 
-          onClick={handleConnect}
-          disabled={isLoading}
-          className={`bg-orange-500 px-4 py-2 rounded-lg text-white font-semibold hover:bg-orange-400 transition-colors ${isLoading ? 'opacity-70 cursor-not-allowed' : ''} ${className}`}
-        >
-          {isLoading ? 'Connecting...' : 'Connect Wallet'}
-        </button>
+        <>
+          <button 
+            onClick={() => setShowWalletOptions((v) => !v)}
+            disabled={isLoading}
+            className={`bg-orange-500 px-4 py-2 rounded-lg text-white font-semibold hover:bg-orange-400 transition-colors ${isLoading ? 'opacity-70 cursor-not-allowed' : ''} ${className}`}
+          >
+            {isLoading ? 'Connecting...' : 'Connect Wallet'}
+          </button>
+          {showWalletOptions && !isLoading && (
+            <div className="absolute z-10 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 left-0">
+              <button
+                onClick={handleConnectMetaMask}
+                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-gray-800 rounded-t-lg"
+              >
+                <span role="img" aria-label="MetaMask" className="mr-2">🦊</span>
+                MetaMask
+              </button>
+              <button
+                onClick={handleConnectWalletConnect}
+                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-gray-800 rounded-b-lg border-t border-gray-100"
+              >
+                <span role="img" aria-label="WalletConnect" className="mr-2">🔗</span>
+                WalletConnect
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="flex items-center gap-2">
           <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
