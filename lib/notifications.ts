@@ -11,15 +11,15 @@ interface NotificationData {
 }
 
 /**
- * Cria uma notificação genérica no Firestore.
- * @param notification Dados da notificação.
- * @returns Referência do documento criado.
+ * Creates a generic notification in Firestore.
+ * @param notification Notification data.
+ * @returns Reference to the created document.
  */
 export const createNotification = async (notification: NotificationData) => {
   try {
-    if (!db) throw new Error("Firestore não inicializado");
+    if (!db) throw new Error("Firestore not initialized");
     if (!notification.userId) {
-      console.error("Erro: userId é obrigatório para criar notificações.");
+      console.error("Error: userId is required to create notifications.");
       return null;
     }
 
@@ -28,28 +28,26 @@ export const createNotification = async (notification: NotificationData) => {
       title: notification.title,
       body: notification.body,
       type: notification.type || "general",
-      read: notification.read || false,
-      createdAt: serverTimestamp(),
+      read: notification.read || false,      createdAt: serverTimestamp(),
       data: notification.data || {}
     };
-
+    
     const notificationsRef = collection(db, "notifications");
     const docRef = await addDoc(notificationsRef, notificationData);
-
-    console.log(`Notificação criada com sucesso: ${docRef.id}`);
+    console.log(`Notification created successfully: ${docRef.id}`);
     return docRef;
   } catch (error) {
-    console.error("Erro ao criar notificação:", error);
+    console.error("Error creating notification:", error);
     throw error;
   }
 };
 
 /**
- * Cria uma notificação para mensagens de suporte.
- * @param ticketId ID do ticket de suporte.
- * @param userId ID do usuário (seeker ou company).
- * @param message Conteúdo da mensagem.
- * @param senderName Nome do remetente (suporte).
+ * Creates a notification for support messages.
+ * @param ticketId Support ticket ID.
+ * @param userId User ID (seeker or company).
+ * @param message Message content.
+ * @param senderName Sender name (support).
  */
 export const createSupportMessageNotification = async (
   ticketId: string,
@@ -60,7 +58,7 @@ export const createSupportMessageNotification = async (
   const shortenedMessage = message.length > 50 ? `${message.substring(0, 47)}...` : message;
   await createNotification({
     userId,
-    title: "Nova mensagem de suporte",
+    title: "New support message",
     body: `${senderName}: ${shortenedMessage}`,
     type: "support_message",
     data: { ticketId, message, senderName }
@@ -68,10 +66,10 @@ export const createSupportMessageNotification = async (
 };
 
 /**
- * Cria uma notificação para atualizações de status de tickets.
- * @param ticketId ID do ticket de suporte.
- * @param userId ID do usuário (seeker ou company).
- * @param status Novo status do ticket.
+ * Creates a notification for ticket status updates.
+ * @param ticketId Support ticket ID.
+ * @param userId User ID (seeker or company).
+ * @param status New ticket status.
  */
 export const createTicketStatusNotification = async (
   ticketId: string,
@@ -80,18 +78,18 @@ export const createTicketStatusNotification = async (
 ) => {
   await createNotification({
     userId,
-    title: "Atualização no status do ticket",
-    body: `O status do seu ticket foi atualizado para: ${status}`,
+    title: "Ticket status update",
+    body: `Your ticket status has been updated to: ${status}`,
     type: "ticket_status",
     data: { ticketId, status }
   });
 };
 
 /**
- * Cria uma notificação para tickets aceitos por um agente de suporte.
- * @param ticketId ID do ticket de suporte.
- * @param userId ID do usuário (seeker ou company).
- * @param agentName Nome do agente de suporte.
+ * Creates a notification for tickets accepted by a support agent.
+ * @param ticketId Support ticket ID.
+ * @param userId User ID (seeker or company).
+ * @param agentName Support agent name.
  */
 export const createTicketAcceptedNotification = async (
   ticketId: string,
@@ -100,8 +98,8 @@ export const createTicketAcceptedNotification = async (
 ) => {
   await createNotification({
     userId,
-    title: "Seu ticket foi aceito",
-    body: `O agente de suporte ${agentName} aceitou seu ticket e está pronto para ajudar.`,
+    title: "Your ticket has been accepted",
+    body: `Support agent ${agentName} has accepted your ticket and is ready to help.`,
     type: "ticket_accepted",
     data: { ticketId, agentName }
   });

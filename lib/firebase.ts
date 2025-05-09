@@ -6,7 +6,7 @@ import { getAuth, GoogleAuthProvider, signInWithEmailAndPassword, UserCredential
 import { getFirestore, doc, getDoc, DocumentData, collection, getDocs, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { getStorage, FirebaseStorage, ref, uploadBytes, getDownloadURL, deleteObject, listAll, StorageReference } from 'firebase/storage';
 
-// Configuração do Firebase com informações sensíveis em variáveis de ambiente
+// Firebase configuration with sensitive information in environment variables
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyBUZ-F0kzPxRdlSkBacI2AnlNe8_-BuSZo",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "gate33-b5029.firebaseapp.com",
@@ -17,20 +17,20 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase only once
-console.log("Inicializando Firebase...");
+console.log("Initializing Firebase...");
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-console.log("Firebase inicializado com sucesso");
+console.log("Firebase initialized successfully");
 
 // Initialize Services
-console.log("Inicializando serviços Firebase...");
+console.log("Initializing Firebase services...");
 const auth = getAuth(app);
 const db = getFirestore(app);
 let storage = getStorage(app);
 
 // Ensure the correct bucket is used
-console.log("Atualizando Firebase Storage para usar o bucket correto...");
+console.log("Updating Firebase Storage to use the correct bucket...");
 storage = getStorage(app, `gs://${firebaseConfig.storageBucket}`);
-console.log("Firebase Storage atualizado com sucesso.");
+console.log("Firebase Storage updated successfully.");
 
 // Define a type for the storage error
 interface StorageErrorType {
@@ -41,10 +41,10 @@ interface StorageErrorType {
   stack?: string;
 }
 
-// Adicionar handler para capturar erros
+// Add handler to capture errors
 const handleStorageError = (error: StorageErrorType) => {
   if (!error) {
-    console.error("Firebase não inicializado");
+    console.error("Firebase not initialized");
     return;
   }
 
@@ -55,79 +55,78 @@ const handleStorageError = (error: StorageErrorType) => {
   console.error("Server Response:", error.serverResponse);
   console.error("Error Stack:", error.stack);
   console.error("========================================");
-
-  // Verificar causas comuns e fornecer sugestões mais detalhadas
+  // Check common causes and provide detailed suggestions
   if (error.code === "storage/unauthorized") {
-    console.error("SOLUÇÃO: Verifique as regras de segurança do Firebase Storage. Certifique-se de que a regra permita leitura e escrita para o caminho especificado.");
-    console.error("Exemplo de regra permissiva para teste: service firebase.storage { match /b/{bucket}/o { match /{allPaths=**} { allow read, write: if request.auth != null || true; }}}");
+    console.error("SOLUTION: Check Firebase Storage security rules. Make sure the rule allows read and write access for the specified path.");
+    console.error("Example of permissive rule for testing: service firebase.storage { match /b/{bucket}/o { match /{allPaths=**} { allow read, write: if request.auth != null || true; }}}");
   } else if (error.code === "storage/canceled") {
-    console.error("SOLUÇÃO: Upload foi cancelado. Verifique se há timeout ou se o usuário interrompeu o processo.");
+    console.error("SOLUTION: Upload was canceled. Check for timeout or if the user interrupted the process.");
   } else if (error.code === "storage/unknown") {
-    console.error("SOLUÇÃO: Verifique a conexão de rede, as regras do Firebase Storage e o tamanho do arquivo.");
-    console.error("Tente reiniciar o aplicativo e verificar se o Firebase Storage está operacional na console do Firebase.");
+    console.error("SOLUTION: Check network connection, Firebase Storage rules, and file size.");
+    console.error("Try restarting the application and verify if Firebase Storage is operational in the Firebase console.");
   } else if (error.code === "storage/object-not-found") {
-    console.error("SOLUÇÃO: O arquivo solicitado não existe. Verifique o caminho ou crie o arquivo.");
+    console.error("SOLUTION: The requested file does not exist. Check the path or create the file.");
   } else if (error.code === "storage/quota-exceeded") {
-    console.error("SOLUÇÃO: Cota do Firebase Storage excedida. Atualize para um plano superior ou libere espaço.");
+    console.error("SOLUTION: Firebase Storage quota exceeded. Upgrade to a higher plan or free up space.");
   } else if (error.code === "storage/unauthenticated") {
-    console.error("SOLUÇÃO: Usuário não autenticado. Faça login novamente ou verifique as regras de segurança para permitir acesso anônimo.");
+    console.error("SOLUTION: User not authenticated. Log in again or check security rules to allow anonymous access.");
   } else if (error.code === "storage/invalid-checksum") {
-    console.error("SOLUÇÃO: Problema com o upload. Tente novamente ou reduza o tamanho do arquivo.");
+    console.error("SOLUTION: Problem with the upload. Try again or reduce the file size.");
   } else if (error.code === "storage/server-file-wrong-size") {
-    console.error("SOLUÇÃO: Problema com o tamanho do arquivo. Tente redimensionar a imagem antes do upload.");
+    console.error("SOLUTION: Problem with the file size. Try resizing the image before uploading.");
   }
 };
 
-// Função de diagnóstico avançado para o Firebase Storage
+// Advanced diagnostic function for Firebase Storage
 const diagnoseFBStorage = async () => {
   try {
-    console.log("Iniciando diagnóstico do Firebase Storage...");
+    console.log("Starting Firebase Storage diagnostic...");
     
-    // 1. Verificar se o Firebase está inicializado
+    // 1. Check if Firebase is initialized
     if (!storage) {
-      console.error("Firebase Storage não está inicializado!");
+      console.error("Firebase Storage is not initialized!");
       return {
         status: "error",
-        message: "Firebase Storage não inicializado",
-        suggestions: ["Verifique se as credenciais do Firebase estão corretas", "Verifique se o Firebase está sendo importado corretamente"]
+        message: "Firebase Storage not initialized",
+        suggestions: ["Check if Firebase credentials are correct", "Check if Firebase is being imported correctly"]
       };
     }
     
-    // 2. Tentar uma operação simples - listar arquivos
+    // 2. Try a simple operation - list files
     try {
-      console.log("Tentando listar referências no bucket padrão...");
-      // Esta linha irá falhar se houver problemas de permissão ou conectividade
+      console.log("Attempting to list references in the default bucket...");
+      // This line will fail if there are permission or connectivity issues
       const rootRef = ref(storage, '/');
-      console.log("Referência root criada com sucesso:", rootRef);
+      console.log("Root reference created successfully:", rootRef);
       
-      // Tentar criar uma referência a um arquivo de teste
+      // Try to create a reference to a test file
       const testRef = ref(storage, 'test-connection.txt');
-      console.log("Referência de teste criada com sucesso:", testRef);
+      console.log("Test reference created successfully:", testRef);
       
       return {
         status: "success",
-        message: "Firebase Storage parece estar funcionando corretamente",
+        message: "Firebase Storage appears to be working correctly",
         storage: storage,
         rootRef: rootRef
       };
     } catch (listError) {
-      console.error("Erro ao tentar operação no Firebase Storage:", listError);
+      console.error("Error when trying operation in Firebase Storage:", listError);
       return {
         status: "error",
-        message: "Erro ao executar operação no Firebase Storage",
+        message: "Error executing operation in Firebase Storage",
         error: listError,
         suggestions: [
-          "Verifique sua conexão de internet",
-          "Verifique as regras de segurança do Firebase Storage",
-          "Verifique se o bucket do Firebase Storage existe e está acessível"
+          "Check your internet connection",
+          "Check Firebase Storage security rules",
+          "Check if the Firebase Storage bucket exists and is accessible"
         ]
       };
     }
   } catch (error) {
-    console.error("Erro no diagnóstico do Firebase Storage:", error);
+    console.error("Error in Firebase Storage diagnostic:", error);
     return {
       status: "error",
-      message: "Erro ao executar diagnóstico",
+      message: "Error executing diagnostic",
       error: error
     };
   }
