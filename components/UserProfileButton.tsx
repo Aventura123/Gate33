@@ -18,6 +18,17 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
     type: 'seeker' | 'company' | 'admin' | 'support';
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Detectar se está em versão mobile para ajustar o comportamento do dropdown
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Reference for the dropdown container to detect mouse leave
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -282,18 +293,18 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
   if (!userInfo) {
     return null;
   }
-
   return (
     <div 
       className={`relative ${className}`}
       ref={dropdownRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={isMobile ? undefined : handleMouseEnter}
+      onMouseLeave={isMobile ? undefined : handleMouseLeave}
     >
       <div
         className="flex items-center gap-2 cursor-pointer"
+        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
       >
-        <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-orange-500">
+        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-orange-500">
           <img
             src={userInfo.photo}
             alt={`${userInfo.name}'s profile`}
@@ -305,16 +316,16 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
             }}
           />
         </div>
-        <span className="hidden md:inline text-sm font-medium text-white">
+        <span className={`text-sm font-medium text-white ${isMobile ? 'inline' : 'hidden md:inline'}`}>
           {userInfo.name.length > 12 ? `${userInfo.name.substring(0, 12)}...` : userInfo.name}
         </span>
       </div>
       
       {isDropdownOpen && (
         <div 
-          className="absolute right-0 mt-2 w-48 bg-black/95 border border-gray-700 rounded-md shadow-lg py-1 z-50"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
+          className={`${isMobile ? 'relative left-0 w-full' : 'absolute right-0 w-48'} mt-2 bg-black/95 border border-gray-700 rounded-md shadow-lg py-1 z-50`}
+          onMouseEnter={isMobile ? undefined : handleMouseEnter}
+          onMouseLeave={isMobile ? undefined : handleMouseLeave}
         >
           <div className="px-4 py-2 border-b border-gray-700">
             <p className="text-orange-400 font-semibold">{userInfo.name}</p>

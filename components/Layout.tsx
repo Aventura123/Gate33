@@ -96,69 +96,61 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       {/* Mobile Navigation Panel (Slides from right) */}
       <nav
-        className={`${
-          menuOpen ? 'translate-x-0' : 'translate-x-full'
-        } fixed top-0 right-0 h-full w-64 bg-black/95 z-50 p-4 transition-transform duration-300 ease-in-out md:hidden`}
+        className={`fixed top-0 right-0 h-full w-72 max-w-full bg-black/95 z-50 transition-transform duration-300 ease-in-out md:hidden overflow-y-auto ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        style={{ minWidth: 'min(85vw, 300px)' }}
       >
         {/* Close Button inside the panel */}
         <button
           className="absolute top-4 right-4 text-orange-500 focus:outline-none text-2xl"
-          onClick={() => setMenuOpen(false)} /* Closes the menu */
+          onClick={() => setMenuOpen(false)}
         >
-          &times; {/* 'X' character for close */}
+          &times;
         </button>
-        <div className="mt-12 flex flex-col gap-4"> {/* Add margin-top to avoid overlap with close button */}
+        <div className="mt-12 flex flex-col px-3 pb-6">
           {/* Principais páginas */}
-          <a href="/" className="block px-4 py-2 hover:text-orange-500" onClick={() => setMenuOpen(false)}>Home</a>
-          <a href="/#about" className="block hover:text-orange-500 mb-2" onClick={() => setMenuOpen(false)}>About</a>
-          <a href="/#services" className="block hover:text-orange-500 mb-2" onClick={() => setMenuOpen(false)}>Services</a>
+          <a href="/" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Home</a>
+          <a href="/#about" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>About</a>
+          <a href="/#services" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Services</a>
           
-          {/* Separador visual */}
-          <div className="border-t border-gray-700 my-1"></div>
+          <div className="border-t border-gray-700 my-0.5"></div>
           
-          {/* Funcionalidades de emprego e oportunidades */}
-          <a href="/jobs" className="block px-4 py-2 hover:text-orange-500" onClick={() => setMenuOpen(false)}>Jobs</a>
-          <a href="/instant-jobs" className="block px-4 py-2 hover:text-orange-500" onClick={() => setMenuOpen(false)}>Instant Jobs</a>
-          <a href="/learn2earn" className="block px-4 py-2 hover:text-orange-500" onClick={() => setMenuOpen(false)}>Learn2Earn</a>
+          <a href="/jobs" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Jobs</a>
+          <a href="/instant-jobs" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Instant Jobs</a>
+          <a href="/learn2earn" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Learn2Earn</a>
           
-          {/* Separador visual */}
-          <div className="border-t border-gray-700 my-1"></div>
+          <div className="border-t border-gray-700 my-0.5"></div>
           
-          {/* Ferramentas e recursos */}
-          <a href="/nft" className="block px-4 py-2 hover:text-orange-500" onClick={() => setMenuOpen(false)}>NFT</a>
-          <a href="/crypto-tools" className="block px-4 py-2 hover:text-orange-500" onClick={() => setMenuOpen(false)}>Crypto Tools</a>
-          <a href="/bitcoin-analysis" className="block px-4 py-2 hover:text-orange-500" onClick={() => setMenuOpen(false)}>Bitcoin Analysis</a>
-          <a href="/donate" className="block px-4 py-2 hover:text-orange-500 font-medium" onClick={() => setMenuOpen(false)}>Donate</a>
+          <a href="/nft" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>NFT</a>
+          <a href="/crypto-tools" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Crypto Tools</a>
+          <a href="/bitcoin-analysis" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Bitcoin Analysis</a>
+          <a href="/donate" className="block py-1.5 text-base hover:text-orange-500 font-medium" onClick={() => setMenuOpen(false)}>Donate</a>
+          <a href="/#faq" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>FAQ</a>
+          <a href="/#contact" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Contact</a>
           
-          {/* Páginas adicionais */}
-          <a href="/#faq" className="block hover:text-orange-500 mb-2" onClick={() => setMenuOpen(false)}>FAQ</a>
-          <a href="/#contact" className="block hover:text-orange-500" onClick={() => setMenuOpen(false)}>Contact</a>
+          <div className="border-t border-gray-700 my-0.5"></div>
           
-          {/* Separador para os botões de login/signup */}
-          <div className="border-t border-gray-700 my-2"></div>
-          
-          {/* Mostrar o botão de perfil quando logado, ou os botões de login/signup quando não */}
+          {/* Botões de login ou componente de perfil */}
           {isLoggedIn ? (
-            <div className="px-4 py-2">
+            <div className="pt-1 -ml-1">
               <UserProfileButton />
             </div>
           ) : (
-            <>
+            <div className="flex flex-col gap-1 pt-1">
               <a 
                 href="/login" 
-                className="mx-4 my-1 px-4 py-2 border border-orange-500 text-orange-500 rounded text-center hover:bg-orange-500 hover:text-white transition-colors" 
+                className="block w-full px-3 py-1.5 border border-orange-500 text-orange-500 rounded text-center hover:bg-orange-500 hover:text-white transition-colors" 
                 onClick={() => setMenuOpen(false)}
               >
                 Login
               </a>
               <a 
                 href="/seeker-signup" 
-                className="mx-4 my-1 px-4 py-2 bg-orange-500 text-white rounded text-center hover:bg-orange-600 transition-colors" 
+                className="block w-full px-3 py-1.5 bg-orange-500 text-white rounded text-center hover:bg-orange-600 transition-colors" 
                 onClick={() => setMenuOpen(false)}
               >
                 Signup
               </a>
-            </>
+            </div>
           )}
         </div>
       </nav>
