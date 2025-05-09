@@ -61,8 +61,7 @@ const CompanyRegisterPage: React.FC = () => {
     try {
       if (!db) {
         throw new Error("Database is not initialized.");
-      }
-      // Check for duplicate company by name, email, or taxId
+      }      // Check for duplicate company by name, email, or taxId
       const companiesRef = collection(db, "pendingCompanies");
       const q = query(
         companiesRef,
@@ -76,27 +75,69 @@ const CompanyRegisterPage: React.FC = () => {
         companiesRef,
         where("taxId", "==", formData.taxId),
       );
-      const [snap1, snap2, snap3] = await Promise.all([
+      // Check also for responsible person's contact info
+      const q7 = query(
+        companiesRef,
+        where("responsibleEmail", "==", formData.responsibleEmail),
+      );
+      const q8 = query(
+        companiesRef,
+        where("responsiblePhone", "==", formData.responsiblePhone),
+      );
+      
+      const [snap1, snap2, snap3, snap7, snap8] = await Promise.all([
         getDocs(q),
         getDocs(q2),
-        getDocs(q3)
+        getDocs(q3),
+        getDocs(q7),
+        getDocs(q8)
       ]);
+      
       if (!snap1.empty || !snap2.empty || !snap3.empty) {
-        setMessage("A company with the same name, email, or tax ID is already registered and pending approval.");
+        setMessage("ERROR: A company with the same name, email, or tax ID is already registered and pending approval.");
         return;
       }
+      
+      // Check if the responsible person is already registered
+      if (!snap7.empty) {
+        setMessage("ERROR: An account with the same responsible person's email already exists. Please use forgot password to recover access.");
+        return;
+      }
+      
+      if (!snap8.empty) {
+        setMessage("ERROR: An account with the same responsible person's phone number already exists. Please use forgot password to recover access.");
+        return;
+      }
+      
       // Optionally, check also in approved companies
       const approvedRef = collection(db, "companies");
       const q4 = query(approvedRef, where("companyName", "==", formData.companyName));
       const q5 = query(approvedRef, where("email", "==", formData.email));
       const q6 = query(approvedRef, where("taxId", "==", formData.taxId));
-      const [snap4, snap5, snap6] = await Promise.all([
+      const q9 = query(approvedRef, where("responsibleEmail", "==", formData.responsibleEmail));
+      const q10 = query(approvedRef, where("responsiblePhone", "==", formData.responsiblePhone));
+      
+      const [snap4, snap5, snap6, snap9, snap10] = await Promise.all([
         getDocs(q4),
         getDocs(q5),
-        getDocs(q6)
+        getDocs(q6),
+        getDocs(q9),
+        getDocs(q10)
       ]);
+      
       if (!snap4.empty || !snap5.empty || !snap6.empty) {
-        setMessage("A company with the same name, email, or tax ID is already approved and registered.");
+        setMessage("ERROR: A company with the same name, email, or tax ID is already approved and registered.");
+        return;
+      }
+      
+      // Check if the responsible person is already registered in approved companies
+      if (!snap9.empty) {
+        setMessage("ERROR: An account with the same responsible person's email already exists. Please use forgot password to recover access.");
+        return;
+      }
+      
+      if (!snap10.empty) {
+        setMessage("ERROR: An account with the same responsible person's phone number already exists. Please use forgot password to recover access.");
         return;
       }
       // Add document to pendingCompanies
@@ -167,12 +208,24 @@ const CompanyRegisterPage: React.FC = () => {
               <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
               <input type="password" name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
             </div>
-            <textarea name="comments" placeholder="Observations / Comments (optional)" value={formData.comments} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm mt-2" rows={3} />
-            <div className="flex flex-col mt-2">
+            <textarea name="comments" placeholder="Observations / Comments (optional)" value={formData.comments} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm mt-2" rows={3} />            <div className="flex flex-col mt-2">
               <label className="text-sm font-medium text-gray-700 mb-1">Official Document (optional, PDF or image)</label>
               <input type="file" name="docFile" accept="application/pdf,image/*" onChange={handleDocFileChange} className="p-2 border rounded text-black bg-white text-sm" />
             </div>
-            {message && <p className="text-green-600 text-sm mt-2">{message}</p>}
+            {message && (
+              <div className="mt-2">
+                {message.startsWith("ERROR:") ? (
+                  <>
+                    <p className="text-red-600 text-sm">{message.replace("ERROR: ", "")}</p>
+                    <a href="/forgot-password" className="text-orange-500 text-sm hover:underline">
+                      Click here to recover your password
+                    </a>
+                  </>
+                ) : (
+                  <p className="text-green-600 text-sm">{message}</p>
+                )}
+              </div>
+            )}
             <button type="submit" className="w-full bg-orange-500 text-white p-3 rounded font-bold hover:bg-orange-600 mt-4">Register</button>
           </div>
         </form>
