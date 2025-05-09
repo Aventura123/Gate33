@@ -243,6 +243,7 @@ const SeekerDashboard = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [seekerId, setSeekerId] = useState("");
   const [applications, setApplications] = useState<JobApplication[]>([]); // State for applications
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Add state for mobile menu
   const [seekerProfile, setSeekerProfile] = useState<SeekerProfile>({
     id: "", // Initialize id
     name: "",
@@ -2103,11 +2104,44 @@ const SeekerDashboard = () => {
     
   }, [seekerId, walletAddress, db]);
 
-  return (
-    <Layout>
-      <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex">
-        {/* Sidebar */}
-        <aside className="w-full md:w-1/4 bg-black/70 p-6 flex flex-col">
+  // Handle mobile menu toggle
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  // Handle tab change with automatic menu close on mobile
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (isMobile) {
+      setMobileMenuOpen(false); // Close menu after tab selection on mobile
+    }
+  };
+
+  return (    <Layout>
+      <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex relative">
+        {/* Mobile menu toggle button */}
+        {isMobile && (
+          <button 
+            className="fixed top-20 left-4 z-50 bg-orange-500 text-white p-2 rounded-full shadow-lg"
+            onClick={toggleMobileMenu}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+        )}
+        
+        {/* Sidebar - Changes for mobile responsiveness */}
+        <aside 
+          className={`${isMobile ? 'fixed left-0 top-0 h-full z-40 transform transition-transform duration-300 ease-in-out ' + (mobileMenuOpen ? 'translate-x-0' : '-translate-x-full') : 'relative'} w-full md:w-1/4 bg-black/70 p-6 flex flex-col`}
+        >
           {/* Profile Photo Section */}
           <div className="relative flex flex-col items-center mb-6">
             <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
@@ -2180,7 +2214,7 @@ const SeekerDashboard = () => {
               <li>
                 <button
                   className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "myProfile" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
-                  onClick={() => setActiveTab("myProfile")}
+                  onClick={() => handleTabChange("myProfile")}
                 >
                   My Profile
                 </button>
@@ -2188,7 +2222,7 @@ const SeekerDashboard = () => {
               <li>
                 <button
                   className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "myApplications" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
-                  onClick={() => setActiveTab("myApplications")}
+                  onClick={() => handleTabChange("myApplications")}
                 >
                   My Applications
                 </button>
@@ -2196,7 +2230,7 @@ const SeekerDashboard = () => {
               <li>
                 <button
                   className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
-                  onClick={() => setActiveTab("instantJobs")}
+                  onClick={() => handleTabChange("instantJobs")}
                 >
                   Instant Jobs
                 </button>
@@ -2204,7 +2238,7 @@ const SeekerDashboard = () => {
               <li>
                 <button
                   className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "settings" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
-                  onClick={() => setActiveTab("settings")}
+                  onClick={() => handleTabChange("settings")}
                 >
                   Settings
                 </button>
@@ -2212,7 +2246,7 @@ const SeekerDashboard = () => {
               <li>
                 <button
                   className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "support" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
-                  onClick={() => setActiveTab("support")}
+                  onClick={() => handleTabChange("support")}
                 >
                   Support
                 </button>
