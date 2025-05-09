@@ -96,8 +96,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       {/* Mobile Navigation Panel (Slides from right) */}
       <nav
-        className={`fixed top-0 right-0 h-full w-72 max-w-full bg-black/95 z-50 transition-transform duration-300 ease-in-out md:hidden overflow-y-auto ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}
-        style={{ minWidth: 'min(85vw, 300px)' }}
+        className={`fixed top-0 right-0 h-full w-72 max-w-full bg-black/95 z-50 transition-transform duration-300 ease-in-out md:hidden overflow-y-auto mobile-nav-panel ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Close Button inside the panel */}
         <button

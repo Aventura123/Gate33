@@ -30,6 +30,11 @@ body {
   @apply bg-black text-white;
 }
 
+/* Mobile Navigation Panel */
+.mobile-nav-panel {
+  min-width: min(85vw, 300px);
+}
+
 /* Accessibility Improvements */
 :focus {
   outline: 2px solid #ff9800;
