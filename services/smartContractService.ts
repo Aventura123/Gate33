@@ -2,6 +2,7 @@ import { ethers } from "ethers";
 import { db } from "../lib/firebase";
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import { web3Service } from "./web3Service";
+import RPC_URLS, { getRpcUrl } from "../config/rpcUrls";
 
 class SmartContractService {
   private provider: ethers.providers.Web3Provider | null = null;
@@ -1256,34 +1257,7 @@ class SmartContractService {
    * @param amount Valor a ser pago
    * @param companyId ID da empresa (usado como identificador adicional no contrato)
    */  // Helper function to normalize network names to match USDT_ADDRESSES keys
-  private normalizeNetworkName(networkName: string): string {
-    // Convert to lowercase first
-    let normalized = networkName.toLowerCase();
-    
-    // Remove "mainnet" suffix if present
-    normalized = normalized.replace(" mainnet", "");
-    
-    // Handle specific network name mappings
-    if (normalized.includes("binance") || normalized.includes("bsc")) {
-      return "binance";
-    } else if (normalized.includes("ethereum") || normalized === "eth") {
-      return "ethereum";
-    } else if (normalized.includes("polygon") || normalized.includes("matic")) {
-      return "polygon";
-    } else if (normalized.includes("avalanche") || normalized.includes("avax")) {
-      return "avalanche";
-    } else if (normalized.includes("arbitrum")) {
-      return "arbitrum";
-    } else if (normalized.includes("optimism")) {
-      return "optimism";
-    } else if (normalized.includes("mumbai")) {
-      return "mumbai";
-    } else if (normalized.includes("testnet") && normalized.includes("binance")) {
-      return "binanceTestnet";
-    }
-    
-    return normalized;
-  }
+  // Removed duplicate implementation of normalizeNetworkName
 
   async processJobPaymentWithUSDT(planId: string, amount: number, companyId: string, forcedNetwork?: string) {
     try {
@@ -1296,30 +1270,73 @@ class SmartContractService {
         throw new Error("O valor do plano é inválido. Verifique se o plano está sincronizado corretamente com o banco de dados.");
       }
       
-      // 2. Inicializar Web3 se necessário
-      if (!this.provider || !this.signer) {
-        const initialized = await this.init();
-        if (!initialized) throw new Error("Web3 não está disponível");
+      // 2. Inicializar Web3
+      let provider;
+      let signer;
+      
+      // If using forced network, create a custom provider with appropriate RPC URL
+      if (forcedNetwork) {
+        const normalizedNetworkName = this.normalizeNetworkName(forcedNetwork);
+        console.log(`Using forced network: ${forcedNetwork} (normalized to: ${normalizedNetworkName})`);
+        
+        // Use the helper method to create a provider that prioritizes public RPC endpoints
+        provider = this.createNetworkProvider(normalizedNetworkName);
+        if (!provider) {
+          throw new Error(`Não foi possível criar um provedor para a rede: ${forcedNetwork}`);
+        }
+        
+        // Try to get signer from web3Service
+        if (web3Service.signer) {
+          signer = web3Service.signer;
+          console.log("Using signer from web3Service");
+        } else if (typeof window !== 'undefined' && window.ethereum) {
+          // Fallback to window.ethereum
+          try {
+            const tempProvider = new ethers.providers.Web3Provider(window.ethereum);
+            signer = tempProvider.getSigner();
+            console.log("Using signer from window.ethereum");
+          } catch (err) {
+            console.error("Failed to get signer from window.ethereum:", err);
+            throw new Error("Unable to connect to wallet. Please ensure your wallet is properly connected.");
+          }
+        } else {
+          throw new Error("No wallet connected. Please connect your wallet to continue.");
+        }
+      } else {
+        // Use standard initialization
+        if (!this.provider || !this.signer) {
+          const initialized = await this.init();
+          if (!initialized) throw new Error("Web3 não está disponível");
+        }
+        provider = this.provider;
+        signer = this.signer;
       }
 
-      if (!this.signer) {
-        throw new Error("Carteira não conectada ou signer não disponível");
+      // Final check for provider and signer
+      if (!provider || !signer) {
+        throw new Error("Falha ao inicializar conexão com blockchain. Verifique se sua carteira está conectada.");
       }
       
       // 3. Obter informações da rede e carteira
       let networkName, network;
-      if (forcedNetwork) {
-        // Normalize the forced network name to match our USDT_ADDRESSES keys
-        networkName = this.normalizeNetworkName(forcedNetwork);
-        console.log(`Using forced network: ${forcedNetwork} (normalized to: ${networkName})`);
-        network = { chainId: null };
-      } else {
-        network = await this.provider!.getNetwork();
-        networkName = this.getNetworkName(network.chainId);
-      }
-      const walletAddress = await this.signer.getAddress();
+      let walletAddress;
       
-      console.log(`Processando pagamento em USDT na rede: ${networkName} (${network.chainId}) a partir da carteira: ${walletAddress}`);
+      try {
+        if (forcedNetwork) {
+          networkName = this.normalizeNetworkName(forcedNetwork);
+          network = { chainId: null };
+          walletAddress = await signer.getAddress();
+        } else {
+          network = await provider.getNetwork();
+          networkName = this.getNetworkName(network.chainId);
+          walletAddress = await signer.getAddress();
+        }
+        
+        console.log(`Processando pagamento em USDT na rede: ${networkName} (${network.chainId}) a partir da carteira: ${walletAddress}`);
+      } catch (error) {
+        console.error("Error getting network or wallet information:", error);
+        throw new Error("Falha ao obter informações da rede ou carteira. Verifique sua conexão e tente novamente.");
+      }
       
       // 4. Obter detalhes do plano para validar
       const planDoc = await getDoc(doc(db, "jobPlans", planId));
@@ -1328,27 +1345,25 @@ class SmartContractService {
       }
       
       const planData = planDoc.data();
-      const planPrice = planData.price;
       
-      // 5. Verificar se este plano aceita USDT (currency deve ser USDT)
+      // 5. Verificar se este plano aceita USDT
       if (planData.currency.toUpperCase() !== 'USDT') {
         throw new Error(`Este plano não aceita pagamento em USDT. Moeda requerida: ${planData.currency}`);
       }
-        // 6. Verificar se a rede atual suporta USDT
+      
+      // 6. Verificar se a rede atual suporta USDT
       let normalizedNetworkName = networkName ? this.normalizeNetworkName(networkName) : null;
       if (!normalizedNetworkName || !this.USDT_ADDRESSES[normalizedNetworkName]) {
         throw new Error(`A rede atual (${networkName || 'desconhecida'}) não tem suporte para USDT. Conecte-se a uma dessas redes: ${Object.keys(this.USDT_ADDRESSES).join(', ')}`);
       }
       
-      // Não vamos verificar se networkCurrency === planCurrency pois o USDT é um token que existe em várias redes
-      // A verificação relevante aqui é se o USDT existe na rede atual, o que já foi feito acima
-      
-      // 7. Carregar o endereço do contrato com base na rede
+      // 7. Carregar o endereço do contrato
       await this.loadContractAddress(forcedNetwork);
       if (!this.contractAddress) {
         throw new Error(`Nenhum contrato configurado para a rede: ${networkName || 'desconhecida'}`);
       }
-        // 8. Obter o endereço do token USDT na rede atual
+      
+      // 8. Obter o endereço do token USDT na rede atual
       const usdtAddress = this.USDT_ADDRESSES[normalizedNetworkName];
       if (!usdtAddress) {
         throw new Error(`Endereço USDT não encontrado para a rede ${networkName} (normalizado para: ${normalizedNetworkName})`);
@@ -1361,155 +1376,292 @@ class SmartContractService {
         "function balanceOf(address account) public view returns (uint256)",
         "function decimals() public view returns (uint8)"
       ];
-      
-      // 10. Criar instância do contrato de token
-      const tokenContract = new ethers.Contract(usdtAddress, tokenABI, this.signer);
-      
-      // 11. Verificar o saldo da carteira (USDT)
-      const decimals = await tokenContract.decimals();
-      const balance = await tokenContract.balanceOf(walletAddress);
-      const formattedBalance = ethers.utils.formatUnits(balance, decimals);
-      
-      if (parseFloat(formattedBalance) < amount) {
-        throw new Error(`Saldo insuficiente de USDT. Você tem ${formattedBalance} USDT, mas precisa de ${amount} USDT.`);
-      }
-      
-      console.log(`Saldo de USDT disponível: ${formattedBalance}`);
-      
-      // 12. Converter o valor para a unidade correta (USDT geralmente usa 6 casas decimais, não 18)
-      const amountInTokenUnits = ethers.utils.parseUnits(amount.toString(), decimals);
-      
-      // 13. Verificar allowance (permissão para o contrato gastar tokens)
-      const allowance = await tokenContract.allowance(walletAddress, this.contractAddress);
-      
-      // 14. Se o allowance for menor que o valor, solicitar aprovação
-      if (allowance.lt(amountInTokenUnits)) {
-        console.log(`Realizando approve de ${amount} USDT para o contrato ${this.contractAddress}`);
-        const approveTx = await tokenContract.approve(this.contractAddress, amountInTokenUnits);
-        const approveReceipt = await approveTx.wait();
+        try {
+        // 10. Criar instância do contrato de token
+        const tokenContract = new ethers.Contract(usdtAddress, tokenABI, signer);
         
-        console.log(`Aprovação realizada: ${approveReceipt.transactionHash}`);
-      } else {
-        console.log(`Allowance já é suficiente (${ethers.utils.formatUnits(allowance, decimals)} USDT)`);
+        // 11. Verificar o saldo da carteira (USDT) com tratamento de erros
+        console.log(`Checking USDT balance at address: ${usdtAddress}`);
+          // Get decimals with timeout and fallback to default value if needed
+        let decimals;
+        try {
+          // Use Promise.race to implement a timeout
+          decimals = await Promise.race([
+            tokenContract.decimals(),
+            new Promise<never>((_, reject) => setTimeout(() => 
+              reject(new Error("Timeout getting USDT decimals")), 5000))
+          ]);
+          console.log(`USDT decimals: ${decimals}`);
+        } catch (decimalError: any) {
+          console.warn("Error getting USDT decimals, using default value of 6:", decimalError);
+          decimals = 6; // Default for USDT on most networks
+        }
+          // Get balance with timeout and error handling
+        let balance;
+        try {
+          // Use Promise.race to implement a timeout
+          balance = await Promise.race([
+            tokenContract.balanceOf(walletAddress),
+            new Promise<never>((_, reject) => setTimeout(() => 
+              reject(new Error("Timeout getting USDT balance")), 7000))
+          ]);
+          const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+          
+          if (parseFloat(formattedBalance) < amount) {
+            throw new Error(`Saldo insuficiente de USDT. Você tem ${formattedBalance} USDT, mas precisa de ${amount} USDT.`);
+          }
+          
+          console.log(`Saldo de USDT disponível: ${formattedBalance}`);
+        } catch (balanceError: any) {
+          console.error("Error checking USDT balance:", balanceError);
+          if (balanceError.message && balanceError.message.includes("Timeout")) {
+            throw new Error("Tempo limite excedido ao verificar saldo USDT. A rede pode estar congestionada. Por favor, tente novamente.");
+          } else if (balanceError.message && balanceError.message.includes("Saldo insuficiente")) {
+            throw balanceError; // Re-throw insufficient balance errors
+          } else {
+            throw new Error(`Erro ao verificar saldo USDT: ${balanceError.message || "Erro desconhecido"}`);
+          }
+        }
+        
+        // 12. Converter o valor para a unidade correta
+        const amountInTokenUnits = ethers.utils.parseUnits(amount.toString(), decimals);
+        
+        // 13. Verificar allowance (permissão para o contrato gastar tokens)
+        const allowance = await tokenContract.allowance(walletAddress, this.contractAddress);
+        
+        // 14. Se o allowance for menor que o valor, solicitar aprovação
+        if (allowance.lt(amountInTokenUnits)) {
+          console.log(`Realizando approve de ${amount} USDT para o contrato ${this.contractAddress}`);
+          const approveTx = await tokenContract.approve(this.contractAddress, amountInTokenUnits);
+          const approveReceipt = await approveTx.wait();
+          
+          console.log(`Aprovação realizada: ${approveReceipt.transactionHash}`);
+        } else {
+          console.log(`Allowance já é suficiente (${ethers.utils.formatUnits(allowance, decimals)} USDT)`);
+        }
+        
+        // 15. ABI para o método de pagamento com token
+        const contractABI = [
+          "function processTokenPaymentWithFee(address tokenAddress, address recipient, uint256 amount) external returns (bool)",
+          "function processTokenPayment(address tokenAddress, string memory planId, string memory companyId, uint256 amount) external returns (bool)"
+        ];
+        
+        // 16. Criar instância do contrato de pagamento
+        const paymentContract = new ethers.Contract(this.contractAddress, contractABI, signer);
+        
+        // 17. Endereço do destinatário principal (mainWallet)
+        const settingsCollection = collection(db, "settings");
+        const settingsDoc = await getDoc(doc(settingsCollection, "paymentConfig"));
+        let recipientAddress = "";
+        
+        if (settingsDoc.exists() && settingsDoc.data().mainWallet) {
+          recipientAddress = settingsDoc.data().mainWallet;
+          console.log(`Usando mainWallet como destinatário principal: ${recipientAddress}`);
+        } else {
+          // Se não encontrar, usar endereço padrão do arquivo de configuração
+          try {
+            const configModule = await import('../config/paymentConfig');
+            recipientAddress = configModule.PAYMENT_RECEIVER_ADDRESS;
+          } catch (e) {
+            recipientAddress = "0x0000000000000000000000000000000000000000"; // Fallback address
+          }
+          console.log(`Nenhuma carteira configurada no Firestore, usando endereço padrão: ${recipientAddress}`);
+        }
+        
+        if (!recipientAddress) {
+          throw new Error("Endereço do destinatário não está configurado");
+        }
+        
+        // 18. Tentar primeiro chamar processTokenPayment com os IDs (método mais recente)
+        try {
+          console.log(`Tentando processTokenPayment com planId=${planId}, companyId=${companyId}`);
+          const tx = await paymentContract.processTokenPayment(
+            usdtAddress,
+            planId,
+            companyId,
+            amountInTokenUnits,
+            { gasLimit: ethers.utils.hexlify(500000) }
+          );
+          
+          const receipt = await tx.wait();
+          console.log(`Transação confirmada: ${receipt.transactionHash}`);
+          
+          return {
+            transactionHash: receipt.transactionHash,
+            blockNumber: receipt.blockNumber,
+            success: true,
+            tokenAddress: usdtAddress,
+            recipientAddress: "Contract Distribution",
+            amount: amount,
+            currency: 'USDT'
+          };
+        } catch (methodError) {
+          // Se processTokenPayment falhar, tentar o método antigo processTokenPaymentWithFee
+          console.log("Método processTokenPayment falhou, tentando processTokenPaymentWithFee", methodError);
+          
+          console.log(`Enviando transação para contrato ${this.contractAddress}`);
+          console.log(`Parâmetros: tokenAddress=${usdtAddress}, recipient=${recipientAddress}, amount=${amountInTokenUnits.toString()}`);
+          
+          const tx = await paymentContract.processTokenPaymentWithFee(
+            usdtAddress,
+            recipientAddress,
+            amountInTokenUnits,
+            { gasLimit: ethers.utils.hexlify(500000) }
+          );
+          
+          const receipt = await tx.wait();
+          console.log(`Transação confirmada: ${receipt.transactionHash}`);
+          
+          return {
+            transactionHash: receipt.transactionHash,
+            blockNumber: receipt.blockNumber,
+            success: true,
+            tokenAddress: usdtAddress,
+            recipientAddress: recipientAddress,
+            amount: amount,
+            currency: 'USDT'
+          };
+        }
+      } catch (error: any) {
+        // Melhorar a mensagem de erro para problemas comuns
+        if (error.message && error.message.includes("invalid project id")) {
+          console.error("Provider error - invalid project ID:", error);
+          throw new Error("Erro de configuração do provedor blockchain. Por favor, entre em contato com o suporte.");
+        } else if (error.message && error.message.includes("user rejected transaction")) {
+          throw new Error("Transação rejeitada pelo usuário. Por favor, tente novamente e confirme a transação em sua carteira.");
+        } else {
+          console.error("Erro detalhado ao processar pagamento com USDT:", error);
+          throw error;
+        }
       }
-      
-      // 15. ABI para o método de pagamento com token
-      const contractABI = [
-        "function processTokenPaymentWithFee(address tokenAddress, address recipient, uint256 amount) external returns (bool)"
-      ];
-      
-      // 16. Criar instância do contrato de pagamento
-      const paymentContract = new ethers.Contract(this.contractAddress, contractABI, this.signer);
-      
-      // 17. Endereço do destinatário principal (mainWallet)
-      // Vamos obter do Firestore, agora dependendo exclusivamente do mainWallet
-      const settingsCollection = collection(db, "settings");
-      const settingsDoc = await getDoc(doc(settingsCollection, "paymentConfig"));
-      let recipientAddress = "";
-      
-      // Obter apenas o mainWallet, pois o receiverAddress foi removido
-      if (settingsDoc.exists() && settingsDoc.data().mainWallet) {
-        recipientAddress = settingsDoc.data().mainWallet;
-        console.log(`Usando mainWallet como destinatário principal: ${recipientAddress}`);
-      } else {
-        // Se não encontrar, usar endereço padrão do arquivo de configuração
-        const configModule = await import('../config/paymentConfig');
-        recipientAddress = configModule.PAYMENT_RECEIVER_ADDRESS;
-        console.log(`Nenhuma carteira configurada no Firestore, usando endereço padrão: ${recipientAddress}`);
-      }
-      
-      if (!recipientAddress) {
-        throw new Error("Endereço do destinatário não está configurado");
-      }
-      
-      // 18. Processar o pagamento com token
-      console.log(`Enviando transação para contrato ${this.contractAddress}`);
-      console.log(`Parâmetros: tokenAddress=${usdtAddress}, recipient=${recipientAddress}, amount=${amountInTokenUnits.toString()}`);
-      
-      const tx = await paymentContract.processTokenPaymentWithFee(
-        usdtAddress,
-        recipientAddress,
-        amountInTokenUnits,
-        { gasLimit: ethers.utils.hexlify(500000) } // Limite de gas maior para operações com tokens
-      );
-      
-      // 19. Aguardar confirmação
-      const receipt = await tx.wait();
-      
-      console.log(`Transação confirmada: ${receipt.transactionHash}`);
-      
-      // 20. Retornar detalhes da transação
-      return {
-        transactionHash: receipt.transactionHash,
-        blockNumber: receipt.blockNumber,
-        success: true,
-        tokenAddress: usdtAddress,
-        recipientAddress: recipientAddress,
-        amount: amount,
-        currency: 'USDT'
-      };
-      
     } catch (error) {
       console.error("Erro ao processar pagamento com USDT:", error);
       throw error;
     }
   }
-  // Get USDT balance for a wallet address
+    // Get USDT balance for a wallet address
   async getUsdtBalance(walletAddress: string, forcedNetwork?: string): Promise<string> {
     try {
-      // 1. Initialize Web3 if necessary
-      if (!this.provider || !this.signer) {
-        const initialized = await this.init();
-        if (!initialized) throw new Error("Web3 is not available");
-      }
-      
-      if (!this.provider) {
-        throw new Error("Provider is not initialized");
-      }
-      
-      // 2. Get current network information
+      let provider: ethers.providers.JsonRpcProvider | null = null;
       let networkName: string;
+
       if (forcedNetwork) {
-        networkName = forcedNetwork;
+        networkName = this.normalizeNetworkName(forcedNetwork);
+        
+        // Use the helper method that prioritizes public RPC endpoints
+        provider = this.createNetworkProvider(networkName);
+        if (!provider) {
+          // Try a direct connection to the public endpoint as a fallback
+          const publicEndpoints: Record<string, string> = {
+            'polygon': 'https://polygon-rpc.com',
+            'binance': 'https://bsc-dataseed.binance.org',
+            'ethereum': 'https://eth.llamarpc.com'
+          };
+          
+          const endpoint = publicEndpoints[networkName.toLowerCase()];
+          if (endpoint) {
+            console.log(`Attempting direct connection to ${endpoint} for ${networkName}`);
+            provider = new ethers.providers.JsonRpcProvider(endpoint);
+          } else {
+            throw new Error(`Não foi possível criar um provedor para a rede: ${forcedNetwork}`);
+          }
+        }
+        
+        console.log(`Using public RPC for ${networkName} when checking USDT balance`);
       } else {
-        const network = await this.provider.getNetwork();
+        // ...existing code for non-forced network...
+        if (!this.provider || !this.signer) {
+          const initialized = await this.init();
+          if (!initialized) throw new Error("Web3 is not available");
+        }
+        if (!this.provider) {
+          throw new Error("Provider is not initialized");
+        }
+        provider = this.provider;
+        const network = await provider.getNetwork();
         const networkNameTemp = this.getNetworkName(network.chainId);
         if (!networkNameTemp) {
           throw new Error(`Unknown network with chainId: ${network.chainId}`);
         }
         networkName = networkNameTemp;
       }
-      
+
       // 3. Get USDT address for current network
-      const usdtAddress = this.USDT_ADDRESSES[networkName.toLowerCase()];
+      const normalizedNetworkName = networkName.toLowerCase();
+      const usdtAddress = this.USDT_ADDRESSES[normalizedNetworkName];
       if (!usdtAddress) {
         throw new Error(`USDT is not supported on the current network (${networkName || 'unknown'})`);
       }
+
+      console.log(`Getting USDT balance on ${networkName} for address ${walletAddress} at token address ${usdtAddress}`);
+
+      // Test the provider connection before proceeding
+      try {
+        await provider.getNetwork();
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error(`Provider connection test failed: ${error.message}`);
+        } else {
+          console.error("Provider connection test failed with an unknown error:", error);
+        }
+        throw new Error(`Falha na conexão com a rede ${networkName}. Verifique sua conexão com a internet ou tente novamente mais tarde.`);
+      }
       
-      // 4. ABI for token balance check
+      // Define token contract ABI
       const tokenABI = [
         "function balanceOf(address account) public view returns (uint256)",
         "function decimals() public view returns (uint8)"
       ];
       
-      // 5. Create token contract instance
-      const tokenContract = new ethers.Contract(usdtAddress, tokenABI, this.provider);
-      
-      // 6. Get token decimals
-      const decimals = await tokenContract.decimals();
-      
-      // 7. Get balance
-      const balance = await tokenContract.balanceOf(walletAddress);
-      
-      // 8. Format balance with correct decimals
-      const formattedBalance = ethers.utils.formatUnits(balance, decimals);
-      
-      console.log(`USDT balance for ${walletAddress}: ${formattedBalance} USDT`);
-      return formattedBalance;
-      
-    } catch (error) {
+      try {
+        // 5. Create token contract instance
+        const tokenContract = new ethers.Contract(usdtAddress, tokenABI, provider);
+
+        // 6. Get token decimals with timeout and retry
+        let decimals: number;
+        try {
+          decimals = await Promise.race([
+            tokenContract.decimals(),
+            new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error("Timeout getting token decimals")), 5000)
+            )
+          ]);
+        } catch (err) {
+          console.warn("Error or timeout getting decimals, using default of 6 for USDT:", err);
+          decimals = 6; // Default for USDT on most networks
+        }
+
+        // 7. Get balance with timeout and retry
+        let balance;
+        try {
+          balance = await Promise.race([
+            tokenContract.balanceOf(walletAddress),
+            new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error("Timeout getting token balance")), 5000)
+            )
+          ]);
+        } catch (err) {
+          console.error("Error getting USDT balance:", err);
+          throw new Error(`Não foi possível obter o saldo de USDT. Erro de conexão com a rede ${networkName}.`);
+        }
+
+        // 8. Format balance with correct decimals
+        const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+
+        console.log(`USDT balance for ${walletAddress}: ${formattedBalance} USDT`);
+        return formattedBalance;
+      } catch (contractError) {
+        console.error("Contract interaction error:", contractError);
+        throw new Error(`Erro ao interagir com o contrato USDT na rede ${networkName}. Verifique sua conexão e tente novamente.`);
+      }    } catch (error: any) {
       console.error("Error getting USDT balance:", error);
-      throw error;
+      // Provide a user-friendly error message
+      if (error.message && error.message.includes("invalid project id")) {
+        const resolvedNetworkName = forcedNetwork || (this.provider ? this.getNetworkName((await this.provider.getNetwork()).chainId) : 'unknown');
+        throw new Error(`Erro de configuração ao acessar a rede ${resolvedNetworkName}. Por favor, entre em contato com o suporte.`);
+      } else {
+        throw error;
+      }
     }
   }
 
@@ -1534,6 +1686,50 @@ class SmartContractService {
     };
     
     return currencyMap[networkName] || null;
+  }  // Helper function to create a provider for a specific network
+  private createNetworkProvider(networkName: string): ethers.providers.JsonRpcProvider | null {
+    try {
+      // First try to get a public RPC URL that doesn't require API key
+      const normalizedNetworkName = this.normalizeNetworkName(networkName);
+      
+      // Always prioritize direct public RPC endpoints that don't require auth
+      // IMPORTANT: These are reliable public endpoints that should work without API keys
+      const publicRPCs: Record<string, string> = {
+        polygon: "https://polygon-rpc.com",
+        binance: "https://bsc-dataseed.binance.org",
+        avalanche: "https://api.avax.network/ext/bc/C/rpc",
+        fantom: "https://rpc.ftm.tools",
+        arbitrum: "https://arb1.arbitrum.io/rpc",
+        optimism: "https://mainnet.optimism.io",
+        ethereum: "https://eth.llamarpc.com",
+        mumbai: "https://rpc-mumbai.maticvigil.com",
+        binanceTestnet: "https://data-seed-prebsc-1-s1.binance.org:8545"
+      };
+      
+      // ALWAYS prefer using public endpoints for common networks 
+      // Only fall back to getRpcUrl for less common networks
+      let rpcUrl = publicRPCs[normalizedNetworkName];
+      
+      // If no public endpoint found, try to get from config but ONLY if it's not an Infura URL without API key
+      if (!rpcUrl) {
+        const configUrl = getRpcUrl(normalizedNetworkName);
+        // Avoid using Infura URLs with undefined API keys
+        if (configUrl && !configUrl.includes("infura.io/v3/undefined")) {
+          rpcUrl = configUrl;
+        }
+      }
+      
+      if (!rpcUrl) {
+        console.error(`No valid RPC URL configured for network: ${networkName}`);
+        return null;
+      }
+      
+      console.log(`Creating provider for ${normalizedNetworkName} using: ${rpcUrl}`);
+      return new ethers.providers.JsonRpcProvider(rpcUrl);
+    } catch (error: any) {
+      console.error(`Error creating provider for network ${networkName}:`, error);
+      return null;
+    }
   }
 
   constructor() {
