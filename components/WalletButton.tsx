@@ -231,7 +231,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
             <select
               value={currentNetwork}
               onChange={(e) => handleSwitchNetwork(e.target.value as NetworkType)}
-              className="text-sm border rounded px-2 py-1"
+              className="text-sm border rounded px-2 py-1 text-black bg-white"
             >
               {availableNetworks.map((network) => (
                 <option key={network} value={network}>

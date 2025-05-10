@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, updateDoc, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 // Import payment related services
-import { web3Service } from "../../services/web3Service";
+import web3Service from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
 // Import learn2earnContractService
 // Import learn2earnContractService
@@ -1127,7 +1127,13 @@ const PostJobPage = (): JSX.Element => {
           {/* Payment button sempre visível, só desabilitado se não conectado */}
           <div className="flex flex-col space-y-3">
             <button
-              onClick={processPayment}
+              onClick={async () => {
+                if (!walletAddress) {
+                  const walletInfo = await web3Service.connectWallet(); // Ensure wallet is connected
+                  setWalletAddress(walletInfo.address); // Update wallet address state
+                }
+                processPayment(); // Proceed with payment logic
+              }}
               disabled={!walletAddress || isProcessingPayment}
               className={`w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition ${(!walletAddress || isProcessingPayment) ? "opacity-70 cursor-not-allowed" : ""}`}
             >
