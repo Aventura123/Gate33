@@ -2,8 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { db } from "../../lib/firebase";
 import { collection, query, getDocs, addDoc, updateDoc, doc, deleteDoc, where, setDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { connectWallet, getCurrentAddress } from "../../services/crypto";
-import { Button } from "./button";
 import { web3Service } from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
 import InstantJobsManager from "../admin/InstantJobsManager";
