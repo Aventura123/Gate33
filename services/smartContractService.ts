@@ -333,21 +333,38 @@ class SmartContractService {
         }
         
         this.lastNetworkCheck = now;
-      }
-
-      // If we have a network-specific address for the current network, use that
+      }      // If we have a network-specific address for the current network, use that
       let networkName: string | null = null;
       if (forcedNetwork) {
-        networkName = forcedNetwork;
+        // Normalize the forced network name to match our network keys
+        networkName = this.normalizeNetworkName(forcedNetwork);
+        console.log(`Using forced network: ${forcedNetwork} (normalized to: ${networkName})`);
       } else if (this.provider) {
         const network = await this.provider.getNetwork();
         networkName = this.getNetworkName(network.chainId);
       }
       
-      if (networkName && this.networkContractAddresses[networkName.toLowerCase()]) {
-        this.contractAddress = this.networkContractAddresses[networkName.toLowerCase()];
-        console.log(`Using ${networkName} contract address:`, this.contractAddress);
-        return;
+      // Debug: print all available network addresses
+      console.log(`Available contract addresses: ${JSON.stringify(Object.keys(this.networkContractAddresses))}`);
+      
+      if (networkName) {
+        // Try multiple variations of the network name to find a match
+        const possibleKeys = [
+          networkName,
+          networkName.toLowerCase(),
+          networkName.replace(' ', ''),
+          networkName.replace(' Mainnet', ''),
+          networkName.replace(' Mainnet', '').toLowerCase()
+        ];
+        
+        // Check if any of these keys exist in the networkContractAddresses
+        for (const key of possibleKeys) {
+          if (this.networkContractAddresses[key]) {
+            this.contractAddress = this.networkContractAddresses[key];
+            console.log(`Found contract address for ${networkName} using key ${key}:`, this.contractAddress);
+            return;
+          }
+        }
       }
       
       // If no network-specific address was found, use the default if available
@@ -364,8 +381,7 @@ class SmartContractService {
       throw error;
     }
   }
-  
-  // Helper method to get network name from chain ID
+    // Helper method to get network name from chain ID
   private getNetworkName(chainId: number): string | null {
     const networkMap: Record<number, string> = {
       1: 'ethereum',    // Ethereum Mainnet
@@ -384,6 +400,37 @@ class SmartContractService {
     };
     
     return networkMap[chainId] || null;
+  }
+  
+  // Helper function to normalize network names to match USDT_ADDRESSES keys
+  private normalizeNetworkName(networkName: string): string {
+    // Convert to lowercase first
+    let normalized = networkName.toLowerCase();
+    
+    // Remove "mainnet" suffix if present
+    normalized = normalized.replace(" mainnet", "");
+    
+    // Handle specific network name mappings
+    if (normalized.includes("binance") || normalized.includes("bsc")) {
+      return normalized.includes("testnet") ? "binanceTestnet" : "binance";
+    } else if (normalized.includes("ethereum") || normalized === "eth") {
+      return "ethereum";
+    } else if (normalized.includes("polygon") || normalized.includes("matic")) {
+      return "polygon";
+    } else if (normalized.includes("avalanche") || normalized.includes("avax")) {
+      return "avalanche";
+    } else if (normalized.includes("arbitrum")) {
+      return "arbitrum";
+    } else if (normalized.includes("optimism")) {
+      return "optimism";
+    } else if (normalized.includes("mumbai")) {
+      return "mumbai";
+    } else if (normalized.includes("testnet") && normalized.includes("binance")) {
+      return "binanceTestnet";
+    }
+    
+    // Default: return the cleaned network name
+    return normalized;
   }
 
   // Get fee collector address
@@ -1208,7 +1255,36 @@ class SmartContractService {
    * @param planId ID do plano selecionado
    * @param amount Valor a ser pago
    * @param companyId ID da empresa (usado como identificador adicional no contrato)
-   */
+   */  // Helper function to normalize network names to match USDT_ADDRESSES keys
+  private normalizeNetworkName(networkName: string): string {
+    // Convert to lowercase first
+    let normalized = networkName.toLowerCase();
+    
+    // Remove "mainnet" suffix if present
+    normalized = normalized.replace(" mainnet", "");
+    
+    // Handle specific network name mappings
+    if (normalized.includes("binance") || normalized.includes("bsc")) {
+      return "binance";
+    } else if (normalized.includes("ethereum") || normalized === "eth") {
+      return "ethereum";
+    } else if (normalized.includes("polygon") || normalized.includes("matic")) {
+      return "polygon";
+    } else if (normalized.includes("avalanche") || normalized.includes("avax")) {
+      return "avalanche";
+    } else if (normalized.includes("arbitrum")) {
+      return "arbitrum";
+    } else if (normalized.includes("optimism")) {
+      return "optimism";
+    } else if (normalized.includes("mumbai")) {
+      return "mumbai";
+    } else if (normalized.includes("testnet") && normalized.includes("binance")) {
+      return "binanceTestnet";
+    }
+    
+    return normalized;
+  }
+
   async processJobPaymentWithUSDT(planId: string, amount: number, companyId: string, forcedNetwork?: string) {
     try {
       // 1. Validações básicas
@@ -1233,7 +1309,9 @@ class SmartContractService {
       // 3. Obter informações da rede e carteira
       let networkName, network;
       if (forcedNetwork) {
-        networkName = forcedNetwork;
+        // Normalize the forced network name to match our USDT_ADDRESSES keys
+        networkName = this.normalizeNetworkName(forcedNetwork);
+        console.log(`Using forced network: ${forcedNetwork} (normalized to: ${networkName})`);
         network = { chainId: null };
       } else {
         network = await this.provider!.getNetwork();
@@ -1256,9 +1334,9 @@ class SmartContractService {
       if (planData.currency.toUpperCase() !== 'USDT') {
         throw new Error(`Este plano não aceita pagamento em USDT. Moeda requerida: ${planData.currency}`);
       }
-      
-      // 6. Verificar se a rede atual suporta USDT
-      if (!networkName || !this.USDT_ADDRESSES[networkName.toLowerCase()]) {
+        // 6. Verificar se a rede atual suporta USDT
+      let normalizedNetworkName = networkName ? this.normalizeNetworkName(networkName) : null;
+      if (!normalizedNetworkName || !this.USDT_ADDRESSES[normalizedNetworkName]) {
         throw new Error(`A rede atual (${networkName || 'desconhecida'}) não tem suporte para USDT. Conecte-se a uma dessas redes: ${Object.keys(this.USDT_ADDRESSES).join(', ')}`);
       }
       
@@ -1270,11 +1348,10 @@ class SmartContractService {
       if (!this.contractAddress) {
         throw new Error(`Nenhum contrato configurado para a rede: ${networkName || 'desconhecida'}`);
       }
-      
-      // 8. Obter o endereço do token USDT na rede atual
-      const usdtAddress = this.USDT_ADDRESSES[networkName.toLowerCase()];
+        // 8. Obter o endereço do token USDT na rede atual
+      const usdtAddress = this.USDT_ADDRESSES[normalizedNetworkName];
       if (!usdtAddress) {
-        throw new Error(`Endereço USDT não encontrado para a rede ${networkName}`);
+        throw new Error(`Endereço USDT não encontrado para a rede ${networkName} (normalizado para: ${normalizedNetworkName})`);
       }
       
       // 9. ABI para interagir com token ERC20 (USDT)

@@ -240,8 +240,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     setJobData((prev) => ({ ...prev, pricingPlanId: plan.id, paymentId: prev.paymentId || "" }));
     setPaymentStep('review');
   };
-  
-  const processPayment = async () => {
+    const processPayment = async () => {
     if (!selectedPlan) {
       setPaymentError("Please select a pricing plan");
       return;
@@ -276,53 +275,86 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     setIsProcessingPayment(true);
     setPaymentStep('processing');
     
+    // Set a timeout to reset UI if transaction takes too long
+    const timeoutId = setTimeout(() => {
+      if (paymentStep === 'processing') {
+        setPaymentError("Transaction is taking longer than expected. Please check your wallet for any pending transactions.");
+        setPaymentStep('review');
+        setIsProcessingPayment(false);
+      }
+    }, 90000); // 90 seconds timeout
+    
     try {
       // Verificar novamente se a carteira está conectada após a tentativa de conexão
       let currentAddress = walletAddress;
       
       // Verificação adicional de segurança
       if (!currentAddress) {
+        clearTimeout(timeoutId);
         throw new Error("Wallet is not connected. Please connect your wallet first.");
       }
       
       // Check if payment should be in USDT or native currency
       const planCurrency = selectedPlan.currency?.toUpperCase();
       
-      // Choose the appropriate payment method based on currency
+      // Variable to store transaction result
       let transaction;
-      if (planCurrency === 'USDT') {
-        console.log("[JobPostPayment] Detected USDT payment, using USDT payment method");
-        
-        // For WalletConnect, we need to pass the forced network
-        if (isUsingWalletConnect && currentNetwork) {
-          console.log(`[JobPostPayment] Using WalletConnect with forced network: ${currentNetwork}`);
-          transaction = await smartContractService.processJobPaymentWithUSDT(
-            selectedPlan.id,
-            selectedPlan.price,
-            companyId,
-            currentNetwork // Pass the selected network as an optional parameter
-          );
+      
+      try {
+        if (planCurrency === 'USDT') {
+          console.log("[JobPostPayment] Detected USDT payment, using USDT payment method");
+          
+          // For WalletConnect, we need to pass the forced network
+          if (isUsingWalletConnect && currentNetwork) {
+            console.log(`[JobPostPayment] Using WalletConnect with forced network: ${currentNetwork}`);
+            // The smartContractService will now handle normalization of the network name internally
+            transaction = await smartContractService.processJobPaymentWithUSDT(
+              selectedPlan.id,
+              selectedPlan.price,
+              companyId,
+              currentNetwork // Pass the selected network as an optional parameter
+            );
+          } else {
+            // For MetaMask, we don't need to pass network (it's already switched)
+            console.log("[JobPostPayment] Using normal USDT payment method (MetaMask)");
+            transaction = await smartContractService.processJobPaymentWithUSDT(
+              selectedPlan.id,
+              selectedPlan.price,
+              companyId
+            );
+          }
         } else {
-          // For MetaMask, we don't need to pass network (it's already switched)
-          console.log("[JobPostPayment] Using normal USDT payment method (MetaMask)");
-          transaction = await smartContractService.processJobPaymentWithUSDT(
+          console.log("[JobPostPayment] Using native token payment method");
+          transaction = await smartContractService.processJobPayment(
             selectedPlan.id,
             selectedPlan.price,
             companyId
           );
         }
-      } else {
-        console.log("[JobPostPayment] Using native token payment method");
-        transaction = await smartContractService.processJobPayment(
-          selectedPlan.id,
-          selectedPlan.price,
-          companyId
-        );
+      } catch (error: any) {
+        console.error("[JobPostPayment] Error during payment processing:", error);
+        clearTimeout(timeoutId);
+        
+        // Handle specific contract/network errors with user-friendly messages
+        if (error.message?.includes("contract address not configured")) {
+          throw new Error(`Payment contract not available on the ${currentNetwork || 'current'} network. Please try another network.`);
+        } else if (error.message?.includes("user rejected")) {
+          throw new Error("You rejected the transaction in your wallet. Please try again.");
+        } else if (error.message?.includes("insufficient funds")) {
+          throw new Error("You don't have enough funds in your wallet to complete this transaction.");
+        } else {
+          // Pass through the original error
+          throw error;
+        }
       }
       
-      if (!transaction || !transaction.transactionHash) throw new Error("Transaction failed");
+      // Verify the transaction was successful
+      if (!transaction || !transaction.transactionHash) {
+        clearTimeout(timeoutId);
+        throw new Error("Transaction failed or was incomplete. Please try again.");
+      }
       
-      // Salvar pagamento
+      // Transaction successful - save payment
       const paymentsCollection = collection(db, "payments");
       const paymentRef = await addDoc(paymentsCollection, {
         planId: selectedPlan.id,
@@ -356,11 +388,19 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
       };
       await addDoc(jobCollection, jobToSave);
       setJobData((prev) => ({ ...prev, paymentStatus: "completed", paymentId: paymentRef.id }));
+      
+      // Clear the timeout since we're done processing
+      clearTimeout(timeoutId);
+      
+      // Update UI to show completion
       setPaymentStep('completed');
       reloadData();
     } catch (error: any) {
+      console.error("[JobPostPayment] Payment error:", error);
       setPaymentError(error.message || "Payment failed. Please try again.");
       setJobData((prev) => ({ ...prev, paymentStatus: "failed" }));
+      // Reset to review step instead of staying in processing state
+      setPaymentStep('review');
     } finally {
       setIsProcessingPayment(false);
     }
