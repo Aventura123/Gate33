@@ -1377,6 +1377,64 @@ class SmartContractService {
       throw error;
     }
   }
+  // Get USDT balance for a wallet address
+  async getUsdtBalance(walletAddress: string, forcedNetwork?: string): Promise<string> {
+    try {
+      // 1. Initialize Web3 if necessary
+      if (!this.provider || !this.signer) {
+        const initialized = await this.init();
+        if (!initialized) throw new Error("Web3 is not available");
+      }
+      
+      if (!this.provider) {
+        throw new Error("Provider is not initialized");
+      }
+      
+      // 2. Get current network information
+      let networkName: string;
+      if (forcedNetwork) {
+        networkName = forcedNetwork;
+      } else {
+        const network = await this.provider.getNetwork();
+        const networkNameTemp = this.getNetworkName(network.chainId);
+        if (!networkNameTemp) {
+          throw new Error(`Unknown network with chainId: ${network.chainId}`);
+        }
+        networkName = networkNameTemp;
+      }
+      
+      // 3. Get USDT address for current network
+      const usdtAddress = this.USDT_ADDRESSES[networkName.toLowerCase()];
+      if (!usdtAddress) {
+        throw new Error(`USDT is not supported on the current network (${networkName || 'unknown'})`);
+      }
+      
+      // 4. ABI for token balance check
+      const tokenABI = [
+        "function balanceOf(address account) public view returns (uint256)",
+        "function decimals() public view returns (uint8)"
+      ];
+      
+      // 5. Create token contract instance
+      const tokenContract = new ethers.Contract(usdtAddress, tokenABI, this.provider);
+      
+      // 6. Get token decimals
+      const decimals = await tokenContract.decimals();
+      
+      // 7. Get balance
+      const balance = await tokenContract.balanceOf(walletAddress);
+      
+      // 8. Format balance with correct decimals
+      const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+      
+      console.log(`USDT balance for ${walletAddress}: ${formattedBalance} USDT`);
+      return formattedBalance;
+      
+    } catch (error) {
+      console.error("Error getting USDT balance:", error);
+      throw error;
+    }
+  }
 
   // Helper method to get currency symbol based on network
   private getNetworkCurrency(networkName: string | null): string | null {

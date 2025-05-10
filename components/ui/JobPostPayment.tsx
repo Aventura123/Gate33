@@ -11,6 +11,7 @@ interface PricingPlan {
   duration: number;
   features: string[];
   recommended?: boolean;
+  currency?: string; // Add currency field to support USDT payment plans
 }
 
 interface CompanyProfile {
@@ -52,8 +53,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
   const [paymentStep, setPaymentStep] = useState<'form' | 'select-plan' | 'review' | 'processing' | 'completed'>('form');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
 
@@ -72,30 +72,62 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
       setPaymentError("Erro ao buscar planos de preço");
     }
   }, []);
-
   useEffect(() => { fetchPricingPlans(); }, [fetchPricingPlans]);
-
   // --- NOVO: Sincronizar com wallet global ---
   useEffect(() => {
     // Função para atualizar o estado local com a wallet global
     const updateWalletInfo = () => {
       try {
-        const walletInfo = web3Service.getWalletInfo ? web3Service.getWalletInfo() : null;
-        if (walletInfo && walletInfo.address) {
-          setWalletAddress(walletInfo.address);
+        // Verificar se o serviço existe e se a função isWalletConnected existe
+        if (web3Service && typeof web3Service.isWalletConnected === 'function') {
+          // Verificar se a carteira está conectada
+          const isConnected = web3Service.isWalletConnected();
+          console.log('[JobPostPayment] Wallet connection check:', isConnected);
+          
+          if (isConnected) {
+            // Obter informações da carteira
+            const walletInfo = web3Service.getWalletInfo();
+            console.log('[JobPostPayment] Wallet info received:', walletInfo);
+            
+            if (walletInfo && walletInfo.address) {
+              console.log('[JobPostPayment] Wallet detected:', walletInfo.address);
+              setWalletAddress(walletInfo.address);
+              return;
+            } else {
+              console.log('[JobPostPayment] Wallet info missing address property');
+            }
+          } else {
+            console.log('[JobPostPayment] No wallet connected according to web3Service');
+          }
         } else {
-          setWalletAddress(null);
+          console.log('[JobPostPayment] web3Service or isWalletConnected function missing');
         }
-      } catch {
         setWalletAddress(null);
-      }
+      } catch (error) {
+        console.error('[JobPostPayment] Error checking wallet:', error);
+        setWalletAddress(null);      }
     };
+    
+    // Executar imediatamente e em seguida iniciar o polling
     updateWalletInfo();
-    // Listeners para eventos globais
+    
+    // Polling a cada 2s para garantir sincronização sem sobrecarga
+    const poll = setInterval(updateWalletInfo, 2000);
+    // Listeners para eventos globais (compatível com ambos os padrões)
     const handleWeb3Connected = (e: any) => {
-      setWalletAddress(e.detail?.address || null);
+      console.log('[JobPostPayment] web3Connected', e.detail);
+      const addr = e.detail?.address || e.detail || null;
+      setWalletAddress(addr);
     };
     const handleWeb3Disconnected = () => {
+      setWalletAddress(null);
+    };
+    const handleWalletConnected = (e: any) => {
+      console.log('[JobPostPayment] walletConnected', e.detail);
+      const addr = e.detail?.address || e.detail || null;
+      setWalletAddress(addr);
+    };
+    const handleWalletDisconnected = () => {
       setWalletAddress(null);
     };
     const handleChainChanged = () => {
@@ -106,15 +138,21 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     };
     window.addEventListener('web3Connected', handleWeb3Connected);
     window.addEventListener('web3Disconnected', handleWeb3Disconnected);
+    window.addEventListener('walletConnected', handleWalletConnected);
+    window.addEventListener('walletDisconnected', handleWalletDisconnected);
     window.addEventListener('chainChanged', handleChainChanged);
     window.addEventListener('accountsChanged', handleAccountsChanged);
     return () => {
+      clearInterval(poll);
       window.removeEventListener('web3Connected', handleWeb3Connected);
       window.removeEventListener('web3Disconnected', handleWeb3Disconnected);
+      window.removeEventListener('walletConnected', handleWalletConnected);
+      window.removeEventListener('walletDisconnected', handleWalletDisconnected);
       window.removeEventListener('chainChanged', handleChainChanged);
       window.removeEventListener('accountsChanged', handleAccountsChanged);
     };
   }, []);
+  // Removida a verificação prévia de saldo USDT - o erro será exibido apenas durante o processamento do pagamento
 
   // Handlers
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -126,27 +164,66 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     setSelectedPlan(plan);
     setJobData((prev) => ({ ...prev, pricingPlanId: plan.id, paymentId: prev.paymentId || "" }));
     setPaymentStep('review');
-  };
-
-  const processPayment = async () => {
+  };  const processPayment = async () => {
     if (!selectedPlan) {
       setPaymentError("Please select a pricing plan");
       return;
     }
+    
     setPaymentError(null);
+    
+    // Verificar se a carteira está conectada
+    if (!walletAddress) {
+      console.log("[JobPostPayment] Tentando conectar carteira...");
+      try {
+        const walletInfo = await web3Service.connectWallet();
+        if (walletInfo?.address) {
+          console.log("[JobPostPayment] Carteira conectada com sucesso:", walletInfo.address);
+          setWalletAddress(walletInfo.address);
+        } else {
+          throw new Error("Could not get wallet address");
+        }
+      } catch (error: any) {
+        setPaymentError(error.message || "Failed to connect wallet");
+        console.error("[JobPostPayment] Erro ao conectar carteira:", error);
+        return;
+      }
+    }
+    
     setIsProcessingPayment(true);
     setPaymentStep('processing');
-    try {
+      try {
+      // Verificar novamente se a carteira está conectada após a tentativa de conexão
       let currentAddress = walletAddress;
+      
+      // Verificação adicional de segurança
       if (!currentAddress) {
-        const walletInfo = await web3Service.connectWallet();
-        currentAddress = walletInfo?.address;
-        if (currentAddress) setWalletAddress(walletInfo.address);
-        else throw new Error("Could not get wallet address");
+        throw new Error("Wallet is not connected. Please connect your wallet first.");
       }
-      // Simulação: pagamento via smart contract
-      const transaction = await smartContractService.processJobPayment(selectedPlan.id, selectedPlan.price, companyId);
+      
+      // Check if payment should be in USDT or native currency
+      const planCurrency = selectedPlan.currency?.toUpperCase();
+      
+      // Choose the appropriate payment method based on currency
+      let transaction;
+      if (planCurrency === 'USDT') {
+        console.log("[JobPostPayment] Detected USDT payment, using USDT payment method");
+        transaction = await smartContractService.processJobPaymentWithUSDT(
+          selectedPlan.id,
+          selectedPlan.price,
+          companyId
+        );
+      } else {
+        console.log("[JobPostPayment] Using native token payment method");
+        transaction = await smartContractService.processJobPayment(
+          selectedPlan.id,
+          selectedPlan.price,
+          companyId
+        );
+      }
+      
       if (!transaction || !transaction.transactionHash) throw new Error("Transaction failed");
+      
       // Salvar pagamento
       const paymentsCollection = collection(db, "payments");
       const paymentRef = await addDoc(paymentsCollection, {
@@ -154,11 +231,13 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
         planName: selectedPlan.name,
         amount: selectedPlan.price,
         companyId,
+        currency: planCurrency || 'NATIVE',
         status: "completed",
         createdAt: new Date(),
         transactionHash: transaction.transactionHash,
         blockNumber: transaction.blockNumber
       });
+      
       // Salvar job
       const now = new Date();
       const expiryDate = new Date(now.getTime() + selectedPlan.duration * 24 * 60 * 60 * 1000);
@@ -173,6 +252,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
         pricingPlanId: selectedPlan.id,
         planName: selectedPlan.name,
         planDuration: selectedPlan.duration,
+        planCurrency: planCurrency || 'NATIVE',
         featured: selectedPlan.name.toLowerCase().includes('premium') || selectedPlan.name.toLowerCase().includes('featured'),
         priorityListing: selectedPlan.name.toLowerCase().includes('premium'),
       };
@@ -243,10 +323,17 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             {pricingPlans.map(plan => (
               <div key={plan.id} className={`border rounded-lg p-6 flex flex-col h-full transition-all cursor-pointer ${jobData.pricingPlanId === plan.id ? "border-orange-500 bg-black/70" : "border-gray-700 bg-black/50 hover:border-orange-300"}`}
-                onClick={() => { setJobData(prev => ({ ...prev, pricingPlanId: plan.id })); setSelectedPlan(plan); }}>
-                <h4 className="text-xl font-bold text-orange-400">{plan.name}</h4>
-                <div className="text-3xl font-bold text-white my-2">${plan.price}</div>
+                onClick={() => { setJobData(prev => ({ ...prev, pricingPlanId: plan.id })); setSelectedPlan(plan); }}>                <h4 className="text-xl font-bold text-orange-400">{plan.name}</h4>
+                <div className="text-3xl font-bold text-white my-2">${plan.price} {plan.currency === 'USDT' ? 'USDT' : ''}</div>
                 <p className="text-gray-400 mb-4">{plan.duration} days listing</p>
+                {plan.currency === 'USDT' && (
+                  <div className="flex items-center text-yellow-400 text-sm mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1v-3a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    USDT payment required
+                  </div>
+                )}
                 <button type="button" onClick={() => { setJobData(prev => ({ ...prev, pricingPlanId: plan.id })); setSelectedPlan(plan); }} className="mt-4 py-2 px-4 rounded-lg bg-orange-500 text-white hover:bg-orange-600">Select Plan</button>
               </div>
             ))}
@@ -279,14 +366,22 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                 <h4 className="text-xl font-semibold text-white">{selectedPlan.name} Plan</h4>
                 <p className="text-gray-400">{selectedPlan.duration} days of job listing</p>
               </div>
-              <div className="text-2xl font-bold text-white">${selectedPlan.price}</div>
-            </div>
-            <div className="space-y-2 mb-6">
-              <div className="flex justify-between font-bold">
-                <span className="text-gray-300">Total:</span>
-                <span className="text-orange-500">${selectedPlan.price}</span>
+              <div className="text-2xl font-bold text-white">${selectedPlan.price} {selectedPlan.currency === 'USDT' ? 'USDT' : ''}</div>
+            </div>              <div className="space-y-2 mb-6">
+                <div className="flex justify-between font-bold">
+                  <span className="text-gray-300">Total:</span>
+                  <span className="text-orange-500">${selectedPlan.price} {selectedPlan.currency === 'USDT' ? 'USDT' : ''}</span>
+                </div>                {selectedPlan.currency === 'USDT' && (
+                  <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-800 rounded-md">
+                    <div className="flex items-start text-yellow-400 text-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1v-3a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>This plan requires payment in USDT. Make sure you have sufficient USDT tokens in your wallet.</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
             <div className="mb-4 p-3 rounded-lg border border-gray-700">
               <div className="flex justify-between items-center">
                 <span className="text-gray-300">Wallet Connection:</span>

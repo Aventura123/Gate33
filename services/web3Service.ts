@@ -256,8 +256,13 @@ class Web3Service {
         if (!this.walletInfo) {
           throw new Error("Failed to initialize wallet information");
         }
+          console.log('Wallet connected successfully:', this.walletInfo);
         
-        console.log('Wallet connected successfully:', this.walletInfo);
+        // Dispatch event to indicate wallet connection
+        window.dispatchEvent(new CustomEvent('web3Connected', { 
+          detail: this.walletInfo 
+        }));
+        
         return this.walletInfo;
       } catch (error) {
         console.error('Error getting wallet information:', error);
@@ -314,10 +319,15 @@ class Web3Service {
     this.walletInfo = {
       address,
       chainId: network.chainId,
-      networkName: this.getNetworkNameForChainId(network.chainId)
-    };
+      networkName: this.getNetworkNameForChainId(network.chainId)    };
     // Adiciona listeners para eventos do WalletConnect v2
     this.setupWalletConnectV2Listeners();
+    
+    // Dispatch event to indicate wallet connection
+    window.dispatchEvent(new CustomEvent('web3Connected', { 
+      detail: this.walletInfo 
+    }));
+    
     return this.walletInfo;
   }
 
