@@ -162,22 +162,25 @@ const WalletButton: React.FC<WalletButtonProps> = ({
       onDisconnect();
     }
   };
-
   const handleSwitchNetwork = async (network: NetworkType) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Se for WalletConnect, só muda o estado local
-      if (web3Service.wcV2Provider) {
-        setCurrentNetwork(network);
-        // Opcional: pode mostrar um aviso leve, mas não bloqueia
-        // setError("Rede alterada apenas no app. Confirme na sua carteira se necessário.");
-      } else {
-        await web3Service.switchNetwork(network);
-        setCurrentNetwork(network);
-      }
+      // Chama o método switchNetwork que agora lida com ambos os casos
+      await web3Service.switchNetwork(network);
+      
+      // Atualiza o estado local
+      setCurrentNetwork(network);
+      
+      // Notifica outros componentes sobre a mudança de rede
+      window.dispatchEvent(new CustomEvent('networkChanged', { 
+        detail: { network, forced: !!web3Service.wcV2Provider } 
+      }));
+      
+      console.log(`Network switched to ${network} ${web3Service.wcV2Provider ? '(forced)' : ''}`);
     } catch (err: any) {
       setError(err.message || "Failed to switch network");
+      console.error('Error switching network:', err);
     } finally {
       setIsLoading(false);
     }

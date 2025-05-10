@@ -486,11 +486,35 @@ class Web3Service {
    * Switches to a specific network
    */
   async switchNetwork(networkType: NetworkType): Promise<boolean> {
+    const network = this.networks[networkType];
+    
+    // Caso especial para WalletConnect
+    if (this.wcV2Provider) {
+      try {
+        console.log(`WalletConnect: Switching to network ${networkType} (chainId: ${network.chainId})`);
+        
+        // Atualiza o estado interno sem tentar mudar a rede na carteira
+        if (this.walletInfo) {
+          this.walletInfo.networkName = network.name;
+          this.walletInfo.chainId = network.chainId;
+        }
+        
+        // Emite evento para informar mudança de rede forçada
+        window.dispatchEvent(new CustomEvent('web3ForcedNetwork', { 
+          detail: { networkType, chainId: network.chainId, name: network.name } 
+        }));
+        
+        return true;
+      } catch (error) {
+        console.error('Error setting forced network with WalletConnect:', error);
+        throw new Error(`Failed to set forced network: ${(error as Error).message}`);
+      }
+    }
+    
+    // Caso normal para MetaMask e outros que usam window.ethereum
     if (!window.ethereum) {
       throw new Error('MetaMask is not installed.');
     }
-
-    const network = this.networks[networkType];
     
     try {
       // Try to switch to the network
