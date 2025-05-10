@@ -159,8 +159,15 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     setIsLoading(true);
     setError(null);
     try {
-      await web3Service.switchNetwork(network);
-      setCurrentNetwork(network);
+      // Se for WalletConnect, só muda o estado local
+      if (web3Service.wcV2Provider) {
+        setCurrentNetwork(network);
+        // Opcional: pode mostrar um aviso leve, mas não bloqueia
+        // setError("Rede alterada apenas no app. Confirme na sua carteira se necessário.");
+      } else {
+        await web3Service.switchNetwork(network);
+        setCurrentNetwork(network);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to switch network");
     } finally {

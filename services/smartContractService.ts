@@ -1,6 +1,7 @@
 import { ethers } from "ethers";
 import { db } from "../lib/firebase";
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
+import { web3Service } from "./web3Service";
 
 class SmartContractService {
   private provider: ethers.providers.Web3Provider | null = null;
@@ -24,6 +25,13 @@ class SmartContractService {
 
   // Initialize the Web3 provider
   async init() {
+    // Always use the provider and signer from web3Service
+    this.provider = web3Service.provider;
+    this.signer = web3Service.signer;
+    if (this.provider && this.signer) {
+      return true;
+    }
+    // Fallback: try to initialize from window.ethereum if not set (legacy)
     if (typeof window !== 'undefined' && window.ethereum) {
       this.provider = new ethers.providers.Web3Provider(window.ethereum);
       this.signer = this.provider.getSigner();
