@@ -40,8 +40,8 @@ class SmartContractService {
     return false;
   }
 
-  // Initialize contract with optional specific address
-  async initializeContract(network?: string, contractAddress?: string) {
+  // Initialize contract with optional specific address and forced network
+  async initializeContract(network?: string, contractAddress?: string, forcedNetwork?: string) {
     const initialized = await this.init();
     
     if (initialized && contractAddress) {
@@ -49,15 +49,15 @@ class SmartContractService {
       this.contractAddress = contractAddress;
       console.log(`Using provided contract address: ${contractAddress}`);
     } else if (initialized) {
-      // Caso contrário, carregue do Firebase normalmente
-      await this.loadContractAddress();
+      // Caso contrário, carregue do Firebase normalmente, usando forcedNetwork se fornecido
+      await this.loadContractAddress(forcedNetwork);
     }
     
     return initialized;
   }
   
   // Switch to a different contract network without reinitializing everything
-  async switchContractNetwork(chainId: number, contractAddress?: string) {
+  async switchContractNetwork(chainId: number, contractAddress?: string, forcedNetwork?: string) {
     // Reset contract instance to force rebuilding
     this.contract = null;
     
@@ -70,12 +70,12 @@ class SmartContractService {
     
     // Otherwise load from Firebase for the new chainId
     try {
-      const networkName = this.getNetworkName(chainId);
+      const networkName = forcedNetwork || this.getNetworkName(chainId);
       console.log(`Switching to network: ${networkName} (ChainId: ${chainId})`);
       
       // Force refresh from Firebase by resetting timestamp
       this.lastNetworkCheck = 0;
-      await this.loadContractAddress();
+      await this.loadContractAddress(forcedNetwork);
       
       if (this.contractAddress) {
         console.log(`Loaded contract address: ${this.contractAddress} for network: ${networkName}`);
@@ -140,7 +140,7 @@ class SmartContractService {
   }
 
   // Get contract owner address with improved network handling
-  async getContractOwner() {
+  async getContractOwner(forcedNetwork?: string) {
     // Ensure contract is initialized
     if (!this.provider || !this.signer) {
       const initialized = await this.init();
@@ -149,7 +149,17 @@ class SmartContractService {
 
     try {
       // 1. First, verify the current network
-      const networkInfo = await this.getCurrentNetwork();
+      let networkInfo;
+      if (forcedNetwork) {
+        networkInfo = {
+          chainId: null,
+          networkName: forcedNetwork,
+          networkDisplayName: forcedNetwork,
+          currency: this.getNetworkCurrency(forcedNetwork)
+        };
+      } else {
+        networkInfo = await this.getCurrentNetwork();
+      }
       console.log(`Current network: ${networkInfo.networkDisplayName} (${networkInfo.chainId})`);
       
       // 2. Check if there's a contract for this network in Firebase
@@ -286,8 +296,8 @@ class SmartContractService {
     }
   }
 
-  // Load contract addresses from Firestore
-  private async loadContractAddress() {
+  // Load contract addresses from Firestore, allow forcedNetwork override
+  private async loadContractAddress(forcedNetwork?: string) {
     try {
       // Check if we need to refresh network addresses from Firebase
       const now = Date.now();
@@ -326,15 +336,18 @@ class SmartContractService {
       }
 
       // If we have a network-specific address for the current network, use that
-      if (this.provider) {
+      let networkName: string | null = null;
+      if (forcedNetwork) {
+        networkName = forcedNetwork;
+      } else if (this.provider) {
         const network = await this.provider.getNetwork();
-        const networkName = this.getNetworkName(network.chainId);
-        
-        if (networkName && this.networkContractAddresses[networkName.toLowerCase()]) {
-          this.contractAddress = this.networkContractAddresses[networkName.toLowerCase()];
-          console.log(`Using ${networkName} contract address:`, this.contractAddress);
-          return;
-        }
+        networkName = this.getNetworkName(network.chainId);
+      }
+      
+      if (networkName && this.networkContractAddresses[networkName.toLowerCase()]) {
+        this.contractAddress = this.networkContractAddresses[networkName.toLowerCase()];
+        console.log(`Using ${networkName} contract address:`, this.contractAddress);
+        return;
       }
       
       // If no network-specific address was found, use the default if available
@@ -1088,7 +1101,7 @@ class SmartContractService {
   }
 
   // Process payment for jobs using smart contract
-  async processJobPayment(planId: string, amount: number, companyId: string) {
+  async processJobPayment(planId: string, amount: number, companyId: string, forcedNetwork?: string) {
     try {
       // 1. Validate inputs
       if (!planId || !companyId) {
@@ -1111,9 +1124,16 @@ class SmartContractService {
       }
       
       // 3. Get current network and wallet information
-      const network = await this.provider!.getNetwork();
-      const networkName = this.getNetworkName(network.chainId);
-      const walletAddress = await this.signer.getAddress();
+      let network, networkName, walletAddress;
+      if (forcedNetwork) {
+        networkName = forcedNetwork;
+        network = { chainId: null };
+        walletAddress = await this.signer.getAddress();
+      } else {
+        network = await this.provider!.getNetwork();
+        networkName = this.getNetworkName(network.chainId);
+        walletAddress = await this.signer.getAddress();
+      }
       
       console.log(`Processing payment on network: ${networkName} (${network.chainId}) from wallet: ${walletAddress}`);
       
@@ -1142,7 +1162,7 @@ class SmartContractService {
       }
 
       // 7. Load the appropriate contract address based on network
-      await this.loadContractAddress();
+      await this.loadContractAddress(forcedNetwork);
       if (!this.contractAddress) {
         throw new Error(`No contract address configured for network: ${networkName || 'unknown'}`);
       }
@@ -1189,7 +1209,7 @@ class SmartContractService {
    * @param amount Valor a ser pago
    * @param companyId ID da empresa (usado como identificador adicional no contrato)
    */
-  async processJobPaymentWithUSDT(planId: string, amount: number, companyId: string) {
+  async processJobPaymentWithUSDT(planId: string, amount: number, companyId: string, forcedNetwork?: string) {
     try {
       // 1. Validações básicas
       if (!planId || !companyId) {
@@ -1211,8 +1231,14 @@ class SmartContractService {
       }
       
       // 3. Obter informações da rede e carteira
-      const network = await this.provider!.getNetwork();
-      const networkName = this.getNetworkName(network.chainId);
+      let networkName, network;
+      if (forcedNetwork) {
+        networkName = forcedNetwork;
+        network = { chainId: null };
+      } else {
+        network = await this.provider!.getNetwork();
+        networkName = this.getNetworkName(network.chainId);
+      }
       const walletAddress = await this.signer.getAddress();
       
       console.log(`Processando pagamento em USDT na rede: ${networkName} (${network.chainId}) a partir da carteira: ${walletAddress}`);
@@ -1240,7 +1266,7 @@ class SmartContractService {
       // A verificação relevante aqui é se o USDT existe na rede atual, o que já foi feito acima
       
       // 7. Carregar o endereço do contrato com base na rede
-      await this.loadContractAddress();
+      await this.loadContractAddress(forcedNetwork);
       if (!this.contractAddress) {
         throw new Error(`Nenhum contrato configurado para a rede: ${networkName || 'desconhecida'}`);
       }
