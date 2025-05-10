@@ -104,11 +104,14 @@ const WalletButton: React.FC<WalletButtonProps> = ({
         (network) => network === walletInfo.networkName
       ) || "ethereum"; // Default to a valid NetworkType
 
-      setCurrentNetwork(validNetwork as NetworkType);
-
-      if (onConnect) {
+      setCurrentNetwork(validNetwork as NetworkType);      if (onConnect) {
         onConnect(walletInfo.address);
       }
+      
+      // Dispatch event to notify other components about wallet connection
+      window.dispatchEvent(new CustomEvent('walletConnected', { 
+        detail: { address: walletInfo.address, network: validNetwork } 
+      }));
     } catch (err: any) {
       setError(err.message || 'Failed to connect wallet');
       console.error('Error connecting wallet:', err);
@@ -131,11 +134,14 @@ const WalletButton: React.FC<WalletButtonProps> = ({
         (network) => network === walletInfo.networkName
       ) || "ethereum"; // Default to a valid NetworkType
 
-      setCurrentNetwork(validNetwork as NetworkType);
-
-      if (onConnect) {
+      setCurrentNetwork(validNetwork as NetworkType);      if (onConnect) {
         onConnect(walletInfo.address);
       }
+      
+      // Dispatch event to notify other components about wallet connection
+      window.dispatchEvent(new CustomEvent('walletConnected', { 
+        detail: { address: walletInfo.address, network: validNetwork } 
+      }));
     } catch (err: any) {
       setError(err.message || 'Failed to connect with WalletConnect');
       console.error('Error connecting WalletConnect:', err);
@@ -143,12 +149,14 @@ const WalletButton: React.FC<WalletButtonProps> = ({
       setIsLoading(false);
     }
   };
-
   const handleDisconnect = () => {
     web3Service.disconnectWallet();
     setIsConnected(false);
     setWalletAddress('');
     setCurrentNetwork("ethereum"); // Default to a valid NetworkType
+
+    // Dispatch event to notify other components about wallet disconnection
+    window.dispatchEvent(new CustomEvent('walletDisconnected'));
 
     if (onDisconnect) {
       onDisconnect();

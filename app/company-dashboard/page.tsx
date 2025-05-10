@@ -605,7 +605,7 @@ const PostJobPage = (): JSX.Element => {
           const walletInfo = await web3Service.connectWallet();
           currentAddress = walletInfo?.address;
           if (currentAddress) {
-            setWalletAddress(currentAddress);
+            setWalletAddress(walletInfo.address);
             console.log("[processPayment] Wallet connected:", currentAddress);
           } else {
             throw new Error("Could not get wallet address");
@@ -1104,10 +1104,7 @@ const PostJobPage = (): JSX.Element => {
               <span className="text-gray-300">Total:</span>
               <span className="text-orange-500">${selectedPlan.price}</span>
             </div>
-          </div>
-          
-          {/* Wallet connection status and button */}
-          <div className="mb-4 p-3 rounded-lg border border-gray-700">
+          </div>            <div className="mb-4 p-3 rounded-lg border border-gray-700">
             <div className="flex justify-between items-center">
               <span className="text-gray-300">Wallet Connection:</span>
               <span className={walletAddress ? "text-green-500" : "text-yellow-500"}>
@@ -1115,7 +1112,9 @@ const PostJobPage = (): JSX.Element => {
               </span>
             </div>
             <div className="mt-2 text-sm text-gray-400 break-all">
-              Address: {walletAddress}
+              {walletAddress 
+                ? `Address: ${walletAddress}` 
+                : "No wallet connected"}
             </div>
             {walletError && (
               <div className="mt-2 text-sm text-red-500">
@@ -1124,18 +1123,23 @@ const PostJobPage = (): JSX.Element => {
             )}
           </div>
           
-          {/* Payment button sempre visível, só desabilitado se não conectado */}
-          <div className="flex flex-col space-y-3">
-            <button
+          {/* Payment button with improved wallet connection handling */}
+          <div className="flex flex-col space-y-3">            <button
               onClick={async () => {
-                if (!walletAddress) {
-                  const walletInfo = await web3Service.connectWallet(); // Ensure wallet is connected
-                  setWalletAddress(walletInfo.address); // Update wallet address state
+                setPaymentError(null);
+                
+                if (walletAddress) {
+                  console.log("[Payment] Using connected wallet:", walletAddress);
+                  // Processar o pagamento diretamente
+                  processPayment();
+                } else {
+                  // A carteira não está conectada, informar ao usuário
+                  setPaymentError("Por favor, conecte sua carteira usando o botão na barra lateral antes de continuar");
+                  console.log("[Payment] Wallet not connected. Please use the wallet button in the sidebar.");
                 }
-                processPayment(); // Proceed with payment logic
               }}
-              disabled={!walletAddress || isProcessingPayment}
-              className={`w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition ${(!walletAddress || isProcessingPayment) ? "opacity-70 cursor-not-allowed" : ""}`}
+              disabled={isProcessingPayment || !walletAddress}
+              className={`w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition ${isProcessingPayment ? "opacity-70 cursor-not-allowed" : ""} ${!walletAddress ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               {isProcessingPayment ? (
                 <span className="flex items-center justify-center">
@@ -1145,8 +1149,10 @@ const PostJobPage = (): JSX.Element => {
                   </svg>
                   Processing Payment...
                 </span>
-              ) : (
+              ) : walletAddress ? (
                 "Complete Payment & Post Job"
+              ) : (
+                "Connect Wallet First"
               )}
             </button>
             
@@ -3554,6 +3560,46 @@ const manualSyncStatuses = async () => {
       </div>
     );
   };
+
+  // Adicionar listener para eventos de conexão/desconexão da carteira
+  useEffect(() => {
+    // Função para lidar com evento de conexão de carteira
+    const handleWalletConnected = (event: any) => {
+      console.log("[Event] Wallet connected:", event.detail?.address);
+      if (event.detail?.address) {
+        setWalletAddress(event.detail.address);
+        setWalletError(null);
+      }
+    };
+
+    // Função para lidar com evento de desconexão de carteira
+    const handleWalletDisconnected = () => {
+      console.log("[Event] Wallet disconnected");
+      setWalletAddress(null);
+    };
+
+    // Adicionar os listeners
+    window.addEventListener('walletConnected', handleWalletConnected);
+    window.addEventListener('walletDisconnected', handleWalletDisconnected);
+
+    // Verificar o estado atual no carregamento
+    const checkWalletStatus = () => {
+      const walletInfo = web3Service.getWalletInfo();
+      if (walletInfo && walletInfo.address) {
+        setWalletAddress(walletInfo.address);
+      } else {
+        setWalletAddress(null);
+      }
+    };
+    
+    checkWalletStatus();
+
+    // Limpar os listeners quando o componente for desmontado
+    return () => {
+      window.removeEventListener('walletConnected', handleWalletConnected);
+      window.removeEventListener('walletDisconnected', handleWalletDisconnected);
+    };
+  }, []);
 
   return (
     <Layout>
