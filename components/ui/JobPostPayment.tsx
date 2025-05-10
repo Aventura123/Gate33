@@ -1,483 +1,320 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
-import { web3Service } from "../../services/web3Service";
+import React, { useState, useEffect, useCallback, FormEvent, ChangeEvent } from "react";
+import web3Service from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
-import { NetworkType } from "../../services/web3Service";
-
-import { jobService } from "../../services/jobService";
-import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import { collection, addDoc, getDoc, doc, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
-interface JobPlan {
+interface PricingPlan {
   id: string;
   name: string;
-  description: string;
   price: number;
-  currency: string;
-  features: string[];
   duration: number;
-  isPremium: boolean;
-  isTopListed: boolean;
+  features: string[];
+  recommended?: boolean;
+}
+
+interface CompanyProfile {
+  name: string;
+  description: string;
+  website: string;
+  location: string;
+  responsiblePerson?: string;
+  address?: string;
+  contactPhone?: string;
 }
 
 interface JobPostPaymentProps {
-  jobId: string;
-  onPaymentSuccess: (planId: string, transactionHash: string) => void;
-  onPaymentError: (error: string) => void;
+  companyId: string;
+  companyProfile: CompanyProfile;
+  reloadData: () => void;
 }
 
-const JobPostPayment: React.FC<JobPostPaymentProps> = ({
-  jobId,
-  onPaymentSuccess,
-  onPaymentError,
-}) => {
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState("");
-  const [plans, setPlans] = useState<JobPlan[]>([]);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"smartContract" | "usdtSmartContract">("smartContract");
-  const [transactionHash, setTransactionHash] = useState<string | null>(null);
-  const [processingPayment, setProcessingPayment] = useState(false);
-  const [updatingJob, setUpdatingJob] = useState(false);
-  const [jobUpdateStatus, setJobUpdateStatus] = useState<"idle" | "updating" | "success" | "error">("idle");
+const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfile, reloadData }) => {
+  // Estados e lógica idênticos ao fluxo original da dashboard
+  const [jobData, setJobData] = useState({
+    title: "",
+    description: "",
+    category: "",
+    company: companyProfile.name || "",
+    requiredSkills: "",
+    salaryRange: "",
+    location: "",
+    employmentType: "",
+    experienceLevel: "",
+    blockchainExperience: "",
+    remoteOption: "",
+    contactEmail: "",
+    applicationLink: "",
+    pricingPlanId: "",
+    paymentStatus: "pending" as 'pending' | 'completed' | 'failed',
+    paymentId: ""
+  });
+  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
+  const [paymentStep, setPaymentStep] = useState<'form' | 'select-plan' | 'review' | 'processing' | 'completed'>('form');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
 
-  // Load plans from Firestore
-  useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        setIsLoading(true);
-        const plansCollection = collection(db, "jobPlans");
-        const plansSnapshot = await getDocs(plansCollection);
-        const plansList = plansSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as JobPlan[];
-
-        // Sort plans by price (from cheapest to most expensive)
-        plansList.sort((a, b) => a.price - b.price);
-        setPlans(plansList);
-
-        // If there are plans, select the first one as default
-        if (plansList.length > 0) {
-          setSelectedPlanId(plansList[0].id);
-        }
-      } catch (err) {
-        console.error("Error loading plans:", err);
-        setError("Unable to load available plans.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPlans();
+  // Buscar planos de preço
+  const fetchPricingPlans = useCallback(async () => {
+    try {
+      if (!db) throw new Error("Firestore is not initialized");
+      const pricingPlansCollection = collection(db, "jobPlans");
+      const pricingPlansSnapshot = await getDocs(pricingPlansCollection);
+      const fetchedPlans = pricingPlansSnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as PricingPlan[];
+      setPricingPlans(fetchedPlans);
+    } catch (error) {
+      setPaymentError("Erro ao buscar planos de preço");
+    }
   }, []);
 
-  // Connect wallet
-  const connectWallet = async () => {
-    try {
-      setIsLoading(true);
-      const walletInfo = await web3Service.connectWallet();
-      setWalletConnected(true);
-      setWalletAddress(walletInfo.address);
-      setIsLoading(false);
-    } catch (err: any) {
-      console.error("Error connecting wallet:", err);
-      setError(err.message || "Error connecting wallet");
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => { fetchPricingPlans(); }, [fetchPricingPlans]);
 
-  // Disconnect wallet
-  const disconnectWallet = () => {
-    web3Service.disconnectWallet();
-    setWalletConnected(false);
-    setWalletAddress("");
-  };
-
-  // Utilitário para mapear rede para moeda
-  const getNetworkCurrency = (networkName: string | undefined) => {
-    if (!networkName) return undefined;
-    const map: Record<string, string> = {
-      ethereum: "ETH",
-      polygon: "MATIC",
-      binance: "BNB",
-      binancetestnet: "tBNB"
-    };
-    return map[networkName.toLowerCase()];
-  };
-
-  // Process payment via smart contract
-  const processContractPayment = async () => {
-    if (!selectedPlanId || !jobId) {
-      setError("Select a plan before continuing.");
-      return;
-    }
-
-    setProcessingPayment(true);
-    setError(null);
-
-    try {
-      // Initialize the contract if needed
-      await smartContractService.init();
-      
-      // Use the correct method from smartContractService
-      const result = await smartContractService.processJobPayment(
-        selectedPlanId,
-        parseFloat(getSelectedPlan()?.price.toString() || "0"),
-        jobId
-      );
-      
-      setTransactionHash(result.transactionHash);
-      
-      // Update job status
-      await updateJobStatus(selectedPlanId, result.transactionHash);
-      
-      if (onPaymentSuccess) {
-        onPaymentSuccess(selectedPlanId, result.transactionHash);
-      }
-    } catch (err: any) {
-      console.error("Error processing payment via contract:", err);
-      setError(err.message || "Error processing payment via contract");
-      if (onPaymentError) {
-        onPaymentError(err.message || "Error processing payment via contract");
-      }
-    } finally {
-      setProcessingPayment(false);
-    }
-  };
-
-  // Process payment via USDT smart contract
-  const processUSDTContractPayment = async () => {
-    if (!selectedPlanId || !jobId) {
-      setError("Select a plan before continuing.");
-      return;
-    }
-
-    setProcessingPayment(true);
-    setError(null);
-
-    try {
-      // Initialize the contract if needed
-      await smartContractService.init();
-      
-      // Use the USDT payment method from smartContractService
-      const result = await smartContractService.processJobPaymentWithUSDT(
-        selectedPlanId,
-        parseFloat(getSelectedPlan()?.price.toString() || "0"),
-        jobId
-      );
-      
-      setTransactionHash(result.transactionHash);
-      
-      // Update job status
-      await updateJobStatus(selectedPlanId, result.transactionHash);
-      
-      if (onPaymentSuccess) {
-        onPaymentSuccess(selectedPlanId, result.transactionHash);
-      }
-    } catch (err: any) {
-      console.error("Error processing payment via USDT contract:", err);
-      setError(err.message || "Error processing payment via USDT contract");
-      if (onPaymentError) {
-        onPaymentError(err.message || "Error processing payment via USDT contract");
-      }
-    } finally {
-      setProcessingPayment(false);
-    }
-  };
-
-  // New function to update job status after payment
-  const updateJobStatus = async (planId: string, transactionHash: string) => {
-    setUpdatingJob(true);
-    setJobUpdateStatus("updating");
-    
-    try {
-      await jobService.updateJobAfterPayment(jobId, planId, transactionHash);
-      setJobUpdateStatus("success");
-    } catch (err: any) {
-      console.error("Error updating job status:", err);
-      setJobUpdateStatus("error");
-      // We don't throw the error here to avoid interrupting the user flow
-      // since the payment was processed successfully
-    } finally {
-      setUpdatingJob(false);
-    }
-  };
-
-  // Process payment based on the selected method
-  const handlePayment = async () => {
-    if (!walletConnected) {
-      await connectWallet();
-      return;
-    }
-
-    if (paymentMethod === "smartContract") {
-      await processContractPayment();
-    } else if (paymentMethod === "usdtSmartContract") {
-      // Mostrar alerta informativo sobre o valor que aparecerá na MetaMask
-      const selectedPlan = getSelectedPlan();
-      if (selectedPlan) {
-        const isConfirmed = window.confirm(
-          `AVISO IMPORTANTE: Devido a questões técnicas do contrato, o valor que aparecerá na sua carteira poderá mostrar apenas 70% do valor total (${(selectedPlan.price * 0.7).toFixed(2)} USDT). Isto é normal e o valor total correto do plano é ${selectedPlan.price} USDT.\n\nDeseja continuar com o pagamento?`
-        );
-        if (!isConfirmed) {
-          return;
+  // --- NOVO: Sincronizar com wallet global ---
+  useEffect(() => {
+    // Função para atualizar o estado local com a wallet global
+    const updateWalletInfo = () => {
+      try {
+        const walletInfo = web3Service.getWalletInfo ? web3Service.getWalletInfo() : null;
+        if (walletInfo && walletInfo.address) {
+          setWalletAddress(walletInfo.address);
+        } else {
+          setWalletAddress(null);
         }
+      } catch {
+        setWalletAddress(null);
       }
-      await processUSDTContractPayment();
+    };
+    updateWalletInfo();
+    // Listeners para eventos globais
+    const handleWeb3Connected = (e: any) => {
+      setWalletAddress(e.detail?.address || null);
+    };
+    const handleWeb3Disconnected = () => {
+      setWalletAddress(null);
+    };
+    const handleChainChanged = () => {
+      updateWalletInfo();
+    };
+    const handleAccountsChanged = () => {
+      updateWalletInfo();
+    };
+    window.addEventListener('web3Connected', handleWeb3Connected);
+    window.addEventListener('web3Disconnected', handleWeb3Disconnected);
+    window.addEventListener('chainChanged', handleChainChanged);
+    window.addEventListener('accountsChanged', handleAccountsChanged);
+    return () => {
+      window.removeEventListener('web3Connected', handleWeb3Connected);
+      window.removeEventListener('web3Disconnected', handleWeb3Disconnected);
+      window.removeEventListener('chainChanged', handleChainChanged);
+      window.removeEventListener('accountsChanged', handleAccountsChanged);
+    };
+  }, []);
+
+  // Handlers
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setJobData((prev) => ({ ...prev, [name]: value ?? "" }));
+  };
+
+  const handlePlanSelect = (plan: PricingPlan) => {
+    setSelectedPlan(plan);
+    setJobData((prev) => ({ ...prev, pricingPlanId: plan.id, paymentId: prev.paymentId || "" }));
+    setPaymentStep('review');
+  };
+
+  const processPayment = async () => {
+    if (!selectedPlan) {
+      setPaymentError("Please select a pricing plan");
+      return;
+    }
+    setPaymentError(null);
+    setIsProcessingPayment(true);
+    setPaymentStep('processing');
+    try {
+      let currentAddress = walletAddress;
+      if (!currentAddress) {
+        const walletInfo = await web3Service.connectWallet();
+        currentAddress = walletInfo?.address;
+        if (currentAddress) setWalletAddress(walletInfo.address);
+        else throw new Error("Could not get wallet address");
+      }
+      // Simulação: pagamento via smart contract
+      const transaction = await smartContractService.processJobPayment(selectedPlan.id, selectedPlan.price, companyId);
+      if (!transaction || !transaction.transactionHash) throw new Error("Transaction failed");
+      // Salvar pagamento
+      const paymentsCollection = collection(db, "payments");
+      const paymentRef = await addDoc(paymentsCollection, {
+        planId: selectedPlan.id,
+        planName: selectedPlan.name,
+        amount: selectedPlan.price,
+        companyId,
+        status: "completed",
+        createdAt: new Date(),
+        transactionHash: transaction.transactionHash,
+        blockNumber: transaction.blockNumber
+      });
+      // Salvar job
+      const now = new Date();
+      const expiryDate = new Date(now.getTime() + selectedPlan.duration * 24 * 60 * 60 * 1000);
+      const jobCollection = collection(db, "jobs");
+      const jobToSave = {
+        ...jobData,
+        companyId,
+        createdAt: now,
+        expiresAt: expiryDate,
+        paymentStatus: "completed",
+        paymentId: paymentRef.id,
+        pricingPlanId: selectedPlan.id,
+        planName: selectedPlan.name,
+        planDuration: selectedPlan.duration,
+        featured: selectedPlan.name.toLowerCase().includes('premium') || selectedPlan.name.toLowerCase().includes('featured'),
+        priorityListing: selectedPlan.name.toLowerCase().includes('premium'),
+      };
+      await addDoc(jobCollection, jobToSave);
+      setJobData((prev) => ({ ...prev, paymentStatus: "completed", paymentId: paymentRef.id }));
+      setPaymentStep('completed');
+      reloadData();
+    } catch (error: any) {
+      setPaymentError(error.message || "Payment failed. Please try again.");
+      setJobData((prev) => ({ ...prev, paymentStatus: "failed" }));
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
-  const getSelectedPlan = () => {
-    return plans.find((plan) => plan.id === selectedPlanId);
+  const resetPaymentFlow = () => {
+    setSelectedPlan(null);
+    setPaymentStep('form');
+    setPaymentError(null);
+    setJobData((prev) => ({ ...prev, pricingPlanId: "", paymentStatus: "pending", paymentId: prev.paymentId || "" }));
   };
 
-  const formatCurrency = (value: number, currency: string) => {
-    return `${value} ${currency}`;
-  };
-
+  // Renderização
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">Choose Your Job Posting Plan</h2>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 relative">
-          <span className="block sm:inline">{error}</span>
-        </div>
+    <div className="bg-black/70 p-8 rounded-lg shadow-lg">
+      {paymentStep === 'form' && (
+        <form onSubmit={e => {
+          e.preventDefault();
+          if (!jobData.title || !jobData.description || !jobData.category || !jobData.contactEmail || !jobData.applicationLink) {
+            alert("Please fill in all required fields.");
+            return;
+          }
+          setPaymentStep('select-plan');
+        }}>
+          <div className="space-y-6">
+            <input type="text" name="title" value={jobData.title} onChange={handleChange} placeholder="Job Title" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
+            <textarea name="description" value={jobData.description} onChange={handleChange} placeholder="Job Description" rows={4} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required></textarea>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="text" name="category" value={jobData.category} onChange={handleChange} placeholder="Category" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
+              <input type="text" name="company" value={jobData.company} onChange={handleChange} placeholder="Company Name" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="text" name="requiredSkills" value={jobData.requiredSkills} onChange={handleChange} placeholder="Required Skills" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+              <input type="text" name="salaryRange" value={jobData.salaryRange} onChange={handleChange} placeholder="Salary Range" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="text" name="location" value={jobData.location} onChange={handleChange} placeholder="Location" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+              <input type="text" name="employmentType" value={jobData.employmentType} onChange={handleChange} placeholder="Employment Type" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="text" name="experienceLevel" value={jobData.experienceLevel} onChange={handleChange} placeholder="Experience Level" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+              <input type="text" name="blockchainExperience" value={jobData.blockchainExperience} onChange={handleChange} placeholder="Blockchain Experience" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="text" name="remoteOption" value={jobData.remoteOption} onChange={handleChange} placeholder="Remote Option" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="email" name="contactEmail" value={jobData.contactEmail} onChange={handleChange} placeholder="Contact Email" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
+              <input type="url" name="applicationLink" value={jobData.applicationLink} onChange={handleChange} placeholder="Application URL" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
+            </div>
+            <button type="submit" className="w-full bg-orange-500 text-white py-3 rounded-full font-semibold text-lg hover:bg-orange-600 mt-6">Continue</button>
+          </div>
+        </form>
       )}
-
-      {isLoading ? (
-        <div className="flex justify-center items-center py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-        </div>
-      ) : (
-        <>
-          {/* Plan cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                  selectedPlanId === plan.id
-                    ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20"
-                    : "border-gray-200 hover:border-orange-300 dark:border-gray-700"
-                }`}
-                onClick={() => setSelectedPlanId(plan.id)}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-semibold">{plan.name}</h3>
-                  {plan.isPremium && (
-                    <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded dark:bg-yellow-800 dark:text-yellow-100">
-                      Premium
-                    </span>
-                  )}
-                </div>
-                
-                <p className="text-2xl font-bold mb-2">
-                  {formatCurrency(plan.price, plan.currency)}
-                </p>
-                
-                <p className="text-gray-600 dark:text-gray-300 mb-3 text-sm">
-                  {plan.description}
-                </p>
-                
-                <div className="mb-3 text-sm">
-                  <span className="block">Duration: {plan.duration} days</span>
-                  {plan.isTopListed && (
-                    <span className="text-green-600 dark:text-green-400">
-                      ★ Featured at the top
-                    </span>
-                  )}
-                </div>
-                
-                {plan.features.length > 0 && (
-                  <ul className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-start mb-1">
-                        <svg
-                          className="h-4 w-4 text-green-500 mr-2 mt-0.5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <div className="mt-auto pt-2">
-                  <button
-                    type="button"
-                    className={`w-full py-2 px-4 rounded-md text-center ${
-                      selectedPlanId === plan.id
-                        ? "bg-orange-500 text-white"
-                        : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white"
-                    }`}
-                    onClick={() => setSelectedPlanId(plan.id)}
-                  >
-                    {selectedPlanId === plan.id ? "Selected" : "Select"}
-                  </button>
-                </div>
+      {paymentStep === 'select-plan' && (
+        <div>
+          <h3 className="text-2xl font-semibold text-orange-500 mb-4">Select a Plan</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            {pricingPlans.map(plan => (
+              <div key={plan.id} className={`border rounded-lg p-6 flex flex-col h-full transition-all cursor-pointer ${jobData.pricingPlanId === plan.id ? "border-orange-500 bg-black/70" : "border-gray-700 bg-black/50 hover:border-orange-300"}`}
+                onClick={() => { setJobData(prev => ({ ...prev, pricingPlanId: plan.id })); setSelectedPlan(plan); }}>
+                <h4 className="text-xl font-bold text-orange-400">{plan.name}</h4>
+                <div className="text-3xl font-bold text-white my-2">${plan.price}</div>
+                <p className="text-gray-400 mb-4">{plan.duration} days listing</p>
+                <button type="button" onClick={() => { setJobData(prev => ({ ...prev, pricingPlanId: plan.id })); setSelectedPlan(plan); }} className="mt-4 py-2 px-4 rounded-lg bg-orange-500 text-white hover:bg-orange-600">Select Plan</button>
               </div>
             ))}
           </div>
-
-          {/* Payment Method Options */}
-          {selectedPlanId && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-2">Payment Method</h3>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={`flex-1 py-3 px-4 rounded-md text-center ${
-                    paymentMethod === "smartContract"
-                      ? "bg-orange-500 text-white"
-                      : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white"
-                  }`}
-                  onClick={() => setPaymentMethod("smartContract")}
-                >
-                  Smart Contract Payment
-                </button>
-                <button
-                  type="button"
-                  className={`flex-1 py-3 px-4 rounded-md text-center ${
-                    paymentMethod === "usdtSmartContract"
-                      ? "bg-orange-500 text-white"
-                      : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white"
-                  }`}
-                  onClick={() => setPaymentMethod("usdtSmartContract")}
-                >
-                  Pay with USDT
-                </button>
-              </div>
-              <p className="text-sm text-gray-500 mt-2">
-                {paymentMethod === "smartContract"
-                  ? "Payment processed and verified by our smart contract on the blockchain using native token."
-                  : "Pay with USDT stablecoin using our smart contract. Available on multiple networks."}
-              </p>
-            </div>
-          )}
-
-          {/* Summary and Payment Button */}
-          {selectedPlanId && (
-            <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800 mb-6">
-              <h3 className="text-lg font-semibold mb-2">Summary</h3>
-              <div className="flex justify-between mb-1">
-                <span>Plan:</span>
-                <span className="font-medium">{getSelectedPlan()?.name}</span>
-              </div>
-              <div className="flex justify-between mb-1">
-                <span>Duration:</span>
-                <span>{getSelectedPlan()?.duration} days</span>
-              </div>
-              <div className="flex justify-between mb-1">
-                <span>Method:</span>
-                <span>
-                  {paymentMethod === "smartContract"
-                    ? "Smart Contract"
-                    : "USDT Payment"}
-                </span>
-              </div>
-              <div className="flex justify-between font-bold mt-4 pt-3 border-t border-gray-300 dark:border-gray-600 text-lg">
-                <span>Total Amount to Approve:</span>
-                <span className="text-orange-500">
-                  {getSelectedPlan() &&
-                    formatCurrency(getSelectedPlan()!.price, getSelectedPlan()!.currency)}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-2 italic text-center">
-                This is the full amount that will be requested for approval in your wallet
-              </p>
-            </div>
-          )}
-
-          {/* Connection/Payment Button */}
-          <div className="text-center">
-            {!walletConnected && (
-              <button
-                type="button"
-                className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md w-full md:w-auto"
-                onClick={connectWallet}
-                disabled={isLoading || processingPayment}
-              >
-                {isLoading ? "Connecting..." : "Connect Wallet"}
-              </button>
-            )}
-
-            {walletConnected && (
-              <>
-                <div className="flex items-center justify-center mb-4 gap-2">
-                  <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">
-                    Connected
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                    {walletAddress.substring(0, 6)}...
-                    {walletAddress.substring(walletAddress.length - 4)}
-                  </span>
-                  <button
-                    onClick={disconnectWallet}
-                    className="text-sm text-red-500 hover:text-red-700"
-                  >
-                    Disconnect
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  className="bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-md w-full md:w-auto"
-                  onClick={handlePayment}
-                  disabled={isLoading || processingPayment || !selectedPlanId}
-                >
-                  {processingPayment
-                    ? "Processing..."
-                    : `Pay ${
-                        getSelectedPlan()
-                          ? formatCurrency(
-                              getSelectedPlan()!.price,
-                              getSelectedPlan()!.currency
-                            )
-                          : ""
-                      }`}
-                </button>
-              </>
-            )}
+          <div className="flex justify-between mt-8">
+            <button onClick={() => setPaymentStep('form')} className="bg-gray-700 text-white py-2 px-6 rounded-lg font-semibold hover:bg-gray-800">Back</button>
+            <button onClick={() => {
+              if (!selectedPlan && jobData.pricingPlanId) {
+                const plan = pricingPlans.find(p => p.id === jobData.pricingPlanId) || null;
+                setSelectedPlan(plan);
+              }
+              if (!jobData.pricingPlanId) {
+                alert('Please select a plan.');
+                return;
+              }
+              setPaymentStep('review');
+            }} className="bg-orange-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-orange-600">Continue to Payment</button>
           </div>
-
-          {/* Transaction Information */}
-          {transactionHash && (
-            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
-              <h3 className="text-lg font-semibold text-green-800 dark:text-green-300 mb-2">
-                Payment Processed!
-              </h3>
-              
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                {jobUpdateStatus === "success" 
-                  ? `Your job posting has been published successfully and will be visible for ${getSelectedPlan()?.duration} days.`
-                  : jobUpdateStatus === "updating"
-                    ? "Updating your job posting status..."
-                    : jobUpdateStatus === "error"
-                      ? "Your payment was processed, but there was an error updating the job posting status. Our team will be notified and will resolve the issue."
-                      : "Processing your payment..."}
-              </p>
-              
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Transaction ID:{" "}
-                <span className="font-mono">{transactionHash}</span>
-              </p>
+        </div>
+      )}
+      {paymentStep === 'review' && selectedPlan && (
+        <div className="bg-black/50 p-6 rounded-lg mt-4">
+          <div className="flex justify-between mb-6">
+            <button onClick={() => setPaymentStep('select-plan')} className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-6 rounded-lg">Back to Plans</button>
+          </div>
+          <h3 className="text-2xl font-semibold text-orange-500 mb-4">Review Your Order</h3>
+          <div className="bg-black/50 border border-gray-700 rounded-lg p-6">
+            <div className="flex justify-between items-center border-b border-gray-700 pb-4 mb-4">
+              <div>
+                <h4 className="text-xl font-semibold text-white">{selectedPlan.name} Plan</h4>
+                <p className="text-gray-400">{selectedPlan.duration} days of job listing</p>
+              </div>
+              <div className="text-2xl font-bold text-white">${selectedPlan.price}</div>
             </div>
-          )}
-        </>
+            <div className="space-y-2 mb-6">
+              <div className="flex justify-between font-bold">
+                <span className="text-gray-300">Total:</span>
+                <span className="text-orange-500">${selectedPlan.price}</span>
+              </div>
+            </div>
+            <div className="mb-4 p-3 rounded-lg border border-gray-700">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Wallet Connection:</span>
+                <span className={walletAddress ? "text-green-500" : "text-yellow-500"}>{walletAddress ? "Connected" : "Not Connected"}</span>
+              </div>
+              <div className="mt-2 text-sm text-gray-400 break-all">{walletAddress ? `Address: ${walletAddress}` : "No wallet connected"}</div>
+              {walletError && <div className="mt-2 text-sm text-red-500">Error: {walletError}</div>}
+            </div>
+            <div className="flex flex-col space-y-3">
+              <button onClick={processPayment} disabled={isProcessingPayment || !walletAddress} className={`w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition ${isProcessingPayment ? "opacity-70 cursor-not-allowed" : ""} ${!walletAddress ? "opacity-50 cursor-not-allowed" : ""}`}>{isProcessingPayment ? (<span className="flex items-center justify-center"><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing Payment...</span>) : walletAddress ? "Complete Payment & Post Job" : "Connect Wallet First"}</button>
+              <button onClick={() => setPaymentStep('select-plan')} disabled={isProcessingPayment} className="w-full bg-transparent border border-gray-600 text-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-800 transition">Change Plan</button>
+            </div>
+            {paymentError && <div className="mt-4 bg-red-500/20 border border-red-500 text-red-500 p-3 rounded-lg">{paymentError}</div>}
+          </div>
+        </div>
+      )}
+      {paymentStep === 'processing' && (
+        <div className="text-center py-8"><span className="flex items-center justify-center"><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing Payment...</span></div>
+      )}
+      {paymentStep === 'completed' && (
+        <div className="text-center space-y-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+          </div>
+          <h3 className="text-2xl font-semibold text-green-500">Payment Successful!</h3>
+          <p className="text-gray-300">Your payment has been processed successfully. You can now complete your job posting.</p>
+          <button onClick={resetPaymentFlow} className="mt-4 bg-orange-500 text-white py-3 px-8 rounded-lg font-semibold hover:bg-orange-600 transition">Post Another Job</button>
+        </div>
       )}
     </div>
   );

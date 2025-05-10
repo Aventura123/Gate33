@@ -18,6 +18,7 @@ import instantJobsService, { InstantJob, JobMessage } from '../../services/insta
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
 import WalletButton from '../../components/WalletButton';
+import JobPostPayment from "../../components/ui/JobPostPayment";
 
 // Interface for Support Ticket
 interface SupportTicket {
@@ -197,7 +198,7 @@ const PostJobPage = (): JSX.Element => {
     totalParticipants: 0,
     maxParticipants: undefined,
     startDate: null, // Initialize as null instead of undefined
-    endDate: null,   // Initialize as null instead of undefined
+    endDate: null,   // Initialize as null instead of undefined,
     tasks: [],
     status: 'draft',
     contractAddress: "",
@@ -1700,198 +1701,7 @@ const PostJobPage = (): JSX.Element => {
         return (
           <div className="bg-black/70 p-10 rounded-lg shadow-lg">
             <h2 className="text-3xl font-semibold text-orange-500 mb-6">Post a New Job</h2>
-            {jobSubmissionStep === 'form' ? (
-              <form onSubmit={handleInitialSubmit}>
-                {/* Job submission form fields */}
-                <div className="space-y-6">
-                  <input
-                    type="text"
-                    name="title"
-                    value={jobData.title}
-                    onChange={handleChange}
-                    placeholder="Job Title"
-                    className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                    required
-                  />
-                  <textarea
-                    name="description"
-                    value={jobData.description}
-                    onChange={handleChange}
-                    placeholder="Job Description"
-                    rows={4}
-                    className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                    required
-                  ></textarea>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      name="category"
-                      value={jobData.category}
-                      onChange={handleChange}
-                      placeholder="Category"
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                      required
-                    />
-                    <input
-                      type="text"
-                      name="company"
-                      value={jobData.company || companyProfile.name}
-                      onChange={handleChange}
-                      placeholder="Company Name"
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      name="requiredSkills"
-                      value={jobData.requiredSkills}
-                      onChange={handleChange}
-                      placeholder="Required Skills"
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                    />
-                    <input
-                      type="text"
-                      name="salaryRange"
-                      value={jobData.salaryRange}
-                      onChange={handleChange}
-                      placeholder="Salary Range"
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      name="location"
-                      value={jobData.location}
-                      onChange={handleChange}
-                      placeholder="Location"
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                    />
-                    <input
-                      type="text"
-                      name="employmentType"
-                      value={jobData.employmentType}
-                      onChange={handleChange}
-                      placeholder="Employment Type"
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      name="experienceLevel"
-                      value={jobData.experienceLevel}
-                      onChange={handleChange}
-                      placeholder="Experience Level"
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                    />
-                    <input
-                      type="text"
-                      name="blockchainExperience"
-                      value={jobData.blockchainExperience}
-                      onChange={handleChange}
-                      placeholder="Blockchain Experience"
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      name="remoteOption"
-                      value={jobData.remoteOption}
-                      onChange={handleChange}
-                      placeholder="Remote Option"
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="email"
-                      name="contactEmail"
-                      value={jobData.contactEmail}
-                      onChange={handleChange}
-                      placeholder="Contact Email"
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                      required
-                    />
-                    <input
-                      type="url"
-                      name="applicationLink"
-                      value={jobData.applicationLink}
-                      onChange={handleChange}
-                      placeholder="Application URL"
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                      required
-                    />
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  className="bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg hover:bg-orange-600 mt-6 w-full"
-                >
-                  Continue to Payment
-                </button>
-              </form>
-            ) : jobSubmissionStep === 'payment' ? (
-              <div className="bg-black/50 p-6 rounded-lg mt-4">
-                {paymentStep === 'select-plan' && renderPlanSelection()}
-                {paymentStep === 'review' && renderPaymentReview()}
-                {paymentStep === 'processing' && renderPaymentReview()}
-                {paymentStep === 'completed' && (
-                  <form onSubmit={handleSubmit}>
-                    <div className="text-center py-8">
-                      <div className="text-green-500 text-5xl mb-4">✓</div>
-                      <h3 className="text-2xl font-semibold text-white">Payment Completed!</h3>
-                      <p className="text-gray-300 mt-2 mb-6">
-                        Your job post has been created and is now live.
-                      </p>
-                      
-                      <div className="flex justify-center space-x-4">
-                        <button
-                          type="button"
-                          onClick={startNewJob}
-                          className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600"
-                        >
-                          Post Another Job
-                        </button>
-                        <button
-                          type="button"
-                          onClick={viewPostedJobs}
-                          className="bg-gray-700 text-white py-2 px-6 rounded hover:bg-gray-600"
-                        >
-                          View My Jobs
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="text-green-500 text-5xl mb-4">✓</div>
-                <h3 className="text-2xl font-semibold text-white">Job Posted Successfully!</h3>
-                <p className="text-gray-300 mt-2 mb-6">
-                  Your job has been posted and is now visible to job seekers.
-                </p>
-                
-                <div className="flex justify-center space-x-4">
-                  <button
-                    onClick={startNewJob}
-                    className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600"
-                  >
-                    Post Another Job
-                  </button>
-                  <button
-                    onClick={viewPostedJobs}
-                    className="bg-gray-700 text-white py-2 px-6 rounded hover:bg-gray-600"
-                  >
-                    View My Jobs
-                  </button>
-                </div>
-              </div>
-            )}
+            <JobPostPayment companyId={companyId} companyProfile={companyProfile} reloadData={reloadData} />
           </div>
         );
       case "instantJobs":
