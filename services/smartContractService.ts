@@ -3,6 +3,7 @@ import { db } from "../lib/firebase";
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import { web3Service } from "./web3Service";
 import RPC_URLS, { getRpcUrl } from "../config/rpcUrls";
+import { getHttpRpcUrls } from "../config/rpcConfig";
 
 class SmartContractService {
   private provider: ethers.providers.Web3Provider | null = null;
@@ -1689,41 +1690,39 @@ class SmartContractService {
   }  // Helper function to create a provider for a specific network
   private createNetworkProvider(networkName: string): ethers.providers.JsonRpcProvider | null {
     try {
-      // First try to get a public RPC URL that doesn't require API key
       const normalizedNetworkName = this.normalizeNetworkName(networkName);
-      
-      // Always prioritize direct public RPC endpoints that don't require auth
-      // IMPORTANT: These are reliable public endpoints that should work without API keys
-      const publicRPCs: Record<string, string> = {
-        polygon: "https://polygon-rpc.com",
-        binance: "https://bsc-dataseed.binance.org",
-        avalanche: "https://api.avax.network/ext/bc/C/rpc",
-        fantom: "https://rpc.ftm.tools",
-        arbitrum: "https://arb1.arbitrum.io/rpc",
-        optimism: "https://mainnet.optimism.io",
-        ethereum: "https://eth.llamarpc.com",
-        mumbai: "https://rpc-mumbai.maticvigil.com",
-        binanceTestnet: "https://data-seed-prebsc-1-s1.binance.org:8545"
-      };
-      
-      // ALWAYS prefer using public endpoints for common networks 
-      // Only fall back to getRpcUrl for less common networks
-      let rpcUrl = publicRPCs[normalizedNetworkName];
-      
-      // If no public endpoint found, try to get from config but ONLY if it's not an Infura URL without API key
-      if (!rpcUrl) {
-        const configUrl = getRpcUrl(normalizedNetworkName);
-        // Avoid using Infura URLs with undefined API keys
-        if (configUrl && !configUrl.includes("infura.io/v3/undefined")) {
-          rpcUrl = configUrl;
+      let rpcUrl: string | undefined;
+
+      // Para Polygon, sempre usar o endpoint do rpcConfig
+      if (normalizedNetworkName === "polygon") {
+        const polygonRpcList = getHttpRpcUrls();
+        rpcUrl = polygonRpcList && polygonRpcList.length > 0 ? polygonRpcList[0] : undefined;
+      } else {
+        // Mantém lógica atual para outras redes
+        const publicRPCs: Record<string, string> = {
+          polygon: "https://polygon-rpc.com", // redundante, mas mantido para compatibilidade
+          binance: "https://bsc-dataseed.binance.org",
+          avalanche: "https://api.avax.network/ext/bc/C/rpc",
+          fantom: "https://rpc.ftm.tools",
+          arbitrum: "https://arb1.arbitrum.io/rpc",
+          optimism: "https://mainnet.optimism.io",
+          ethereum: "https://eth.llamarpc.com",
+          mumbai: "https://rpc-mumbai.maticvigil.com",
+          binanceTestnet: "https://data-seed-prebsc-1-s1.binance.org:8545"
+        };
+        rpcUrl = publicRPCs[normalizedNetworkName];
+        if (!rpcUrl) {
+          const configUrl = getRpcUrl(normalizedNetworkName);
+          if (configUrl && !configUrl.includes("infura.io/v3/undefined")) {
+            rpcUrl = configUrl;
+          }
         }
       }
-      
+
       if (!rpcUrl) {
         console.error(`No valid RPC URL configured for network: ${networkName}`);
         return null;
       }
-      
       console.log(`Creating provider for ${normalizedNetworkName} using: ${rpcUrl}`);
       return new ethers.providers.JsonRpcProvider(rpcUrl);
     } catch (error: any) {
