@@ -51,17 +51,16 @@ const NetworkStatusIndicator: React.FC<{
   const color = getNetworkColor(networkType);
   
   if (!isLoading) return null;
-  
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+    return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full border-2 border-orange-400">
         <div className="flex flex-col items-center">
-          <div className={`w-16 h-16 rounded-full border-4 border-${color}-200 border-t-${color}-500 animate-spin mb-4`}></div>
-          <h3 className="text-lg font-medium mb-2">Switching Network</h3>
-          <p className="text-gray-600 text-center mb-2">
-            Connecting to {networkType.charAt(0).toUpperCase() + networkType.slice(1)} network...
+          <div className="w-16 h-16 rounded-full border-4 border-orange-200 border-t-orange-500 animate-spin mb-4"></div>
+          <h3 className="text-lg font-medium mb-2 text-orange-600">Switching Network</h3>
+          <p className="text-gray-700 text-center mb-2">
+            Connecting to <span className="font-semibold text-orange-600">{networkType.charAt(0).toUpperCase() + networkType.slice(1)}</span> network...
           </p>
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs bg-orange-50 p-2 rounded-md border border-orange-100 text-gray-600 text-center mt-2 w-full">
             Please approve the request in your wallet if prompted
           </p>
         </div>
@@ -552,15 +551,15 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
-            
-            {/* Network Selection Modal */}
+              {/* Network Selection Modal */}
             {showNetworkModal && (
-              <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-30 flex items-center justify-center">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+              <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl border-2 border-orange-400">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Select Network</h3>                    <button 
+                    <h3 className="text-lg font-semibold text-orange-600">Select Network</h3>                    
+                    <button 
                       onClick={() => setShowNetworkModal(false)} 
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-orange-400 hover:text-orange-600"
                       aria-label="Close network selection modal"
                       title="Close"
                     >
@@ -569,8 +568,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                       </svg>
                     </button>
                   </div>
-                  
-                  <div className="grid gap-3">
+                    <div className="grid gap-3">
                     {availableNetworks.map((network) => {
                       const isCurrentNetwork = currentNetwork === network;
                       const networkColor = network === 'ethereum' ? 'blue' : network === 'polygon' ? 'purple' : network === 'binance' ? 'yellow' : 'gray';
@@ -582,12 +580,19 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                             handleSwitchNetwork(network);
                             // Não fechar o modal aqui. Ele será fechado após sucesso no handleSwitchNetwork
                           }}
-                          className={`flex items-center p-3 rounded-lg ${isCurrentNetwork ? `bg-${networkColor}-50 border border-${networkColor}-200` : 'hover:bg-gray-50'}`}
+                          className={`flex items-center p-3 rounded-lg transform transition-all duration-200 ${
+                            isLoading ? 'opacity-70 cursor-not-allowed' : 
+                            isCurrentNetwork ? 
+                              `bg-orange-100 border border-orange-300 shadow-md` : 
+                              'hover:bg-orange-50 hover:border hover:border-orange-200 hover:shadow-sm'
+                          }`}
                           disabled={isLoading}
                         >
                           <span className={`inline-block w-4 h-4 rounded-full mr-3 bg-${networkColor}-${isCurrentNetwork ? '500' : '400'}`}></span>
                           <div className="flex-1 text-left">
-                            <p className="font-medium">{network.charAt(0).toUpperCase() + network.slice(1)}</p>
+                            <p className={`font-medium ${isCurrentNetwork ? 'text-orange-700' : 'text-gray-700'}`}>
+                              {network.charAt(0).toUpperCase() + network.slice(1)}
+                            </p>
                             <p className="text-xs text-gray-500">
                               {network === 'ethereum' ? 'Ethereum Mainnet' : 
                                network === 'polygon' ? 'Polygon Mainnet' : 
@@ -595,7 +600,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                             </p>
                           </div>
                           {isCurrentNetwork && (
-                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-${networkColor}-500`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                           )}
@@ -603,11 +608,10 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                       );
                     })}
                   </div>
-                  
-                  <p className="mt-4 text-xs text-gray-500">
+                    <p className="mt-4 text-xs text-gray-600 bg-orange-50 p-2 rounded-md border border-orange-100">
                     {web3Service.wcV2Provider ? 
-                      'Switching networks is now supported with WalletConnect! If you encounter issues, try switching networks manually in your wallet app.' : 
-                      'Network switching is supported directly from this interface.'}
+                      '🔗 Switching networks is now supported with WalletConnect! If you encounter issues, try switching networks manually in your wallet app.' : 
+                      '🦊 Network switching is supported directly from this interface.'}
                   </p>
                 </div>
               </div>

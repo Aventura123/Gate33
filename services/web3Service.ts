@@ -399,11 +399,10 @@ class Web3Service {
     if (!infuraRpc || infuraRpc.includes('undefined')) {
       throw new Error('Ethereum Infura RPC endpoint is not properly configured. Please check your INFURA_KEY in .env.local and rpcConfig.ts.');
     }
-    
-    // Add more compatible networks for SafePal
+      // Add popular networks for better wallet compatibility
     const chains = [1, 137, 56];
     
-    // Initialize with better configuration for SafePal compatibility
+    // Initialize with optimal configuration for general wallet compatibility
     console.log('[WalletConnect] Creating provider with chains:', chains);
     try {
       this.wcV2Provider = await EthereumProvider.init({
@@ -415,12 +414,11 @@ class Web3Service {
           1: infuraRpc,
           137: "https://polygon-rpc.com",
           56: "https://bsc-dataseed.binance.org/",
-          97: "https://data-seed-prebsc-1-s1.binance.org:8545/"
-        },
+          97: "https://data-seed-prebsc-1-s1.binance.org:8545/"        },
         disableProviderPing: false, // Keep connection alive with pings
+        // Use standard storage options that are compatível with WalletConnect types
         storageOptions: {
-          // Force recreate session for SafePal
-          forceClearStaleSession: true
+          // Remove unsupported prefix property
         }
       });
       
