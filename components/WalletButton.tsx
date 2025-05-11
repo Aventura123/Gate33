@@ -231,14 +231,14 @@ const WalletButton: React.FC<WalletButtonProps> = ({
             <div className="absolute z-10 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 left-0">
               <button
                 onClick={() => handleConnect('metamask')}
-                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-gray-800 rounded-t-lg"
+                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-gray-800 rounded-t-lg flex items-center gap-2"
               >
                 <span role="img" aria-label="MetaMask" className="mr-2">🦊</span>
                 MetaMask
               </button>
               <button
                 onClick={() => handleConnect('walletconnect')}
-                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-gray-800 rounded-b-lg border-t border-gray-100"
+                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-gray-800 rounded-b-lg border-t border-gray-100 flex items-center gap-2"
               >
                 <span role="img" aria-label="WalletConnect" className="mr-2">🔗</span>
                 WalletConnect
@@ -251,9 +251,9 @@ const WalletButton: React.FC<WalletButtonProps> = ({
           <div className="flex items-center gap-2">
             {/* Provider icon */}
             {isUsingWalletConnect ? (
-              <img src="https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/svg/walletconnect-logo.svg" alt="WalletConnect" className="w-5 h-5" />
+              <span role="img" aria-label="WalletConnect" className="w-5 h-5">🔗</span>
             ) : (
-              <img src="/logo.png" alt="MetaMask" className="w-5 h-5" onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg'; }} />
+              <span role="img" aria-label="MetaMask" className="w-5 h-5">🦊</span>
             )}
             {/* Address */}
             <span className="bg-green-900/30 text-green-400 text-xs font-medium px-2.5 py-0.5 rounded select-all">Connected</span>

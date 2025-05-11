@@ -89,9 +89,9 @@ const WalletModal: React.FC<WalletModalProps> = ({
         <div className="flex flex-col items-center gap-2 mb-4">
           <div className="flex items-center gap-2">
             {isUsingWalletConnect ? (
-              <img src="https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/svg/walletconnect-logo.svg" alt="WalletConnect" className="w-5 h-5" />
+              <span role="img" aria-label="WalletConnect" className="w-5 h-5">🔗</span>
             ) : (
-              <img src="/logo.png" alt="MetaMask" className="w-5 h-5" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg'; }} />
+              <span role="img" aria-label="MetaMask" className="w-5 h-5">🦊</span>
             )}
             <span className="text-xs text-gray-300 font-mono select-all">{walletAddress ? walletAddress.slice(0,6) + '...' + walletAddress.slice(-6) : ''}</span>
           </div>
