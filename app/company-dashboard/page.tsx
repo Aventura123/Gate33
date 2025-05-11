@@ -216,6 +216,10 @@ const PostJobPage = (): JSX.Element => {
   const [depositError, setDepositError] = useState<string | null>(null);
   const [isDepositConfirmed, setIsDepositConfirmed] = useState(false);
 
+  // Add at the top of the component, in the state declarations section
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Function to fetch pricing plans from Firebase
   const fetchPricingPlans = useCallback(async () => {
     try {
@@ -2957,11 +2961,63 @@ const manualSyncStatuses = async () => {
     };
   }, []);
 
+  // Add after the existing useEffect hooks
+  // Detect mobile device on client side
+  useEffect(() => {
+    const checkIfMobile = () => {
+      const userAgent = 
+        typeof window.navigator === "undefined" ? "" : navigator.userAgent;
+      const mobile = Boolean(
+        userAgent.match(
+          /Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i
+        )
+      );
+      setIsMobile(mobile);
+    };
+    
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
+
+  // Handle mobile menu toggle
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  // Handle tab change with automatic menu close on mobile
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (isMobile) {
+      setMobileMenuOpen(false); // Close menu after tab selection on mobile
+    }
+  };
   return (
     <Layout>
-      <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex">
-        {/* Sidebar */}
-        <aside className="w-full md:w-1/4 bg-black/70 p-6 flex flex-col">
+      <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex relative">
+        {/* Mobile menu toggle button */}
+        {isMobile && (
+          <button 
+            className="fixed top-20 left-4 z-50 bg-orange-500 text-white p-2 rounded-full shadow-lg"
+            onClick={toggleMobileMenu}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+        )}
+
+        {/* Sidebar - With mobile responsiveness */}
+        <aside 
+          className={`${isMobile ? 'fixed left-0 top-0 h-full z-40 transform transition-transform duration-300 ease-in-out ' + (mobileMenuOpen ? 'translate-x-0' : '-translate-x-full') : 'relative'} w-full md:w-1/4 bg-black/70 p-6 flex flex-col`}
+        >
           {/* Profile Photo Section */}
           <div className="flex flex-col items-center mb-6">
             <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
@@ -2998,7 +3054,7 @@ const manualSyncStatuses = async () => {
                   className={`w-full text-left py-2 px-4 rounded-lg ${
                     activeTab === "profile" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
                   }`}
-                  onClick={() => setActiveTab("profile")}
+                  onClick={() => handleTabChange("profile")}
                 >
                   Profile
                 </button>
@@ -3008,7 +3064,7 @@ const manualSyncStatuses = async () => {
                   className={`w-full text-left py-2 px-4 rounded-lg ${
                     activeTab === "myJobs" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
                   }`}
-                  onClick={() => setActiveTab("myJobs")}
+                  onClick={() => handleTabChange("myJobs")}
                 >
                   My Jobs
                 </button>
@@ -3018,7 +3074,7 @@ const manualSyncStatuses = async () => {
                   className={`w-full text-left py-2 px-4 rounded-lg ${
                     activeTab === "newJob" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
                   }`}
-                  onClick={() => setActiveTab("newJob")}
+                  onClick={() => handleTabChange("newJob")}
                 >
                   New Job
                 </button>
@@ -3028,7 +3084,7 @@ const manualSyncStatuses = async () => {
                   className={`w-full text-left py-2 px-4 rounded-lg ${
                     activeTab === "instantJobs" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
                   }`}
-                  onClick={() => setActiveTab("instantJobs")}
+                  onClick={() => handleTabChange("instantJobs")}
                 >
                   Instant Jobs
                 </button>
@@ -3038,7 +3094,7 @@ const manualSyncStatuses = async () => {
                   className={`w-full text-left py-2 px-4 rounded-lg ${
                     activeTab === "learn2earn" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
                   }`}
-                  onClick={() => setActiveTab("learn2earn")}
+                  onClick={() => handleTabChange("learn2earn")}
                 >
                   Learn2Earn
                 </button>
@@ -3049,7 +3105,7 @@ const manualSyncStatuses = async () => {
                     activeTab === "support" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
                   }`}
                   onClick={() => {
-                    setActiveTab("support");
+                    handleTabChange("support");
                     fetchSupportTickets();
                     setSupportSectionActive('list');
                   }}
@@ -3062,7 +3118,7 @@ const manualSyncStatuses = async () => {
                   className={`w-full text-left py-2 px-4 rounded-lg ${
                     activeTab === "settings" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
                   }`}
-                  onClick={() => setActiveTab("settings")}
+                  onClick={() => handleTabChange("settings")}
                 >
                   Settings
                 </button>
@@ -3073,7 +3129,7 @@ const manualSyncStatuses = async () => {
                     activeTab === "notifications" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
                   }`}
                   onClick={() => {
-                    setActiveTab("notifications");
+                    handleTabChange("notifications");
                     fetchNotifications();
                   }}
                 >
@@ -3092,11 +3148,10 @@ const manualSyncStatuses = async () => {
               <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4a1 1 0 10-2 0v4.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L14 11.586V7z" clipRule="evenodd" />
             </svg>
             Logout
-          </button>
-        </aside>
+          </button>        </aside>
         
-        {/* Main Content Area */}
-        <section className="w-full md:w-3/4 p-6 overflow-y-auto">
+        {/* Main Content Area - Updated for mobile responsiveness */}
+        <section className={`w-full ${isMobile ? 'p-6' : 'md:w-3/4 p-6'} overflow-y-auto ${isMobile && mobileMenuOpen ? 'opacity-30' : 'opacity-100'} transition-opacity duration-300`}>
           {renderContent()}
         </section>
       </main>
