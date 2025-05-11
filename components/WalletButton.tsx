@@ -9,6 +9,9 @@ const getNetworkColor = (network: NetworkType): string => {
     case 'ethereum': return 'blue';
     case 'polygon': return 'purple';
     case 'binance': return 'yellow';
+    case 'binanceTestnet': return 'orange';
+    case 'avalanche': return 'red';
+    case 'optimism': return 'pink';
     default: return 'gray';
   }
 };
@@ -34,9 +37,26 @@ const getNetworkDetails = (network: NetworkType) => {
         nativeCurrency: 'BNB',
         color: 'yellow'
       };
+    case 'binanceTestnet':
+      return {
+        name: 'BSC Testnet',
+        nativeCurrency: 'tBNB',
+        color: 'orange'
+      };
+    case 'avalanche':
+      return {
+        name: 'Avalanche C-Chain',
+        nativeCurrency: 'AVAX',
+        color: 'red'      };
+    case 'optimism':
+      return {
+        name: 'Optimism',
+        nativeCurrency: 'ETH',
+        color: 'pink'
+      };
     default:
       return {
-        name: network.charAt(0).toUpperCase() + network.slice(1),
+        name: String(network).charAt(0).toUpperCase() + String(network).slice(1),
         nativeCurrency: '...',
         color: 'gray'
       };
@@ -109,12 +129,18 @@ interface WalletButtonProps {
   onConnect?: (address: string) => void;
   onDisconnect?: () => void;
   className?: string;
+  availableNetworks?: NetworkType[];
+  showNetworkSelector?: boolean;
+  title?: string;
 }
 
 const WalletButton: React.FC<WalletButtonProps> = ({ 
   onConnect, 
   onDisconnect,
-  className = ""
+  className = "",
+  availableNetworks: propNetworks,
+  showNetworkSelector = true,
+  title = "Connect Wallet"
 }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string>('');
@@ -122,10 +148,18 @@ const WalletButton: React.FC<WalletButtonProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showWalletOptions, setShowWalletOptions] = useState(false);
   const [showNetworkModal, setShowNetworkModal] = useState(false);
-  const [showNetworkSuccess, setShowNetworkSuccess] = useState(false);  const [availableNetworks, setAvailableNetworks] = useState<NetworkType[]>(["ethereum", "polygon", "binance"]);
+  const [showNetworkSuccess, setShowNetworkSuccess] = useState(false);  const [availableNetworks, setAvailableNetworks] = useState<NetworkType[]>(
+    propNetworks || ["ethereum", "polygon", "binance", "binanceTestnet", "avalanche", "optimism"]
+  );
   const [currentNetwork, setCurrentNetwork] = useState<NetworkType>("ethereum");
   const [needsReconnect, setNeedsReconnect] = useState(false);
   const [pendingNetworkSwitch, setPendingNetworkSwitch] = useState<NetworkType | null>(null);
+  // Effect to initialize component with propNetworks
+  useEffect(() => {
+    if (propNetworks && propNetworks.length > 0) {
+      setAvailableNetworks(propNetworks);
+    }
+  }, [propNetworks]);
 
   useEffect(() => {
     // Map or validate networkName to ensure it matches NetworkType
@@ -135,9 +169,12 @@ const WalletButton: React.FC<WalletButtonProps> = ({
         if (walletInfo) {
           setIsConnected(true);
           setWalletAddress(walletInfo.address);
+          
+          // Check if the current network is in our available networks
           const validNetwork = availableNetworks.includes(walletInfo.networkName as NetworkType)
             ? (walletInfo.networkName as NetworkType)
-            : "ethereum"; // Default to a valid NetworkType
+            : availableNetworks[0]; // Default to first available network
+            
           setCurrentNetwork(validNetwork);
 
           if (onConnect) {
@@ -180,7 +217,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
         window.ethereum.removeAllListeners('chainChanged');
       }
     };
-  }, [onConnect, onDisconnect]);
+  }, [onConnect, onDisconnect, availableNetworks]);
   useEffect(() => {
     if (isConnected) {
       const walletInfo = web3Service.getWalletInfo();
@@ -462,19 +499,23 @@ const WalletButton: React.FC<WalletButtonProps> = ({
         setPendingNetworkSwitch(null);
       }
     }
-  };
-  // Handle BSC specific switching with retry mechanism and better WalletConnect support
-  const handleBSCNetworkSwitch = async () => {
-    if (currentNetwork === 'binance') {
+  };  // Handle BSC specific switching with retry mechanism and better WalletConnect support
+  const handleBSCNetworkSwitch = async (networkType: NetworkType = 'binance') => {
+    // Verificar se é uma rede BSC válida (mainnet ou testnet)
+    if (networkType !== 'binance' && networkType !== 'binanceTestnet') {
+      networkType = 'binance'; // Default para mainnet se valor inválido
+    }
+    
+    if (currentNetwork === networkType) {
       setShowNetworkModal(false);
       return;
     }
     
     setIsLoading(true);
     setError(null);
-    setPendingNetworkSwitch('binance');
+    setPendingNetworkSwitch(networkType);
     
-    console.log('[WalletButton] Iniciando troca especial para BSC');
+    console.log(`[WalletButton] Iniciando troca especial para ${networkType === 'binance' ? 'BSC Mainnet' : 'BSC Testnet'}`);
     
     // Detectar se estamos usando WalletConnect
     const isUsingWalletConnect = !!web3Service.wcV2Provider;
@@ -483,23 +524,22 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     try {
       // Primeiro check - verificamos se estamos usando WalletConnect e ajustamos a estratégia
       if (isUsingWalletConnect) {
-        console.log('[WalletButton] Usando método específico para WalletConnect com BSC');
-        await web3Service.attemptProgrammaticNetworkSwitch('binance');
+        console.log(`[WalletButton] Usando método específico para WalletConnect com ${networkType}`);
+        await web3Service.attemptProgrammaticNetworkSwitch(networkType);
       } else {
         // Primeira tentativa para MetaMask/outros providers
-        await web3Service.switchNetwork('binance');
+        await web3Service.switchNetwork(networkType);
       }
-      
-      console.log('[WalletButton] Troca para BSC bem-sucedida na primeira tentativa');
+        console.log(`[WalletButton] Troca para ${networkType} bem-sucedida na primeira tentativa`);
       
       // Update current network
-      setCurrentNetwork('binance');
+      setCurrentNetwork(networkType);
       setShowNetworkSuccess(true);
       setShowNetworkModal(false);
       
       // Notify other components
       window.dispatchEvent(new CustomEvent('networkChanged', {
-        detail: { network: 'binance', forced: isUsingWalletConnect }
+        detail: { network: networkType, forced: isUsingWalletConnect }
       }));
       
     } catch (err: any) {
@@ -522,33 +562,32 @@ const WalletButton: React.FC<WalletButtonProps> = ({
       try {
         // Mais tempo de espera para BSC que costuma ser mais lento
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        console.log('[WalletButton] Realizando segunda tentativa para BSC');
+            console.log(`[WalletButton] Realizando segunda tentativa para ${networkType}`);
         
         // Sempre usar o método mais robusto na segunda tentativa
-        await web3Service.attemptProgrammaticNetworkSwitch('binance');
+        await web3Service.attemptProgrammaticNetworkSwitch(networkType);
         
-        console.log('[WalletButton] Troca para BSC bem-sucedida na segunda tentativa');
-        setCurrentNetwork('binance');
+        console.log(`[WalletButton] Troca para ${networkType} bem-sucedida na segunda tentativa`);
+        setCurrentNetwork(networkType);
         setShowNetworkSuccess(true);
         setShowNetworkModal(false);
         
         // Notify other components
         window.dispatchEvent(new CustomEvent('networkChanged', {
-          detail: { network: 'binance', forced: isUsingWalletConnect }
+          detail: { network: networkType, forced: isUsingWalletConnect }
         }));
         
       } catch (retryErr: any) {
         console.error('[WalletButton] Falha também na segunda tentativa para BSC:', retryErr);
-        
-        // Specialized error handling for BSC
+          // Specialized error handling for BSC
         if (retryErr.message?.includes('User rejected') || retryErr.code === 4001) {
-          setError('Você rejeitou a troca para a rede Binance Smart Chain.');
+          setError(`Você rejeitou a troca para a rede ${networkType === 'binance' ? 'Binance Smart Chain' : 'BSC Testnet'}.`);
         } else if (retryErr.message?.includes('sessão') || retryErr.message?.includes('conexão')) {
           setNeedsReconnect(true);
           setError('A conexão com sua carteira foi perdida. Tentando reconectar...');
         } else {
-          setError('Falha ao conectar à Binance Smart Chain. Por favor, adicione a rede manualmente na sua carteira com ChainID: 56, Nome: Binance Smart Chain, RPC: https://bsc-dataseed.binance.org');
+          const networkConfig = web3Service.networks[networkType];
+          setError(`Falha ao conectar à ${networkType === 'binance' ? 'Binance Smart Chain' : 'BSC Testnet'}. Por favor, adicione a rede manualmente na sua carteira com ChainID: ${networkConfig.chainId}, Nome: ${networkConfig.name}, RPC: ${networkConfig.rpcUrl}`);
         }
       }
     } finally {
@@ -557,14 +596,20 @@ const WalletButton: React.FC<WalletButtonProps> = ({
         setIsLoading(false);
         setPendingNetworkSwitch(null);
       }
-    }
-  };
-
+    }  };
+  
   // Modify the network button for BSC to use the specialized handler
   const renderNetworkButton = (network: NetworkType) => {
     const isCurrentNetwork = currentNetwork === network;
-    const networkColor = network === 'ethereum' ? 'blue' : network === 'polygon' ? 'purple' : network === 'binance' ? 'yellow' : 'gray'; 
-    const handleClick = network === 'binance' ? handleBSCNetworkSwitch : () => handleSwitchNetwork(network);
+    const networkColor = network === 'ethereum' ? 'blue' : 
+                          network === 'polygon' ? 'purple' : 
+                          network === 'binance' ? 'yellow' : 
+                          network === 'binanceTestnet' ? 'orange' : 
+                          network === 'avalanche' ? 'red' : 
+                          network === 'optimism' ? 'pink' : 'gray'; 
+    const handleClick = (network === 'binance' || network === 'binanceTestnet') ? 
+                         () => handleBSCNetworkSwitch(network) : 
+                         () => handleSwitchNetwork(network);
     
     return (
       <button
@@ -582,11 +627,13 @@ const WalletButton: React.FC<WalletButtonProps> = ({
         <div className="flex-1 text-left">
           <p className={`font-medium ${isCurrentNetwork ? 'text-orange-700' : 'text-gray-700'}`}>
             {network.charAt(0).toUpperCase() + network.slice(1)}
-          </p>
-          <p className="text-xs text-gray-500">
+          </p>          <p className="text-xs text-gray-500">
             {network === 'ethereum' ? 'Ethereum Mainnet' : 
              network === 'polygon' ? 'Polygon Mainnet' : 
-             network === 'binance' ? 'Binance Smart Chain' : 'Network'}
+             network === 'binance' ? 'Binance Smart Chain' : 
+             network === 'binanceTestnet' ? 'BSC Testnet' : 
+             network === 'avalanche' ? 'Avalanche C-Chain' : 
+             network === 'optimism' ? 'Optimism' : 'Network'}
           </p>
         </div>
         {isCurrentNetwork && (
@@ -641,13 +688,12 @@ const WalletButton: React.FC<WalletButtonProps> = ({
       />
 
       {!isConnected ? (
-        <>
-          <button 
+        <>          <button 
             onClick={() => setShowWalletOptions((v) => !v)}
             disabled={isLoading}
             className={`bg-orange-500 px-4 py-2 rounded-lg text-white font-semibold hover:bg-orange-400 transition-colors ${isLoading ? 'opacity-70 cursor-not-allowed' : ''} ${className}`}
           >
-            {isLoading ? 'Connecting...' : 'Connect Wallet'}
+            {isLoading ? 'Connecting...' : title}
           </button>
           {showWalletOptions && !isLoading && (
             <div className="absolute z-10 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 left-0">
@@ -681,52 +727,56 @@ const WalletButton: React.FC<WalletButtonProps> = ({
             >
               Disconnect
             </button>
-          </div>
-
-          <div className="network-selector flex items-center">
-            <button 
-              onClick={() => setShowNetworkModal(true)} 
-              className="flex items-center text-sm border rounded px-2 py-1 hover:bg-gray-50"
-            >
-              <span className={`inline-block w-3 h-3 rounded-full mr-2 ${
-                currentNetwork === 'ethereum' ? 'bg-blue-500' : 
-                currentNetwork === 'polygon' ? 'bg-purple-500' : 
-                currentNetwork === 'binance' ? 'bg-yellow-500' : 
-                'bg-gray-500'
-              }`}></span>
-              {currentNetwork.charAt(0).toUpperCase() + currentNetwork.slice(1)}
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+          </div>          {/* Only render network selector if showNetworkSelector is true */}
+          {showNetworkSelector && (
+            <div className="network-selector flex items-center">
+              <button 
+                onClick={() => setShowNetworkModal(true)} 
+                className="flex items-center text-sm border rounded px-2 py-1 hover:bg-gray-50"
+              >                <span className={`inline-block w-3 h-3 rounded-full mr-2 ${
+                  currentNetwork === 'ethereum' ? 'bg-blue-500' : 
+                  currentNetwork === 'polygon' ? 'bg-purple-500' : 
+                  currentNetwork === 'binance' ? 'bg-yellow-500' : 
+                  currentNetwork === 'binanceTestnet' ? 'bg-orange-500' :
+                  currentNetwork === 'avalanche' ? 'bg-red-500' : 
+                  currentNetwork === 'optimism' ? 'bg-pink-500' :
+                  'bg-gray-500'
+                }`}></span>
+                {currentNetwork.charAt(0).toUpperCase() + currentNetwork.slice(1)}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
               {/* Network Selection Modal */}
-            {showNetworkModal && (
-              <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl border-2 border-orange-400">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-orange-600">Select Network</h3>                    
-                    <button 
-                      onClick={() => setShowNetworkModal(false)} 
-                      className="text-orange-400 hover:text-orange-600"
-                      aria-label="Close network selection modal"
-                      title="Close"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
+              {showNetworkModal && (
+                <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
+                  <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl border-2 border-orange-400">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-orange-600">Select Network</h3>                    
+                      <button 
+                        onClick={() => setShowNetworkModal(false)} 
+                        className="text-orange-400 hover:text-orange-600"
+                        aria-label="Close network selection modal"
+                        title="Close"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
                     <div className="grid gap-3">
-                    {availableNetworks.map(renderNetworkButton)}
-                  </div>                    <p className="mt-4 text-xs text-gray-600 bg-orange-50 p-2 rounded-md border border-orange-100">
-                    {web3Service.wcV2Provider ? 
-                      '🔗 Switching to Ethereum and Polygon is supported with WalletConnect! For BSC, we use an enhanced connection method. If you encounter issues, try switching networks manually in your wallet app.' : 
-                      '🦊 Network switching is fully supported for Ethereum, Polygon, and BSC directly from this interface.'}
-                  </p>
+                      {availableNetworks.map(renderNetworkButton)}
+                    </div>
+                    <p className="mt-4 text-xs text-gray-600 bg-orange-50 p-2 rounded-md border border-orange-100">
+                      {web3Service.wcV2Provider ? 
+                        '🔗 Switching to Ethereum and Polygon is supported with WalletConnect! For BSC, we use an enhanced connection method. If you encounter issues, try switching networks manually in your wallet app.' : 
+                        '🦊 Network switching is fully supported for Ethereum, Polygon, and BSC directly from this interface.'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>      )}
     </div>
   );

@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-export type NetworkType = 'ethereum' | 'polygon' | 'binance' | 'avalanche' | 'optimism';
+export type NetworkType = 'ethereum' | 'polygon' | 'binance' | 'binanceTestnet' | 'avalanche' | 'optimism';
 
 export interface WalletInfo {
   address: string;

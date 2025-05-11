@@ -93,6 +93,13 @@ export const NETWORK_CONFIG = {
     currencySymbol: 'BNB',
     blockExplorer: 'https://bscscan.com'
   },
+  binanceTestnet: {
+    chainId: 97, // BSC Testnet chainId
+    name: 'BSC Testnet',
+    rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+    currencySymbol: 'tBNB',
+    blockExplorer: 'https://testnet.bscscan.com'
+  },
   avalanche: {
     chainId: 43114,
     name: 'Avalanche C-Chain',
