@@ -2,7 +2,6 @@ import { ethers } from "ethers";
 import { db } from "../lib/firebase";
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import { web3Service } from "./web3Service";
-import RPC_URLS, { getRpcUrl } from "../config/rpcUrls";
 import { getHttpRpcUrls } from "../config/rpcConfig";
 
 class SmartContractService {
@@ -1695,7 +1694,7 @@ class SmartContractService {
 
       // Para Polygon, Ethereum e Binance, sempre usar o endpoint do rpcConfig
       if (["polygon", "ethereum", "binance"].includes(normalizedNetworkName)) {
-        const rpcList = getHttpRpcUrls();
+        const rpcList = getHttpRpcUrls(normalizedNetworkName);
         // Filtra para pegar o endpoint correto para a rede
         if (normalizedNetworkName === "polygon") {
           rpcUrl = rpcList.find(url => url.includes("polygon"));
@@ -1722,10 +1721,11 @@ class SmartContractService {
           binanceTestnet: "https://data-seed-prebsc-1-s1.binance.org:8545"
         };
         rpcUrl = publicRPCs[normalizedNetworkName];
+        // Fallback: se não encontrar, tenta pegar o primeiro endpoint HTTP disponível
         if (!rpcUrl) {
-          const configUrl = getRpcUrl(normalizedNetworkName);
-          if (configUrl && !configUrl.includes("infura.io/v3/undefined")) {
-            rpcUrl = configUrl;
+          const fallbackList = getHttpRpcUrls(normalizedNetworkName);
+          if (fallbackList.length > 0) {
+            rpcUrl = fallbackList[0];
           }
         }
       }

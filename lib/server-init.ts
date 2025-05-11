@@ -48,10 +48,12 @@ export const serverStatus: ServerStatus = {
 // Flag to ensure initialization only happens once
 let isInitialized = false;
 
-// Exemplo de uso centralizado:
-const WS_RPC_ENDPOINTS = getWsRpcUrls();
-const HTTP_RPC_ENDPOINTS = getHttpRpcUrls();
-const ALL_RPC_ENDPOINTS = getAllRpcUrls();
+// Redes a monitorar (pode ser configurado por env ou hardcoded)
+const MONITOR_NETWORKS = (process.env.MONITOR_NETWORKS || 'polygon,ethereum,binance').split(',').map(n => n.trim().toLowerCase());
+
+const WS_RPC_ENDPOINTS = MONITOR_NETWORKS.flatMap(net => getWsRpcUrls(net));
+const HTTP_RPC_ENDPOINTS = MONITOR_NETWORKS.flatMap(net => getHttpRpcUrls(net));
+const ALL_RPC_ENDPOINTS = MONITOR_NETWORKS.flatMap(net => getAllRpcUrls(net));
 
 /**
  * Starts all server-side services

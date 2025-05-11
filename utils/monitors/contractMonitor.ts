@@ -40,9 +40,11 @@ if (!serviceWalletAddress && process.env.OWNER_PRIVATE_KEY) {
 }
 const tokenDistributorAddress = process.env.TOKEN_DISTRIBUTOR_ADDRESS || process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS || '';
 
-// Obter endpoints centralizados
-const wsRpcUrls = getWsRpcUrls();
-const httpRpcUrls = getHttpRpcUrls();
+// Redes a monitorar (pode ser configurado por env ou hardcoded)
+const MONITOR_NETWORKS = (process.env.MONITOR_NETWORKS || 'polygon,ethereum,binance').split(',').map(n => n.trim().toLowerCase());
+
+const wsRpcUrls = MONITOR_NETWORKS.flatMap(net => getWsRpcUrls(net));
+const httpRpcUrls = MONITOR_NETWORKS.flatMap(net => getHttpRpcUrls(net));
 
 console.log('WebSocket RPC URLs (prioridade):', wsRpcUrls);
 console.log('HTTP RPC URLs (fallback):', httpRpcUrls);
