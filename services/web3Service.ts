@@ -133,7 +133,7 @@ class Web3Service {
       try {
         // Tente alternativos públicos em ordem de prioridade
         const fallbackUrls = [
-          'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161', // Public Infura
+          'https://mainnet.infura.io/v3/7b71460a7cfd447295a93a1d76a71ed6', // Public Infura
           'https://cloudflare-eth.com', // Cloudflare
           'https://eth-mainnet.public.blastapi.io', // Blast API
           'https://ethereum.publicnode.com', // Public Node
