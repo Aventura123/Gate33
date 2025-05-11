@@ -1693,10 +1693,21 @@ class SmartContractService {
       const normalizedNetworkName = this.normalizeNetworkName(networkName);
       let rpcUrl: string | undefined;
 
-      // Para Polygon, sempre usar o endpoint do rpcConfig
-      if (normalizedNetworkName === "polygon") {
-        const polygonRpcList = getHttpRpcUrls();
-        rpcUrl = polygonRpcList && polygonRpcList.length > 0 ? polygonRpcList[0] : undefined;
+      // Para Polygon, Ethereum e Binance, sempre usar o endpoint do rpcConfig
+      if (["polygon", "ethereum", "binance"].includes(normalizedNetworkName)) {
+        const rpcList = getHttpRpcUrls();
+        // Filtra para pegar o endpoint correto para a rede
+        if (normalizedNetworkName === "polygon") {
+          rpcUrl = rpcList.find(url => url.includes("polygon"));
+        } else if (normalizedNetworkName === "ethereum") {
+          rpcUrl = rpcList.find(url => url.includes("eth") || url.includes("mainnet.infura"));
+        } else if (normalizedNetworkName === "binance") {
+          rpcUrl = rpcList.find(url => url.includes("bsc") || url.includes("binance"));
+        }
+        // fallback para o primeiro da lista se não encontrar
+        if (!rpcUrl && rpcList.length > 0) {
+          rpcUrl = rpcList[0];
+        }
       } else {
         // Mantém lógica atual para outras redes
         const publicRPCs: Record<string, string> = {
