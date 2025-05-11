@@ -75,50 +75,129 @@ class Web3Service {
     }
     return chainId > 0 ? `Network ${chainId}` : 'Unknown';
   }
-
   /**
    * Listeners para eventos do WalletConnect v2
    */
   private setupWalletConnectV2Listeners() {
     if (!this.wcV2Provider) return;
+    
+    console.log('[WalletConnect] Setting up event listeners');
+    
     // Remove listeners antigos para evitar duplicidade
-    this.wcV2Provider.removeAllListeners?.('session_delete');
-    this.wcV2Provider.removeAllListeners?.('accountsChanged');
-    this.wcV2Provider.removeAllListeners?.('chainChanged');
+    try {
+      this.wcV2Provider.removeAllListeners?.('session_delete');
+      this.wcV2Provider.removeAllListeners?.('accountsChanged');
+      this.wcV2Provider.removeAllListeners?.('chainChanged');
+      this.wcV2Provider.removeAllListeners?.('disconnect');
+      this.wcV2Provider.removeAllListeners?.('connect');
+    } catch (error) {
+      console.warn('[WalletConnect] Error removing listeners:', error);
+    }
 
-    // Listener para desconexão
+    // Listener para desconexão da sessão
     this.wcV2Provider.on?.('session_delete', () => {
+      console.log('[WalletConnect] Session deleted event received');
       this.disconnectWallet();
       window.dispatchEvent(new CustomEvent('web3WalletDisconnected'));
     });
+    
+    // Listener específico para o evento disconnect (complementa session_delete)
+    this.wcV2Provider.on?.('disconnect', () => {
+      console.log('[WalletConnect] Disconnect event received');
+      this.disconnectWallet();
+      window.dispatchEvent(new CustomEvent('web3WalletDisconnected'));
+    });
+    
+    // Listener para evento de reconexão
+    this.wcV2Provider.on?.('connect', () => {
+      console.log('[WalletConnect] Connect event received - connection established');
+    });
 
-    // Listener para troca de contas
+    // Listener para troca de contas com melhor tratamento de erro
     this.wcV2Provider.on?.('accountsChanged', (accounts: string[]) => {
-      if (accounts.length === 0) {
+      console.log('[WalletConnect] Accounts changed:', accounts);
+      
+      if (!accounts || accounts.length === 0) {
+        console.log('[WalletConnect] No accounts available, disconnecting wallet');
         this.disconnectWallet();
         window.dispatchEvent(new CustomEvent('web3WalletDisconnected'));
       } else {
-        if (this.provider && this.signer) {
-          this.signer = this.provider.getSigner();
-          if (this.walletInfo) {
-            this.walletInfo.address = accounts[0];
+        try {
+          if (this.provider && this.signer) {
+            this.signer = this.provider.getSigner();
+            if (this.walletInfo) {
+              this.walletInfo.address = accounts[0];
+            }
           }
+          window.dispatchEvent(new CustomEvent('web3AccountChanged', { detail: accounts[0] }));
+        } catch (error) {
+          console.error('[WalletConnect] Error processing account change:', error);
         }
-        window.dispatchEvent(new CustomEvent('web3AccountChanged', { detail: accounts[0] }));
       }
     });
 
-    // Listener para troca de rede
+    // Listener para troca de rede com melhor tratamento de SafePal
     this.wcV2Provider.on?.('chainChanged', async (chainId: number | string) => {
-      let numericChainId = typeof chainId === 'string' ? parseInt(chainId, 16) : chainId;
-      this.provider = new ethers.providers.Web3Provider(this.wcV2Provider as any, numericChainId);
-      this.signer = this.provider.getSigner();
-      const network = await this.provider.getNetwork();
-      if (this.walletInfo) {
-        this.walletInfo.chainId = network.chainId;
-        this.walletInfo.networkName = this.getNetworkNameForChainId(network.chainId);
+      try {
+        console.log('[WalletConnect] Chain changed event:', chainId);
+        
+        // Converter chainId para formato numérico
+        let numericChainId = typeof chainId === 'string' ? 
+          parseInt(chainId.startsWith('0x') ? chainId.slice(2) : chainId, 16) : 
+          chainId;
+          
+        console.log('[WalletConnect] Numeric chainId:', numericChainId);
+        
+        // Get network name and configuration
+        const networkName = this.getNetworkNameForChainId(numericChainId);
+        console.log('[WalletConnect] Network name:', networkName);
+        
+        // Find network type from configuration
+        let networkType: NetworkType | null = null;
+        for (const [key, value] of Object.entries(this.networks)) {
+          if (value.chainId === numericChainId) {
+            networkType = key as NetworkType;
+            break;
+          }
+        }
+        
+        if (!networkType) {
+          console.log('[WalletConnect] Could not determine network type for chainId', numericChainId);
+          networkType = 'ethereum'; // Default
+        }
+        
+        // Re-initialize provider with the new chainId
+        this.provider = new ethers.providers.Web3Provider(this.wcV2Provider as any, numericChainId);
+        this.signer = this.provider.getSigner();
+        
+        // Get network info from provider
+        const network = await this.provider.getNetwork();
+        
+        // Update wallet info
+        if (this.walletInfo) {
+          this.walletInfo.chainId = numericChainId;
+          this.walletInfo.networkName = networkName;
+        }
+        
+        // Dispatch network change events
+        window.dispatchEvent(new CustomEvent('web3NetworkChanged', { 
+          detail: this.walletInfo 
+        }));
+        
+        // Also dispatch the successful network switch event to close modals
+        window.dispatchEvent(new CustomEvent('web3NetworkSwitched', { 
+          detail: { 
+            networkType, 
+            chainId: numericChainId, 
+            name: networkName,
+            provider: 'walletconnect' 
+          } 
+        }));
+        
+        console.log(`[WalletConnect] Network changed to ${networkName} (${numericChainId})`);
+      } catch (error) {
+        console.error('[WalletConnect] Error processing chain change:', error);
       }
-      window.dispatchEvent(new CustomEvent('web3NetworkChanged', { detail: this.walletInfo }));
     });
   }
 
@@ -290,51 +369,146 @@ class Web3Service {
 
   /**
    * Connects to WalletConnect v2
-   */
-  async connectWalletConnect(): Promise<WalletInfo> {
+   */  async connectWalletConnect(): Promise<WalletInfo> {
     if (typeof window === "undefined") {
       throw new Error("WalletConnect can only be used in the browser");
     }
+    
+    // Clear any existing WalletConnect connection to ensure clean state
+    if (this.wcV2Provider) {
+      try {
+        console.log('[WalletConnect] Disconnecting existing provider before reconnection');
+        await this.wcV2Provider.disconnect();
+      } catch (disconnectError) {
+        console.warn('[WalletConnect] Error during provider disconnection:', disconnectError);
+        // Continue with reconnection even if disconnect fails
+      }
+      this.wcV2Provider = null;
+    }
+    
+    console.log('[WalletConnect] Initializing new connection...');
     const EthereumProvider = (await import("@walletconnect/ethereum-provider")).default;
     const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
     if (!projectId) {
       throw new Error("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set in .env.local");
     }
+    
     // Use the unified Infura key logic from rpcConfig
     const ethRpcList = getHttpRpcUrls('ethereum');
     const infuraRpc = ethRpcList.find(url => url.includes('infura.io'));
     if (!infuraRpc || infuraRpc.includes('undefined')) {
       throw new Error('Ethereum Infura RPC endpoint is not properly configured. Please check your INFURA_KEY in .env.local and rpcConfig.ts.');
     }
+    
+    // Add more compatible networks for SafePal
     const chains = [1, 137, 56];
-    this.wcV2Provider = await EthereumProvider.init({
-      projectId,
-      chains,
-      optionalChains: [1, 137, 56],
-      showQrModal: true,
-      rpcMap: {
-        1: infuraRpc,
-        137: "https://polygon-rpc.com",
-        56: "https://bsc-dataseed.binance.org/",
-      },
-    });
-    await this.wcV2Provider.enable();
-    this.provider = new ethers.providers.Web3Provider(this.wcV2Provider as any);
-    this.signer = this.provider.getSigner();
-    const address = await this.signer.getAddress();
-    const network = await this.provider.getNetwork();
-    this.walletInfo = {
-      address,
-      chainId: network.chainId,
-      networkName: this.getNetworkNameForChainId(network.chainId)
-    };
-    // Adiciona listeners para eventos do WalletConnect v2
-    this.setupWalletConnectV2Listeners();
-    // Dispatch event to indicate wallet connection
-    window.dispatchEvent(new CustomEvent('web3Connected', { 
-      detail: this.walletInfo 
-    }));
-    return this.walletInfo;
+    
+    // Initialize with better configuration for SafePal compatibility
+    console.log('[WalletConnect] Creating provider with chains:', chains);
+    try {
+      this.wcV2Provider = await EthereumProvider.init({
+        projectId,
+        chains,
+        optionalChains: [1, 137, 56, 97], // Include BSC testnet
+        showQrModal: true,
+        rpcMap: {
+          1: infuraRpc,
+          137: "https://polygon-rpc.com",
+          56: "https://bsc-dataseed.binance.org/",
+          97: "https://data-seed-prebsc-1-s1.binance.org:8545/"
+        },
+        disableProviderPing: false, // Keep connection alive with pings
+        storageOptions: {
+          // Force recreate session for SafePal
+          forceClearStaleSession: true
+        }
+      });
+      
+      console.log('[WalletConnect] Provider initialized, enabling connection...');
+      await this.wcV2Provider.enable();
+      console.log('[WalletConnect] Connection enabled successfully');
+      
+      // Verify connection state
+      if (!this.wcV2Provider.session) {
+        console.error('[WalletConnect] No session created after enable()');
+        throw new Error('Falha ao estabelecer sessão WalletConnect. Por favor, tente novamente.');
+      }
+      
+      console.log('[WalletConnect] Session established:', {
+        topic: this.wcV2Provider.session.topic,
+        expiry: this.wcV2Provider.session.expiry,
+        connected: this.wcV2Provider.connected
+      });
+      
+      // Create provider from WalletConnect
+      this.provider = new ethers.providers.Web3Provider(this.wcV2Provider as any);
+      this.signer = this.provider.getSigner();
+      
+      // Get address and network info with better error handling
+      let address: string;
+      try {
+        address = await this.signer.getAddress();
+        console.log('[WalletConnect] Connected address:', address);
+      } catch (addressError) {
+        console.error('[WalletConnect] Failed to get address:', addressError);
+        throw new Error('Não foi possível obter o endereço da carteira. Verifique se sua carteira está conectada.');
+      }
+      
+      // Get network with timeout protection
+      const networkPromise = this.provider.getNetwork();
+      const networkTimeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Tempo esgotado ao obter informações de rede')), 10000);
+      });
+      
+      let network;
+      try {
+        network = await Promise.race([networkPromise, networkTimeoutPromise]);
+        console.log('[WalletConnect] Connected network:', network);
+      } catch (networkError) {
+        console.error('[WalletConnect] Failed to get network:', networkError);
+        // Use a default network if we can't detect it
+        network = { chainId: 1, name: 'unknown' };
+      }
+      
+      this.walletInfo = {
+        address,
+        chainId: network.chainId,
+        networkName: this.getNetworkNameForChainId(network.chainId)
+      };
+      
+      // Adiciona listeners para eventos do WalletConnect v2
+      this.setupWalletConnectV2Listeners();
+      
+      // Dispatch event to indicate wallet connection
+      window.dispatchEvent(new CustomEvent('web3Connected', { 
+        detail: this.walletInfo 
+      }));
+      
+      console.log('[WalletConnect] Connection complete, returning wallet info:', this.walletInfo);
+      return this.walletInfo;
+    } catch (error) {
+      console.error('[WalletConnect] Error during connection process:', error);
+      // Clean up failed connection attempt
+      if (this.wcV2Provider) {
+        try {
+          await this.wcV2Provider.disconnect();
+        } catch (e) {
+          console.warn('[WalletConnect] Error during cleanup after failed connection:', e);
+        }
+        this.wcV2Provider = null;
+      }
+      this.provider = null;
+      this.signer = null;
+      
+      // Provide helpful error message
+      if (error instanceof Error) {
+        if (error.message.includes('User rejected')) {
+          throw new Error('Conexão cancelada. Você rejeitou a solicitação de conexão.');
+        }
+        throw error;
+      }
+      throw new Error('Falha ao conectar com a carteira. Por favor, tente novamente.');
+    }
   }
 
   /**
@@ -569,6 +743,309 @@ class Web3Service {
       console.error('Error switching network:', error);
       throw new Error(`Failed to switch network: ${error.message}`);
     }
+  }
+
+  /**
+   * Attempts to programmatically switch network for both MetaMask and WalletConnect.
+   * Returns true if switch was successful, throws with a clear message if not supported or rejected.
+   */  async attemptProgrammaticNetworkSwitch(networkType: NetworkType): Promise<boolean> {
+    const network = this.networks[networkType];
+    const chainIdHex = '0x' + network.chainId.toString(16);
+      // WalletConnect v2
+    if (this.wcV2Provider) {      // Add extensive logging to diagnose WalletConnect session state
+      console.log('[WalletConnect] Provider state before network switch:', {
+        hasProvider: !!this.wcV2Provider,
+        hasSession: !!this.wcV2Provider.session,
+        sessionTopic: this.wcV2Provider.session?.topic,
+        hasAccounts: !!this.wcV2Provider.session?.accounts,
+        accountsLength: this.wcV2Provider.session?.accounts?.length,
+        firstAccount: this.wcV2Provider.session?.accounts?.[0],
+        connected: this.wcV2Provider.connected,
+        sessionProperties: Object.keys(this.wcV2Provider.session || {})
+      });
+      
+      // General approach for all WalletConnect wallets
+      // Check if we have any indication of a valid connection
+      const hasValidSession = this.wcV2Provider.session && this.wcV2Provider.connected === true;
+      
+      // Defensive: check if session is active
+      if (!hasValidSession) {
+        console.log('[WalletConnect] Invalid session state detected. Attempting repair...');
+        
+        // If provider says we're connected, trust that over other indicators
+        if (this.wcV2Provider.connected) {
+          console.log('[WalletConnect] Provider reports connected=true. Proceeding with network switch.');
+        } else {
+          throw new Error('Conecte sua carteira WalletConnect antes de trocar de rede.');
+        }
+      }
+      
+      try {
+        console.log(`Tentando trocar para a rede ${network.name} (chainId: ${network.chainId}) via WalletConnect...`);        // General approach to ensure proper connection for all WalletConnect wallets
+        let isConnected = false;
+        try {
+          // First check the connected flag - most reliable indicator
+          isConnected = this.wcV2Provider.connected === true;
+          
+          // As a secondary check, try to get accounts
+          if (isConnected) {
+            try {
+              const accounts = await this.wcV2Provider.request({ method: 'eth_accounts' });
+              console.log('[WalletConnect] Current accounts:', accounts);
+              // If we get accounts, that's great, but we won't fail if this doesn't work
+              // Some wallets might not properly implement eth_accounts
+            } catch (accountsError) {
+              console.warn('[WalletConnect] Failed to get accounts, but provider reports connected=true:', accountsError);
+              // Continue anyway since we're already considering ourselves connected
+            }
+          }
+        } catch (connectionError) {
+          console.warn('[WalletConnect] Error checking connection status:', connectionError);
+          // Fall back to connected flag if there was an error checking
+          isConnected = this.wcV2Provider.connected === true;
+        }
+        
+        // If not connected, try to re-establish the connection
+        if (!isConnected) {
+          console.log('[WalletConnect] Not connected. Attempting to reconnect...');
+          try {
+            await this.wcV2Provider.enable();
+            console.log('[WalletConnect] Connection re-established via enable()');
+            isConnected = true;
+          } catch (enableError) {
+            console.error('[WalletConnect] Failed to re-establish connection:', enableError);
+            throw new Error('A conexão com sua carteira WalletConnect foi perdida. Por favor, reconecte e tente novamente.');
+          }
+        }
+        
+        // Sempre envie o request para o provider WalletConnect
+        console.log('[WalletConnect] Enviando request wallet_switchEthereumChain:', {
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: chainIdHex }]
+        });
+          // Add timeout for all WalletConnect wallets to prevent UI hanging
+        const switchPromise = this.wcV2Provider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: chainIdHex }],
+        });
+        
+        // If the wallet app doesn't respond, we want to time out after a reasonable period
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Tempo esgotado ao esperar resposta da carteira. Verifique se seu aplicativo está aberto e tente novamente.'));
+          }, 30000); // 30 seconds timeout
+        });
+        
+        try {
+          // Wait for either the switch to complete or timeout
+          await Promise.race([switchPromise, timeoutPromise]);
+          console.log(`[WalletConnect] Rede alterada com sucesso para ${network.name} (${network.chainId})`);
+        } catch (error: any) {
+          // Handle different types of timeout errors that might come from different wallets
+          if (error.message?.includes('Tempo esgotado') || 
+              error.message?.includes('timeout') ||
+              error.message?.includes('timed out')) {
+            throw new Error('Tempo esgotado ao trocar de rede. Verifique se seu aplicativo está aberto e respondendo.');
+          }
+          throw error; // Rethrow other errors to be handled by the outer catch
+        }
+        
+        // Pequeno delay para garantir atualização
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Atualizar provider e signer
+        this.provider = new ethers.providers.Web3Provider(this.wcV2Provider as any, network.chainId);
+        this.signer = this.provider.getSigner();
+        
+        // Atualizar informações da carteira
+        if (this.walletInfo) {
+          this.walletInfo.chainId = network.chainId;
+          this.walletInfo.networkName = network.name;
+        }
+        
+        // Emitir evento para informar mudança bem-sucedida
+        window.dispatchEvent(new CustomEvent('web3NetworkSwitched', { 
+          detail: { 
+            networkType, 
+            chainId: network.chainId, 
+            name: network.name,
+            provider: 'walletconnect' 
+          } 
+        }));
+        
+        return true;
+      } catch (error: any) {
+        console.error('Erro ao tentar trocar de rede via WalletConnect:', error);
+        
+        // Tentar identificar mais precisamente o tipo de erro
+        const errorMessage = error?.message || '';
+        const errorCode = error?.code;
+        
+        // Se a rede não estiver configurada na carteira, tente adicioná-la primeiro
+        if (errorCode === 4902 || errorMessage.includes('Unrecognized chain ID')) {          try {            // Enhanced network addition request with better error handling for all WalletConnect wallets
+            const addParams = {
+              chainId: chainIdHex,
+              chainName: network.name,
+              nativeCurrency: {
+                name: network.currencySymbol,
+                symbol: network.currencySymbol,
+                decimals: 18
+              },
+              rpcUrls: [network.rpcUrl],
+              blockExplorerUrls: network.blockExplorer ? [network.blockExplorer] : []
+            };
+            console.log('[WalletConnect] Enviando request wallet_addEthereumChain:', addParams);
+            
+            // Handle timeouts properly for all WalletConnect wallets
+            const addChainPromise = this.wcV2Provider.request({
+              method: 'wallet_addEthereumChain',
+              params: [addParams]
+            });
+            
+            // If the wallet app is not responding, we don't want to wait forever
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => {
+                reject(new Error('Tempo esgotado ao adicionar nova rede. Verifique se seu aplicativo está aberto.'));
+              }, 30000); // 30 seconds timeout
+            });
+            
+            // Wait for either the chain addition to complete or timeout
+            await Promise.race([addChainPromise, timeoutPromise]);
+            
+            console.log(`Rede ${network.name} adicionada com sucesso. Tentando trocar novamente...`);
+            
+            // Dar um pequeno tempo antes de tentar novamente
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Tentar novamente a troca após adicionar
+            return this.attemptProgrammaticNetworkSwitch(networkType);
+          } catch (addError: any) {
+            console.error('Erro ao adicionar rede:', addError);
+            
+            if (addError?.code === 4001) {
+              throw new Error(`Você rejeitou adicionar a rede ${network.name}. Por favor, tente novamente.`);
+            }
+            
+            throw new Error(`Não foi possível adicionar a rede ${network.name} à sua carteira. Por favor, adicione manualmente.`);
+          }
+        }
+        
+        // Método não suportado pela carteira
+        if (errorMessage.includes('Unrecognized JSON RPC method') || 
+            errorCode === -32601 || 
+            errorMessage.includes('Method not supported')) {
+          throw new Error(`Sua carteira WalletConnect não suporta troca automática de rede. Por favor, abra o aplicativo da sua carteira e troque manualmente para a rede ${network.name}.`);
+        }
+        
+        // Usuário rejeitou a troca
+        if (errorCode === 4001 || errorMessage.includes('User rejected')) {
+          throw new Error('Você rejeitou a troca de rede. Por favor, aprove a solicitação em sua carteira.');
+        }
+        
+        // Sessão expirada ou problema de conexão
+        if (errorMessage.includes('No matching key') || 
+            errorMessage.includes('connection') || 
+            errorMessage.includes('session') || 
+            errorMessage.includes('expired')) {
+          // Este erro será capturado pelo fluxo de reconexão no componente
+          throw new Error('A sessão WalletConnect expirou. Precisamos reconectar sua carteira.');
+        }
+        
+        // Erro genérico com detalhes para debugging
+        throw new Error(`Não foi possível trocar para a rede ${network.name}. Erro: ${errorMessage || 'Desconhecido'}. Por favor, faça isso manualmente em sua carteira.`);
+      }
+    }    // MetaMask or injected provider
+    if (window.ethereum) {
+      try {
+        console.log(`Tentando trocar para a rede ${network.name} (chainId: ${network.chainId}) via MetaMask...`);
+        
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: chainIdHex }],
+        });
+        
+        console.log(`Rede trocada com sucesso para ${network.name} (chainId: ${network.chainId})`);
+        
+        // Atualizar provider e signer
+        this.provider = new ethers.providers.Web3Provider(window.ethereum);
+        this.signer = this.provider.getSigner();
+        
+        // Atualizar informações da carteira
+        if (this.walletInfo) {
+          this.walletInfo.chainId = network.chainId;
+          this.walletInfo.networkName = network.name;
+        }
+        
+        // Emitir evento para informar mudança bem-sucedida
+        window.dispatchEvent(new CustomEvent('web3NetworkSwitched', { 
+          detail: { 
+            networkType, 
+            chainId: network.chainId, 
+            name: network.name,
+            provider: 'metamask' 
+          } 
+        }));
+        
+        return true;
+      } catch (error: any) {
+        console.error('Erro ao tentar trocar de rede via MetaMask:', error);
+        
+        // Rede não configurada no MetaMask
+        if (error.code === 4902 || error.message?.includes('Unrecognized chain ID')) {
+          try {
+            console.log(`Rede ${network.name} não encontrada no MetaMask. Tentando adicionar...`);
+            
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [
+                {
+                  chainId: chainIdHex,
+                  chainName: network.name,
+                  nativeCurrency: {
+                    name: network.currencySymbol,
+                    symbol: network.currencySymbol,
+                    decimals: 18,
+                  },
+                  rpcUrls: [network.rpcUrl],
+                  blockExplorerUrls: network.blockExplorer ? [network.blockExplorer] : undefined,
+                },
+              ],
+            });
+            
+            console.log(`Rede ${network.name} adicionada ao MetaMask. Tentando trocar novamente...`);
+            
+            // Dar um pequeno tempo antes de tentar novamente
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Tentar trocar novamente
+            return this.attemptProgrammaticNetworkSwitch(networkType);
+          } catch (addError: any) {
+            console.error('Erro ao adicionar rede ao MetaMask:', addError);
+            
+            if (addError.code === 4001) {
+              throw new Error(`Você rejeitou adicionar a rede ${network.name}. Por favor, tente novamente.`);
+            }
+            
+            throw new Error(`Não foi possível adicionar a rede ${network.name} ao MetaMask. Por favor, adicione manualmente.`);
+          }
+        }
+        
+        // Usuário rejeitou a troca
+        if (error.code === 4001) {
+          throw new Error('Você rejeitou a troca de rede no MetaMask. Por favor, aprove ou troque manualmente.');
+        }
+        
+        // Carteira bloqueada
+        if (error.message?.includes('locked') || error.code === -32002) {
+          throw new Error('Sua carteira MetaMask está bloqueada. Por favor, desbloqueie-a e tente novamente.');
+        }
+        
+        // Erro genérico com detalhes
+        throw new Error(error?.message || 'Não foi possível trocar de rede no MetaMask. Por favor, tente novamente ou faça isso manualmente.');
+      }
+    }
+    
+    throw new Error('Nenhuma carteira compatível encontrada. Por favor, instale MetaMask ou use WalletConnect.');
   }
 
   /**
