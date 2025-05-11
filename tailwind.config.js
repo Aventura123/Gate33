@@ -8,5 +8,19 @@ module.exports = {
   theme: {
     extend: {},
   },
+  safelist: [
+    'bg-blue-500',
+    'bg-purple-500',
+    'bg-green-500',
+    'bg-yellow-500',
+    'bg-yellow-400',
+    'bg-orange-500',
+    'bg-orange-400',
+    'bg-red-500',
+    'bg-pink-500',
+    'bg-gray-500',
+    'bg-gray-400',
+    // Add any other color classes you use for network dots here
+  ],
   plugins: [],
 };
