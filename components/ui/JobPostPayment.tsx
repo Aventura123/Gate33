@@ -4,6 +4,7 @@ import smartContractService from "../../services/smartContractService";
 import { db } from "../../lib/firebase";
 import { collection, addDoc, getDoc, doc, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import jobService from "../../services/jobService";
+import { useWallet } from '../WalletProvider';
 
 interface PricingPlan {
   id: string;
@@ -56,13 +57,18 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   
-  // Add new state variables for network tracking
-  const [currentNetwork, setCurrentNetwork] = useState<string | null>(null);
-  const [isUsingWalletConnect, setIsUsingWalletConnect] = useState<boolean>(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [walletError, setWalletError] = useState<string | null>(null);
+  // Usar contexto global da carteira
+  const {
+    walletAddress,
+    currentNetwork,
+    isUsingWalletConnect,
+    walletError,
+    isConnectingWallet,
+    connectWallet,
+    clearWalletError
+  } = useWallet();
+
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
-  const [isConnectingWallet, setIsConnectingWallet] = useState(false);
 
   // Fetch pricing plans
   const fetchPricingPlans = useCallback(async () => {
@@ -83,135 +89,6 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
   useEffect(() => { 
     fetchPricingPlans(); 
   }, [fetchPricingPlans]);
-  
-  // --- NEW: Sync with global wallet ---
-  useEffect(() => {
-    // Function to update local state with global wallet
-    let lastWalletAddress: string | null = null;
-    let lastNetwork: string | null = null;
-    const updateWalletInfo = () => {
-      try {
-        if (web3Service && typeof web3Service.isWalletConnected === 'function') {
-          const isConnected = web3Service.isWalletConnected();
-          if (isConnected) {
-            const walletInfo = web3Service.getWalletInfo();
-            if (walletInfo && walletInfo.address) {
-              if (walletInfo.address !== lastWalletAddress) {
-                setWalletAddress(walletInfo.address);
-                lastWalletAddress = walletInfo.address;
-              }
-              if (walletInfo.networkName && walletInfo.networkName !== lastNetwork) {
-                setCurrentNetwork(walletInfo.networkName);
-                lastNetwork = walletInfo.networkName;
-              }
-              const usingWC = !!web3Service.wcV2Provider;
-              setIsUsingWalletConnect(usingWC);
-              return;
-            }
-          }
-        }
-        if (lastWalletAddress !== null) {
-          setWalletAddress(null);
-          lastWalletAddress = null;
-        }
-        if (lastNetwork !== null) {
-          setCurrentNetwork(null);
-          lastNetwork = null;
-        }
-      } catch (error) {
-        setWalletAddress(null);
-        setCurrentNetwork(null);
-      }
-    };
-    // Only run once on mount
-    updateWalletInfo();
-    // Listeners for global events (compatible with both patterns)
-    const handleWeb3Connected = (e: any) => {
-      console.log('[JobPostPayment] web3Connected', e.detail);
-      const addr = e.detail?.address || e.detail || null;
-      setWalletAddress(addr);
-      
-      // Update network information if available
-      if (e.detail?.networkName) {
-        setCurrentNetwork(e.detail.networkName);
-      }
-      
-      // Check if using WalletConnect
-      setIsUsingWalletConnect(!!web3Service.wcV2Provider);
-    };
-    
-    const handleWeb3Disconnected = () => {
-      setWalletAddress(null);
-      setCurrentNetwork(null);
-      setIsUsingWalletConnect(false);
-    };
-    
-    const handleWalletConnected = (e: any) => {
-      console.log('[JobPostPayment] walletConnected', e.detail);
-      const addr = e.detail?.address || e.detail || null;
-      setWalletAddress(addr);
-      
-      // Update network information if available
-      if (e.detail?.network) {
-        setCurrentNetwork(e.detail.network);
-      }
-      
-      // Check if using WalletConnect
-      setIsUsingWalletConnect(!!web3Service.wcV2Provider);
-    };
-    
-    const handleWalletDisconnected = () => {
-      setWalletAddress(null);
-      setCurrentNetwork(null);
-      setIsUsingWalletConnect(false);
-    };
-    
-    const handleChainChanged = () => {
-      updateWalletInfo();
-    };
-    
-    const handleAccountsChanged = () => {
-      updateWalletInfo();
-    };
-    
-    // New handlers for network changes
-    const handleNetworkChanged = (e: any) => {
-      console.log('[JobPostPayment] networkChanged event', e.detail);
-      if (e.detail?.network) {
-        setCurrentNetwork(e.detail.network);
-      }
-      setIsUsingWalletConnect(e.detail?.forced || !!web3Service.wcV2Provider);
-    };
-    
-    // Handler for forced networks with WalletConnect
-    const handleForcedNetwork = (e: any) => {
-      console.log('[JobPostPayment] web3ForcedNetwork event', e.detail);
-      if (e.detail?.networkType) {
-        setCurrentNetwork(e.detail.networkType);
-      }
-      setIsUsingWalletConnect(true);
-    };
-    
-    window.addEventListener('web3Connected', handleWeb3Connected);
-    window.addEventListener('web3Disconnected', handleWeb3Disconnected);
-    window.addEventListener('walletConnected', handleWalletConnected);
-    window.addEventListener('walletDisconnected', handleWalletDisconnected);
-    window.addEventListener('chainChanged', handleChainChanged);
-    window.addEventListener('accountsChanged', handleAccountsChanged);
-    window.addEventListener('networkChanged', handleNetworkChanged);
-    window.addEventListener('web3ForcedNetwork', handleForcedNetwork);
-    
-    return () => {
-      window.removeEventListener('web3Connected', handleWeb3Connected);
-      window.removeEventListener('web3Disconnected', handleWeb3Disconnected);
-      window.removeEventListener('walletConnected', handleWalletConnected);
-      window.removeEventListener('walletDisconnected', handleWalletDisconnected);
-      window.removeEventListener('chainChanged', handleChainChanged);
-      window.removeEventListener('accountsChanged', handleAccountsChanged);
-      window.removeEventListener('networkChanged', handleNetworkChanged);
-      window.removeEventListener('web3ForcedNetwork', handleForcedNetwork);
-    };
-  }, []);
   
   // Removed previous USDT balance check - error will only be shown during payment processing
 
@@ -245,21 +122,11 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     // Check if the wallet is connected
     if (!walletAddress) {
       console.log("[JobPostPayment] Trying to connect wallet...");
-      setIsConnectingWallet(true);
       try {
-        const walletInfo = await web3Service.connectWallet();
-        if (walletInfo?.address) {
-          console.log("[JobPostPayment] Wallet connected successfully:", walletInfo.address);
-          setWalletAddress(walletInfo.address);
-        } else {
-          throw new Error("Could not get wallet address");
-        }
+        await connectWallet();
       } catch (error: any) {
         setPaymentError(error.message || "Failed to connect wallet");
-        console.error("[JobPostPayment] Error connecting wallet:", error);
         return;
-      } finally {
-        setIsConnectingWallet(false);
       }
     }
     // Double-check wallet connection after connect attempt

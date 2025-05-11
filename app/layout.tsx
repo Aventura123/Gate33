@@ -1,5 +1,6 @@
 import "./globals.css";
 import { metadata } from "./metadata";
+import { WalletProvider } from '../components/WalletProvider';
 
 // Contract monitoring initialization has been moved to the server-init.ts file
 // This prevents multiple conflicting initializations during Next.js renderings
@@ -15,7 +16,11 @@ export default function RootLayout({
         <title>Gate33</title>
         <link rel="icon" href="/logo.png" type="image/png" />
       </head>
-      <body>{children}</body>
+      <body>
+        <WalletProvider>
+          {children}
+        </WalletProvider>
+      </body>
     </html>
   )
 }
