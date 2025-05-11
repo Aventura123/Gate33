@@ -86,13 +86,12 @@ export const NETWORK_CONFIG = {
     rpcUrl: 'https://polygon-rpc.com',
     currencySymbol: 'MATIC',
     blockExplorer: 'https://polygonscan.com'
-  },
-  binance: {
-    chainId: 97, // BSC Testnet chainId
-    name: 'BSC Testnet',
-    rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-    currencySymbol: 'tBNB',
-    blockExplorer: 'https://testnet.bscscan.com'
+  },  binance: {
+    chainId: 56, // BSC Mainnet chainId
+    name: 'Binance Smart Chain',
+    rpcUrl: 'https://bsc-dataseed.binance.org',
+    currencySymbol: 'BNB',
+    blockExplorer: 'https://bscscan.com'
   },
   avalanche: {
     chainId: 43114,

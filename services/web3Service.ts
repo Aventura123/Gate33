@@ -659,33 +659,138 @@ class Web3Service {
   getWalletInfo(): WalletInfo | null {
     return this.walletInfo;
   }
-
   /**
    * Switches to a specific network
    */
   async switchNetwork(networkType: NetworkType): Promise<boolean> {
     const network = this.networks[networkType];
+
+    // Log de início da operação com informações importantes
+    console.log(`[switchNetwork] Switching to network ${networkType} (chainId: ${network.chainId})`, {
+      isUsingWalletConnect: !!this.wcV2Provider,
+      hasEthereumProvider: !!window.ethereum
+    });
     
-    // Caso especial para WalletConnect
+    // Caso especial para WalletConnect - neste método sempre usamos tentativa direta
     if (this.wcV2Provider) {
       try {
-        console.log(`WalletConnect: Switching to network ${networkType} (chainId: ${network.chainId})`);
+        // Para WalletConnect, vamos primeiro verificar se o provedor realmente está conectado
+        const isConnected = this.wcV2Provider.connected === true;
         
-        // Atualiza o estado interno sem tentar mudar a rede na carteira
-        if (this.walletInfo) {
-          this.walletInfo.networkName = network.name;
-          this.walletInfo.chainId = network.chainId;
+        if (!isConnected) {
+          console.log('[switchNetwork] WalletConnect not connected, attempting to reconnect...');
+          try {
+            await this.wcV2Provider.enable();
+            console.log('[switchNetwork] WalletConnect reconnected');
+          } catch (enableError) {
+            console.error('[switchNetwork] Failed to reconnect WalletConnect:', enableError);
+            throw new Error('A conexão com sua carteira WalletConnect foi perdida. Por favor, reconecte-a primeiro.');
+          }
         }
         
-        // Emite evento para informar mudança de rede forçada
-        window.dispatchEvent(new CustomEvent('web3ForcedNetwork', { 
-          detail: { networkType, chainId: network.chainId, name: network.name } 
+        // Verificar se a carteira BSC precisa de tratamento especial
+        const isBSCRequest = networkType === 'binance';
+        
+        if (isBSCRequest) {
+          console.log('[switchNetwork] BSC switch request detected with WalletConnect');
+          // Tentar mudar de rede via wallet_switchEthereumChain
+          try {
+            const chainIdHex = '0x' + network.chainId.toString(16);
+            console.log(`[switchNetwork] Sending wallet_switchEthereumChain request for BSC (${chainIdHex})`);
+            
+            await this.wcV2Provider.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: chainIdHex }],
+            });
+            
+            console.log('[switchNetwork] BSC switch succeeded');
+          } catch (switchError: any) {
+            console.error('[switchNetwork] BSC switch failed:', switchError);
+            
+            // Se não conseguir trocar, tentar adicionar a rede primeiro
+            if (switchError.code === 4902 || switchError.message?.includes('Unrecognized chain ID')) {
+              console.log('[switchNetwork] BSC not found in wallet, attempting to add it...');
+              
+              try {
+                await this.wcV2Provider.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [{
+                    chainId: '0x' + network.chainId.toString(16),
+                    chainName: network.name,
+                    nativeCurrency: {
+                      name: network.currencySymbol,
+                      symbol: network.currencySymbol,
+                      decimals: 18
+                    },
+                    rpcUrls: [network.rpcUrl],
+                    blockExplorerUrls: [network.blockExplorer],
+                  }]
+                });
+                
+                console.log('[switchNetwork] BSC added successfully, retrying switch...');
+                
+                // Tentar novamente após adicionar
+                await this.wcV2Provider.request({
+                  method: 'wallet_switchEthereumChain',
+                  params: [{ chainId: '0x' + network.chainId.toString(16) }],
+                });
+              } catch (addError: any) {
+                console.error('[switchNetwork] Failed to add BSC:', addError);
+                
+                // Se o usuário rejeitou adicionar
+                if (addError.code === 4001) {
+                  throw new Error('Você rejeitou adicionar a rede Binance Smart Chain.');
+                }
+                
+                throw new Error('Não foi possível adicionar a rede Binance Smart Chain. Por favor, adicione manualmente.');
+              }
+            } else {
+              throw switchError; // Relançar o erro original se não for erro de rede não encontrada
+            }
+          }
+        } else {
+          // Para outras redes que não são BSC, usar o fluxo padrão
+          console.log(`[switchNetwork] Standard network switch for ${networkType}`);
+          const chainIdHex = '0x' + network.chainId.toString(16);
+          
+          await this.wcV2Provider.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: chainIdHex }],
+          });
+        }
+        
+        // Atualizar provider e signer após a troca bem-sucedida
+        this.provider = new ethers.providers.Web3Provider(this.wcV2Provider as any, network.chainId);
+        this.signer = this.provider.getSigner();
+        
+        // Atualizar informações da carteira
+        if (this.walletInfo) {
+          this.walletInfo.chainId = network.chainId;
+          this.walletInfo.networkName = network.name;
+        }
+        
+        // Emitir evento de troca bem-sucedida
+        window.dispatchEvent(new CustomEvent('web3NetworkSwitched', { 
+          detail: { 
+            networkType, 
+            chainId: network.chainId, 
+            name: network.name,
+            provider: 'walletconnect' 
+          } 
         }));
         
         return true;
-      } catch (error) {
-        console.error('Error setting forced network with WalletConnect:', error);
-        throw new Error(`Failed to set forced network: ${(error as Error).message}`);
+      } catch (error: any) {
+        console.error('[switchNetwork] WalletConnect network switch error:', error);
+        
+        // Distinguir entre diferentes tipos de erros para melhor UX
+        if (error.code === 4001 || error.message?.includes('User rejected')) {
+          throw new Error('Você rejeitou a troca de rede. Por favor, tente novamente.');
+        } else if (error.message?.includes('connection') || error.message?.includes('session')) {
+          throw new Error('A sessão WalletConnect expirou. Por favor, reconecte sua carteira.');
+        } else {
+          throw new Error(`Falha ao trocar para a rede ${network.name}: ${error.message || 'Erro desconhecido'}`);
+        }
       }
     }
     
@@ -696,10 +801,15 @@ class Web3Service {
     
     try {
       // Try to switch to the network
+      const chainIdHex = `0x${network.chainId.toString(16)}`;
+      console.log(`[switchNetwork] Sending wallet_switchEthereumChain to MetaMask (${chainIdHex})`);
+      
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: `0x${network.chainId.toString(16)}` }],
+        params: [{ chainId: chainIdHex }],
       });
+      
+      console.log(`[switchNetwork] Network switch to ${networkType} successful`);
       
       // Update the provider after switching
       this.provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -711,11 +821,23 @@ class Web3Service {
         this.walletInfo.networkName = network.name;
       }
       
+      // Emitir evento de troca bem-sucedida
+      window.dispatchEvent(new CustomEvent('web3NetworkSwitched', { 
+        detail: { 
+          networkType, 
+          chainId: network.chainId, 
+          name: network.name,
+          provider: 'metamask' 
+        } 
+      }));
+      
       return true;
     } catch (error: any) {
       // If the network is not added to MetaMask, we try to add it
       if (error.code === 4902) {
         try {
+          console.log(`[switchNetwork] Network ${networkType} not found in MetaMask, adding it...`);
+          
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [
@@ -732,14 +854,27 @@ class Web3Service {
               },
             ],
           });
+          
+          console.log(`[switchNetwork] Network ${networkType} added successfully, retrying switch...`);
           return this.switchNetwork(networkType);
-        } catch (addError) {
-          console.error('Error adding network:', addError);
-          throw new Error(`Failed to add network: ${(addError as Error).message}`);
+        } catch (addError: any) {
+          console.error('[switchNetwork] Error adding network:', addError);
+          
+          if (addError.code === 4001) {
+            throw new Error(`Você rejeitou adicionar a rede ${network.name}. Por favor, tente novamente.`);
+          } else {
+            throw new Error(`Falha ao adicionar a rede ${network.name}: ${addError.message || 'Erro desconhecido'}`);
+          }
         }
       }
-      console.error('Error switching network:', error);
-      throw new Error(`Failed to switch network: ${error.message}`);
+      
+      console.error('[switchNetwork] Error switching network:', error);
+      
+      if (error.code === 4001) {
+        throw new Error('Você rejeitou a troca de rede. Por favor, tente novamente.');
+      } else {
+        throw new Error(`Falha ao trocar para a rede ${network.name}: ${error.message || 'Erro desconhecido'}`);
+      }
     }
   }
 
@@ -748,9 +883,9 @@ class Web3Service {
    * Returns true if switch was successful, throws with a clear message if not supported or rejected.
    */  async attemptProgrammaticNetworkSwitch(networkType: NetworkType): Promise<boolean> {
     const network = this.networks[networkType];
-    const chainIdHex = '0x' + network.chainId.toString(16);
-      // WalletConnect v2
-    if (this.wcV2Provider) {      // Add extensive logging to diagnose WalletConnect session state
+    const chainIdHex = '0x' + network.chainId.toString(16);    // WalletConnect v2
+    if (this.wcV2Provider) {      
+      // Add extensive logging to diagnose WalletConnect session state
       console.log('[WalletConnect] Provider state before network switch:', {
         hasProvider: !!this.wcV2Provider,
         hasSession: !!this.wcV2Provider.session,
@@ -759,7 +894,8 @@ class Web3Service {
         accountsLength: this.wcV2Provider.session?.accounts?.length,
         firstAccount: this.wcV2Provider.session?.accounts?.[0],
         connected: this.wcV2Provider.connected,
-        sessionProperties: Object.keys(this.wcV2Provider.session || {})
+        sessionProperties: Object.keys(this.wcV2Provider.session || {}),
+        currentChainId: network.chainId
       });
       
       // General approach for all WalletConnect wallets
