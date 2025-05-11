@@ -62,6 +62,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
+  const [isConnectingWallet, setIsConnectingWallet] = useState(false);
 
   // Fetch pricing plans
   const fetchPricingPlans = useCallback(async () => {
@@ -86,59 +87,44 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
   // --- NEW: Sync with global wallet ---
   useEffect(() => {
     // Function to update local state with global wallet
+    let lastWalletAddress: string | null = null;
+    let lastNetwork: string | null = null;
     const updateWalletInfo = () => {
       try {
-        // Check if the service exists and if the isWalletConnected function exists
         if (web3Service && typeof web3Service.isWalletConnected === 'function') {
-          // Check if the wallet is connected
           const isConnected = web3Service.isWalletConnected();
-          console.log('[JobPostPayment] Wallet connection check:', isConnected);
-          
           if (isConnected) {
-            // Get wallet information
             const walletInfo = web3Service.getWalletInfo();
-            console.log('[JobPostPayment] Wallet info received:', walletInfo);
-            
             if (walletInfo && walletInfo.address) {
-              console.log('[JobPostPayment] Wallet detected:', walletInfo.address);
-              setWalletAddress(walletInfo.address);
-              
-              // Track network information
-              if (walletInfo.networkName) {
-                console.log('[JobPostPayment] Network detected:', walletInfo.networkName);
-                setCurrentNetwork(walletInfo.networkName);
+              if (walletInfo.address !== lastWalletAddress) {
+                setWalletAddress(walletInfo.address);
+                lastWalletAddress = walletInfo.address;
               }
-              
-              // Check if using WalletConnect
+              if (walletInfo.networkName && walletInfo.networkName !== lastNetwork) {
+                setCurrentNetwork(walletInfo.networkName);
+                lastNetwork = walletInfo.networkName;
+              }
               const usingWC = !!web3Service.wcV2Provider;
-              console.log('[JobPostPayment] Using WalletConnect:', usingWC);
               setIsUsingWalletConnect(usingWC);
-              
               return;
-            } else {
-              console.log('[JobPostPayment] Wallet info missing address property');
             }
-          } else {
-            console.log('[JobPostPayment] No wallet connected according to web3Service');
           }
-        } else {
-          console.log('[JobPostPayment] web3Service or isWalletConnected function missing');
         }
-        setWalletAddress(null);
-        setCurrentNetwork(null);
+        if (lastWalletAddress !== null) {
+          setWalletAddress(null);
+          lastWalletAddress = null;
+        }
+        if (lastNetwork !== null) {
+          setCurrentNetwork(null);
+          lastNetwork = null;
+        }
       } catch (error) {
-        console.error('[JobPostPayment] Error checking wallet:', error);
         setWalletAddress(null);
         setCurrentNetwork(null);
       }
     };
-    
-    // Execute immediately and then start polling
+    // Only run once on mount
     updateWalletInfo();
-    
-    // Poll every 2s to ensure sync without overload
-    const poll = setInterval(updateWalletInfo, 2000);
-    
     // Listeners for global events (compatible with both patterns)
     const handleWeb3Connected = (e: any) => {
       console.log('[JobPostPayment] web3Connected', e.detail);
@@ -216,7 +202,6 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     window.addEventListener('web3ForcedNetwork', handleForcedNetwork);
     
     return () => {
-      clearInterval(poll);
       window.removeEventListener('web3Connected', handleWeb3Connected);
       window.removeEventListener('web3Disconnected', handleWeb3Disconnected);
       window.removeEventListener('walletConnected', handleWalletConnected);
@@ -242,22 +227,24 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     setPaymentStep('review');
   };
     const processPayment = async () => {
+    // Prevent duplicate payment and wallet connection attempts immediately
+    if (isProcessingPayment || isConnectingWallet) return;
+    setIsProcessingPayment(true);
     if (!selectedPlan) {
       setPaymentError("Please select a pricing plan");
+      setIsProcessingPayment(false);
       return;
     }
-    
     setPaymentError(null);
-    
     // Log network information for debugging
     console.log(`[JobPostPayment] Processing payment with network: ${currentNetwork || 'unknown'}`);
     console.log(`[JobPostPayment] Using WalletConnect: ${isUsingWalletConnect}`);
     console.log(`[JobPostPayment] Payment currency: ${selectedPlan.currency || 'ETH'}`);
     console.log(`[JobPostPayment] Payment amount: ${selectedPlan.price}`);
-    
     // Check if the wallet is connected
     if (!walletAddress) {
       console.log("[JobPostPayment] Trying to connect wallet...");
+      setIsConnectingWallet(true);
       try {
         const walletInfo = await web3Service.connectWallet();
         if (walletInfo?.address) {
@@ -269,13 +256,20 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
       } catch (error: any) {
         setPaymentError(error.message || "Failed to connect wallet");
         console.error("[JobPostPayment] Error connecting wallet:", error);
+        setIsConnectingWallet(false);
+        setIsProcessingPayment(false);
         return;
+      } finally {
+        setIsConnectingWallet(false);
       }
     }
-    
-    setIsProcessingPayment(true);
+    // Double-check wallet connection after connect attempt
+    if (!walletAddress) {
+      setPaymentError("Wallet is not connected. Please connect your wallet first.");
+      setIsProcessingPayment(false);
+      return;
+    }
     setPaymentStep('processing');
-    
     // Set a timeout to reset UI if transaction takes too long
     const timeoutId = setTimeout(() => {
       if (paymentStep === 'processing') {
@@ -284,7 +278,6 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
         setIsProcessingPayment(false);
       }
     }, 90000); // 90 seconds timeout
-    
     try {
       // Check again if the wallet is connected after attempting to connect
       let currentAddress = walletAddress;
@@ -549,9 +542,19 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
               {walletError && <div className="mt-2 text-sm text-red-500">Error: {walletError}</div>}
             </div>
             <div className="flex flex-col space-y-3">
-              <button onClick={processPayment} disabled={isProcessingPayment || !walletAddress} className={`w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition ${isProcessingPayment ? "opacity-70 cursor-not-allowed" : ""} ${!walletAddress ? "opacity-50 cursor-not-allowed" : ""}`}>{isProcessingPayment ? (<span className="flex items-center justify-center"><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing Payment...</span>) : walletAddress ? "Complete Payment & Post Job" : "Connect Wallet First"}</button>
-              <button onClick={() => setPaymentStep('select-plan')} disabled={isProcessingPayment} className="w-full bg-transparent border border-gray-600 text-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-800 transition">Change Plan</button>
+              <button
+                type="button"
+                className={`w-full py-3 rounded-lg font-semibold text-lg mt-4 ${isProcessingPayment || isConnectingWallet || !walletAddress ? 'bg-orange-300 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-600 text-white'}`}
+                onClick={processPayment}
+                disabled={isProcessingPayment || isConnectingWallet || !walletAddress}
+              >
+                {isProcessingPayment ? 'Processing Payment...' : isConnectingWallet ? 'Connecting Wallet...' : !walletAddress ? 'Connect Wallet First' : 'Pay and Publish'}
+              </button>
+              {paymentError && (
+                <div className="mt-3 text-red-500 text-sm">{paymentError}</div>
+              )}
             </div>
+            {/* Only show the error box once, below the button */}
             {paymentError && <div className="mt-4 bg-red-500/20 border border-red-500 text-red-500 p-3 rounded-lg">{paymentError}</div>}
           </div>
         </div>

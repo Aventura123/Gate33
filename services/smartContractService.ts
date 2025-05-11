@@ -1466,9 +1466,17 @@ class SmartContractService {
         if (!recipientAddress) {
           throw new Error("Recipient address is not configured");
         }
-          // 18. First try to call processTokenPayment with IDs (newer method)
+          // 18. First try to call processTokenPayment with IDs (newer method) using callStatic for a dry run
         try {
-          console.log(`Trying processTokenPayment with planId=${planId}, companyId=${companyId}`);
+          console.log(`Trying callStatic.processTokenPayment (dry run) with planId=${planId}, companyId=${companyId}`);
+          await paymentContract.callStatic.processTokenPayment(
+            usdtAddress,
+            planId,
+            companyId,
+            amountInTokenUnits
+          );
+          // If callStatic succeeds, do the real transaction
+          console.log(`callStatic succeeded, sending real processTokenPayment transaction`);
           const tx = await paymentContract.processTokenPayment(
             usdtAddress,
             planId,
@@ -1476,10 +1484,8 @@ class SmartContractService {
             amountInTokenUnits,
             { gasLimit: ethers.utils.hexlify(500000) }
           );
-          
           const receipt = await tx.wait();
           console.log(`Transaction confirmed: ${receipt.transactionHash}`);
-          
           return {
             transactionHash: receipt.transactionHash,
             blockNumber: receipt.blockNumber,
@@ -1488,23 +1494,20 @@ class SmartContractService {
             recipientAddress: "Contract Distribution",
             amount: amount,
             currency: 'USDT'
-          };        } catch (methodError) {
-          // If processTokenPayment fails, try the older method processTokenPaymentWithFee
-          console.log("Method processTokenPayment failed, trying processTokenPaymentWithFee", methodError);
-          
+          };
+        } catch (methodError) {
+          // If callStatic or real tx fails, try the older method processTokenPaymentWithFee
+          console.log("Method processTokenPayment (callStatic or tx) failed, trying processTokenPaymentWithFee", methodError);
           console.log(`Sending transaction to contract ${this.contractAddress}`);
           console.log(`Parameters: tokenAddress=${usdtAddress}, recipient=${recipientAddress}, amount=${amountInTokenUnits.toString()}`);
-          
           const tx = await paymentContract.processTokenPaymentWithFee(
             usdtAddress,
             recipientAddress,
             amountInTokenUnits,
             { gasLimit: ethers.utils.hexlify(500000) }
           );
-          
           const receipt = await tx.wait();
           console.log(`Transaction confirmed: ${receipt.transactionHash}`);
-          
           return {
             transactionHash: receipt.transactionHash,
             blockNumber: receipt.blockNumber,
