@@ -32,7 +32,7 @@ interface JobPostPaymentProps {
 }
 
 const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfile, reloadData }) => {
-  // Estados e lógica idênticos ao fluxo original da dashboard
+  // States and logic identical to the original dashboard flow
   const [jobData, setJobData] = useState({
     title: "",
     description: "",
@@ -63,7 +63,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
   const [walletError, setWalletError] = useState<string | null>(null);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
 
-  // Buscar planos de preço
+  // Fetch pricing plans
   const fetchPricingPlans = useCallback(async () => {
     try {
       if (!db) throw new Error("Firestore is not initialized");
@@ -75,7 +75,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
       })) as PricingPlan[];
       setPricingPlans(fetchedPlans);
     } catch (error) {
-      setPaymentError("Erro ao buscar planos de preço");
+      setPaymentError("Error fetching pricing plans");
     }
   }, []);
   
@@ -83,19 +83,19 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     fetchPricingPlans(); 
   }, [fetchPricingPlans]);
   
-  // --- NOVO: Sincronizar com wallet global ---
+  // --- NEW: Sync with global wallet ---
   useEffect(() => {
-    // Função para atualizar o estado local com a wallet global
+    // Function to update local state with global wallet
     const updateWalletInfo = () => {
       try {
-        // Verificar se o serviço existe e se a função isWalletConnected existe
+        // Check if the service exists and if the isWalletConnected function exists
         if (web3Service && typeof web3Service.isWalletConnected === 'function') {
-          // Verificar se a carteira está conectada
+          // Check if the wallet is connected
           const isConnected = web3Service.isWalletConnected();
           console.log('[JobPostPayment] Wallet connection check:', isConnected);
           
           if (isConnected) {
-            // Obter informações da carteira
+            // Get wallet information
             const walletInfo = web3Service.getWalletInfo();
             console.log('[JobPostPayment] Wallet info received:', walletInfo);
             
@@ -133,13 +133,13 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
       }
     };
     
-    // Executar imediatamente e em seguida iniciar o polling
+    // Execute immediately and then start polling
     updateWalletInfo();
     
-    // Polling a cada 2s para garantir sincronização sem sobrecarga
+    // Poll every 2s to ensure sync without overload
     const poll = setInterval(updateWalletInfo, 2000);
     
-    // Listeners para eventos globais (compatível com ambos os padrões)
+    // Listeners for global events (compatible with both patterns)
     const handleWeb3Connected = (e: any) => {
       console.log('[JobPostPayment] web3Connected', e.detail);
       const addr = e.detail?.address || e.detail || null;
@@ -228,7 +228,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     };
   }, []);
   
-  // Removida a verificação prévia de saldo USDT - o erro será exibido apenas durante o processamento do pagamento
+  // Removed previous USDT balance check - error will only be shown during payment processing
 
   // Handlers
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -255,20 +255,20 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     console.log(`[JobPostPayment] Payment currency: ${selectedPlan.currency || 'ETH'}`);
     console.log(`[JobPostPayment] Payment amount: ${selectedPlan.price}`);
     
-    // Verificar se a carteira está conectada
+    // Check if the wallet is connected
     if (!walletAddress) {
-      console.log("[JobPostPayment] Tentando conectar carteira...");
+      console.log("[JobPostPayment] Trying to connect wallet...");
       try {
         const walletInfo = await web3Service.connectWallet();
         if (walletInfo?.address) {
-          console.log("[JobPostPayment] Carteira conectada com sucesso:", walletInfo.address);
+          console.log("[JobPostPayment] Wallet connected successfully:", walletInfo.address);
           setWalletAddress(walletInfo.address);
         } else {
           throw new Error("Could not get wallet address");
         }
       } catch (error: any) {
         setPaymentError(error.message || "Failed to connect wallet");
-        console.error("[JobPostPayment] Erro ao conectar carteira:", error);
+        console.error("[JobPostPayment] Error connecting wallet:", error);
         return;
       }
     }
@@ -286,10 +286,10 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     }, 90000); // 90 seconds timeout
     
     try {
-      // Verificar novamente se a carteira está conectada após a tentativa de conexão
+      // Check again if the wallet is connected after attempting to connect
       let currentAddress = walletAddress;
       
-      // Verificação adicional de segurança
+      // Additional security check
       if (!currentAddress) {
         clearTimeout(timeoutId);
         throw new Error("Wallet is not connected. Please connect your wallet first.");
@@ -303,7 +303,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
       try {
         if (planCurrency === 'USDT') {
           console.log("[JobPostPayment] Detected USDT payment, using USDT payment method via jobService");
-          // Para WalletConnect, passamos a rede forçada
+          // For WalletConnect, pass the forced network
           if (isUsingWalletConnect && currentNetwork) {
             transaction = await jobService.processJobPaymentWithUSDT(
               selectedPlan.id,
@@ -370,7 +370,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
         blockNumber: transaction.blockNumber
       });
       
-      // Salvar job
+      // Save job
       const now = new Date();
       const expiryDate = new Date(now.getTime() + selectedPlan.duration * 24 * 60 * 60 * 1000);
       const jobCollection = collection(db, "jobs");
@@ -414,7 +414,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     setJobData((prev) => ({ ...prev, pricingPlanId: "", paymentStatus: "pending", paymentId: prev.paymentId || "" }));
   };
 
-  // Renderização
+  // Render
   return (
     <div className="bg-black/70 p-8 rounded-lg shadow-lg">
       {paymentStep === 'form' && (

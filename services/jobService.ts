@@ -106,9 +106,8 @@ class JobService {
           developmentWallet,
           charityWallet,
           evolutionWallet
-        };
-      } catch (err) {
-        console.error('Erro ao obter distribuição do contrato:', err);
+        };      } catch (err) {
+        console.error('Error getting contract distribution:', err);
       }
       
       // 6. Update job status

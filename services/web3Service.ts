@@ -76,14 +76,14 @@ class Web3Service {
     return chainId > 0 ? `Network ${chainId}` : 'Unknown';
   }
   /**
-   * Listeners para eventos do WalletConnect v2
+   * Listeners for WalletConnect v2 events
    */
   private setupWalletConnectV2Listeners() {
     if (!this.wcV2Provider) return;
     
     console.log('[WalletConnect] Setting up event listeners');
     
-    // Remove listeners antigos para evitar duplicidade
+    // Remove old listeners to avoid duplication
     try {
       this.wcV2Provider.removeAllListeners?.('session_delete');
       this.wcV2Provider.removeAllListeners?.('accountsChanged');
@@ -94,26 +94,26 @@ class Web3Service {
       console.warn('[WalletConnect] Error removing listeners:', error);
     }
 
-    // Listener para desconexão da sessão
+    // Listener for session disconnection
     this.wcV2Provider.on?.('session_delete', () => {
       console.log('[WalletConnect] Session deleted event received');
       this.disconnectWallet();
       window.dispatchEvent(new CustomEvent('web3WalletDisconnected'));
     });
     
-    // Listener específico para o evento disconnect (complementa session_delete)
+    // Specific listener for disconnect event (complements session_delete)
     this.wcV2Provider.on?.('disconnect', () => {
       console.log('[WalletConnect] Disconnect event received');
       this.disconnectWallet();
       window.dispatchEvent(new CustomEvent('web3WalletDisconnected'));
     });
     
-    // Listener para evento de reconexão
+    // Listener for reconnection event
     this.wcV2Provider.on?.('connect', () => {
       console.log('[WalletConnect] Connect event received - connection established');
     });
 
-    // Listener para troca de contas com melhor tratamento de erro
+    // Listener for account change with better error handling
     this.wcV2Provider.on?.('accountsChanged', (accounts: string[]) => {
       console.log('[WalletConnect] Accounts changed:', accounts);
       
@@ -136,12 +136,12 @@ class Web3Service {
       }
     });
 
-    // Listener para troca de rede com melhor tratamento de SafePal
+    // Listener for network change with better handling for SafePal
     this.wcV2Provider.on?.('chainChanged', async (chainId: number | string) => {
       try {
         console.log('[WalletConnect] Chain changed event:', chainId);
         
-        // Converter chainId para formato numérico
+        // Convert chainId to numeric format
         let numericChainId = typeof chainId === 'string' ? 
           parseInt(chainId.startsWith('0x') ? chainId.slice(2) : chainId, 16) : 
           chainId;
@@ -202,16 +202,16 @@ class Web3Service {
   }
 
   /**
-   * Inicializa provedores fallback para quando não houver carteira conectada
+   * Initializes fallback providers for when no wallet is connected
    */
   private async initializeFallbackProviders() {
     try {
-      // Tente primeiro com o Infura como fallback (mais confiável)
+      // Try Infura first as fallback (more reliable)
       this.fallbackProvider = new ethers.providers.InfuraProvider('mainnet', 'da1aa71d421944c69d9be9e699a29d1d');
     } catch (error) {
-      console.warn('Falha ao inicializar Infura provider, tentando outros fallbacks:', error);
+      console.warn('Failed to initialize Infura provider, trying other fallbacks:', error);
       try {
-        // Tente alternativos públicos em ordem de prioridade
+        // Try public alternatives in order of priority
         const fallbackUrls = [
           'https://mainnet.infura.io/v3/7b71460a7cfd447295a93a1d76a71ed6', // Public Infura
           'https://cloudflare-eth.com', // Cloudflare
@@ -219,47 +219,47 @@ class Web3Service {
           'https://ethereum.publicnode.com', // Public Node
         ];
         
-        // Tente cada URL até encontrar uma que funcione
+        // Try each URL until one works
         for (const url of fallbackUrls) {
           try {
             this.fallbackProvider = new ethers.providers.JsonRpcProvider(url);
-            // Teste se o provider está funcionando
+            // Test if the provider is working
             await this.fallbackProvider.getBlockNumber();
-            console.log('Fallback provider inicializado com sucesso:', url);
+            console.log('Fallback provider initialized successfully:', url);
             break;
           } catch (e) {
-            console.warn(`Fallback provider falhou (${url}):`, e);
+            console.warn(`Fallback provider failed (${url}):`, e);
             this.fallbackProvider = null;
           }
         }
       } catch (fallbackError) {
-        console.error('Todos os fallback providers falharam:', fallbackError);
+        console.error('All fallback providers failed:', fallbackError);
         this.fallbackProvider = null;
       }
     }
   }
 
   /**
-   * Obtém um provider válido, seja o conectado à carteira ou um fallback
-   * Garante que sempre retorne um provider, mesmo que seja offline
+   * Gets a valid provider, either connected to the wallet or a fallback
+   * Ensures that a provider is always returned, even if offline
    */
   getProvider() {
     if (this.provider) return this.provider;
     if (this.fallbackProvider) return this.fallbackProvider;
     
-    // Se nenhum provider estiver disponível, crie um provider estático
-    // que não depende de rede externa (útil para previnir erros fatais)
+    // If no provider is available, create a static provider
+    // that does not depend on external network (useful to prevent fatal errors)
     try {
       return ethers.providers.getDefaultProvider('homestead', {
-        // Configuração mínima que não falha mesmo sem conexão
+        // Minimum configuration that does not fail even without connection
         infura: 'da1aa71d421944c69d9be9e699a29d1d',
         alchemy: 'aBnESsQTECl5REQ7cDPdp1gDDOSg_SzE',
         etherscan: 'YKRAU1FG8JI7T52VNHPVE6NQRPD7SHZ8FB',
-        quorum: 1 // Apenas um provedor precisa responder
+        quorum: 1 // Only one provider needs to respond
       });
     } catch (error) {
-      console.warn('Falha ao criar provider padrão, usando provider offline:', error);
-      // Último recurso: retornar um provider "offline" que não falha
+      console.warn('Failed to create default provider, using offline provider:', error);
+      // Last resort: return an "offline" provider that does not fail
       return new ethers.providers.JsonRpcProvider('http://localhost:8545');
     }
   }
@@ -431,7 +431,7 @@ class Web3Service {
       // Verify connection state
       if (!this.wcV2Provider.session) {
         console.error('[WalletConnect] No session created after enable()');
-        throw new Error('Falha ao estabelecer sessão WalletConnect. Por favor, tente novamente.');
+        throw new Error('Failed to establish WalletConnect session. Please try again.');
       }
       
       console.log('[WalletConnect] Session established:', {
@@ -451,13 +451,13 @@ class Web3Service {
         console.log('[WalletConnect] Connected address:', address);
       } catch (addressError) {
         console.error('[WalletConnect] Failed to get address:', addressError);
-        throw new Error('Não foi possível obter o endereço da carteira. Verifique se sua carteira está conectada.');
+        throw new Error('Could not get wallet address. Check if your wallet is connected.');
       }
       
       // Get network with timeout protection
       const networkPromise = this.provider.getNetwork();
       const networkTimeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Tempo esgotado ao obter informações de rede')), 10000);
+        setTimeout(() => reject(new Error('Timeout while getting network information')), 10000);
       });
       
       let network;
@@ -476,7 +476,7 @@ class Web3Service {
         networkName: this.getNetworkNameForChainId(network.chainId)
       };
       
-      // Adiciona listeners para eventos do WalletConnect v2
+      // Add listeners for WalletConnect v2 events
       this.setupWalletConnectV2Listeners();
       
       // Dispatch event to indicate wallet connection
@@ -503,11 +503,11 @@ class Web3Service {
       // Provide helpful error message
       if (error instanceof Error) {
         if (error.message.includes('User rejected')) {
-          throw new Error('Conexão cancelada. Você rejeitou a solicitação de conexão.');
+          throw new Error('Connection canceled. You rejected the connection request.');
         }
         throw error;
       }
-      throw new Error('Falha ao conectar com a carteira. Por favor, tente novamente.');
+      throw new Error('Failed to connect with the wallet. Please try again.');
     }
   }
 
@@ -667,16 +667,16 @@ class Web3Service {
   async switchNetwork(networkType: NetworkType): Promise<boolean> {
     const network = this.networks[networkType];
 
-    // Log de início da operação com informações importantes
+    // Log the start of the operation with important information
     console.log(`[switchNetwork] Switching to network ${networkType} (chainId: ${network.chainId})`, {
       isUsingWalletConnect: !!this.wcV2Provider,
       hasEthereumProvider: !!window.ethereum
     });
     
-    // Caso especial para WalletConnect - neste método sempre usamos tentativa direta
+    // Special case for WalletConnect - in this method we always use direct attempt
     if (this.wcV2Provider) {
       try {
-        // Para WalletConnect, vamos primeiro verificar se o provedor realmente está conectado
+        // For WalletConnect, let's first check if the provider is actually connected
         const isConnected = this.wcV2Provider.connected === true;
         
         if (!isConnected) {
@@ -686,7 +686,7 @@ class Web3Service {
             console.log('[switchNetwork] WalletConnect reconnected');
           } catch (enableError) {
             console.error('[switchNetwork] Failed to reconnect WalletConnect:', enableError);
-            throw new Error('A conexão com sua carteira WalletConnect foi perdida. Por favor, reconecte-a primeiro.');
+            throw new Error('The connection to your WalletConnect wallet was lost. Please reconnect it first.');
           }
         }        
         // Check if the network needs special handling (BSC, Avalanche, or Optimism)
@@ -740,10 +740,10 @@ class Web3Service {
                 
                 // If user rejected adding the network
                 if (addError.code === 4001) {
-                  throw new Error(`Você rejeitou adicionar a rede ${network.name}.`);
+                  throw new Error(`You rejected adding the ${network.name} network.`);
                 }
                 
-                throw new Error(`Não foi possível adicionar a rede ${network.name}. Por favor, adicione manualmente.`);
+                throw new Error(`Could not add the ${network.name} network. Please add it manually.`);
               }
             } else {
               throw switchError; // Rethrow the original error if it's not a network not found error
@@ -760,17 +760,17 @@ class Web3Service {
           });
         }
         
-        // Atualizar provider e signer após a troca bem-sucedida
+        // Update provider and signer after successful switch
         this.provider = new ethers.providers.Web3Provider(this.wcV2Provider as any, network.chainId);
         this.signer = this.provider.getSigner();
         
-        // Atualizar informações da carteira
+        // Update wallet information
         if (this.walletInfo) {
           this.walletInfo.chainId = network.chainId;
           this.walletInfo.networkName = network.name;
         }
         
-        // Emitir evento de troca bem-sucedida
+        // Emit successful switch event
         window.dispatchEvent(new CustomEvent('web3NetworkSwitched', { 
           detail: { 
             networkType, 
@@ -784,18 +784,18 @@ class Web3Service {
       } catch (error: any) {
         console.error('[switchNetwork] WalletConnect network switch error:', error);
         
-        // Distinguir entre diferentes tipos de erros para melhor UX
+        // Distinguish between different types of errors for better UX
         if (error.code === 4001 || error.message?.includes('User rejected')) {
-          throw new Error('Você rejeitou a troca de rede. Por favor, tente novamente.');
+          throw new Error('You rejected the network switch. Please try again.');
         } else if (error.message?.includes('connection') || error.message?.includes('session')) {
-          throw new Error('A sessão WalletConnect expirou. Por favor, reconecte sua carteira.');
+          throw new Error('The WalletConnect session has expired. Please reconnect your wallet.');
         } else {
-          throw new Error(`Falha ao trocar para a rede ${network.name}: ${error.message || 'Erro desconhecido'}`);
+          throw new Error(`Failed to switch to the ${network.name} network: ${error.message || 'Unknown error'}`);
         }
       }
     }
     
-    // Caso normal para MetaMask e outros que usam window.ethereum
+    // Normal case for MetaMask and others using window.ethereum
     if (!window.ethereum) {
       throw new Error('MetaMask is not installed.');
     }
@@ -822,7 +822,7 @@ class Web3Service {
         this.walletInfo.networkName = network.name;
       }
       
-      // Emitir evento de troca bem-sucedida
+      // Emit successful switch event
       window.dispatchEvent(new CustomEvent('web3NetworkSwitched', { 
         detail: { 
           networkType, 
@@ -862,9 +862,9 @@ class Web3Service {
           console.error('[switchNetwork] Error adding network:', addError);
           
           if (addError.code === 4001) {
-            throw new Error(`Você rejeitou adicionar a rede ${network.name}. Por favor, tente novamente.`);
+            throw new Error(`You rejected adding the ${network.name} network. Please try again.`);
           } else {
-            throw new Error(`Falha ao adicionar a rede ${network.name}: ${addError.message || 'Erro desconhecido'}`);
+            throw new Error(`Failed to add the ${network.name} network: ${addError.message || 'Unknown error'}`);
           }
         }
       }
@@ -872,9 +872,9 @@ class Web3Service {
       console.error('[switchNetwork] Error switching network:', error);
       
       if (error.code === 4001) {
-        throw new Error('Você rejeitou a troca de rede. Por favor, tente novamente.');
+        throw new Error('You rejected the network switch. Please try again.');
       } else {
-        throw new Error(`Falha ao trocar para a rede ${network.name}: ${error.message || 'Erro desconhecido'}`);
+        throw new Error(`Failed to switch to the ${network.name} network: ${error.message || 'Unknown error'}`);
       }
     }
   }
@@ -911,12 +911,12 @@ class Web3Service {
         if (this.wcV2Provider.connected) {
           console.log('[WalletConnect] Provider reports connected=true. Proceeding with network switch.');
         } else {
-          throw new Error('Conecte sua carteira WalletConnect antes de trocar de rede.');
+          throw new Error('Connect your WalletConnect wallet before switching networks.');
         }
       }
       
       try {
-        console.log(`Tentando trocar para a rede ${network.name} (chainId: ${network.chainId}) via WalletConnect...`);        // General approach to ensure proper connection for all WalletConnect wallets
+        console.log(`Attempting to switch to the ${network.name} network (chainId: ${network.chainId}) via WalletConnect...`);        // General approach to ensure proper connection for all WalletConnect wallets
         let isConnected = false;
         try {
           // First check the connected flag - most reliable indicator
@@ -949,12 +949,12 @@ class Web3Service {
             isConnected = true;
           } catch (enableError) {
             console.error('[WalletConnect] Failed to re-establish connection:', enableError);
-            throw new Error('A conexão com sua carteira WalletConnect foi perdida. Por favor, reconecte e tente novamente.');
+            throw new Error('The connection to your WalletConnect wallet was lost. Please reconnect and try again.');
           }
         }
         
-        // Sempre envie o request para o provider WalletConnect
-        console.log('[WalletConnect] Enviando request wallet_switchEthereumChain:', {
+        // Always send the request to the WalletConnect provider
+        console.log('[WalletConnect] Sending wallet_switchEthereumChain request:', {
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: chainIdHex }]
         });
@@ -967,38 +967,38 @@ class Web3Service {
         // If the wallet app doesn't respond, we want to time out after a reasonable period
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => {
-            reject(new Error('Tempo esgotado ao esperar resposta da carteira. Verifique se seu aplicativo está aberto e tente novamente.'));
+            reject(new Error('Timeout while waiting for wallet response. Make sure your app is open and try again.'));
           }, 30000); // 30 seconds timeout
         });
         
         try {
           // Wait for either the switch to complete or timeout
           await Promise.race([switchPromise, timeoutPromise]);
-          console.log(`[WalletConnect] Rede alterada com sucesso para ${network.name} (${network.chainId})`);
+          console.log(`[WalletConnect] Network successfully switched to ${network.name} (${network.chainId})`);
         } catch (error: any) {
           // Handle different types of timeout errors that might come from different wallets
-          if (error.message?.includes('Tempo esgotado') || 
+          if (error.message?.includes('Timeout') || 
               error.message?.includes('timeout') ||
               error.message?.includes('timed out')) {
-            throw new Error('Tempo esgotado ao trocar de rede. Verifique se seu aplicativo está aberto e respondendo.');
+            throw new Error('Timeout while switching network. Make sure your app is open and responding.');
           }
           throw error; // Rethrow other errors to be handled by the outer catch
         }
         
-        // Pequeno delay para garantir atualização
+        // Small delay to ensure update
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Atualizar provider e signer
+        // Update provider and signer
         this.provider = new ethers.providers.Web3Provider(this.wcV2Provider as any, network.chainId);
         this.signer = this.provider.getSigner();
         
-        // Atualizar informações da carteira
+        // Update wallet information
         if (this.walletInfo) {
           this.walletInfo.chainId = network.chainId;
           this.walletInfo.networkName = network.name;
         }
         
-        // Emitir evento para informar mudança bem-sucedida
+        // Emit event to indicate successful switch
         window.dispatchEvent(new CustomEvent('web3NetworkSwitched', { 
           detail: { 
             networkType, 
@@ -1010,13 +1010,13 @@ class Web3Service {
         
         return true;
       } catch (error: any) {
-        console.error('Erro ao tentar trocar de rede via WalletConnect:', error);
+        console.error('Error attempting to switch network via WalletConnect:', error);
         
-        // Tentar identificar mais precisamente o tipo de erro
+        // Try to identify the type of error more precisely
         const errorMessage = error?.message || '';
         const errorCode = error?.code;
         
-        // Se a rede não estiver configurada na carteira, tente adicioná-la primeiro
+        // If the network is not configured in the wallet, try adding it first
         if (errorCode === 4902 || errorMessage.includes('Unrecognized chain ID')) {          try {            // Enhanced network addition request with better error handling for all WalletConnect wallets
             // Add special handling for Layer 2 networks' parameters
             const decimals = 18; // Default for most networks
@@ -1033,7 +1033,7 @@ class Web3Service {
               rpcUrls: [network.rpcUrl],
               blockExplorerUrls: network.blockExplorer ? [network.blockExplorer] : []
             };
-            console.log('[WalletConnect] Enviando request wallet_addEthereumChain:', addParams);
+            console.log('[WalletConnect] Sending wallet_addEthereumChain request:', addParams);
             
             // Handle timeouts properly for all WalletConnect wallets
             const addChainPromise = this.wcV2Provider.request({
@@ -1044,78 +1044,78 @@ class Web3Service {
             // If the wallet app is not responding, we don't want to wait forever
             const timeoutPromise = new Promise((_, reject) => {
               setTimeout(() => {
-                reject(new Error('Tempo esgotado ao adicionar nova rede. Verifique se seu aplicativo está aberto.'));
+                reject(new Error('Timeout while adding new network. Make sure your app is open.'));
               }, 30000); // 30 seconds timeout
             });
             
             // Wait for either the chain addition to complete or timeout
             await Promise.race([addChainPromise, timeoutPromise]);
             
-            console.log(`Rede ${network.name} adicionada com sucesso. Tentando trocar novamente...`);
+            console.log(`Network ${network.name} added successfully. Attempting to switch again...`);
             
-            // Dar um pequeno tempo antes de tentar novamente
+            // Give a small delay before trying again
             await new Promise(resolve => setTimeout(resolve, 1000));
             
-            // Tentar novamente a troca após adicionar
+            // Try switching again after adding
             return this.attemptProgrammaticNetworkSwitch(networkType);
           } catch (addError: any) {
-            console.error('Erro ao adicionar rede:', addError);
+            console.error('Error adding network:', addError);
             
             if (addError?.code === 4001) {
-              throw new Error(`Você rejeitou adicionar a rede ${network.name}. Por favor, tente novamente.`);
+              throw new Error(`You rejected adding the ${network.name} network. Please try again.`);
             }
             
-            throw new Error(`Não foi possível adicionar a rede ${network.name} à sua carteira. Por favor, adicione manualmente.`);
+            throw new Error(`Could not add the ${network.name} network to your wallet. Please add it manually.`);
           }
         }
         
-        // Método não suportado pela carteira
+        // Method not supported by the wallet
         if (errorMessage.includes('Unrecognized JSON RPC method') || 
             errorCode === -32601 || 
             errorMessage.includes('Method not supported')) {
-          throw new Error(`Sua carteira WalletConnect não suporta troca automática de rede. Por favor, abra o aplicativo da sua carteira e troque manualmente para a rede ${network.name}.`);
+          throw new Error(`Your WalletConnect wallet does not support automatic network switching. Please open your wallet app and manually switch to the ${network.name} network.`);
         }
         
-        // Usuário rejeitou a troca
+        // User rejected the switch
         if (errorCode === 4001 || errorMessage.includes('User rejected')) {
-          throw new Error('Você rejeitou a troca de rede. Por favor, aprove a solicitação em sua carteira.');
+          throw new Error('You rejected the network switch. Please approve the request in your wallet.');
         }
         
-        // Sessão expirada ou problema de conexão
+        // Session expired or connection issue
         if (errorMessage.includes('No matching key') || 
             errorMessage.includes('connection') || 
             errorMessage.includes('session') || 
             errorMessage.includes('expired')) {
-          // Este erro será capturado pelo fluxo de reconexão no componente
-          throw new Error('A sessão WalletConnect expirou. Precisamos reconectar sua carteira.');
+          // This error will be caught by the reconnection flow in the component
+          throw new Error('The WalletConnect session has expired. We need to reconnect your wallet.');
         }
         
-        // Erro genérico com detalhes para debugging
-        throw new Error(`Não foi possível trocar para a rede ${network.name}. Erro: ${errorMessage || 'Desconhecido'}. Por favor, faça isso manualmente em sua carteira.`);
+        // Generic error with details for debugging
+        throw new Error(`Could not switch to the ${network.name} network. Error: ${errorMessage || 'Unknown'}. Please do this manually in your wallet.`);
       }
     }    // MetaMask or injected provider
     if (window.ethereum) {
       try {
-        console.log(`Tentando trocar para a rede ${network.name} (chainId: ${network.chainId}) via MetaMask...`);
+        console.log(`Attempting to switch to the ${network.name} network (chainId: ${network.chainId}) via MetaMask...`);
         
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: chainIdHex }],
         });
         
-        console.log(`Rede trocada com sucesso para ${network.name} (chainId: ${network.chainId})`);
+        console.log(`Network successfully switched to ${network.name} (chainId: ${network.chainId})`);
         
-        // Atualizar provider e signer
+        // Update provider and signer
         this.provider = new ethers.providers.Web3Provider(window.ethereum);
         this.signer = this.provider.getSigner();
         
-        // Atualizar informações da carteira
+        // Update wallet information
         if (this.walletInfo) {
           this.walletInfo.chainId = network.chainId;
           this.walletInfo.networkName = network.name;
         }
         
-        // Emitir evento para informar mudança bem-sucedida
+        // Emit event to indicate successful switch
         window.dispatchEvent(new CustomEvent('web3NetworkSwitched', { 
           detail: { 
             networkType, 
@@ -1127,12 +1127,12 @@ class Web3Service {
         
         return true;
       } catch (error: any) {
-        console.error('Erro ao tentar trocar de rede via MetaMask:', error);
+        console.error('Error attempting to switch network via MetaMask:', error);
         
-        // Rede não configurada no MetaMask
+        // Network not configured in MetaMask
         if (error.code === 4902 || error.message?.includes('Unrecognized chain ID')) {
           try {
-            console.log(`Rede ${network.name} não encontrada no MetaMask. Tentando adicionar...`);
+            console.log(`Network ${network.name} not found in MetaMask. Attempting to add...`);
             
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
@@ -1151,40 +1151,40 @@ class Web3Service {
               ],
             });
             
-            console.log(`Rede ${network.name} adicionada ao MetaMask. Tentando trocar novamente...`);
+            console.log(`Network ${network.name} added to MetaMask. Attempting to switch again...`);
             
-            // Dar um pequeno tempo antes de tentar novamente
+            // Give a small delay before trying again
             await new Promise(resolve => setTimeout(resolve, 500));
             
-            // Tentar trocar novamente
+            // Try switching again
             return this.attemptProgrammaticNetworkSwitch(networkType);
           } catch (addError: any) {
-            console.error('Erro ao adicionar rede ao MetaMask:', addError);
+            console.error('Error adding network to MetaMask:', addError);
             
             if (addError.code === 4001) {
-              throw new Error(`Você rejeitou adicionar a rede ${network.name}. Por favor, tente novamente.`);
+              throw new Error(`You rejected adding the ${network.name} network. Please try again.`);
             }
             
-            throw new Error(`Não foi possível adicionar a rede ${network.name} ao MetaMask. Por favor, adicione manualmente.`);
+            throw new Error(`Could not add the ${network.name} network to MetaMask. Please add it manually.`);
           }
         }
         
-        // Usuário rejeitou a troca
+        // User rejected the switch
         if (error.code === 4001) {
-          throw new Error('Você rejeitou a troca de rede no MetaMask. Por favor, aprove ou troque manualmente.');
+          throw new Error('You rejected the network switch in MetaMask. Please approve or switch manually.');
         }
         
-        // Carteira bloqueada
+        // Wallet locked
         if (error.message?.includes('locked') || error.code === -32002) {
-          throw new Error('Sua carteira MetaMask está bloqueada. Por favor, desbloqueie-a e tente novamente.');
+          throw new Error('Your MetaMask wallet is locked. Please unlock it and try again.');
         }
         
-        // Erro genérico com detalhes
-        throw new Error(error?.message || 'Não foi possível trocar de rede no MetaMask. Por favor, tente novamente ou faça isso manualmente.');
+        // Generic error with details
+        throw new Error(error?.message || 'Could not switch network in MetaMask. Please try again or do it manually.');
       }
     }
     
-    throw new Error('Nenhuma carteira compatível encontrada. Por favor, instale MetaMask ou use WalletConnect.');
+    throw new Error('No compatible wallet found. Please install MetaMask or use WalletConnect.');
   }
 
   /**

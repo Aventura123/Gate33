@@ -1250,32 +1250,28 @@ class SmartContractService {
       throw error;
     }
   }
-  
-  /**
-   * Processa pagamento de JobPost usando USDT (token)
-   * @param planId ID do plano selecionado
-   * @param amount Valor a ser pago
-   * @param companyId ID da empresa (usado como identificador adicional no contrato)
-   */  // Helper function to normalize network names to match USDT_ADDRESSES keys
+    /**
+   * Processes JobPost payment using USDT (token)
+   * @param planId ID of the selected plan
+   * @param amount Amount to be paid
+   * @param companyId Company ID (used as additional identifier in the contract)
+   */// Helper function to normalize network names to match USDT_ADDRESSES keys
   // Removed duplicate implementation of normalizeNetworkName
 
   async processJobPaymentWithUSDT(planId: string, amount: number, companyId: string, forcedNetwork?: string) {
-    try {
-      // 1. Validações básicas
+    try {      // 1. Basic validations
       if (!planId || !companyId) {
-        throw new Error("Plan ID e Company ID são obrigatórios");
+        throw new Error("Plan ID and Company ID are required");
       }
       
       if (amount === undefined || amount === null || isNaN(amount)) {
-        throw new Error("O valor do plano é inválido. Verifique se o plano está sincronizado corretamente com o banco de dados.");
+        throw new Error("The plan value is invalid. Please ensure the plan is correctly synchronized with the database.");
       }
-      
-      // 2. Inicializar provider e signer corretamente
+        // 2. Initialize provider and signer correctly
       let provider: any;
       let signer: any;
       let normalizedNetworkName: string | null = null;
-      const isWalletConnect = !!web3Service.wcV2Provider;
-      // --- NOVA LÓGICA UNIFICADA ---
+      const isWalletConnect = !!web3Service.wcV2Provider;      // --- UNIFIED NEW LOGIC ---
       if (isWalletConnect) {
         provider = web3Service.provider;
         signer = web3Service.signer;
@@ -1288,31 +1284,29 @@ class SmartContractService {
         if (normalizedNetworkName && currentNetworkName !== normalizedNetworkName) {
           // Block the payment and show a clear error to the user
           throw new Error(
-            `Sua carteira WalletConnect está conectada à rede ${currentNetworkName}, mas o pagamento requer a rede ${normalizedNetworkName}. ` +
-            `Por favor, troque a rede no app da sua carteira e tente novamente.`
+            `Your WalletConnect wallet is connected to the ${currentNetworkName} network, but the payment requires the ${normalizedNetworkName} network. ` +
+            `Please switch networks in your wallet app and try again.`
           );
         }
-        console.log(`[SmartContractService] WalletConnect: usando provider e signer do WalletConnect para rede: ${normalizedNetworkName}`);
-      } else if (forcedNetwork) {
-        // MetaMask: forçar troca de rede na carteira
+        console.log(`[SmartContractService] WalletConnect: using provider and signer from WalletConnect for network: ${normalizedNetworkName}`);      } else if (forcedNetwork) {
+        // MetaMask: force network switch in wallet
         normalizedNetworkName = this.normalizeNetworkName(forcedNetwork);
-        // Solicitar troca de rede na MetaMask
+        // Request network switch in MetaMask
         await web3Service.switchNetworkInMetamask(normalizedNetworkName);
         provider = this.createNetworkProvider(normalizedNetworkName);
         if (!provider) {
-          throw new Error(`Não foi possível criar um provedor para a rede: ${forcedNetwork}`);
+          throw new Error(`Could not create provider for network: ${forcedNetwork}`);
         }
-        // O signer do MetaMask já está associado ao provider correto após o switch
+        // MetaMask signer is already associated with the correct provider after switch
         signer = web3Service.signer;
         if (!signer) {
-          throw new Error("Nenhum signer válido encontrado. Conecte sua carteira antes de continuar.");
+          throw new Error("No valid signer found. Connect your wallet before continuing.");
         }
-        console.log("[SmartContractService] MetaMask: usando provider e signer da rede forçada após switch");
-      } else {
-        // Inicialização padrão
+        console.log("[SmartContractService] MetaMask: using provider and signer from forced network after switch");      } else {
+        // Default initialization
         if (!this.provider || !this.signer) {
           const initialized = await this.init();
-          if (!initialized) throw new Error("Web3 não está disponível");
+          if (!initialized) throw new Error("Web3 is not available");
         }
         provider = this.provider;
         signer = this.signer;
@@ -1324,14 +1318,13 @@ class SmartContractService {
 
       // Final check for provider and signer
       if (!provider || !signer) {
-        throw new Error("Falha ao inicializar conexão com blockchain. Verifique se sua carteira está conectada.");
+        throw new Error("Failed to initialize blockchain connection. Check if your wallet is connected.");
       }
       
       // 3. Obter informações da rede e carteira
       let networkName, network;
       let walletAddress;
-      
-      try {
+        try {
         if (forcedNetwork) {
           networkName = this.normalizeNetworkName(forcedNetwork);
           network = { chainId: null };
@@ -1342,40 +1335,38 @@ class SmartContractService {
           walletAddress = await signer.getAddress();
         }
         
-        console.log(`Processando pagamento em USDT na rede: ${networkName} (${network.chainId}) a partir da carteira: ${walletAddress}`);
+        console.log(`Processing USDT payment on network: ${networkName} (${network.chainId}) from wallet: ${walletAddress}`);
       } catch (error) {
         console.error("Error getting network or wallet information:", error);
-        throw new Error("Falha ao obter informações da rede ou carteira. Verifique sua conexão e tente novamente.");
+        throw new Error("Failed to get network or wallet information. Check your connection and try again.");
       }
-      
-      // 4. Obter detalhes do plano para validar
+        // 4. Get plan details to validate
       const planDoc = await getDoc(doc(db, "jobPlans", planId));
       if (!planDoc.exists()) {
-        throw new Error(`Plano com ID ${planId} não encontrado`);
+        throw new Error(`Plan with ID ${planId} not found`);
       }
       
       const planData = planDoc.data();
       
-      // 5. Verificar se este plano aceita USDT
+      // 5. Check if this plan accepts USDT
       if (planData.currency.toUpperCase() !== 'USDT') {
-        throw new Error(`Este plano não aceita pagamento em USDT. Moeda requerida: ${planData.currency}`);
+        throw new Error(`This plan does not accept USDT payments. Required currency: ${planData.currency}`);
       }
       
-      // 6. Verificar se a rede atual suporta USDT
+      // 6. Check if the current network supports USDT
       if (!normalizedNetworkName || !this.USDT_ADDRESSES[normalizedNetworkName]) {
-        throw new Error(`A rede atual (${normalizedNetworkName || 'desconhecida'}) não tem suporte para USDT. Conecte-se a uma dessas redes: ${Object.keys(this.USDT_ADDRESSES).join(', ')}`);
+        throw new Error(`The current network (${normalizedNetworkName || 'unknown'}) does not support USDT. Please connect to one of these networks: ${Object.keys(this.USDT_ADDRESSES).join(', ')}`);
       }
-      
-      // 7. Carregar o endereço do contrato
+        // 7. Load contract address
       await this.loadContractAddress(forcedNetwork);
       if (!this.contractAddress) {
-        throw new Error(`Nenhum contrato configurado para a rede: ${networkName || 'desconhecida'}`);
+        throw new Error(`No contract configured for network: ${networkName || 'unknown'}`);
       }
       
-      // 8. Obter o endereço do token USDT na rede atual
+      // 8. Get USDT token address for the current network
       const usdtAddress = this.USDT_ADDRESSES[normalizedNetworkName];
       if (!usdtAddress) {
-        throw new Error(`Endereço USDT não encontrado para a rede ${networkName} (normalizado para: ${normalizedNetworkName})`);
+        throw new Error(`USDT address not found for network ${networkName} (normalized to: ${normalizedNetworkName})`);
       }
       
       // 9. ABI para interagir com token ERC20 (USDT)
@@ -1385,11 +1376,10 @@ class SmartContractService {
         "function balanceOf(address account) public view returns (uint256)",
         "function decimals() public view returns (uint8)"
       ];
-        try {
-        // 10. Criar instância do contrato de token
+        try {        // 10. Create token contract instance
         const tokenContract = new ethers.Contract(usdtAddress, tokenABI, signer);
         
-        // 11. Verificar o saldo da carteira (USDT) com tratamento de erros
+        // 11. Check wallet balance (USDT) with error handling
         console.log(`Checking USDT balance at address: ${usdtAddress}`);
           // Get decimals with timeout and fallback to default value if needed
         let decimals;
@@ -1413,22 +1403,20 @@ class SmartContractService {
             tokenContract.balanceOf(walletAddress),
             new Promise<never>((_, reject) => setTimeout(() => 
               reject(new Error("Timeout getting USDT balance")), 7000))
-          ]);
-          const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+          ]);          const formattedBalance = ethers.utils.formatUnits(balance, decimals);
           
           if (parseFloat(formattedBalance) < amount) {
-            throw new Error(`Saldo insuficiente de USDT. Você tem ${formattedBalance} USDT, mas precisa de ${amount} USDT.`);
+            throw new Error(`Insufficient USDT balance. You have ${formattedBalance} USDT, but you need ${amount} USDT.`);
           }
           
-          console.log(`Saldo de USDT disponível: ${formattedBalance}`);
-        } catch (balanceError: any) {
+          console.log(`Available USDT balance: ${formattedBalance}`);        } catch (balanceError: any) {
           console.error("Error checking USDT balance:", balanceError);
           if (balanceError.message && balanceError.message.includes("Timeout")) {
-            throw new Error("Tempo limite excedido ao verificar saldo USDT. A rede pode estar congestionada. Por favor, tente novamente.");
-          } else if (balanceError.message && balanceError.message.includes("Saldo insuficiente")) {
+            throw new Error("Timeout exceeded while checking USDT balance. The network may be congested. Please try again.");
+          } else if (balanceError.message && balanceError.message.includes("Insufficient")) {
             throw balanceError; // Re-throw insufficient balance errors
           } else {
-            throw new Error(`Erro ao verificar saldo USDT: ${balanceError.message || "Erro desconhecido"}`);
+            throw new Error(`Error checking USDT balance: ${balanceError.message || "Unknown error"}`);
           }
         }
         
@@ -1437,16 +1425,15 @@ class SmartContractService {
         
         // 13. Verificar allowance (permissão para o contrato gastar tokens)
         const allowance = await tokenContract.allowance(walletAddress, this.contractAddress);
-        
-        // 14. Se o allowance for menor que o valor, solicitar aprovação
+          // 14. If allowance is less than the amount, request approval
         if (allowance.lt(amountInTokenUnits)) {
-          console.log(`Realizando approve de ${amount} USDT para o contrato ${this.contractAddress}`);
+          console.log(`Approving ${amount} USDT for contract ${this.contractAddress}`);
           const approveTx = await tokenContract.approve(this.contractAddress, amountInTokenUnits);
           const approveReceipt = await approveTx.wait();
           
-          console.log(`Aprovação realizada: ${approveReceipt.transactionHash}`);
+          console.log(`Approval completed: ${approveReceipt.transactionHash}`);
         } else {
-          console.log(`Allowance já é suficiente (${ethers.utils.formatUnits(allowance, decimals)} USDT)`);
+          console.log(`Allowance is already sufficient (${ethers.utils.formatUnits(allowance, decimals)} USDT)`);
         }
         
         // 15. ABI para o método de pagamento com token
@@ -1462,28 +1449,26 @@ class SmartContractService {
         const settingsCollection = collection(db, "settings");
         const settingsDoc = await getDoc(doc(settingsCollection, "paymentConfig"));
         let recipientAddress = "";
-        
-        if (settingsDoc.exists() && settingsDoc.data().mainWallet) {
+          if (settingsDoc.exists() && settingsDoc.data().mainWallet) {
           recipientAddress = settingsDoc.data().mainWallet;
-          console.log(`Usando mainWallet como destinatário principal: ${recipientAddress}`);
+          console.log(`Using mainWallet as primary recipient: ${recipientAddress}`);
         } else {
-          // Se não encontrar, usar endereço padrão do arquivo de configuração
+          // If not found, use default address from configuration file
           try {
             const configModule = await import('../config/paymentConfig');
             recipientAddress = configModule.PAYMENT_RECEIVER_ADDRESS;
           } catch (e) {
             recipientAddress = "0x0000000000000000000000000000000000000000"; // Fallback address
           }
-          console.log(`Nenhuma carteira configurada no Firestore, usando endereço padrão: ${recipientAddress}`);
+          console.log(`No wallet configured in Firestore, using default address: ${recipientAddress}`);
         }
         
         if (!recipientAddress) {
-          throw new Error("Endereço do destinatário não está configurado");
+          throw new Error("Recipient address is not configured");
         }
-        
-        // 18. Tentar primeiro chamar processTokenPayment com os IDs (método mais recente)
+          // 18. First try to call processTokenPayment with IDs (newer method)
         try {
-          console.log(`Tentando processTokenPayment com planId=${planId}, companyId=${companyId}`);
+          console.log(`Trying processTokenPayment with planId=${planId}, companyId=${companyId}`);
           const tx = await paymentContract.processTokenPayment(
             usdtAddress,
             planId,
@@ -1493,7 +1478,7 @@ class SmartContractService {
           );
           
           const receipt = await tx.wait();
-          console.log(`Transação confirmada: ${receipt.transactionHash}`);
+          console.log(`Transaction confirmed: ${receipt.transactionHash}`);
           
           return {
             transactionHash: receipt.transactionHash,
@@ -1503,13 +1488,12 @@ class SmartContractService {
             recipientAddress: "Contract Distribution",
             amount: amount,
             currency: 'USDT'
-          };
-        } catch (methodError) {
-          // Se processTokenPayment falhar, tentar o método antigo processTokenPaymentWithFee
-          console.log("Método processTokenPayment falhou, tentando processTokenPaymentWithFee", methodError);
+          };        } catch (methodError) {
+          // If processTokenPayment fails, try the older method processTokenPaymentWithFee
+          console.log("Method processTokenPayment failed, trying processTokenPaymentWithFee", methodError);
           
-          console.log(`Enviando transação para contrato ${this.contractAddress}`);
-          console.log(`Parâmetros: tokenAddress=${usdtAddress}, recipient=${recipientAddress}, amount=${amountInTokenUnits.toString()}`);
+          console.log(`Sending transaction to contract ${this.contractAddress}`);
+          console.log(`Parameters: tokenAddress=${usdtAddress}, recipient=${recipientAddress}, amount=${amountInTokenUnits.toString()}`);
           
           const tx = await paymentContract.processTokenPaymentWithFee(
             usdtAddress,
@@ -1519,7 +1503,7 @@ class SmartContractService {
           );
           
           const receipt = await tx.wait();
-          console.log(`Transação confirmada: ${receipt.transactionHash}`);
+          console.log(`Transaction confirmed: ${receipt.transactionHash}`);
           
           return {
             transactionHash: receipt.transactionHash,
@@ -1530,21 +1514,20 @@ class SmartContractService {
             amount: amount,
             currency: 'USDT'
           };
-        }
-      } catch (error: any) {
-        // Melhorar a mensagem de erro para problemas comuns
+        }      } catch (error: any) {
+        // Improve error message for common issues
         if (error.message && error.message.includes("invalid project id")) {
           console.error("Provider error - invalid project ID:", error);
-          throw new Error("Erro de configuração do provedor blockchain. Por favor, entre em contato com o suporte.");
+          throw new Error("Blockchain provider configuration error. Please contact support.");
         } else if (error.message && error.message.includes("user rejected transaction")) {
-          throw new Error("Transação rejeitada pelo usuário. Por favor, tente novamente e confirme a transação em sua carteira.");
+          throw new Error("Transaction rejected by user. Please try again and confirm the transaction in your wallet.");
         } else {
-          console.error("Erro detalhado ao processar pagamento com USDT:", error);
+          console.error("Detailed error processing USDT payment:", error);
           throw error;
         }
       }
     } catch (error) {
-      console.error("Erro ao processar pagamento com USDT:", error);
+      console.error("Error processing USDT payment:", error);
       throw error;
     }
   }

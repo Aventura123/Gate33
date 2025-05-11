@@ -1,15 +1,15 @@
-// Centraliza a configuração dos endpoints RPC para múltiplas redes
+// Centralizes the configuration of RPC endpoints for multiple networks
 
 const INFURA_KEY = process.env.INFURA_KEY || process.env.NEXT_PUBLIC_INFURA_KEY || '7b71460a7cfd447295a93a1d76a71ed6';
 
-// Custom endpoints por rede (permite override por env)
+// Custom endpoints per network (allows override via env)
 const CUSTOM_RPC: Record<string, string | undefined> = {
   polygon: process.env.CUSTOM_POLYGON_RPC,
   ethereum: process.env.CUSTOM_ETHEREUM_RPC,
   binance: process.env.CUSTOM_BSC_RPC,
 };
 
-// Endpoints HTTP por rede
+// HTTP endpoints per network
 const HTTP_RPC_URLS: Record<string, string[]> = {
   polygon: [
     CUSTOM_RPC.polygon,
@@ -31,7 +31,7 @@ const HTTP_RPC_URLS: Record<string, string[]> = {
   ].filter(Boolean) as string[],
 };
 
-// Endpoints WebSocket por rede
+// WebSocket endpoints per network
 const WS_RPC_URLS: Record<string, string[]> = {
   polygon: [
     CUSTOM_RPC.polygon && CUSTOM_RPC.polygon.startsWith('wss://') ? CUSTOM_RPC.polygon : undefined,

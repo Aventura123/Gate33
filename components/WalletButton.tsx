@@ -102,12 +102,12 @@ const NetworkOverview: React.FC<{
   return (
     <div className="fixed bottom-4 right-4 bg-white shadow-xl rounded-lg p-4 max-w-xs w-full z-50 border border-green-200">
       <div className="flex justify-between items-center mb-2">
-        <h3 className="font-medium text-gray-800">Rede Alterada</h3>
+        <h3 className="font-medium text-gray-800">Network Changed</h3>
         <button 
           onClick={onClose} 
           className="text-gray-400 hover:text-gray-600"
-          aria-label="Fechar notificação"
-          title="Fechar"
+          aria-label="Close notification"
+          title="Close"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -119,7 +119,7 @@ const NetworkOverview: React.FC<{
         <span className="text-sm font-medium">{networkDetails.name}</span>
       </div>
       <p className="text-xs text-gray-500">
-        Você está agora conectado à rede {networkDetails.name}. Moeda nativa: {networkDetails.nativeCurrency}.
+        You are now connected to the {networkDetails.name} network. Native currency: {networkDetails.nativeCurrency}.
       </p>
         </div>
       );
@@ -186,14 +186,14 @@ const WalletButton: React.FC<WalletButtonProps> = ({
 
     checkConnection();
 
-    // Adicionar evento para detectar mudanças de conta
+    // Add event to detect account changes
     if (typeof window !== 'undefined' && window.ethereum) {
       window.ethereum.on('accountsChanged', (accounts: string[]) => {
         if (accounts.length === 0) {
-          // Usuário desconectou a conta
+          // User disconnected the account
           handleDisconnect();
         } else {
-          // Usuário trocou para outra conta
+          // User switched to another account
           setWalletAddress(accounts[0]);
           setIsConnected(true);
           
@@ -203,14 +203,14 @@ const WalletButton: React.FC<WalletButtonProps> = ({
         }
       });
 
-      // Detectar mudança de rede
+      // Detect network change
       window.ethereum.on('chainChanged', () => {
-        // Recarregar a página quando a rede mudar
+        // Reload the page when the network changes
         window.location.reload();
       });
     }
 
-    // Cleanup dos listeners
+    // Cleanup listeners
     return () => {
       if (typeof window !== 'undefined' && window.ethereum) {
         window.ethereum.removeAllListeners('accountsChanged');
@@ -229,25 +229,25 @@ const WalletButton: React.FC<WalletButtonProps> = ({
       }
     }
   }, [isConnected]);
-  // Efeito para lidar com a reconexão automática do WalletConnect
+  // Effect to handle WalletConnect automatic reconnection
   useEffect(() => {
     const handleReconnection = async () => {
       if (needsReconnect && pendingNetworkSwitch) {
         try {
-          setError('Sessão expirada. Reconectando a carteira...');
+          setError('Session expired. Reconnecting wallet...');
           
-          // Fechar modal de redes enquanto reconecta para evitar confusão
+          // Close networks modal while reconnecting to avoid confusion
           setShowNetworkModal(false);
           
-          console.log('Iniciando reconexão automática da carteira WalletConnect...');
+          console.log('Starting automatic reconnection of WalletConnect wallet...');
           
-          // Reconectar WalletConnect
+          // Reconnect WalletConnect
           const walletInfo = await web3Service.connectWalletConnect();
-          // LOGAR provider e sessão após reconexão
-          console.log('[WalletButton] Após reconexão: wcV2Provider', web3Service.wcV2Provider);
-          console.log('[WalletButton] Após reconexão: wcV2Provider.session', web3Service.wcV2Provider?.session);
+          // LOG provider and session after reconnection
+          console.log('[WalletButton] After reconnection: wcV2Provider', web3Service.wcV2Provider);
+          console.log('[WalletButton] After reconnection: wcV2Provider.session', web3Service.wcV2Provider?.session);
           if (!web3Service.wcV2Provider || !web3Service.wcV2Provider.session || !web3Service.wcV2Provider.session.accounts || web3Service.wcV2Provider.session.accounts.length === 0) {
-            setError('A sessão WalletConnect não está ativa. Abra o app da sua carteira e conecte novamente.');
+            setError('The WalletConnect session is not active. Open your wallet app and connect again.');
             setIsLoading(false);
             setNeedsReconnect(false);
             setPendingNetworkSwitch(null);
@@ -256,45 +256,45 @@ const WalletButton: React.FC<WalletButtonProps> = ({
           setIsConnected(true);
           setWalletAddress(walletInfo.address);
           
-          // Pequeno atraso para garantir que a conexão foi estabelecida
+          // Small delay to ensure the connection is established
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          // Log de troca de rede para debug
-          console.log(`[WalletButton] Tentando trocar para rede: ${pendingNetworkSwitch}, com provider tipo: ${web3Service.wcV2Provider ? 'WalletConnect' : 'MetaMask/Injected'}`);
+          // Network switch log for debug
+          console.log(`[WalletButton] Trying to switch to network: ${pendingNetworkSwitch}, with provider type: ${web3Service.wcV2Provider ? 'WalletConnect' : 'MetaMask/Injected'}`);
           
-          // Tentar novamente a troca de rede após reconexão
-          setError('Carteira reconectada. Aplicando troca de rede...');
+          // Try network switch again after reconnection
+          setError('Wallet reconnected. Applying network switch...');
           await web3Service.attemptProgrammaticNetworkSwitch(pendingNetworkSwitch);
           setCurrentNetwork(pendingNetworkSwitch);
           
-          // Limpar estado de reconexão
+          // Clear reconnection state
           setPendingNetworkSwitch(null);
           setNeedsReconnect(false);
           setError(null);
           
-          // Notificar outros componentes da aplicação sobre a mudança
+          // Notify other application components about the change
           window.dispatchEvent(new CustomEvent('networkChanged', {
             detail: { network: pendingNetworkSwitch, forced: !!web3Service.wcV2Provider }
           }));
           
-          console.log(`Reconectado com sucesso e trocado para rede ${pendingNetworkSwitch}`);
+          console.log(`Successfully reconnected and switched to network ${pendingNetworkSwitch}`);
         } catch (err: any) {
-          console.error('Erro durante reconexão automática:', err);
+          console.error('Error during automatic reconnection:', err);
           
-          // Fornecer orientação específica baseada no tipo de erro
+          // Provide specific guidance based on error type
           if (err.message?.includes('User closed') || 
               err.message?.includes('User rejected') || 
               err.message?.includes('rejected') ||
               err.message?.includes('cancelou')) {
-            setError('A reconexão foi cancelada. Tente conectar sua carteira novamente.');
+            setError('The reconnection was canceled. Try connecting your wallet again.');
           } 
           else if (err.message?.includes('timeout') || 
                    err.message?.includes('timed out') || 
                    err.message?.includes('tempo esgotado')) {
-            setError('Tempo esgotado na reconexão. Verifique se seu aplicativo de carteira está aberto e tente novamente.');
+            setError('Reconnection timeout. Check if your wallet app is open and try again.');
           }
           else {
-            setError(`Falha na reconexão: ${err.message}. Por favor, troque de rede manualmente na sua carteira.`);
+            setError(`Reconnection failed: ${err.message}. Please switch networks manually in your wallet.`);
           }
           
           setPendingNetworkSwitch(null);
@@ -308,10 +308,10 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     if (needsReconnect && pendingNetworkSwitch) {
       handleReconnection();
     }
-      // Registrar listener para eventos de troca de rede bem-sucedida
+    // Register listener for successful network switch events
     const handleNetworkSwitched = (event: any) => {
       const { networkType, chainId, name, provider } = event.detail;
-      console.log(`Evento de troca de rede detectado: ${name} (${chainId}) via ${provider || 'unknown'}`);
+      console.log(`Network switch event detected: ${name} (${chainId}) via ${provider || 'unknown'}`);
       setCurrentNetwork(networkType);
       setError(null);
       setIsLoading(false);
@@ -321,7 +321,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
       // Close the network modal only after successful network switch
       setShowNetworkModal(false);
       
-      console.log('[WalletButton] Rede trocada com sucesso, modal fechado');
+      console.log('[WalletButton] Network switched successfully, modal closed');
     };
     
     window.addEventListener('web3NetworkSwitched', handleNetworkSwitched);
@@ -405,7 +405,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     }
   };  const handleSwitchNetwork = async (network: NetworkType) => {
     if (network === currentNetwork) {
-      // Se já estamos na rede selecionada, apenas fechar o modal e não fazer nada
+      // If we are already on the selected network, just close the modal and do nothing
       setShowNetworkModal(false);
       return;
     }
@@ -413,87 +413,87 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     setIsLoading(true);
     setError(null);
     try {
-      // Armazenar a rede pendente para mostrar o indicador de status
+      // Store pending network to show status indicator
       setPendingNetworkSwitch(network);
       
-      // Log para debug
-      console.log(`[WalletButton] Iniciando troca para rede: ${network}`);
+      // Debug log
+      console.log(`[WalletButton] Starting switch to network: ${network}`);
       
-      // Tentar mudar de rede programaticamente (tanto para MetaMask quanto WalletConnect)
+      // Try to change network programmatically (both for MetaMask and WalletConnect)
       await web3Service.attemptProgrammaticNetworkSwitch(network);
       
-      // Log após tentativa de troca
-      console.log(`[WalletButton] Após tentativa de troca para: ${network}`);
+      // Log after switch attempt
+      console.log(`[WalletButton] After switch attempt to: ${network}`);
       
-      // Atualizar estado local após mudança bem-sucedida
+      // Update local state after successful change
       setCurrentNetwork(network);
       setPendingNetworkSwitch(null);
       
-      // Notificar outros componentes da aplicação sobre a mudança
+      // Notify other application components about the change
       window.dispatchEvent(new CustomEvent('networkChanged', {
         detail: { network, forced: !!web3Service.wcV2Provider }
       }));
       
-      // Feedback visual de sucesso
+      // Visual success feedback
       setError(null);
       setShowNetworkSuccess(true);
       
-      // Ocultar notificação após 5 segundos
+      // Hide notification after 5 seconds
       setTimeout(() => {
         setShowNetworkSuccess(false);
       }, 5000);
       setShowNetworkSuccess(true);
       
-      console.log(`Rede alterada para ${network} ${web3Service.wcV2Provider ? '(WalletConnect)' : '(MetaMask)'}`);
+      console.log(`Network changed to ${network} ${web3Service.wcV2Provider ? '(WalletConnect)' : '(MetaMask)'}`);
     } catch (err: any) {
-      console.error('Erro ao trocar de rede:', err);
-        console.log('[WalletButton] Erro detalhado na troca de rede:', {
+      console.error('Error switching networks:', err);
+        console.log('[WalletButton] Detailed error in network switch:', {
         message: err.message,
         hasWcProvider: !!web3Service.wcV2Provider,
         code: err.code
       });
       
-      // Verificar se é um erro de sessão expirada ou conexão do WalletConnect
-      const isSessionExpiredError = err.message?.includes('Conecte sua carteira') || 
-                                   err.message?.includes('sessão expirou') ||
-                                   err.message?.includes('sessão WalletConnect') ||
-                                   err.message?.includes('conexão') ||
+      // Check if it's an expired session error or WalletConnect connection
+      const isSessionExpiredError = err.message?.includes('Connect your wallet') || 
+                                   err.message?.includes('session expired') ||
+                                   err.message?.includes('WalletConnect session') ||
+                                   err.message?.includes('connection') ||
                                    err.message?.includes('Please call connect') || 
                                    err.message?.includes('connection is not open') ||
-                                   err.message?.includes('conexão') ||
-                                   err.message?.includes('reconectar');
+                                   err.message?.includes('connect') ||
+                                   err.message?.includes('reconnect');
       
-      // Se for WalletConnect e for erro de sessão/conexão, iniciar fluxo de reconexão
+      // If it's WalletConnect and session/connection error, start reconnection flow
       if (isSessionExpiredError && web3Service.wcV2Provider) {
-        console.log('[WalletButton] Detectado erro de conexão WalletConnect. Iniciando reconexão automática...');
+        console.log('[WalletButton] WalletConnect connection error detected. Starting automatic reconnection...');
         setPendingNetworkSwitch(network);
         setNeedsReconnect(true);
-        setError('Detectamos um problema na conexão. Iniciando reconexão...');
+        setError('We detected a connection problem. Starting reconnection...');
         return;
       }
       
-      // Feedback específico baseado no tipo de erro para melhor UX
+      // Specific feedback based on error type for better UX
       if (err.message?.includes('User rejected') || 
-          err.message?.includes('rejeitou') ||
-          err.message?.includes('cancelou') ||
+          err.message?.includes('rejected') ||
+          err.message?.includes('cancelled') ||
           err.code === 4001) {
-        setError('Você rejeitou a troca de rede. Tente novamente quando estiver pronto.');
+        setError('You rejected the network switch. Try again when you are ready.');
       } 
-      else if (err.message?.includes('troque manualmente') || 
+      else if (err.message?.includes('switch manually') || 
                err.message?.includes('not supported') ||
                err.message?.includes('Unrecognized') ||
-               err.message?.includes('não suport')) {
-        setError(`Sua carteira não suporta troca automática de rede. Por favor, abra o aplicativo da sua carteira e mude para a rede ${network.charAt(0).toUpperCase() + network.slice(1)} manualmente.`);
+               err.message?.includes('not support')) {
+        setError(`Your wallet doesn't support automatic network switching. Please open your wallet app and change to ${network.charAt(0).toUpperCase() + network.slice(1)} network manually.`);
       }
-      else if (err.message?.includes('Tempo esgotado') || 
+      else if (err.message?.includes('Time expired') || 
                err.message?.includes('timeout') ||
                err.message?.includes('timed out')) {
-        setError('Tempo esgotado ao aguardar resposta da carteira. Verifique se seu aplicativo está aberto e tente novamente.');
+        setError('Timeout waiting for wallet response. Check if your app is open and try again.');
       }
       else {
-        setError(err.message || 'Não foi possível trocar de rede. Tente novamente ou mude manualmente no aplicativo da sua carteira.');
+        setError(err.message || 'Could not switch networks. Try again or change manually in your wallet app.');
       }} finally {
-      // Só desativa loading se não estivermos em processo de reconexão
+      // Only disable loading if we're not in a reconnection process
       if (!needsReconnect) {
         setIsLoading(false);
         setPendingNetworkSwitch(null);
@@ -501,9 +501,9 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     }
   };  // Handle BSC specific switching with retry mechanism and better WalletConnect support
   const handleBSCNetworkSwitch = async (networkType: NetworkType = 'binance') => {
-    // Verificar se é uma rede BSC válida (mainnet ou testnet)
+    // Check if it's a valid BSC network (mainnet or testnet)
     if (networkType !== 'binance' && networkType !== 'binanceTestnet') {
-      networkType = 'binance'; // Default para mainnet se valor inválido
+      networkType = 'binance'; // Default to mainnet if value is invalid
     }
     
     if (currentNetwork === networkType) {
@@ -515,22 +515,22 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     setError(null);
     setPendingNetworkSwitch(networkType);
     
-    console.log(`[WalletButton] Iniciando troca especial para ${networkType === 'binance' ? 'BSC Mainnet' : 'BSC Testnet'}`);
+    console.log(`[WalletButton] Starting special switch to ${networkType === 'binance' ? 'BSC Mainnet' : 'BSC Testnet'}`);
     
-    // Detectar se estamos usando WalletConnect
+    // Detect if we're using WalletConnect
     const isUsingWalletConnect = !!web3Service.wcV2Provider;
-    console.log('[WalletButton] Usando WalletConnect:', isUsingWalletConnect);
+    console.log('[WalletButton] Using WalletConnect:', isUsingWalletConnect);
     
     try {
-      // Primeiro check - verificamos se estamos usando WalletConnect e ajustamos a estratégia
+      // First check - we verify if we're using WalletConnect and adjust the strategy
       if (isUsingWalletConnect) {
-        console.log(`[WalletButton] Usando método específico para WalletConnect com ${networkType}`);
+        console.log(`[WalletButton] Using specific method for WalletConnect with ${networkType}`);
         await web3Service.attemptProgrammaticNetworkSwitch(networkType);
       } else {
-        // Primeira tentativa para MetaMask/outros providers
+        // First attempt for MetaMask/other providers
         await web3Service.switchNetwork(networkType);
       }
-        console.log(`[WalletButton] Troca para ${networkType} bem-sucedida na primeira tentativa`);
+        console.log(`[WalletButton] Switch to ${networkType} successful on first attempt`);
       
       // Update current network
       setCurrentNetwork(networkType);
@@ -543,31 +543,31 @@ const WalletButton: React.FC<WalletButtonProps> = ({
       }));
       
     } catch (err: any) {
-      console.error('[WalletButton] Primeiro erro ao trocar para BSC:', err);
+      console.error('[WalletButton] First error switching to BSC:', err);
       
-      // Verificar se é um erro de sessão WalletConnect expirada
-      const isSessionExpiredError = err.message?.includes('sessão expirou') || 
+      // Check if it's an expired WalletConnect session error
+      const isSessionExpiredError = err.message?.includes('session expired') || 
                                    err.message?.includes('WalletConnect') ||
                                    err.message?.includes('session') || 
-                                   err.message?.includes('conexão') ||
-                                   err.message?.includes('reconectar');
+                                   err.message?.includes('connection') ||
+                                   err.message?.includes('reconnect');
       
       if (isUsingWalletConnect && isSessionExpiredError) {
-        console.log('[WalletButton] Detectamos erro de sessão WalletConnect. Iniciando processo de reconexão...');
+        console.log('[WalletButton] WalletConnect session error detected. Starting reconnection process...');
         setNeedsReconnect(true);
-        setError('A conexão com sua carteira foi perdida. Tentando reconectar...');
+        setError('The connection to your wallet was lost. Trying to reconnect...');
         return;
       }
       
       try {
-        // Mais tempo de espera para BSC que costuma ser mais lento
+        // More wait time for BSC which tends to be slower
         await new Promise(resolve => setTimeout(resolve, 2000));
-            console.log(`[WalletButton] Realizando segunda tentativa para ${networkType}`);
+            console.log(`[WalletButton] Making second attempt for ${networkType}`);
         
-        // Sempre usar o método mais robusto na segunda tentativa
+        // Always use the more robust method in the second attempt
         await web3Service.attemptProgrammaticNetworkSwitch(networkType);
         
-        console.log(`[WalletButton] Troca para ${networkType} bem-sucedida na segunda tentativa`);
+        console.log(`[WalletButton] Switch to ${networkType} successful on second attempt`);
         setCurrentNetwork(networkType);
         setShowNetworkSuccess(true);
         setShowNetworkModal(false);
@@ -578,20 +578,20 @@ const WalletButton: React.FC<WalletButtonProps> = ({
         }));
         
       } catch (retryErr: any) {
-        console.error('[WalletButton] Falha também na segunda tentativa para BSC:', retryErr);
+        console.error('[WalletButton] Failed on second attempt for BSC too:', retryErr);
           // Specialized error handling for BSC
         if (retryErr.message?.includes('User rejected') || retryErr.code === 4001) {
-          setError(`Você rejeitou a troca para a rede ${networkType === 'binance' ? 'Binance Smart Chain' : 'BSC Testnet'}.`);
-        } else if (retryErr.message?.includes('sessão') || retryErr.message?.includes('conexão')) {
+          setError(`You rejected the switch to ${networkType === 'binance' ? 'Binance Smart Chain' : 'BSC Testnet'} network.`);
+        } else if (retryErr.message?.includes('session') || retryErr.message?.includes('connection')) {
           setNeedsReconnect(true);
-          setError('A conexão com sua carteira foi perdida. Tentando reconectar...');
+          setError('The connection to your wallet was lost. Trying to reconnect...');
         } else {
           const networkConfig = web3Service.networks[networkType];
-          setError(`Falha ao conectar à ${networkType === 'binance' ? 'Binance Smart Chain' : 'BSC Testnet'}. Por favor, adicione a rede manualmente na sua carteira com ChainID: ${networkConfig.chainId}, Nome: ${networkConfig.name}, RPC: ${networkConfig.rpcUrl}`);
+          setError(`Failed to connect to ${networkType === 'binance' ? 'Binance Smart Chain' : 'BSC Testnet'}. Please add the network manually in your wallet with ChainID: ${networkConfig.chainId}, Name: ${networkConfig.name}, RPC: ${networkConfig.rpcUrl}`);
         }
       }
     } finally {
-      // Só remove o loading se não estamos tentando reconectar
+      // Only remove loading if we're not trying to reconnect
       if (!needsReconnect) {
         setIsLoading(false);
         setPendingNetworkSwitch(null);
@@ -645,7 +645,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     );
   };
 
-  // Formatar endereço para exibição
+  // Format address for display
   const formatAddress = (address: string) => {
     if (!address) return '';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
@@ -752,14 +752,12 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                 <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
                   <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl border-2 border-orange-400">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-semibold text-orange-600">Select Network</h3>                    
-                      <button 
+                      <h3 className="text-lg font-semibold text-orange-600">Select Network</h3>                      <button 
                         onClick={() => setShowNetworkModal(false)} 
                         className="text-orange-400 hover:text-orange-600"
                         aria-label="Close network selection modal"
                         title="Close"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      ><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
