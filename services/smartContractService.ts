@@ -1277,21 +1277,22 @@ class SmartContractService {
       const isWalletConnect = !!web3Service.wcV2Provider;
       // --- NOVA LÓGICA UNIFICADA ---
       if (isWalletConnect) {
-        // Sempre usar a rede forçada do dropdown, nunca a da carteira
-        if (!forcedNetwork) {
-          throw new Error("Selecione a rede desejada no dropdown antes de continuar com WalletConnect.");
+        provider = web3Service.provider;
+        signer = web3Service.signer;
+        if (!provider || !signer) {
+          throw new Error("WalletConnect provider/signer not initialized. Connect your wallet first.");
         }
-        normalizedNetworkName = this.normalizeNetworkName(forcedNetwork);
-        provider = this.createNetworkProvider(normalizedNetworkName);
-        if (!provider) {
-          throw new Error(`Não foi possível criar um provedor para a rede: ${forcedNetwork}`);
+        normalizedNetworkName = forcedNetwork ? this.normalizeNetworkName(forcedNetwork) : null;
+        const currentNetwork = await provider.getNetwork();
+        const currentNetworkName = this.getNetworkName(currentNetwork.chainId);
+        if (normalizedNetworkName && currentNetworkName !== normalizedNetworkName) {
+          // Block the payment and show a clear error to the user
+          throw new Error(
+            `Sua carteira WalletConnect está conectada à rede ${currentNetworkName}, mas o pagamento requer a rede ${normalizedNetworkName}. ` +
+            `Por favor, troque a rede no app da sua carteira e tente novamente.`
+          );
         }
-        // O signer do WalletConnect precisa ser refeito para o provider correto
-        signer = web3Service.getWalletConnectSignerForNetwork(normalizedNetworkName, provider);
-        if (!signer) {
-          throw new Error("Nenhum signer válido encontrado para WalletConnect. Conecte sua carteira antes de continuar.");
-        }
-        console.log(`[SmartContractService] WalletConnect: usando provider e signer da rede forçada: ${normalizedNetworkName}`);
+        console.log(`[SmartContractService] WalletConnect: usando provider e signer do WalletConnect para rede: ${normalizedNetworkName}`);
       } else if (forcedNetwork) {
         // MetaMask: forçar troca de rede na carteira
         normalizedNetworkName = this.normalizeNetworkName(forcedNetwork);

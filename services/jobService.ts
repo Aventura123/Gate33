@@ -215,6 +215,11 @@ class JobService {
    * @returns Transaction result
    */
   async processJobPayment(planId: string, amount: number, companyId: string, network?: string) {
+    // Ensure robust provider/signer selection for all payment flows
+    if (!network) {
+      // This warning helps catch legacy/incorrect usage in dev/test
+      console.warn('[jobService] processJobPayment called without network. Ensure correct network is always selected!');
+    }
     // This delegates to smartContractService, which uses the unified provider/signer logic
     return await smartContractService.processJobPayment(planId, amount, companyId, network);
   }
@@ -228,6 +233,11 @@ class JobService {
    * @returns Transaction result
    */
   async processJobPaymentWithUSDT(planId: string, amount: number, companyId: string, network?: string) {
+    // Ensure robust provider/signer selection for all payment flows
+    if (!network) {
+      // This warning helps catch legacy/incorrect usage in dev/test
+      console.warn('[jobService] processJobPaymentWithUSDT called without network. Ensure correct network is always selected!');
+    }
     // This delegates to smartContractService, which uses the unified provider/signer logic
     return await smartContractService.processJobPaymentWithUSDT(planId, amount, companyId, network);
   }
