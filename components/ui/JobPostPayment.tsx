@@ -227,12 +227,13 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     setPaymentStep('review');
   };
     const processPayment = async () => {
-    // Prevent duplicate payment and wallet connection attempts immediately
-    if (isProcessingPayment || isConnectingWallet) return;
-    setIsProcessingPayment(true);
+    // Prevent duplicate wallet connection attempts immediately
+    if (isConnectingWallet) {
+      setPaymentError("Wallet is currently connecting. Please wait...");
+      return;
+    }
     if (!selectedPlan) {
       setPaymentError("Please select a pricing plan");
-      setIsProcessingPayment(false);
       return;
     }
     setPaymentError(null);
@@ -256,8 +257,6 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
       } catch (error: any) {
         setPaymentError(error.message || "Failed to connect wallet");
         console.error("[JobPostPayment] Error connecting wallet:", error);
-        setIsConnectingWallet(false);
-        setIsProcessingPayment(false);
         return;
       } finally {
         setIsConnectingWallet(false);
@@ -266,9 +265,9 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     // Double-check wallet connection after connect attempt
     if (!walletAddress) {
       setPaymentError("Wallet is not connected. Please connect your wallet first.");
-      setIsProcessingPayment(false);
       return;
     }
+    setIsProcessingPayment(true);
     setPaymentStep('processing');
     // Set a timeout to reset UI if transaction takes too long
     const timeoutId = setTimeout(() => {
@@ -550,12 +549,11 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
               >
                 {isProcessingPayment ? 'Processing Payment...' : isConnectingWallet ? 'Connecting Wallet...' : !walletAddress ? 'Connect Wallet First' : 'Pay and Publish'}
               </button>
+              {/* Only show the error message once below the button */}
               {paymentError && (
                 <div className="mt-3 text-red-500 text-sm">{paymentError}</div>
               )}
             </div>
-            {/* Only show the error box once, below the button */}
-            {paymentError && <div className="mt-4 bg-red-500/20 border border-red-500 text-red-500 p-3 rounded-lg">{paymentError}</div>}
           </div>
         </div>
       )}
@@ -568,7 +566,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
           </div>
           <h3 className="text-2xl font-semibold text-green-500">Payment Successful!</h3>
-          <p className="text-gray-300">Your payment has been processed successfully. You can now complete your job posting.</p>
+          <p className="text-gray-300">Your payment has been processed successfully. You can check your offers on the dashboard.</p>
           <button onClick={resetPaymentFlow} className="mt-4 bg-orange-500 text-white py-3 px-8 rounded-lg font-semibold hover:bg-orange-600 transition">Post Another Job</button>
         </div>
       )}
