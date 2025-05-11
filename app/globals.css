@@ -17,6 +17,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   min-height: 200px;
 }
 
+.min-w-90 {
+  min-width: 90px;
+}
+
 /* Custom scrollbar styling - browser compatible version */
 .custom-scrollbar {
   overflow-y: auto; /* Default scrollbar for Firefox and others that don't support custom styling */
@@ -45,4 +49,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .ticket-messages,
 .notification-container {
   @apply custom-scrollbar;
+}
+
+.pointer-events-none {
+  pointer-events: none;
+}
+.pointer-events-auto {
+  pointer-events: auto;
+}
+
+.wallet-modal-shadow {
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);
 }
