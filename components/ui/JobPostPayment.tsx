@@ -3,6 +3,7 @@ import web3Service from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
 import { db } from "../../lib/firebase";
 import { collection, addDoc, getDoc, doc, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+import jobService from "../../services/jobService";
 
 interface PricingPlan {
   id: string;
@@ -299,42 +300,44 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
       
       // Variable to store transaction result
       let transaction;
-      
       try {
         if (planCurrency === 'USDT') {
-          console.log("[JobPostPayment] Detected USDT payment, using USDT payment method");
-          
-          // For WalletConnect, we need to pass the forced network
+          console.log("[JobPostPayment] Detected USDT payment, using USDT payment method via jobService");
+          // Para WalletConnect, passamos a rede forçada
           if (isUsingWalletConnect && currentNetwork) {
-            console.log(`[JobPostPayment] Using WalletConnect with forced network: ${currentNetwork}`);
-            // The smartContractService will now handle normalization of the network name internally
-            transaction = await smartContractService.processJobPaymentWithUSDT(
+            transaction = await jobService.processJobPaymentWithUSDT(
               selectedPlan.id,
               selectedPlan.price,
               companyId,
-              currentNetwork // Pass the selected network as an optional parameter
+              currentNetwork
             );
           } else {
-            // For MetaMask, we don't need to pass network (it's already switched)
-            console.log("[JobPostPayment] Using normal USDT payment method (MetaMask)");
-            transaction = await smartContractService.processJobPaymentWithUSDT(
+            transaction = await jobService.processJobPaymentWithUSDT(
               selectedPlan.id,
               selectedPlan.price,
               companyId
             );
           }
         } else {
-          console.log("[JobPostPayment] Using native token payment method");
-          transaction = await smartContractService.processJobPayment(
-            selectedPlan.id,
-            selectedPlan.price,
-            companyId
-          );
+          console.log("[JobPostPayment] Using native token payment method via jobService");
+          if (isUsingWalletConnect && currentNetwork) {
+            transaction = await jobService.processJobPayment(
+              selectedPlan.id,
+              selectedPlan.price,
+              companyId,
+              currentNetwork
+            );
+          } else {
+            transaction = await jobService.processJobPayment(
+              selectedPlan.id,
+              selectedPlan.price,
+              companyId
+            );
+          }
         }
       } catch (error: any) {
-        console.error("[JobPostPayment] Error during payment processing:", error);
+        console.error("[JobPostPayment] Error during payment processing via jobService:", error);
         clearTimeout(timeoutId);
-        
         // Handle specific contract/network errors with user-friendly messages
         if (error.message?.includes("contract address not configured")) {
           throw new Error(`Payment contract not available on the ${currentNetwork || 'current'} network. Please try another network.`);
@@ -343,7 +346,6 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
         } else if (error.message?.includes("insufficient funds")) {
           throw new Error("You don't have enough funds in your wallet to complete this transaction.");
         } else {
-          // Pass through the original error
           throw error;
         }
       }
@@ -399,7 +401,6 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
       console.error("[JobPostPayment] Payment error:", error);
       setPaymentError(error.message || "Payment failed. Please try again.");
       setJobData((prev) => ({ ...prev, paymentStatus: "failed" }));
-      // Reset to review step instead of staying in processing state
       setPaymentStep('review');
     } finally {
       setIsProcessingPayment(false);

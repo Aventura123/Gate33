@@ -7,6 +7,7 @@ import {
   SERVICE_FEE_PERCENTAGE, 
   TRANSACTION_TIMEOUT 
 } from '../config/paymentConfig';
+import { getHttpRpcUrls } from '../config/rpcConfig';
 
 declare global {
   interface Window {
@@ -299,6 +300,12 @@ class Web3Service {
     if (!projectId) {
       throw new Error("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set in .env.local");
     }
+    // Use the unified Infura key logic from rpcConfig
+    const ethRpcList = getHttpRpcUrls('ethereum');
+    const infuraRpc = ethRpcList.find(url => url.includes('infura.io'));
+    if (!infuraRpc || infuraRpc.includes('undefined')) {
+      throw new Error('Ethereum Infura RPC endpoint is not properly configured. Please check your INFURA_KEY in .env.local and rpcConfig.ts.');
+    }
     const chains = [1, 137, 56];
     this.wcV2Provider = await EthereumProvider.init({
       projectId,
@@ -306,7 +313,7 @@ class Web3Service {
       optionalChains: [1, 137, 56],
       showQrModal: true,
       rpcMap: {
-        1: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+        1: infuraRpc,
         137: "https://polygon-rpc.com",
         56: "https://bsc-dataseed.binance.org/",
       },
@@ -319,15 +326,14 @@ class Web3Service {
     this.walletInfo = {
       address,
       chainId: network.chainId,
-      networkName: this.getNetworkNameForChainId(network.chainId)    };
+      networkName: this.getNetworkNameForChainId(network.chainId)
+    };
     // Adiciona listeners para eventos do WalletConnect v2
     this.setupWalletConnectV2Listeners();
-    
     // Dispatch event to indicate wallet connection
     window.dispatchEvent(new CustomEvent('web3Connected', { 
       detail: this.walletInfo 
     }));
-    
     return this.walletInfo;
   }
 
@@ -1089,6 +1095,94 @@ class Web3Service {
       return null;
     } catch (error) {
       console.error("Error getting Web3Provider:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Returns a WalletConnect signer for a specific network and provider
+   * Used to force contract interactions on the selected network, regardless of the wallet's current network
+   */
+  getWalletConnectSignerForNetwork(network: string, provider?: ethers.providers.JsonRpcProvider): ethers.Signer | null {
+    try {
+      // Always create a new provider for the forced network
+      let forcedProvider = provider;
+      if (!forcedProvider) {
+        const normalized = network.toLowerCase();
+        const rpcList = getHttpRpcUrls(normalized);
+        const rpcUrl = rpcList.length > 0 ? rpcList[0] : undefined;
+        if (!rpcUrl) return null;
+        forcedProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
+      }
+      // Use the current wallet address if available
+      const address = this.walletInfo?.address;
+      if (!address) return null;
+      // WalletConnect does not expose a private key, so we use the provider and address
+      // This will only work for read operations or for contract calls that do not require signing
+      // For write operations, WalletConnect must be connected and the user must approve the transaction
+      return forcedProvider.getSigner(address);
+    } catch (e) {
+      console.error('Error creating WalletConnect signer for network:', network, e);
+      return null;
+    }
+  }
+
+  /**
+   * Switches MetaMask to the specified network (by normalized name)
+   * Throws if MetaMask is not available or user rejects
+   */
+  async switchNetworkInMetamask(network: string): Promise<void> {
+    if (!window.ethereum) throw new Error('MetaMask is not installed.');
+    const normalized = network.toLowerCase();
+    const key = normalized as keyof typeof NETWORK_CONFIG;
+    const netConfig = this.networks[key];
+    if (!netConfig) throw new Error(`Network config not found for: ${network}`);
+    const chainIdHex = '0x' + netConfig.chainId.toString(16);
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: chainIdHex }],
+      });
+    } catch (error: any) {
+      // If the network is not added to MetaMask, try to add it
+      if (error.code === 4902) {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: chainIdHex,
+              chainName: netConfig.name,
+              nativeCurrency: {
+                name: netConfig.currencySymbol,
+                symbol: netConfig.currencySymbol,
+                decimals: 18,
+              },
+              rpcUrls: [netConfig.rpcUrl],
+              blockExplorerUrls: [netConfig.blockExplorer],
+            },
+          ],
+        });
+      } else {
+        throw error;
+      }
+    }
+    // After switching, update provider and signer
+    this.provider = new ethers.providers.Web3Provider(window.ethereum);
+    this.signer = this.provider.getSigner();
+  }
+
+  /**
+   * Creates a JsonRpcProvider for a specific network (by normalized name)
+   */
+  createNetworkProvider(network: string): ethers.providers.JsonRpcProvider | null {
+    try {
+      const normalized = network.toLowerCase();
+      const rpcList = getHttpRpcUrls(normalized);
+      const rpcUrl = rpcList.length > 0 ? rpcList[0] : undefined;
+      if (!rpcUrl) return null;
+      return new ethers.providers.JsonRpcProvider(rpcUrl);
+    } catch (e) {
+      console.error('Error creating network provider:', network, e);
       return null;
     }
   }

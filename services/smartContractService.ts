@@ -1270,46 +1270,55 @@ class SmartContractService {
         throw new Error("O valor do plano é inválido. Verifique se o plano está sincronizado corretamente com o banco de dados.");
       }
       
-      // 2. Inicializar Web3
-      let provider;
-      let signer;
-      
-      // If using forced network, create a custom provider with appropriate RPC URL
-      if (forcedNetwork) {
-        const normalizedNetworkName = this.normalizeNetworkName(forcedNetwork);
-        console.log(`Using forced network: ${forcedNetwork} (normalized to: ${normalizedNetworkName})`);
-        
-        // Use the helper method to create a provider that prioritizes public RPC endpoints
+      // 2. Inicializar provider e signer corretamente
+      let provider: any;
+      let signer: any;
+      let normalizedNetworkName: string | null = null;
+      const isWalletConnect = !!web3Service.wcV2Provider;
+      // --- NOVA LÓGICA UNIFICADA ---
+      if (isWalletConnect) {
+        // Sempre usar a rede forçada do dropdown, nunca a da carteira
+        if (!forcedNetwork) {
+          throw new Error("Selecione a rede desejada no dropdown antes de continuar com WalletConnect.");
+        }
+        normalizedNetworkName = this.normalizeNetworkName(forcedNetwork);
         provider = this.createNetworkProvider(normalizedNetworkName);
         if (!provider) {
           throw new Error(`Não foi possível criar um provedor para a rede: ${forcedNetwork}`);
         }
-        
-        // Try to get signer from web3Service
-        if (web3Service.signer) {
-          signer = web3Service.signer;
-          console.log("Using signer from web3Service");
-        } else if (typeof window !== 'undefined' && window.ethereum) {
-          // Fallback to window.ethereum
-          try {
-            const tempProvider = new ethers.providers.Web3Provider(window.ethereum);
-            signer = tempProvider.getSigner();
-            console.log("Using signer from window.ethereum");
-          } catch (err) {
-            console.error("Failed to get signer from window.ethereum:", err);
-            throw new Error("Unable to connect to wallet. Please ensure your wallet is properly connected.");
-          }
-        } else {
-          throw new Error("No wallet connected. Please connect your wallet to continue.");
+        // O signer do WalletConnect precisa ser refeito para o provider correto
+        signer = web3Service.getWalletConnectSignerForNetwork(normalizedNetworkName, provider);
+        if (!signer) {
+          throw new Error("Nenhum signer válido encontrado para WalletConnect. Conecte sua carteira antes de continuar.");
         }
+        console.log(`[SmartContractService] WalletConnect: usando provider e signer da rede forçada: ${normalizedNetworkName}`);
+      } else if (forcedNetwork) {
+        // MetaMask: forçar troca de rede na carteira
+        normalizedNetworkName = this.normalizeNetworkName(forcedNetwork);
+        // Solicitar troca de rede na MetaMask
+        await web3Service.switchNetworkInMetamask(normalizedNetworkName);
+        provider = this.createNetworkProvider(normalizedNetworkName);
+        if (!provider) {
+          throw new Error(`Não foi possível criar um provedor para a rede: ${forcedNetwork}`);
+        }
+        // O signer do MetaMask já está associado ao provider correto após o switch
+        signer = web3Service.signer;
+        if (!signer) {
+          throw new Error("Nenhum signer válido encontrado. Conecte sua carteira antes de continuar.");
+        }
+        console.log("[SmartContractService] MetaMask: usando provider e signer da rede forçada após switch");
       } else {
-        // Use standard initialization
+        // Inicialização padrão
         if (!this.provider || !this.signer) {
           const initialized = await this.init();
           if (!initialized) throw new Error("Web3 não está disponível");
         }
         provider = this.provider;
         signer = this.signer;
+        if (this.provider) {
+          const network = await this.provider.getNetwork();
+          normalizedNetworkName = this.getNetworkName(network.chainId);
+        }
       }
 
       // Final check for provider and signer
@@ -1352,9 +1361,8 @@ class SmartContractService {
       }
       
       // 6. Verificar se a rede atual suporta USDT
-      let normalizedNetworkName = networkName ? this.normalizeNetworkName(networkName) : null;
       if (!normalizedNetworkName || !this.USDT_ADDRESSES[normalizedNetworkName]) {
-        throw new Error(`A rede atual (${networkName || 'desconhecida'}) não tem suporte para USDT. Conecte-se a uma dessas redes: ${Object.keys(this.USDT_ADDRESSES).join(', ')}`);
+        throw new Error(`A rede atual (${normalizedNetworkName || 'desconhecida'}) não tem suporte para USDT. Conecte-se a uma dessas redes: ${Object.keys(this.USDT_ADDRESSES).join(', ')}`);
       }
       
       // 7. Carregar o endereço do contrato

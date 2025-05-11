@@ -603,31 +603,48 @@ class InstantJobsEscrowService {
    */
   async createJob(network: string, jobId: string, amount: number, deadlineTimestamp: number) {
     try {
-      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[network.toLowerCase()];
+      // --- Unified provider/signer logic ---
+      const normalizedNetwork = network.toLowerCase();
+      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[normalizedNetwork];
       if (!contractAddress) {
         throw new Error(`Network ${network} not supported for Instant Jobs`);
       }
-      
-      // Get contract instance
-      const contract = await web3Service.getContract(contractAddress, INSTANT_JOBS_ESCROW_ABI);
-      if (!contract) {
-        throw new Error("Failed to get contract instance");
+
+      let provider: any;
+      let signer: any;
+      const isWalletConnect = !!web3Service.wcV2Provider;
+
+      if (isWalletConnect) {
+        provider = web3Service.createNetworkProvider(normalizedNetwork);
+        if (!provider) throw new Error(`Could not create provider for network: ${network}`);
+        signer = web3Service.getWalletConnectSignerForNetwork(normalizedNetwork, provider);
+        if (!signer) throw new Error('No valid WalletConnect signer. Connect your wallet first.');
+      } else {
+        await web3Service.switchNetworkInMetamask(normalizedNetwork);
+        provider = web3Service.provider;
+        signer = web3Service.signer;
+        if (!signer) throw new Error('No valid MetaMask signer. Connect your wallet first.');
       }
-      
+
       // Value in Wei
       const valueInWei = web3Service.toWei(amount.toString());
-      
+      // Get contract instance with correct signer
+      const contract = new (require('ethers')).Contract(contractAddress, INSTANT_JOBS_ESCROW_ABI, signer);
+      if (!contract) {
+        throw new Error('Failed to get contract instance');
+      }
+
       // Call the createJob function in the contract
       const tx = await contract.createJob(jobId, deadlineTimestamp, { value: valueInWei });
       const receipt = await tx.wait();
-      
+
       return {
         transactionHash: receipt.transactionHash,
         blockNumber: receipt.blockNumber,
         contractAddress: contractAddress
       };
     } catch (error) {
-      console.error("Error creating instant job in contract:", error);
+      console.error('Error creating instant job in contract:', error);
       throw error;
     }
   }
@@ -640,31 +657,34 @@ class InstantJobsEscrowService {
    */
   async acceptJob(network: string, jobId: string) {
     try {
-      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[network.toLowerCase()];
-      if (!contractAddress) {
-        throw new Error(`Network ${network} not supported for Instant Jobs`);
+      const normalizedNetwork = network.toLowerCase();
+      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[normalizedNetwork];
+      if (!contractAddress) throw new Error(`Network ${network} not supported for Instant Jobs`);
+      let provider: any;
+      let signer: any;
+      const isWalletConnect = !!web3Service.wcV2Provider;
+      if (isWalletConnect) {
+        provider = web3Service.createNetworkProvider(normalizedNetwork);
+        if (!provider) throw new Error(`Could not create provider for network: ${network}`);
+        signer = web3Service.getWalletConnectSignerForNetwork(normalizedNetwork, provider);
+        if (!signer) throw new Error('No valid WalletConnect signer. Connect your wallet first.');
+      } else {
+        await web3Service.switchNetworkInMetamask(normalizedNetwork);
+        provider = web3Service.provider;
+        signer = web3Service.signer;
+        if (!signer) throw new Error('No valid MetaMask signer. Connect your wallet first.');
       }
-      
-      // Get contract instance
-      const contract = await web3Service.getContract(contractAddress, INSTANT_JOBS_ESCROW_ABI);
-      if (!contract) {
-        throw new Error("Failed to get contract instance");
-      }
-      
-      // Call the acceptJob function in the contract
+      const contract = new (require('ethers')).Contract(contractAddress, INSTANT_JOBS_ESCROW_ABI, signer);
+      if (!contract) throw new Error('Failed to get contract instance');
       const tx = await contract.acceptJob(jobId);
       const receipt = await tx.wait();
-      
-      return {
-        transactionHash: receipt.transactionHash,
-        blockNumber: receipt.blockNumber
-      };
+      return { transactionHash: receipt.transactionHash, blockNumber: receipt.blockNumber };
     } catch (error) {
-      console.error("Error accepting instant job in contract:", error);
+      console.error('Error accepting instant job in contract:', error);
       throw error;
     }
   }
-  
+
   /**
    * Marks an instant job as completed
    * @param network Blockchain network
@@ -673,31 +693,34 @@ class InstantJobsEscrowService {
    */
   async completeJob(network: string, jobId: string) {
     try {
-      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[network.toLowerCase()];
-      if (!contractAddress) {
-        throw new Error(`Network ${network} not supported for Instant Jobs`);
+      const normalizedNetwork = network.toLowerCase();
+      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[normalizedNetwork];
+      if (!contractAddress) throw new Error(`Network ${network} not supported for Instant Jobs`);
+      let provider: any;
+      let signer: any;
+      const isWalletConnect = !!web3Service.wcV2Provider;
+      if (isWalletConnect) {
+        provider = web3Service.createNetworkProvider(normalizedNetwork);
+        if (!provider) throw new Error(`Could not create provider for network: ${network}`);
+        signer = web3Service.getWalletConnectSignerForNetwork(normalizedNetwork, provider);
+        if (!signer) throw new Error('No valid WalletConnect signer. Connect your wallet first.');
+      } else {
+        await web3Service.switchNetworkInMetamask(normalizedNetwork);
+        provider = web3Service.provider;
+        signer = web3Service.signer;
+        if (!signer) throw new Error('No valid MetaMask signer. Connect your wallet first.');
       }
-      
-      // Get contract instance
-      const contract = await web3Service.getContract(contractAddress, INSTANT_JOBS_ESCROW_ABI);
-      if (!contract) {
-        throw new Error("Failed to get contract instance");
-      }
-      
-      // Call the completeJob function in the contract
+      const contract = new (require('ethers')).Contract(contractAddress, INSTANT_JOBS_ESCROW_ABI, signer);
+      if (!contract) throw new Error('Failed to get contract instance');
       const tx = await contract.completeJob(jobId);
       const receipt = await tx.wait();
-      
-      return {
-        transactionHash: receipt.transactionHash,
-        blockNumber: receipt.blockNumber
-      };
+      return { transactionHash: receipt.transactionHash, blockNumber: receipt.blockNumber };
     } catch (error) {
-      console.error("Error marking instant job as completed in contract:", error);
+      console.error('Error marking instant job as completed in contract:', error);
       throw error;
     }
   }
-  
+
   /**
    * Approves and releases payment for an instant job
    * @param network Blockchain network
@@ -706,27 +729,47 @@ class InstantJobsEscrowService {
    */
   async approveAndPay(network: string, jobId: string) {
     try {
-      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[network.toLowerCase()];
+      // --- Unified provider/signer logic ---
+      const normalizedNetwork = network.toLowerCase();
+      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[normalizedNetwork];
       if (!contractAddress) {
         throw new Error(`Network ${network} not supported for Instant Jobs`);
       }
-      
-      // Get contract instance
-      const contract = await web3Service.getContract(contractAddress, INSTANT_JOBS_ESCROW_ABI);
-      if (!contract) {
-        throw new Error("Failed to get contract instance");
+
+      let provider: any;
+      let signer: any;
+      const isWalletConnect = !!web3Service.wcV2Provider;
+
+      if (isWalletConnect) {
+        // WalletConnect: always use forced network and correct signer
+        provider = web3Service.createNetworkProvider(normalizedNetwork);
+        if (!provider) throw new Error(`Could not create provider for network: ${network}`);
+        signer = web3Service.getWalletConnectSignerForNetwork(normalizedNetwork, provider);
+        if (!signer) throw new Error('No valid WalletConnect signer. Connect your wallet first.');
+      } else {
+        // MetaMask: trigger network switch and use correct provider/signer
+        await web3Service.switchNetworkInMetamask(normalizedNetwork);
+        provider = web3Service.provider;
+        signer = web3Service.signer;
+        if (!signer) throw new Error('No valid MetaMask signer. Connect your wallet first.');
       }
-      
+
+      // Get contract instance with correct signer
+      const contract = new (require('ethers')).Contract(contractAddress, INSTANT_JOBS_ESCROW_ABI, signer);
+      if (!contract) {
+        throw new Error('Failed to get contract instance');
+      }
+
       // Call the approveAndPay function in the contract
       const tx = await contract.approveAndPay(jobId);
       const receipt = await tx.wait();
-      
+
       return {
         transactionHash: receipt.transactionHash,
         blockNumber: receipt.blockNumber
       };
     } catch (error) {
-      console.error("Error approving and paying instant job in contract:", error);
+      console.error('Error approving and paying instant job in contract:', error);
       throw error;
     }
   }
@@ -739,31 +782,34 @@ class InstantJobsEscrowService {
    */
   async openDispute(network: string, jobId: string) {
     try {
-      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[network.toLowerCase()];
-      if (!contractAddress) {
-        throw new Error(`Network ${network} not supported for Instant Jobs`);
+      const normalizedNetwork = network.toLowerCase();
+      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[normalizedNetwork];
+      if (!contractAddress) throw new Error(`Network ${network} not supported for Instant Jobs`);
+      let provider: any;
+      let signer: any;
+      const isWalletConnect = !!web3Service.wcV2Provider;
+      if (isWalletConnect) {
+        provider = web3Service.createNetworkProvider(normalizedNetwork);
+        if (!provider) throw new Error(`Could not create provider for network: ${network}`);
+        signer = web3Service.getWalletConnectSignerForNetwork(normalizedNetwork, provider);
+        if (!signer) throw new Error('No valid WalletConnect signer. Connect your wallet first.');
+      } else {
+        await web3Service.switchNetworkInMetamask(normalizedNetwork);
+        provider = web3Service.provider;
+        signer = web3Service.signer;
+        if (!signer) throw new Error('No valid MetaMask signer. Connect your wallet first.');
       }
-      
-      // Get contract instance
-      const contract = await web3Service.getContract(contractAddress, INSTANT_JOBS_ESCROW_ABI);
-      if (!contract) {
-        throw new Error("Failed to get contract instance");
-      }
-      
-      // Call the openDispute function in the contract
+      const contract = new (require('ethers')).Contract(contractAddress, INSTANT_JOBS_ESCROW_ABI, signer);
+      if (!contract) throw new Error('Failed to get contract instance');
       const tx = await contract.openDispute(jobId);
       const receipt = await tx.wait();
-      
-      return {
-        transactionHash: receipt.transactionHash,
-        blockNumber: receipt.blockNumber
-      };
+      return { transactionHash: receipt.transactionHash, blockNumber: receipt.blockNumber };
     } catch (error) {
-      console.error("Error opening dispute for instant job in contract:", error);
+      console.error('Error opening dispute for instant job in contract:', error);
       throw error;
     }
   }
-  
+
   /**
    * Resolves a dispute (admin only)
    * @param network Blockchain network
@@ -774,27 +820,30 @@ class InstantJobsEscrowService {
    */
   async resolveDispute(network: string, jobId: string, winnerAddress: string, releasePayment: boolean) {
     try {
-      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[network.toLowerCase()];
-      if (!contractAddress) {
-        throw new Error(`Network ${network} not supported for Instant Jobs`);
+      const normalizedNetwork = network.toLowerCase();
+      const contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[normalizedNetwork];
+      if (!contractAddress) throw new Error(`Network ${network} not supported for Instant Jobs`);
+      let provider: any;
+      let signer: any;
+      const isWalletConnect = !!web3Service.wcV2Provider;
+      if (isWalletConnect) {
+        provider = web3Service.createNetworkProvider(normalizedNetwork);
+        if (!provider) throw new Error(`Could not create provider for network: ${network}`);
+        signer = web3Service.getWalletConnectSignerForNetwork(normalizedNetwork, provider);
+        if (!signer) throw new Error('No valid WalletConnect signer. Connect your wallet first.');
+      } else {
+        await web3Service.switchNetworkInMetamask(normalizedNetwork);
+        provider = web3Service.provider;
+        signer = web3Service.signer;
+        if (!signer) throw new Error('No valid MetaMask signer. Connect your wallet first.');
       }
-      
-      // Get contract instance
-      const contract = await web3Service.getContract(contractAddress, INSTANT_JOBS_ESCROW_ABI);
-      if (!contract) {
-        throw new Error("Failed to get contract instance");
-      }
-      
-      // Call the resolveDispute function in the contract
+      const contract = new (require('ethers')).Contract(contractAddress, INSTANT_JOBS_ESCROW_ABI, signer);
+      if (!contract) throw new Error('Failed to get contract instance');
       const tx = await contract.resolveDispute(jobId, winnerAddress, releasePayment);
       const receipt = await tx.wait();
-      
-      return {
-        transactionHash: receipt.transactionHash,
-        blockNumber: receipt.blockNumber
-      };
+      return { transactionHash: receipt.transactionHash, blockNumber: receipt.blockNumber };
     } catch (error) {
-      console.error("Error resolving dispute for instant job in contract:", error);
+      console.error('Error resolving dispute for instant job in contract:', error);
       throw error;
     }
   }

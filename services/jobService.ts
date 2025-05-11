@@ -205,6 +205,32 @@ class JobService {
       throw error;
     }
   }
+
+  /**
+   * Processes a job payment using the unified provider/signer logic
+   * @param planId Pricing plan ID
+   * @param amount Payment amount
+   * @param companyId Company ID
+   * @param network (optional) Forced network (for WalletConnect)
+   * @returns Transaction result
+   */
+  async processJobPayment(planId: string, amount: number, companyId: string, network?: string) {
+    // This delegates to smartContractService, which uses the unified provider/signer logic
+    return await smartContractService.processJobPayment(planId, amount, companyId, network);
+  }
+
+  /**
+   * Processes a job payment with USDT using the unified provider/signer logic
+   * @param planId Pricing plan ID
+   * @param amount Payment amount
+   * @param companyId Company ID
+   * @param network (optional) Forced network (for WalletConnect)
+   * @returns Transaction result
+   */
+  async processJobPaymentWithUSDT(planId: string, amount: number, companyId: string, network?: string) {
+    // This delegates to smartContractService, which uses the unified provider/signer logic
+    return await smartContractService.processJobPaymentWithUSDT(planId, amount, companyId, network);
+  }
 }
 
 export const jobService = new JobService();
