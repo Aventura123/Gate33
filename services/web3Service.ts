@@ -398,9 +398,8 @@ class Web3Service {
     const infuraRpc = ethRpcList.find(url => url.includes('infura.io'));
     if (!infuraRpc || infuraRpc.includes('undefined')) {
       throw new Error('Ethereum Infura RPC endpoint is not properly configured. Please check your INFURA_KEY in .env.local and rpcConfig.ts.');
-    }
-      // Add popular networks for better wallet compatibility
-    const chains = [1, 137, 56];
+    }    // Add popular networks for better wallet compatibility
+    const chains = [1, 137, 56, 43114, 10]; // Added Avalanche (43114) and Optimism (10)
     
     // Initialize with optimal configuration for general wallet compatibility
     console.log('[WalletConnect] Creating provider with chains:', chains);
@@ -408,15 +407,18 @@ class Web3Service {
       this.wcV2Provider = await EthereumProvider.init({
         projectId,
         chains,
-        optionalChains: [1, 137, 56, 97], // Include BSC testnet
+        optionalChains: [1, 137, 56, 97, 43114, 10], // Include BSC testnet, Avalanche, and Optimism
         showQrModal: true,
         rpcMap: {
           1: infuraRpc,
           137: "https://polygon-rpc.com",
           56: "https://bsc-dataseed.binance.org/",
-          97: "https://data-seed-prebsc-1-s1.binance.org:8545/"        },
+          97: "https://data-seed-prebsc-1-s1.binance.org:8545/",
+          43114: "https://api.avax.network/ext/bc/C/rpc",
+          10: "https://mainnet.optimism.io"
+        },
         disableProviderPing: false, // Keep connection alive with pings
-        // Use standard storage options that are compatível with WalletConnect types
+        // Use standard storage options that are compatible with WalletConnect types
         storageOptions: {
           // Remove unsupported prefix property
         }
@@ -686,30 +688,29 @@ class Web3Service {
             console.error('[switchNetwork] Failed to reconnect WalletConnect:', enableError);
             throw new Error('A conexão com sua carteira WalletConnect foi perdida. Por favor, reconecte-a primeiro.');
           }
-        }
+        }        
+        // Check if the network needs special handling (BSC, Avalanche, or Optimism)
+        const needsSpecialHandling = ['binance', 'avalanche', 'optimism'].includes(networkType);
         
-        // Verificar se a carteira BSC precisa de tratamento especial
-        const isBSCRequest = networkType === 'binance';
-        
-        if (isBSCRequest) {
-          console.log('[switchNetwork] BSC switch request detected with WalletConnect');
-          // Tentar mudar de rede via wallet_switchEthereumChain
+        if (needsSpecialHandling) {
+          console.log(`[switchNetwork] Special handling for ${networkType} network detected with WalletConnect`);
+          // Try to switch networks via wallet_switchEthereumChain
           try {
             const chainIdHex = '0x' + network.chainId.toString(16);
-            console.log(`[switchNetwork] Sending wallet_switchEthereumChain request for BSC (${chainIdHex})`);
+            console.log(`[switchNetwork] Sending wallet_switchEthereumChain request for ${networkType} (${chainIdHex})`);
             
             await this.wcV2Provider.request({
               method: 'wallet_switchEthereumChain',
               params: [{ chainId: chainIdHex }],
             });
             
-            console.log('[switchNetwork] BSC switch succeeded');
+            console.log(`[switchNetwork] ${networkType} switch succeeded`);
           } catch (switchError: any) {
-            console.error('[switchNetwork] BSC switch failed:', switchError);
+            console.error(`[switchNetwork] ${networkType} switch failed:`, switchError);
             
-            // Se não conseguir trocar, tentar adicionar a rede primeiro
+            // If we can't switch, try adding the network first
             if (switchError.code === 4902 || switchError.message?.includes('Unrecognized chain ID')) {
-              console.log('[switchNetwork] BSC not found in wallet, attempting to add it...');
+              console.log(`[switchNetwork] ${networkType} not found in wallet, attempting to add it...`);
               
               try {
                 await this.wcV2Provider.request({
@@ -727,29 +728,29 @@ class Web3Service {
                   }]
                 });
                 
-                console.log('[switchNetwork] BSC added successfully, retrying switch...');
+                console.log(`[switchNetwork] ${networkType} added successfully, retrying switch...`);
                 
-                // Tentar novamente após adicionar
+                // Try again after adding the network
                 await this.wcV2Provider.request({
                   method: 'wallet_switchEthereumChain',
                   params: [{ chainId: '0x' + network.chainId.toString(16) }],
                 });
               } catch (addError: any) {
-                console.error('[switchNetwork] Failed to add BSC:', addError);
+                console.error(`[switchNetwork] Failed to add ${networkType}:`, addError);
                 
-                // Se o usuário rejeitou adicionar
+                // If user rejected adding the network
                 if (addError.code === 4001) {
-                  throw new Error('Você rejeitou adicionar a rede Binance Smart Chain.');
+                  throw new Error(`Você rejeitou adicionar a rede ${network.name}.`);
                 }
                 
-                throw new Error('Não foi possível adicionar a rede Binance Smart Chain. Por favor, adicione manualmente.');
+                throw new Error(`Não foi possível adicionar a rede ${network.name}. Por favor, adicione manualmente.`);
               }
             } else {
-              throw switchError; // Relançar o erro original se não for erro de rede não encontrada
+              throw switchError; // Rethrow the original error if it's not a network not found error
             }
           }
         } else {
-          // Para outras redes que não são BSC, usar o fluxo padrão
+          // For other networks, use the standard flow
           console.log(`[switchNetwork] Standard network switch for ${networkType}`);
           const chainIdHex = '0x' + network.chainId.toString(16);
           
@@ -1017,13 +1018,17 @@ class Web3Service {
         
         // Se a rede não estiver configurada na carteira, tente adicioná-la primeiro
         if (errorCode === 4902 || errorMessage.includes('Unrecognized chain ID')) {          try {            // Enhanced network addition request with better error handling for all WalletConnect wallets
+            // Add special handling for Layer 2 networks' parameters
+            const decimals = 18; // Default for most networks
+            
+            // Create the parameters for adding the network
             const addParams = {
               chainId: chainIdHex,
               chainName: network.name,
               nativeCurrency: {
                 name: network.currencySymbol,
                 symbol: network.currencySymbol,
-                decimals: 18
+                decimals: decimals
               },
               rpcUrls: [network.rpcUrl],
               blockExplorerUrls: network.blockExplorer ? [network.blockExplorer] : []

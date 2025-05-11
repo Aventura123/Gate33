@@ -7,6 +7,8 @@ This component provides a customizable wallet connection button with network swi
 - Connect to MetaMask or WalletConnect
 - Network switching support with visual feedback
 - BSC (Binance Smart Chain) specialized support for both Mainnet and Testnet
+- Avalanche (AVAX) C-Chain support
+- Optimism network support
 - Customizable network options
 - Conditional network selector
 
@@ -17,7 +19,7 @@ This component provides a customizable wallet connection button with network swi
 | `onConnect` | `(address: string) => void` | `undefined` | Callback when wallet is connected |
 | `onDisconnect` | `() => void` | `undefined` | Callback when wallet is disconnected |
 | `className` | `string` | `''` | CSS class for styling the button |
-| `availableNetworks` | `NetworkType[]` | `["ethereum", "polygon", "binance", "binanceTestnet"]` | Networks to show in the selector |
+| `availableNetworks` | `NetworkType[]` | `["ethereum", "polygon", "binance", "binanceTestnet", "avalanche", "optimism"]` | Networks to show in the selector |
 | `showNetworkSelector` | `boolean` | `true` | Whether to show the network selector after connecting |
 | `title` | `string` | `'Connect Wallet'` | Text to display on the connect button |
 
