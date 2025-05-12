@@ -18,7 +18,8 @@ import instantJobsService, { InstantJob, JobMessage } from '../../services/insta
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
 import WalletButton from '../../components/WalletButton';
-import JobPostPayment from "../../components/ui/JobPostPayment";
+import JobPostPayment from "./JobPostPayment";
+import CompanyWelcome from "./CompanyWelcome";
 
 // Interface for Support Ticket
 interface SupportTicket {
@@ -1284,7 +1285,14 @@ const PostJobPage = (): JSX.Element => {
   const renderContent = () => {
     switch (activeTab) {
       case "profile":
-        return renderSettings();
+        return (
+          <CompanyWelcome
+            name={companyProfile.name}
+            industry={companyProfile.industry}
+            country={companyProfile.country}
+            responsiblePerson={companyProfile.responsiblePerson}
+          />
+        );
       case "myJobs":
         return (
           <div className="bg-black/70 p-10 rounded-lg shadow-lg">

@@ -4,7 +4,7 @@ import smartContractService from "../../services/smartContractService";
 import { db } from "../../lib/firebase";
 import { collection, addDoc, getDoc, doc, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import jobService from "../../services/jobService";
-import { useWallet } from '../WalletProvider';
+import { useWallet } from '../../components/WalletProvider';
 
 interface PricingPlan {
   id: string;
