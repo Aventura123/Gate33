@@ -796,27 +796,48 @@ const PostJobPage = (): JSX.Element => {
           </div>
         ) : (
           <div className="bg-black/70 rounded-lg shadow-lg p-6">
-            {instantJobs.length === 0 ? (
-              <div className="text-center py-8 text-gray-300">No instant jobs found.</div>
-            ) : (
-              <div className="space-y-3">
-                {instantJobs.map((job) => (
-                  <div key={job.id} className="bg-black/60 rounded-lg border border-orange-900/30 p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-semibold text-orange-400">{job.title}</div>
-                        <div className="text-xs text-orange-300">{job.category}</div>
+            {/* Unified Instant Jobs UI for both dedicated tab and Job Offers > Instant Jobs */}
+            {activeSection === 'list' ? (
+              instantJobs.length === 0 ? (
+                <div className="text-center py-8 text-gray-300">No instant jobs found.</div>
+              ) : (
+                <div className="space-y-3">
+                  {instantJobs.map((job) => (
+                    <div
+                      key={job.id}
+                      className={`bg-black/60 rounded-lg border border-orange-900/30 p-4 cursor-pointer hover:shadow-lg ${selectedJobId === job.id ? 'ring-2 ring-orange-500' : ''}`}
+                      onClick={() => {
+                        setSelectedJobId(job.id ?? null);
+                        setSelectedJob(job);
+                        setActiveSection('detail');
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-semibold text-orange-400">{job.title}</div>
+                          <div className="text-xs text-orange-300">{job.category}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-gray-200 font-bold">{job.budget} {job.currency}</div>
+                          <div className="text-xs text-gray-400">Deadline: {formatDateOrTimestamp(job.deadline, {dateOnly: true})}</div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-gray-200 font-bold">{job.budget} {job.currency}</div>
-                        <div className="text-xs text-gray-400">{job.status}</div>
-                      </div>
+                      <div className="mt-2 text-xs text-gray-400 line-clamp-2">{job.description}</div>
                     </div>
-                    <div className="mt-2 text-xs text-gray-400 line-clamp-2">{job.description}</div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )
+            ) : activeSection === 'detail' && selectedJob ? (
+              <InstantJobDetailCard
+                job={selectedJob}
+                messages={jobMessages}
+                onBack={() => setActiveSection('list')}
+                onSendMessage={handleSendMessage}
+                isSending={isSendingMessage}
+                companyProfile={companyProfile}
+                handleApproveJob={handleApproveJob}
+              />
+            ) : null}
           </div>
         )}
       </div>
@@ -923,21 +944,21 @@ const PostJobPage = (): JSX.Element => {
   // Function to load Instant Jobs
   const loadInstantJobs = async () => {
     try {
+      console.log('[InstantJobs] Loading for companyId:', companyId);
       const jobs = await instantJobsService.getInstantJobsByCompany(companyId);
+      console.log('[InstantJobs] Jobs fetched from Firestore:', jobs);
       setInstantJobs(jobs);
+      // Log after state update (async, so use setTimeout)
+      setTimeout(() => {
+        console.log('[InstantJobs] instantJobs state after set:', jobs);
+      }, 100);
     } catch (error) {
-      console.error("Error loading micro-tasks:", error);
+      console.error('Error loading micro-tasks:', error);
     }
   };
   
   // Function to load messages of an Instant Job
   const loadJobMessages = async (jobId: string) => {
-    try {
-      const messages = await instantJobsService.getMessages(jobId);
-      setJobMessages(messages);
-    } catch (error) {
-      console.error("Error loading messages:", error);
-    }
   };
   
   // Function to send message
@@ -1042,10 +1063,10 @@ const PostJobPage = (): JSX.Element => {
   
   // Load instantJobs when necessary
   useEffect(() => {
-    if (activeTab === "instantJobs" && companyId) {
+    if (jobsTab === "instant" && companyId) {
       loadInstantJobs();
     }
-  }, [activeTab, companyId]);
+  }, [jobsTab, companyId]);
   
   // Load job details when selecting one
   useEffect(() => {
@@ -1057,6 +1078,99 @@ const PostJobPage = (): JSX.Element => {
       }
     }
   }, [selectedJobId]);
+
+  // Reusable component to render the Instant Job detail/message card
+const InstantJobDetailCard: React.FC<{
+  job: InstantJob,
+  messages: JobMessage[],
+  onBack: () => void,
+  onSendMessage: (msg: string) => void,
+  isSending: boolean,
+  companyProfile: CompanyProfile,
+  handleApproveJob: (jobId: string) => void
+}> = ({
+  job,
+  messages,
+  onBack,
+  onSendMessage,
+  isSending,
+  companyProfile,
+  handleApproveJob
+}) => {
+  const [messageInput, setMessageInput] = useState("");
+
+  return (
+    <div className="bg-black/80 rounded-lg shadow-lg p-6">
+      <button
+        onClick={onBack}
+        className="text-orange-400 hover:text-orange-300 mb-4"
+      >
+        &larr; Back
+      </button>
+      <div className="mb-4">
+        <h3 className="text-2xl font-bold text-orange-400 mb-2">{job.title}</h3>
+        <div className="text-sm text-orange-300 mb-1">{job.category}</div>
+        <div className="text-gray-200 mb-2">{job.description}</div>
+        <div className="flex flex-wrap gap-4 text-xs text-gray-400 mb-2">
+          <div>Budget: <span className="text-orange-300 font-semibold">{job.budget} {job.currency}</span></div>
+          <div>Deadline: <span className="text-orange-300">{formatDateOrTimestamp(job.deadline, {dateOnly: true})}</span></div>
+          <div>Skills: <span className="text-orange-300">{job.requiredSkills?.join(', ') || '-'}</span></div>
+        </div>
+        <div className="text-xs text-gray-400 mb-2">Status: <span className="text-orange-300">{job.status || '-'}</span></div>
+        {job.id && (
+          <button
+            onClick={() => handleApproveJob(job.id!)}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-xs mt-2"
+          >
+            Approve Completion
+          </button>
+        )}
+      </div>
+      <div className="border-t border-orange-900/30 pt-4">
+        <h4 className="text-lg font-semibold text-orange-400 mb-2">Messages</h4>
+        <div className="max-h-48 overflow-y-auto space-y-2 mb-4">
+          {messages.length === 0 ? (
+            <div className="text-gray-400 text-sm">No messages yet.</div>
+          ) : (
+            messages.map((msg, idx) => (
+              <div key={msg.id || idx} className={`p-2 rounded ${msg.senderType === 'company' ? 'bg-orange-900/40 text-orange-200' : 'bg-gray-800/60 text-gray-200'}`}>
+                <div className="text-xs font-semibold mb-1">{msg.senderName || msg.senderType}</div>
+                <div className="text-sm">{msg.message}</div>
+                <div className="text-xs text-gray-400 mt-1">{formatDateOrTimestamp(msg.timestamp)}</div>
+              </div>
+            ))
+          )}
+        </div>
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            if (messageInput.trim()) {
+              onSendMessage(messageInput);
+              setMessageInput("");
+            }
+          }}
+          className="flex gap-2"
+        >
+          <input
+            type="text"
+            value={messageInput}
+            onChange={e => setMessageInput(e.target.value)}
+            className="flex-1 rounded px-3 py-2 bg-gray-900 text-white border border-orange-900/30 focus:outline-none"
+            placeholder="Type your message..."
+            disabled={isSending}
+          />
+          <button
+            type="submit"
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
+            disabled={isSending || !messageInput.trim()}
+          >
+            {isSending ? 'Sending...' : 'Send'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
 
   // Render the Instant Jobs tab
   const renderInstantJobsTab = () => {
@@ -1092,6 +1206,7 @@ const PostJobPage = (): JSX.Element => {
                   job={job}
                   onClick={(jobId) => {
                     setSelectedJobId(jobId);
+                    setSelectedJob(job);
                     setActiveSection('detail');
                   }}
                   showActionButtons={true}
@@ -1238,124 +1353,15 @@ const PostJobPage = (): JSX.Element => {
     
     // Show micro-task details with messages
     if (activeSection === 'detail' && selectedJob) {
-      return (
-        <div>
-          <div className="flex items-center mb-6">
-            <button
-              onClick={() => {
-                setActiveSection('list');
-                setSelectedJobId(null);
-                setSelectedJob(null);
-              }}
-              className="text-orange-400 hover:text-orange-300 mr-3"
-            >
-              &larr; Back
-            </button>
-            <h2 className="text-3xl font-semibold text-orange-500">{selectedJob.title}</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Left panel: Task information */}
-            <div className="md:col-span-1 bg-black/50 p-6 rounded-lg border border-gray-800">
-              <h3 className="text-xl font-semibold text-orange-400 mb-4">Information</h3>
-              
-              <div className="space-y-3">
-                <div>
-                  <span className="text-orange-300 block">Status:</span>
-                  <span className={`
-                    ${selectedJob.status === 'open' ? 'text-green-400' : ''}
-                    ${selectedJob.status === 'accepted' ? 'text-blue-400' : ''}
-                    ${selectedJob.status === 'completed' ? 'text-yellow-400' : ''}
-                    ${selectedJob.status === 'approved' ? 'text-orange-400' : ''}
-                    ${selectedJob.status === 'disputed' ? 'text-red-400' : ''}
-                    font-semibold
-                  `}>
-                    {selectedJob.status === 'open' ? 'Open' : ''}
-                    {selectedJob.status === 'accepted' ? 'Accepted' : ''}
-                    {selectedJob.status === 'in_progress' ? 'In Progress' : ''}
-                    {selectedJob.status === 'completed' ? 'Complete - Awaiting Approval' : ''}
-                    {selectedJob.status === 'approved' ? 'Approved' : ''}
-                    {selectedJob.status === 'disputed' ? 'In Dispute' : ''}
-                    {selectedJob.status === 'closed' ? 'Closed' : ''}
-                  </span>
-                </div>
-                
-                <div>
-                  <span className="text-orange-300 block">Budget:</span>
-                  <span className="text-white">{selectedJob.budget} {selectedJob.currency}</span>
-                </div>
-                
-                <div>
-                  <span className="text-orange-300 block">Deadline:</span>
-                  <span className="text-white">
-                    {selectedJob.deadline instanceof Date 
-                      ? selectedJob.deadline.toLocaleDateString() 
-                      : new Date(selectedJob.deadline.seconds * 1000).toLocaleDateString()}
-                  </span>
-                </div>
-                
-                <div>
-                  <span className="text-orange-300 block">Category:</span>
-                  <span className="text-white">{selectedJob.category}</span>
-                </div>
-                
-                {selectedJob.acceptedByName && selectedJob.status !== 'open' && (
-                  <div>
-                    <span className="text-orange-300 block">Accepted by:</span>
-                    <span className="text-white">{selectedJob.acceptedByName}</span>
-                  </div>
-                )}
-                
-                <div>
-                  <span className="text-orange-300 block">Required Skills:</span>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedJob.requiredSkills?.map((skill, index) => (
-                      <span key={index} className="bg-gray-800 text-xs text-orange-300 px-2 py-1 rounded-full">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                
-                <div>
-                  <span className="text-orange-300 block">Description:</span>
-                  <p className="text-white mt-2 whitespace-pre-line">{selectedJob.description}</p>
-                </div>
-                
-                {selectedJob.status === 'completed' && (
-                  <div className="mt-4">
-                    <button 
-                      onClick={() => selectedJob.id && handleApproveJob(selectedJob.id)}
-                      className="w-full bg-green-500 hover:bg-green-600 text-white"
-                    >
-                      Approve Completed Task
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Right panel: Message system */}
-            <div className="md:col-span-2 bg-black/50 p-6 rounded-lg border border-gray-800">
-              <h3 className="text-xl font-semibold text-orange-400 mb-4">Messages</h3>
-              
-              {selectedJob.status === 'open' ? (
-                <div className="text-center py-8 text-gray-400">
-                  Messages will be available when someone accepts this micro-task.
-                </div>
-              ) : (
-                <MessageSystem 
-                  messages={jobMessages}
-                  onSendMessage={handleSendMessage}
-                  isLoading={isSendingMessage}
-                  currentUserId={companyId}
-                  currentUserType="company"
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      );
+      return <InstantJobDetailCard
+        job={selectedJob}
+        messages={jobMessages}
+        onBack={() => setActiveSection('list')}
+        onSendMessage={handleSendMessage}
+        isSending={isSendingMessage}
+        companyProfile={companyProfile}
+        handleApproveJob={handleApproveJob}
+      />;
     }
     
     return <div>Loading...</div>;
@@ -3301,5 +3307,16 @@ const manualSyncStatuses = async () => {
     </Layout>
   );
 };
+
+// Helper to format Firestore Timestamp or Date
+function formatDateOrTimestamp(val: Date | import('firebase/firestore').Timestamp | undefined, opts: {dateOnly?: boolean} = {}) {
+  if (!val) return '-';
+  if (typeof (val as any).toDate === 'function') {
+    const d = (val as any).toDate();
+    return opts.dateOnly ? d.toLocaleDateString() : d.toLocaleString();
+  }
+  const d = new Date(val as any);
+  return opts.dateOnly ? d.toLocaleDateString() : d.toLocaleString();
+}
 
 export default PostJobPage;
