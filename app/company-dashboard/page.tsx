@@ -257,6 +257,9 @@ const PostJobPage = (): JSX.Element => {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const [sidebarJobOffersOpen, setSidebarJobOffersOpen] = useState(false);
+  const [jobOffersSubTab, setJobOffersSubTab] = useState<'list' | 'new' | 'instant'>('list');
+
   // Function to fetch pricing plans from Firebase
   const fetchPricingPlans = useCallback(async () => {
     try {
@@ -3104,9 +3107,7 @@ const manualSyncStatuses = async () => {
             <ul className="space-y-4 flex-grow w-full mt-6">
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${
-                    activeTab === "profile" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
-                  }`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "profile" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => handleTabChange("profile")}
                 >
                   Profile
@@ -3114,39 +3115,48 @@ const manualSyncStatuses = async () => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${
-                    activeTab === "myJobs" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
-                  }`}
-                  onClick={() => handleTabChange("myJobs")}
+                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "myJobOffers" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  onClick={() => {
+                    setActiveTab("myJobOffers");
+                    setSidebarJobOffersOpen((open) => !open);
+                    setJobOffersSubTab('list');
+                  }}
                 >
-                  My Jobs
+                  <span>My Job Offers</span>
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${sidebarJobOffersOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
+                {activeTab === "myJobOffers" && sidebarJobOffersOpen && (
+                  <ul className="ml-6 mt-2 space-y-1">
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'list' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        onClick={() => setJobOffersSubTab('list')}
+                      >
+                        All Offers
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'new' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        onClick={() => setJobOffersSubTab('new')}
+                      >
+                        New Job Offer
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'instant' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        onClick={() => setJobOffersSubTab('instant')}
+                      >
+                        Instant Jobs
+                      </button>
+                    </li>
+                  </ul>
+                )}
               </li>
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${
-                    activeTab === "newJob" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
-                  }`}
-                  onClick={() => handleTabChange("newJob")}
-                >
-                  New Job
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${
-                    activeTab === "instantJobs" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
-                  }`}
-                  onClick={() => handleTabChange("instantJobs")}
-                >
-                  Instant Jobs
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${
-                    activeTab === "learn2earn" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
-                  }`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "learn2earn" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => handleTabChange("learn2earn")}
                 >
                   Learn2Earn
@@ -3154,9 +3164,7 @@ const manualSyncStatuses = async () => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${
-                    activeTab === "support" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
-                  }`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "support" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => {
                     handleTabChange("support");
                     fetchSupportTickets();
@@ -3168,9 +3176,7 @@ const manualSyncStatuses = async () => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${
-                    activeTab === "settings" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
-                  }`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "settings" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => handleTabChange("settings")}
                 >
                   Settings
@@ -3178,9 +3184,7 @@ const manualSyncStatuses = async () => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${
-                    activeTab === "notifications" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"
-                  }`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "notifications" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => {
                     handleTabChange("notifications");
                     fetchNotifications();
@@ -3205,7 +3209,16 @@ const manualSyncStatuses = async () => {
         
         {/* Main Content Area - Updated for mobile responsiveness */}
         <section className={`w-full ${isMobile ? 'p-6' : 'md:w-3/4 p-6'} overflow-y-auto ${isMobile && mobileMenuOpen ? 'opacity-30' : 'opacity-100'} transition-opacity duration-300`}>
-          {renderContent()}
+          {/* Render content based on subtab selection */}
+          {activeTab === 'myJobOffers' ? (
+            jobOffersSubTab === 'list' ? renderMyJobs() :
+            jobOffersSubTab === 'new' ? (
+              <div className="bg-black/70 p-10 rounded-lg shadow-lg">
+                <h2 className="text-3xl font-semibold text-orange-500 mb-6">Post a New Job</h2>
+                <JobPostPayment companyId={companyId} companyProfile={companyProfile} reloadData={reloadData} />
+              </div>
+            ) : jobOffersSubTab === 'instant' ? renderInstantJobsTab() : null
+          ) : renderContent()}
         </section>
       </main>
     </Layout>
