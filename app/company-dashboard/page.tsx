@@ -260,6 +260,8 @@ const PostJobPage = (): JSX.Element => {
   const [sidebarJobOffersOpen, setSidebarJobOffersOpen] = useState(false);
   const [jobOffersSubTab, setJobOffersSubTab] = useState<'list' | 'new' | 'instant'>('list');
 
+  const [jobsTab, setJobsTab] = useState<'offers' | 'instant'>('offers');
+
   // Function to fetch pricing plans from Firebase
   const fetchPricingPlans = useCallback(async () => {
     try {
@@ -654,6 +656,7 @@ const PostJobPage = (): JSX.Element => {
 
   // Ensure createdAt and expirationDate are displayed correctly in the 'My Jobs' tab
   // Add logging to debug the issue with createdAt and expirationDate
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null); // Track expanded card
   const renderMyJobs = () => {
     const companyJobs = jobs; // Jobs state should already be filtered by companyId
   
@@ -674,74 +677,148 @@ const PostJobPage = (): JSX.Element => {
     }
   
     return (
-      <div className="space-y-4">
-        {companyJobs.map((job) => {
-          const createdAt = job.createdAt?.toDate(); // Convert Firestore timestamp to Date
-          // Use expiresAt if available, otherwise calculate based on plan duration
-          const expirationDate = job.expiresAt?.toDate() || 
-            (createdAt && job.pricingPlanId ? 
-              new Date(createdAt.getTime() + (pricingPlans.find(p => p.id === job.pricingPlanId)?.duration || 30) * 24 * 60 * 60 * 1000) : 
-              null);
-  
-          // Find plan name for display
-          const planName = job.pricingPlanId ? 
-            pricingPlans.find(p => p.id === job.pricingPlanId)?.name || "Basic" : 
-            "Basic";
-  
-          // Debugging logs
-          console.log("Job ID:", job.id);
-          console.log("Created At:", createdAt);
-          console.log("Expiration Date:", expirationDate);
-  
-          return (
-            <div key={job.id} className="bg-black/50 p-4 rounded-lg">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center mb-1">
-                    <h3 className="text-orange-500 font-bold">{job.title}</h3>
-                    <span className="ml-2 bg-orange-900/20 text-orange-400 text-xs px-2 py-1 rounded-full">
-                      {planName} Plan
-                    </span>
-                  </div>
-                  <p className="text-gray-400 text-sm mb-2">Company: {job.company}</p>
-                  <p className="text-gray-300 my-2">{job.description}</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
-                    <p className="text-gray-300"><span className="text-orange-300">Category:</span> {job.category}</p>
-                    {job.location && <p className="text-gray-300"><span className="text-orange-300">Location:</span> {job.location}</p>}
-                    {job.salaryRange && <p className="text-gray-300"><span className="text-orange-300">Salary:</span> {job.salaryRange}</p>}
-                    {job.employmentType && <p className="text-gray-300"><span className="text-orange-300">Type:</span> {job.employmentType}</p>}
-                    {job.experienceLevel && <p className="text-gray-300"><span className="text-orange-300">Experience:</span> {job.experienceLevel}</p>}
-                    {createdAt && (
-                      <p className="text-gray-300">
-                        <span className="text-orange-300">Created At:</span> {createdAt.toLocaleDateString()}
-                      </p>
-                    )}
-                    {expirationDate && (
-                      <p className="text-gray-300">
-                        <span className="text-orange-300">Expiration Date:</span> {expirationDate.toLocaleDateString()}
-                      </p>
-                    )}
-                    {job.paymentStatus && (
-                      <p className="text-gray-300">
-                        <span className="text-orange-300">Payment:</span> 
-                        <span className={
-                          job.paymentStatus === 'completed' ? 'text-green-500' : 
-                          job.paymentStatus === 'failed' ? 'text-red-500' : 'text-yellow-500'
-                        }> {job.paymentStatus}</span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleDeleteJob(job.id)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm ml-4 flex-shrink-0"
+      <div className="w-full">
+        <div className="flex gap-8 mb-6">
+          <button
+            className={`text-3xl font-semibold mr-4 transition-colors ${jobsTab === 'offers' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
+            onClick={() => setJobsTab('offers')}
+          >
+            All Job Offers
+          </button>
+          <button
+            className={`text-2xl font-semibold transition-colors ${jobsTab === 'instant' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
+            onClick={() => setJobsTab('instant')}
+          >
+            All Instant Jobs
+          </button>
+        </div>
+        {jobsTab === 'offers' ? (
+          <div className="space-y-3">
+            {companyJobs.map((job) => {
+              const createdAt = job.createdAt?.toDate?.() || null;
+              const expirationDate = job.expiresAt?.toDate?.() || (createdAt && job.pricingPlanId ? new Date(createdAt.getTime() + (pricingPlans.find(p => p.id === job.pricingPlanId)?.duration || 30) * 24 * 60 * 60 * 1000) : null);
+              const planName = job.pricingPlanId ? (pricingPlans.find(p => p.id === job.pricingPlanId)?.name || "Basic") : "Basic";
+              const isExpanded = expandedJobId === job.id;
+    
+              return (
+                <div
+                  key={job.id}
+                  className={`bg-black/60 rounded-lg border border-orange-900/30 transition-all duration-200 cursor-pointer hover:shadow-lg ${isExpanded ? 'ring-2 ring-orange-500' : ''}`}
+                  onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
                 >
-                  Delete
-                </button>
+                  <div className="flex items-center justify-between p-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 w-full">
+                      <div>
+                        <span className="block text-xs text-orange-300">Title</span>
+                        <span className="font-semibold text-orange-400">{job.title}</span>
+                      </div>
+                      <div>
+                        <span className="block text-xs text-orange-300">Category</span>
+                        <span className="text-gray-200">{job.category}</span>
+                      </div>
+                      {!isExpanded ? (
+                        <>
+                          <div>
+                            <span className="block text-xs text-orange-300">Start Date</span>
+                            <span className="text-gray-200">{createdAt ? createdAt.toLocaleDateString() : '-'}</span>
+                          </div>
+                          <div>
+                            <span className="block text-xs text-orange-300">Expires</span>
+                            <span className="text-gray-200">{expirationDate ? expirationDate.toLocaleDateString() : '-'}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div>
+                          <span className="block text-xs text-orange-300">Salary</span>
+                          <span className="text-gray-200">{job.salaryRange || '-'}</span>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={e => { e.stopPropagation(); handleDeleteJob(job.id); }}
+                      className="ml-4 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm flex-shrink-0"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  {isExpanded && (
+                    <div className="px-6 pb-4 pt-2 text-sm text-gray-200">
+                      <div className="mb-2">
+                        <span className="font-semibold text-orange-300">Description:</span> {job.description}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                        <div>
+                          <span className="text-orange-300">Company:</span> {job.company}
+                        </div>
+                        <div>
+                          <span className="text-orange-300">Employment Type:</span> {job.employmentType || '-'}
+                        </div>
+                        <div>
+                          <span className="text-orange-300">Experience Level:</span> {job.experienceLevel || '-'}
+                        </div>
+                        <div>
+                          <span className="text-orange-300">Plan:</span> {planName}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-orange-300">Created At:</span> {createdAt ? createdAt.toLocaleDateString() : '-'}
+                        </div>
+                        <div>
+                          <span className="text-orange-300">Expires:</span> {expirationDate ? expirationDate.toLocaleDateString() : '-'}
+                        </div>
+                      </div>
+                      {job.requiredSkills && (
+                        <div className="mt-2">
+                          <span className="text-orange-300">Skills:</span> {job.requiredSkills}
+                        </div>
+                      )}
+                      {job.applicationLink && (
+                        <div className="mt-2">
+                          <span className="text-orange-300">Application Link:</span> <a href={job.applicationLink} className="underline text-orange-400" target="_blank" rel="noopener noreferrer">{job.applicationLink}</a>
+                        </div>
+                      )}
+                      {job.contactEmail && (
+                        <div className="mt-2">
+                          <span className="text-orange-300">Contact Email:</span> {job.contactEmail}
+                        </div>
+                      )}
+                      {job.paymentStatus && (
+                        <div className="mt-2">
+                          <span className="text-orange-300">Payment Status:</span> {job.paymentStatus}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-black/70 rounded-lg shadow-lg p-6">
+            {instantJobs.length === 0 ? (
+              <div className="text-center py-8 text-gray-300">No instant jobs found.</div>
+            ) : (
+              <div className="space-y-3">
+                {instantJobs.map((job) => (
+                  <div key={job.id} className="bg-black/60 rounded-lg border border-orange-900/30 p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-orange-400">{job.title}</div>
+                        <div className="text-xs text-orange-300">{job.category}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-gray-200 font-bold">{job.budget} {job.currency}</div>
+                        <div className="text-xs text-gray-400">{job.status}</div>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-400 line-clamp-2">{job.description}</div>
+                  </div>
+                ))}
               </div>
-            </div>
-          );
-        })}
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -3107,7 +3184,7 @@ const manualSyncStatuses = async () => {
             <ul className="space-y-4 flex-grow w-full mt-6">
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "profile" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "profile" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => handleTabChange("profile")}
                 >
                   Profile
@@ -3115,7 +3192,7 @@ const manualSyncStatuses = async () => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "myJobOffers" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "myJobOffers" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => {
                     setActiveTab("myJobOffers");
                     setSidebarJobOffersOpen((open) => !open);
@@ -3129,7 +3206,7 @@ const manualSyncStatuses = async () => {
                   <ul className="ml-6 mt-2 space-y-1">
                     <li>
                       <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'list' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'list' ? 'bg-orange-500 text-white ring-2 ring-orange-500' : 'text-orange-400 hover:bg-orange-600/20'}`}
                         onClick={() => setJobOffersSubTab('list')}
                       >
                         All Offers
@@ -3137,7 +3214,7 @@ const manualSyncStatuses = async () => {
                     </li>
                     <li>
                       <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'new' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'new' ? 'bg-orange-500 text-white ring-2 ring-orange-500' : 'text-orange-400 hover:bg-orange-600/20'}`}
                         onClick={() => setJobOffersSubTab('new')}
                       >
                         New Job Offer
@@ -3145,7 +3222,7 @@ const manualSyncStatuses = async () => {
                     </li>
                     <li>
                       <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'instant' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'instant' ? 'bg-orange-500 text-white ring-2 ring-orange-500' : 'text-orange-400 hover:bg-orange-600/20'}`}
                         onClick={() => setJobOffersSubTab('instant')}
                       >
                         Instant Jobs
@@ -3156,7 +3233,7 @@ const manualSyncStatuses = async () => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "learn2earn" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "learn2earn" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => handleTabChange("learn2earn")}
                 >
                   Learn2Earn
@@ -3164,7 +3241,7 @@ const manualSyncStatuses = async () => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "support" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "support" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => {
                     handleTabChange("support");
                     fetchSupportTickets();
@@ -3176,7 +3253,7 @@ const manualSyncStatuses = async () => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "settings" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "settings" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => handleTabChange("settings")}
                 >
                   Settings
@@ -3184,7 +3261,7 @@ const manualSyncStatuses = async () => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "notifications" ? "bg-orange-900 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "notifications" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => {
                     handleTabChange("notifications");
                     fetchNotifications();
