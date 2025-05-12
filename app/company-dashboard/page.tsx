@@ -90,8 +90,25 @@ interface CompanyProfile {
   website: string;
   location: string;
   responsiblePerson?: string; // Optional field
+  responsibleEmail?: string;
   address?: string;         // Optional field
   contactPhone?: string;    // Optional field
+  email?: string;
+  taxId?: string;
+  registrationNumber?: string;
+  industry?: string;
+  country?: string;
+  employees?: string;
+  yearsActive?: string;
+  linkedin?: string;
+  telegram?: string;
+  twitter?: string;
+  facebook?: string;
+  instagram?: string;
+  responsiblePosition?: string;
+  responsiblePhone?: string;
+  comments?: string;
+  officialDocumentUrl?: string;
   // Add other relevant fields as needed
 }
 
@@ -128,9 +145,28 @@ const PostJobPage = (): JSX.Element => {
     website: "",
     location: "",
     responsiblePerson: "", // Initialize new fields
+    responsibleEmail: "",
     address: "",
     contactPhone: "",
+    email: "",
+    taxId: "",
+    registrationNumber: "",
+    industry: "",
+    country: "",
+    employees: "",
+    yearsActive: "",
+    linkedin: "",
+    telegram: "",
+    twitter: "",
+    facebook: "",
+    instagram: "",
+    responsiblePosition: "",
+    responsiblePhone: "",
+    comments: "",
+    officialDocumentUrl: "",
   });
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoadingProfile, setIsLoadingProfile] = useState(false); // Loading state for profile
   const router = useRouter();
 
@@ -315,8 +351,25 @@ const PostJobPage = (): JSX.Element => {
           website: data.website || "",
           location: data.location || "",
           responsiblePerson: data.responsiblePerson || "",
+          responsibleEmail: data.responsibleEmail || "",
           address: data.address || "",
           contactPhone: data.contactPhone || "",
+          email: data.email || "",
+          taxId: data.taxId || "",
+          registrationNumber: data.registrationNumber || "",
+          industry: data.industry || "",
+          country: data.country || "",
+          employees: data.employees || "",
+          yearsActive: data.yearsActive || "",
+          linkedin: data.linkedin || "",
+          telegram: data.telegram || "",
+          twitter: data.twitter || "",
+          facebook: data.facebook || "",
+          instagram: data.instagram || "",
+          responsiblePosition: data.responsiblePosition || "",
+          responsiblePhone: data.responsiblePhone || "",
+          comments: data.comments || "",
+          officialDocumentUrl: data.officialDocumentUrl || "",
         });
         // Also update the company name in the job form if it's empty
         if (!jobData.company) {
@@ -327,7 +380,9 @@ const PostJobPage = (): JSX.Element => {
         // Initialize profile state with empty strings if document doesn't exist
         setCompanyProfile({
           name: "", description: "", website: "", location: "",
-          responsiblePerson: "", address: "", contactPhone: ""
+          responsiblePerson: "", responsibleEmail: "", address: "", contactPhone: "", email: "", taxId: "", registrationNumber: "",
+          industry: "", country: "", employees: "", yearsActive: "", linkedin: "", telegram: "", twitter: "", facebook: "", instagram: "",
+          responsiblePosition: "", responsiblePhone: "", comments: "", officialDocumentUrl: ""
         });
       }
     } catch (error) {
@@ -691,86 +746,76 @@ const PostJobPage = (): JSX.Element => {
   const renderSettings = () => {
     return (
       <div className="bg-black/70 p-10 rounded-lg shadow-lg">
-        <h2 className="text-3xl font-semibold text-orange-500 mb-6">Company Settings</h2>
-        <form className="space-y-6" onSubmit={handleProfileSubmit}>
-          {/* Company Name */}
-          <input
-            type="text"
-            name="name"
-            value={companyProfile.name ?? ""} // Ensure value is always string
-            onChange={handleProfileChange}
-            placeholder="Company Name"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" // Changed text-white to text-black
-            required
-          />
-          {/* Company Description */}
-          <textarea
-            name="description"
-            value={companyProfile.description ?? ""} // Ensure value is always string
-            onChange={handleProfileChange}
-            placeholder="Company Description"
-            rows={4}
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-          ></textarea>
-          {/* Company Website */}
-          <input
-            type="url"
-            name="website"
-            value={companyProfile.website ?? ""} // Ensure value is always string
-            onChange={handleProfileChange}
-            placeholder="Company Website (e.g., https://example.com)"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-          />
-          {/* Company Location */}
-          <input
-            type="text"
-            name="location"
-            value={companyProfile.location ?? ""} // Ensure value is always string
-            onChange={handleProfileChange}
-            placeholder="Company Location (e.g., City, Country)"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-          />
-          {/* Responsible Person */}
-          <input
-            type="text"
-            name="responsiblePerson"
-            value={companyProfile.responsiblePerson ?? ""} // Ensure value is always string
-            onChange={handleProfileChange}
-            placeholder="Responsible Person"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-          />
-          {/* Address */}
-          <textarea
-            name="address"
-            value={companyProfile.address ?? ""} // Ensure value is always string
-            onChange={handleProfileChange}
-            placeholder="Company Address"
-            rows={3}
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-          ></textarea>
-          {/* Contact Phone */}
-          <input
-            type="tel"
-            name="contactPhone"
-            value={companyProfile.contactPhone ?? ""} // Ensure value is always string
-            onChange={handleProfileChange}
-            placeholder="Contact Phone"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-          />
-
-          {/* Password Note */}
-          <p className="text-sm text-gray-400">
-            Password changes are handled through a separate secure process.
-          </p>
-
-          {/* Save Button */}
-          <button
-            type="submit"
-            disabled={isLoadingProfile}
-            className={`bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-colors hover:bg-orange-300 border-none w-full mt-5 ${isLoadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {isLoadingProfile ? 'Saving...' : 'Save Profile'}
-          </button>
+        <h2 className="text-3xl font-semibold text-orange-500 mb-8">Company Settings</h2>
+        <form className="space-y-8" onSubmit={handleProfileSubmit}>
+          {/* Main two-column grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {/* Left: Company Data */}
+            <div>
+              <h3 className="text-lg font-bold text-orange-400 mb-4">Company Data</h3>
+              <div className="space-y-3">
+                <input type="text" name="name" value={companyProfile.name ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Company Name" />
+                <input type="text" name="industry" value={companyProfile.industry ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Industry" />
+                <input type="text" name="taxId" value={companyProfile.taxId ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Tax ID / VAT" />
+                <input type="text" name="registrationNumber" value={companyProfile.registrationNumber ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Registration Number" />
+                <input type="text" name="country" value={companyProfile.country ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Country" />
+                <input type="text" name="address" value={companyProfile.address ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Address" />
+                <input type="text" name="employees" value={companyProfile.employees ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Employees" />
+                <input type="text" name="yearsActive" value={companyProfile.yearsActive ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Years Active" />
+                <input type="email" name="email" value={companyProfile.email ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Company Email" />
+                <input type="url" name="website" value={companyProfile.website ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Company Website" />
+              </div>
+            </div>
+            {/* Right: Responsible Person Data */}
+            <div>
+              <h3 className="text-lg font-bold text-orange-400 mb-4">Responsible Person</h3>
+              <div className="space-y-3">
+                <input type="text" name="responsiblePerson" value={companyProfile.responsiblePerson ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" placeholder="Responsible Person" />
+                <input type="text" name="responsiblePosition" value={companyProfile.responsiblePosition ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Responsible Position" />
+                <input type="email" name="responsibleEmail" value={companyProfile.responsibleEmail ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" placeholder="Responsible Email" />
+                <input type="tel" name="responsiblePhone" value={companyProfile.responsiblePhone ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Responsible Phone" />
+                <input type="tel" name="contactPhone" value={companyProfile.contactPhone ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" placeholder="Contact Phone" />
+                <textarea name="comments" value={companyProfile.comments ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Observations / Comments (optional)" rows={2} />
+                {companyProfile.officialDocumentUrl && (
+                  <a href={companyProfile.officialDocumentUrl} target="_blank" rel="noopener noreferrer" className="block text-orange-400 underline">View Official Document</a>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                  <input type="password" name="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" placeholder="New Password" autoComplete="new-password" />
+                  <input type="password" name="confirmPassword" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" placeholder="Confirm New Password" autoComplete="new-password" />
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Horizontal section below: Description & Social Links */}
+          <div className="mt-10 pt-8 border-t border-orange-900/30 grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div>
+              <h3 className="text-lg font-bold text-orange-400 mb-3">Company Description</h3>
+              <textarea name="description" value={companyProfile.description ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm min-h-[90px]" placeholder="Company Description" rows={4} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-orange-400 mb-3">Social Links</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input type="url" name="linkedin" value={companyProfile.linkedin ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="LinkedIn (optional)" />
+                <input type="text" name="telegram" value={companyProfile.telegram ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Telegram (optional)" />
+                <input type="text" name="twitter" value={companyProfile.twitter ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Twitter (optional)" />
+                <input type="text" name="facebook" value={companyProfile.facebook ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Facebook (optional)" />
+                <input type="text" name="instagram" value={companyProfile.instagram ?? ""} disabled className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-gray-400 text-sm cursor-not-allowed" placeholder="Instagram (optional)" />
+              </div>
+            </div>
+          </div>
+          {/* Save button and info */}
+          <div className="flex flex-col md:flex-row items-center justify-between mt-8 gap-4">
+            <p className="text-sm text-gray-400 md:mb-0 mb-2">
+              Only the description, representative data and password can be changed. Other fields are for reference only.
+            </p>
+            <button
+              type="submit"
+              disabled={isLoadingProfile}
+              className={`border border-orange-400 text-orange-400 bg-transparent hover:bg-orange-900/30 hover:text-white py-2 px-8 rounded-full font-semibold text-base transition-colors w-full md:w-auto ${isLoadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {isLoadingProfile ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
         </form>
       </div>
     );
