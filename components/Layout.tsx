@@ -201,9 +201,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div>
             <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">Socials</h4>
             <nav className="text-gray-400 text-xs sm:text-sm">
-              <a href="https://t.me/gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500 mb-1 sm:mb-2">Telegram</a>
-              <a href="https://twitter.com/gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500 mb-1 sm:mb-2">Twitter</a>
-              <a href="https://linkedin.com/company/gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500">LinkedIn</a>
+              <a href="https://t.me/gate33_tg_channel" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500 mb-1 sm:mb-2">Telegram</a>
+              <a href="https://x.com/x_Gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500 mb-1 sm:mb-2">X (Twitter)</a>
+              <a href="https://www.linkedin.com/company/gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500">LinkedIn</a>
             </nav>
           </div>
         </div>

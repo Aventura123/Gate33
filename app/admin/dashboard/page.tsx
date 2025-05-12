@@ -1075,22 +1075,17 @@ const AdminDashboard: React.FC = () => {
   };
 
   const [isMobile, setIsMobile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    if (typeof window !== "undefined") {
-      handleResize(); // Set initial value
-      window.addEventListener("resize", handleResize);
-    }
-
-    return () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener("resize", handleResize);
+    const checkIfMobile = () => {
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth < 768);
       }
     };
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
   // Corrigindo o erro de "window is not defined" para a mensagem de boas-vindas
@@ -2123,10 +2118,40 @@ const fetchEmployersList = async () => {
   return (
     <Layout>
       <main className="min-h-screen flex bg-gradient-to-br from-orange-900 to-black text-white min-h-screen">
+        {/* Mobile menu toggle button - move to bottom left */}
+        {isMobile && !mobileMenuOpen && (
+          <button
+            className="fixed top-20 left-4 z-50 bg-orange-500 text-white p-2 rounded-full shadow-lg focus:outline-none"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Open menu"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
         {/* Sidebar */}
-        <aside className="w-1/4 bg-black/70 p-6 flex flex-col items-start min-h-screen">
-          <div className="flex flex-col items-center mb-6">
-          </div>
+        <aside
+          className={
+            isMobile
+              ? `fixed top-0 left-0 h-full w-64 bg-black/90 z-50 transform transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`
+              : 'w-1/4 bg-black/70 p-6 flex flex-col items-start min-h-screen'
+          }
+          id="admin-dashboard-sidebar"
+        >
+          {/* Mobile close button */}
+          {isMobile && (
+            <button
+              className="absolute top-4 right-4 z-50 bg-orange-500 text-white p-2 rounded-full shadow-lg focus:outline-none"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+          <div className={`flex flex-col items-center w-full ${isMobile ? 'pt-16 pb-8' : 'mb-6'}`}>
             {/* User Photo */}
             <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
               <img
@@ -2143,25 +2168,22 @@ const fetchEmployersList = async () => {
             </div>
             {/* Admin Dashboard Title */}
             <h2 className="text-orange-400 text-xl font-bold mb-2">Admin Dashboard</h2>
-                        {/* User Name and Role */}
-            <div className="text-left mb-6">
-              <p className="text-lg font-semibold text-white">Welcome {userName}!</p>
+            {/* User Name and Role */}
+            <div className="text-center mb-6">
+              <p className="text-lg font-semibold text-white">{`Welcome ${userName}!`}</p>
               <p className="text-sm text-orange-400">Role: {role}</p>
             </div>
-
-            {/* Add spacing between role and buttons */}
-            <div className="mt-4"></div>
-          {/* Desktop menu */}
-          <ul className="space-y-4 w-full block">
+          </div>
+          {/* Navigation - reduce button size and spacing on mobile */}
+          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>
             {hasPermission('canEditContent') && (
               <li>
                 <div
-                  className={`cursor-pointer p-3 rounded-lg text-center ${
-                    isClient && activeTab === "nfts" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                  }`}
+                  className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "nfts" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
                   onClick={() => {
                     setActiveTab("nfts");
                     setActiveSubTab("add");
+                    if (isMobile) setMobileMenuOpen(false);
                   }}
                 >
                   Manage NFTs
@@ -2172,7 +2194,10 @@ const fetchEmployersList = async () => {
                       className={`cursor-pointer p-2 rounded-lg text-center ${
                         activeSubTab === "add" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
                       }`}
-                      onClick={() => setActiveSubTab("add")}
+                      onClick={() => {
+                        setActiveSubTab("add");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
                     >
                       Add NFT
                     </li>
@@ -2180,7 +2205,10 @@ const fetchEmployersList = async () => {
                       className={`cursor-pointer p-2 rounded-lg text-center ${
                         activeSubTab === "delete" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
                       }`}
-                      onClick={() => setActiveSubTab("delete")}
+                      onClick={() => {
+                        setActiveSubTab("delete");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
                     >
                       Delete NFT
                     </li>
@@ -2188,7 +2216,10 @@ const fetchEmployersList = async () => {
                       className={`cursor-pointer p-2 rounded-lg text-center ${
                         activeSubTab === "deleteAll" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
                       }`}
-                      onClick={() => setActiveSubTab("deleteAll")}
+                      onClick={() => {
+                        setActiveSubTab("deleteAll");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
                     >
                       Delete All NFTs
                     </li>
@@ -2200,10 +2231,11 @@ const fetchEmployersList = async () => {
             {(hasPermission('canManageUsers') || hasPermission('canApproveCompanies') || hasPermission('canEditContent')) && (
               <li>
                 <div
-                  className="cursor-pointer p-3 rounded-lg text-center bg-black/50 text-gray-300 hover:bg-orange-500 hover:text-white"
+                  className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "users" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
                   onClick={() => {
                     setActiveTab("users");
                     setActiveSubTab("employers-list");
+                    if (isMobile) setMobileMenuOpen(false);
                   }}
                 >
                   Manage Users
@@ -2211,23 +2243,38 @@ const fetchEmployersList = async () => {
                 {activeTab === "users" && (
                   <ul className="ml-4 mt-2 space-y-2">
                     <li
-                      className="cursor-pointer p-2 rounded-lg text-center bg-black/50 text-gray-300 hover:bg-orange-500 hover:text-white"
-                      onClick={() => setActiveSubTab("employers-list")}
+                      className={`cursor-pointer p-2 rounded-lg text-center ${
+                        activeSubTab === "employers-list" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("employers-list");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
                     >
                       Employers - List
                     </li>
                     {hasPermission('canApproveCompanies') && (
                       <li
-                        className="cursor-pointer p-2 rounded-lg text-center bg-black/50 text-gray-300 hover:bg-orange-500 hover:text-white"
-                        onClick={() => setActiveSubTab("employers-approve")}
+                        className={`cursor-pointer p-2 rounded-lg text-center ${
+                          activeSubTab === "employers-approve" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
+                        }`}
+                        onClick={() => {
+                          setActiveSubTab("employers-approve");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
                       >
                         Approve Companies
                       </li>
                     )}
                     {hasPermission('canEditContent') && (
                       <li
-                        className="cursor-pointer p-2 rounded-lg text-center bg-black/50 text-gray-300 hover:bg-orange-500 hover:text-white"
-                        onClick={() => setActiveSubTab("seekers")}
+                        className={`cursor-pointer p-2 rounded-lg text-center ${
+                          activeSubTab === "seekers" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
+                        }`}
+                        onClick={() => {
+                          setActiveSubTab("seekers");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
                       >
                         Seekers
                       </li>
@@ -2239,12 +2286,11 @@ const fetchEmployersList = async () => {
 
             <li>
               <div
-                className={`cursor-pointer p-3 rounded-lg text-center ${
-                  activeTab === "jobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                }`}
+                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "jobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
                 onClick={() => {
                   setActiveTab("jobs");
                   setActiveSubTab("list");
+                  if (isMobile) setMobileMenuOpen(false);
                 }}
               >
                 Manage Jobs
@@ -2255,7 +2301,10 @@ const fetchEmployersList = async () => {
                     className={`cursor-pointer p-2 rounded-lg text-center ${
                       activeSubTab === "list" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
                     }`}
-                    onClick={() => setActiveSubTab("list")}
+                    onClick={() => {
+                      setActiveSubTab("list");
+                      if (isMobile) setMobileMenuOpen(false);
+                    }}
                   >
                     Jobs List
                   </li>
@@ -2263,7 +2312,10 @@ const fetchEmployersList = async () => {
                     className={`cursor-pointer p-2 rounded-lg text-center ${
                       activeSubTab === "create" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
                     }`}
-                    onClick={() => setActiveSubTab("create")}
+                    onClick={() => {
+                      setActiveSubTab("create");
+                      if (isMobile) setMobileMenuOpen(false);
+                    }}
                   >
                     Create Job
                   </li>
@@ -2271,7 +2323,10 @@ const fetchEmployersList = async () => {
                     className={`cursor-pointer p-2 rounded-lg text-center ${
                       activeSubTab === "prices" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
                     }`}
-                    onClick={() => setActiveSubTab("prices")}
+                    onClick={() => {
+                      setActiveSubTab("prices");
+                      if (isMobile) setMobileMenuOpen(false);
+                    }}
                   >
                     Job Pricing
                   </li>
@@ -2282,11 +2337,10 @@ const fetchEmployersList = async () => {
             {/* Instant Jobs tab */}
             <li>
               <div
-                className={`cursor-pointer p-3 rounded-lg text-center ${
-                  activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                }`}
+                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
                 onClick={() => {
                   setActiveTab("instantJobs");
+                  if (isMobile) setMobileMenuOpen(false);
                   // Don't set a specific subtab, leave as null to show everything
                 }}
               >
@@ -2297,12 +2351,11 @@ const fetchEmployersList = async () => {
             {/* Learn2Earn tab */}
             <li>
               <div
-                className={`cursor-pointer p-3 rounded-lg text-center ${
-                  activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                }`}
+                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
                 onClick={() => {
                   setActiveTab("learn2earn");
                   setActiveSubTab("list");
+                  if (isMobile) setMobileMenuOpen(false);
                 }}
               >
                 Learn2Earn
@@ -2313,7 +2366,10 @@ const fetchEmployersList = async () => {
                     className={`cursor-pointer p-2 rounded-lg text-center ${
                       activeSubTab === "list" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
                     }`}
-                    onClick={() => setActiveSubTab("list")}
+                    onClick={() => {
+                      setActiveSubTab("list");
+                      if (isMobile) setMobileMenuOpen(false);
+                    }}
                   >
                     Learn2Earn List
                   </li>
@@ -2321,7 +2377,10 @@ const fetchEmployersList = async () => {
                     className={`cursor-pointer p-2 rounded-lg text-center ${
                       activeSubTab === "contracts" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
                     }`}
-                    onClick={() => setActiveSubTab("contracts")}
+                    onClick={() => {
+                      setActiveSubTab("contracts");
+                      if (isMobile) setMobileMenuOpen(false);
+                    }}
                   >
                     Smart Contracts
                   </li>
@@ -2331,12 +2390,11 @@ const fetchEmployersList = async () => {
 
             <li>
               <div
-                className={`cursor-pointer p-3 rounded-lg text-center ${
-                  activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                }`}
+                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
                 onClick={() => {
                   setActiveTab("accounting");
                   setActiveSubTab(null);
+                  if (isMobile) setMobileMenuOpen(false);
                 }}
               >
                 Accounting Dashboard
@@ -2345,12 +2403,11 @@ const fetchEmployersList = async () => {
 
             <li>
               <div
-                className={`cursor-pointer p-3 rounded-lg text-center ${
-                  activeTab === "ads" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                }`}
+                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "ads" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
                 onClick={() => {
                   setActiveTab("ads");
                   setActiveSubTab(null);
+                  if (isMobile) setMobileMenuOpen(false);
                 }}
               >
                 Ads Manager
@@ -2359,12 +2416,11 @@ const fetchEmployersList = async () => {
 
             <li>
               <div
-                className={`cursor-pointer p-3 rounded-lg text-center ${
-                  activeTab === "payments" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                }`}
+                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "payments" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
                 onClick={() => {
                   setActiveTab("payments");
                   setActiveSubTab("config");
+                  if (isMobile) setMobileMenuOpen(false);
                 }}
               >
                 Payments Management
@@ -2374,12 +2430,11 @@ const fetchEmployersList = async () => {
             {hasPermission('canAccessSettings') && (
               <li>
                 <div
-                  className={`cursor-pointer p-3 rounded-lg text-center ${
-                    activeTab === "settings" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                  }`}
+                  className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "settings" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
                   onClick={() => {
                     setActiveTab("settings");
                     setActiveSubTab("profile");
+                    if (isMobile) setMobileMenuOpen(false);
                   }}
                 >
                   Settings
@@ -2390,7 +2445,10 @@ const fetchEmployersList = async () => {
                       className={`cursor-pointer p-2 rounded-lg text-center ${
                         activeSubTab === "profile" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
                       }`}
-                      onClick={() => setActiveSubTab("profile")}
+                      onClick={() => {
+                        setActiveSubTab("profile");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
                     >
                       My Profile
                     </li>
@@ -2399,7 +2457,10 @@ const fetchEmployersList = async () => {
                         className={`cursor-pointer p-2 rounded-lg text-center ${
                           activeSubTab === "permissions" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
                         }`}
-                        onClick={() => setActiveSubTab("permissions")}
+                        onClick={() => {
+                          setActiveSubTab("permissions");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
                       >
                         Manage Admins & Permissions
                       </li>
@@ -2413,7 +2474,10 @@ const fetchEmployersList = async () => {
           {/* Logout button */}
           <div className="mt-6 w-full">
             <button 
-              onClick={handleLogout}
+              onClick={() => {
+                handleLogout();
+                if (isMobile) setMobileMenuOpen(false);
+              }}
               className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center justify-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -2423,362 +2487,54 @@ const fetchEmployersList = async () => {
             </button>
           </div>
         </aside>
+        {/* Overlay for mobile menu */}
+        {isMobile && mobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 z-40"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
+        {/* Main content area - compact and center titles on mobile */}
+        <div className={isMobile ? 'flex-1 p-2 pt-16 w-full' : 'flex-1 p-6'}>
+          <div className={isMobile ? 'max-w-md mx-auto' : ''}>
+            {permissionsLoading && (
+              <div className="w-full flex justify-center items-center py-10">
+                <p className="text-center">Loading permissions...</p>
+              </div>
+            )}
+            
+            {/* Show content only if permissions are not loading */}
+            {!permissionsLoading && (
+              <>
+                {/* Add Loading and Error states display */}
+                {isLoading && <p className="text-center">Loading...</p>}
+                {error && <p className="text-center text-red-500">Error: {error}</p>}
 
-        <div className="flex-1 p-6">
-          {permissionsLoading && (
-            <div className="w-full flex justify-center items-center py-10">
-              <p className="text-center">Loading permissions...</p>
-            </div>
-          )}
-          
-          {/* Show content only if permissions are not loading */}
-          {!permissionsLoading && (
-            <>
-              {/* Add Loading and Error states display */}
-              {isLoading && <p className="text-center">Loading...</p>}
-              {error && <p className="text-center text-red-500">Error: {error}</p>}
-
-              {activeTab === "users" && (
-                <div>
-                  <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Manage Users</h2>
-                  <p className="text-gray-300 text-left"></p>
-                  <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                    {/* Employer list is visible for all levels */}
-                    {activeSubTab === "employers-list" && (
-                      <div>
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-xl text-orange-400">Employers List</h3>
-                          <input
-                            type="text"
-                            placeholder="Search employers..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-1/3"
-                          />
-                        </div>
-                        {/* Form to create new employer */}
-                        <form onSubmit={handleCreateEmployer} className="mb-6 flex gap-2 items-end flex-wrap">
-                          <input
-                            type="text"
-                            name="name"
-                            value={newEmployer.name}
-                            onChange={handleInputEmployer}
-                            placeholder="Name"
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                            required
-                          />
-                          <input
-                            type="text"
-                            name="username"
-                            value={newEmployer.username}
-                            onChange={handleInputEmployer}
-                            placeholder="Username"
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                            required
-                          />
-                          <input
-                            type="password"
-                            name="password"
-                            value={newEmployer.password}
-                            onChange={handleInputEmployer}
-                            placeholder="Password"
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                            required
-                          />
-                          <input
-                            type="email"
-                            name="email"
-                            value={newEmployer.email}
-                            onChange={handleInputEmployer}
-                            placeholder="Email"
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                            required
-                          />
-                          <input
-                            type="text"
-                            name="companyName"
-                            value={newEmployer.companyName}
-                            onChange={handleInputEmployer}
-                            placeholder="Company Name"
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                            required
-                          />
-                          <input
-                            type="text"
-                            name="companySize"
-                            value={newEmployer.companySize}
-                            onChange={handleInputEmployer}
-                            placeholder="Company Size"
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                          />
-                          <input
-                            type="text"
-                            name="industry"
-                            value={newEmployer.industry}
-                            onChange={handleInputEmployer}
-                            placeholder="Industry"
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                          />
-                          <button
-                            type="submit"
-                            className="bg-orange-500 text-white px-4 py-1 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
-                            disabled={creatingEmployer}
-                          >
-                            {creatingEmployer ? 'Creating...' : 'Create Employer'}
-                          </button>
-                        </form>
-                        {filteredEmployers.length === 0 ? (
-                          <p>No employers found.</p>
-                        ) : (
-                          <ul>
-                            {filteredEmployers.map((employer) => (
-                              <li key={employer.id}>
-                                {/* Render employer details here */}
-                                {employer.name} - {employer.email}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )}
-                    {/* Pending company approvals */}
-                    {activeSubTab === "employers-approve" && hasPermission('canApproveCompanies') && (
-                      <div>
-                        <h3 className="text-xl text-orange-400 mb-4">Pending Companies for Approval</h3>
-                        {pendingCompanies.length === 0 ? (
-                          <p>No pending companies found.</p>
-                        ) : (
-                          <ul className="space-y-4">
-                            {pendingCompanies.map((company) => (
-                              <li key={company.id} className="bg-black/30 p-4 rounded-lg border border-gray-700 flex flex-col md:flex-row md:items-center md:justify-between">
-                                <div>
-                                  <p className="text-lg font-semibold text-orange-300">{company.companyName}</p>
-                                  <p className="text-gray-300 text-sm">Email: {company.email}</p>
-                                  <p className="text-gray-300 text-sm">Industry: {company.industry}</p>
-                                  <p className="text-gray-300 text-sm">Employees: {company.employees}</p>
-                                  <p className="text-gray-300 text-sm">Submitted: {company.createdAt ? new Date(company.createdAt).toLocaleString() : ''}</p>
-                                </div>
-                                <div className="flex gap-2 mt-2 md:mt-0">
-                                  <button
-                                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                                    onClick={() => handleApproveCompany(company.id)}
-                                  >
-                                    Approve
-                                  </button>
-                                  <button
-                                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                                    onClick={() => handleApproval(company.id, false)}
-                                  >
-                                    Reject
-                                  </button>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )}
-                    {/* Show "seekers" subtab only if you have permission */}
-                    {activeSubTab === "seekers" && hasPermission('canEditContent') && (
-                      <div>
-                        <form onSubmit={handleCreateSeeker} className="mb-6 flex gap-2 items-end flex-wrap">
-                          <input
-                            type="text"
-                            name="name"
-                            value={newSeeker.name}
-                            onChange={handleInputSeeker}
-                            placeholder="Name"
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                            required
-                          />
-                          <input
-                            type="text"
-                            name="username"
-                            value={newSeeker.username}
-                            onChange={handleInputSeeker}
-                            placeholder="Username"
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                            required
-                          />
-                          <input
-                            type="password"
-                            name="password"
-                            value={newSeeker.password}
-                            onChange={handleInputSeeker}
-                            placeholder="Password"
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                            required
-                          />
-                          <input
-                            type="email"
-                            name="email"
-                            value={newSeeker.email}
-                            onChange={handleInputSeeker}
-                            placeholder="Email"
-                            className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                            required
-                          />
-                          <button
-                            type="submit"
-                            className="bg-orange-500 text-white px-4 py-1 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
-                            disabled={creatingSeeker}
-                          >
-                            {creatingSeeker ? 'Creating...' : 'Add'}
-                          </button>
-                        </form>
-                        <h3 className="text-xl text-orange-400 mb-2 text-left">Existing Seekers</h3>
-                        {seekersLoading && <p className="text-gray-400 text-left">Loading seekers...</p>}
-                        {seekersError && <p className="text-red-400 text-left">{seekersError}</p>}
-                        <ul className="mb-4">
-                          {seekers.map((seeker) => (
-                            <li key={seeker.id} className="flex items-center justify-between text-white mb-1">
-                              <span className="text-left">
-                                {seeker.name} <span className="text-gray-400">({seeker.email})</span>
-                              </span>
-                              <button
-                                onClick={() => handleDeleteSeeker(seeker.id)}
-                                className="ml-2 px-2 py-1 bg-red-600 rounded hover:bg-red-700 text-xs disabled:opacity-60"
-                                disabled={deletingSeekerId === seeker.id}
-                              >
-                                {deletingSeekerId === seeker.id ? 'Deleting...' : 'Delete'}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {!activeSubTab && <p className="text-gray-400 text-left">Select a category to manage users.</p>}
-                  </div>
-                </div>
-              )}
-
-              {/* Show "settings" tab only if you have permission */}
-              {activeTab === "settings" && hasPermission('canAccessSettings') && (
-                <div>
-                  <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Settings</h2>
-                  <div className="mt-6 bg-black/50 p-6 rounded-lg">
-
-                    {/* Render My Profile Form */}
-                    {activeSubTab === "profile" && (
-                      <div>
-                        <h3 className="text-xl text-orange-400 mb-4 text-left">My Profile</h3>
-                        {profileLoading && <p>Loading profile...</p>}
-                        {profileError && <p className="text-red-400 mb-4">{profileError}</p>}
-                        {!profileLoading && (
-                          <form onSubmit={handleUpdateProfile} className="space-y-4">
-                            {/* Read-only fields */}
-                            <div>
-                              <label className="block text-sm font-medium text-gray-300">Name</label>
-                              <input type="text" value={profileData.name} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-300">Username</label>
-                              <input type="text" value={profileData.username} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
-                            </div>
-                             <div>
-                              <label className="block text-sm font-medium text-gray-300">Email</label>
-                              <input type="email" value={profileData.email} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
-                            </div>
-                             <div>
-                              <label className="block text-sm font-medium text-gray-300">Role</label>
-                              <input type="text" value={profileData.role} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
-                            </div>
-
-                            {/* Editable fields */}
-                             <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Last Name</label>
-                              <input
-                                type="text"
-                                name="lastName"
-                                value={profileData.lastName}
-                                onChange={handleProfileInputChange}
-                                placeholder="Your last name"
-                                className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                              />
-                            </div>
-                             <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Address</label>
-                              <input
-                                type="text"
-                                name="address"
-                                value={profileData.address}
-                                onChange={handleProfileInputChange}
-                                placeholder="Your address"
-                                className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                              />
-                            </div>
-                             <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Country</label>
-                              <input
-                                type="text"
-                                name="country"
-                                value={profileData.country}
-                                onChange={handleProfileInputChange}
-                                placeholder="Your country"
-                                className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                              />
-                            </div>
-                             <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
-                              <input
-                                type="tel"
-                                name="phone"
-                                value={profileData.phone}
-                                onChange={handleProfileInputChange}
-                                placeholder="Your phone number"
-                                className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                              />
-                            </div>
-                            <hr className="border-gray-600"/>
-                             <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">New Password (leave blank to keep current)</label>
-                              <input
-                                type="password"
-                                name="password"
-                                value={profileData.password}
-                                onChange={handleProfileInputChange}
-                                placeholder="New Password"
-                                className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                              />
-                            </div>
-                             <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Confirm New Password</label>
-                              <input
-                                type="password"
-                                name="confirmPassword"
-                                value={profileData.confirmPassword}
-                                onChange={handleProfileInputChange}
-                                placeholder="Confirm New Password"
-                                className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                                disabled={!profileData.password} // Disable if new password is blank
-                              />
-                            </div>
-
-                            <button
-                              type="submit"
-                              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
-                              disabled={profileUpdating}
-                            >
-                              {profileUpdating ? 'Updating...' : 'Update Profile'}
-                            </button>
-                          </form>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Render Combined Admin Management */}
-                    {activeSubTab === "permissions" && hasPermission('canManageUsers') && (
-                      <div className="space-y-8">
-                        {/* Admin Creation Form */}
+                {activeTab === "users" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Users</h2>
+                    <p className="text-gray-300 text-left"></p>
+                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                      {/* Employer list is visible for all levels */}
+                      {activeSubTab === "employers-list" && (
                         <div>
-                          <h3 className="text-xl text-orange-400 mb-4 text-left">Create New Admin</h3>
-                          <form onSubmit={handleCreateAdmin} className="mb-6 flex gap-2 items-end flex-wrap">
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl text-orange-400">Employers List</h3>
+                            <input
+                              type="text"
+                              placeholder="Search employers..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-1/3"
+                            />
+                          </div>
+                          {/* Form to create new employer */}
+                          <form onSubmit={handleCreateEmployer} className="mb-6 flex gap-2 items-end flex-wrap">
                             <input
                               type="text"
                               name="name"
-                              value={newAdmin.name}
-                              onChange={handleInputAdmin}
+                              value={newEmployer.name}
+                              onChange={handleInputEmployer}
                               placeholder="Name"
                               className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
                               required
@@ -2786,8 +2542,8 @@ const fetchEmployersList = async () => {
                             <input
                               type="text"
                               name="username"
-                              value={newAdmin.username}
-                              onChange={handleInputAdmin}
+                              value={newEmployer.username}
+                              onChange={handleInputEmployer}
                               placeholder="Username"
                               className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
                               required
@@ -2795,8 +2551,8 @@ const fetchEmployersList = async () => {
                             <input
                               type="password"
                               name="password"
-                              value={newAdmin.password}
-                              onChange={handleInputAdmin}
+                              value={newEmployer.password}
+                              onChange={handleInputEmployer}
                               placeholder="Password"
                               className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
                               required
@@ -2804,711 +2560,1028 @@ const fetchEmployersList = async () => {
                             <input
                               type="email"
                               name="email"
-                              value={newAdmin.email}
-                              onChange={handleInputAdmin}
+                              value={newEmployer.email}
+                              onChange={handleInputEmployer}
                               placeholder="Email"
                               className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
                               required
                             />
-                            {/* UPDATED Role Input to Select Dropdown using defined array */}
-                            <select
-                              name="role"
-                              value={newAdmin.role} // Controlled component
-                              onChange={handleInputAdmin}
+                            <input
+                              type="text"
+                              name="companyName"
+                              value={newEmployer.companyName}
+                              onChange={handleInputEmployer}
+                              placeholder="Company Name"
                               className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
                               required
-                            >
-                              <option value="" disabled>Select Role</option>
-                              {/* Iterate over the defined roles array */}
-                              {availableAdminRoles.map((roleValue) => (
-                                <option key={roleValue} value={roleValue}>
-                                  {/* Capitalize first letter for display */}
-                                  {roleValue.charAt(0).toUpperCase() + roleValue.slice(1)}
-                                </option>
-                              ))}
-                            </select>
+                            />
+                            <input
+                              type="text"
+                              name="companySize"
+                              value={newEmployer.companySize}
+                              onChange={handleInputEmployer}
+                              placeholder="Company Size"
+                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                            />
+                            <input
+                              type="text"
+                              name="industry"
+                              value={newEmployer.industry}
+                              onChange={handleInputEmployer}
+                              placeholder="Industry"
+                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                            />
                             <button
                               type="submit"
                               className="bg-orange-500 text-white px-4 py-1 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
-                              disabled={creating}
+                              disabled={creatingEmployer}
                             >
-                              {creating ? 'Creating...' : 'Add Admin'}
+                              {creatingEmployer ? 'Creating...' : 'Create Employer'}
                             </button>
                           </form>
+                          {filteredEmployers.length === 0 ? (
+                            <p>No employers found.</p>
+                          ) : (
+                            <ul>
+                              {filteredEmployers.map((employer) => (
+                                <li key={employer.id}>
+                                  {/* Render employer details here */}
+                                  {employer.name} - {employer.email}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </div>
-
-                        {/* Existing Admins List */}
+                      )}
+                      {/* Pending company approvals */}
+                      {activeSubTab === "employers-approve" && hasPermission('canApproveCompanies') && (
                         <div>
-                          <h3 className="text-xl text-orange-400 mb-2 text-left">Existing Admins</h3>
-                          {adminsLoading && <p className="text-gray-400 text-left">Loading admins...</p>}
-                          {adminsError && <p className="text-red-400 text-left">{adminsError}</p>}
+                          <h3 className="text-xl text-orange-400 mb-4">Pending Companies for Approval</h3>
+                          {pendingCompanies.length === 0 ? (
+                            <p>No pending companies found.</p>
+                          ) : (
+                            <ul className="space-y-4">
+                              {pendingCompanies.map((company) => (
+                                <li key={company.id} className="bg-black/30 p-4 rounded-lg border border-gray-700 flex flex-col md:flex-row md:items-center md:justify-between">
+                                  <div>
+                                    <p className="text-lg font-semibold text-orange-300">{company.companyName}</p>
+                                    <p className="text-gray-300 text-sm">Email: {company.email}</p>
+                                    <p className="text-gray-300 text-sm">Industry: {company.industry}</p>
+                                    <p className="text-gray-300 text-sm">Employees: {company.employees}</p>
+                                    <p className="text-gray-300 text-sm">Submitted: {company.createdAt ? new Date(company.createdAt).toLocaleString() : ''}</p>
+                                  </div>
+                                  <div className="flex gap-2 mt-2 md:mt-0">
+                                    <button
+                                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                      onClick={() => handleApproveCompany(company.id)}
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                                      onClick={() => handleApproval(company.id, false)}
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                      {/* Show "seekers" subtab only if you have permission */}
+                      {activeSubTab === "seekers" && hasPermission('canEditContent') && (
+                        <div>
+                          <form onSubmit={handleCreateSeeker} className="mb-6 flex gap-2 items-end flex-wrap">
+                            <input
+                              type="text"
+                              name="name"
+                              value={newSeeker.name}
+                              onChange={handleInputSeeker}
+                              placeholder="Name"
+                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                              required
+                            />
+                            <input
+                              type="text"
+                              name="username"
+                              value={newSeeker.username}
+                              onChange={handleInputSeeker}
+                              placeholder="Username"
+                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                              required
+                            />
+                            <input
+                              type="password"
+                              name="password"
+                              value={newSeeker.password}
+                              onChange={handleInputSeeker}
+                              placeholder="Password"
+                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                              required
+                            />
+                            <input
+                              type="email"
+                              name="email"
+                              value={newSeeker.email}
+                              onChange={handleInputSeeker}
+                              placeholder="Email"
+                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                              required
+                            />
+                            <button
+                              type="submit"
+                              className="bg-orange-500 text-white px-4 py-1 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
+                              disabled={creatingSeeker}
+                            >
+                              {creatingSeeker ? 'Creating...' : 'Add'}
+                            </button>
+                          </form>
+                          <h3 className="text-xl text-orange-400 mb-2 text-left">Existing Seekers</h3>
+                          {seekersLoading && <p className="text-gray-400 text-left">Loading seekers...</p>}
+                          {seekersError && <p className="text-red-400 text-left">{seekersError}</p>}
                           <ul className="mb-4">
-                            {admins.map((adm) => (
-                              <li key={adm.id} className="flex items-center justify-between text-white mb-1">
-                              <span className="text-left">{adm.name} <span className="text-gray-400">({adm.username} - {adm.email} - {adm.role})</span></span>
-                              <button
-                                onClick={() => handleDeleteAdmin(adm.id)}
-                                className="ml-2 px-2 py-1 bg-red-600 rounded hover:bg-red-700 text-xs disabled:opacity-60"
-                                disabled={deletingId === adm.id}
-                              >
-                                {deletingId === adm.id ? 'Deleting...' : 'Delete'}
-                              </button>
-                            </li>
+                            {seekers.map((seeker) => (
+                              <li key={seeker.id} className="flex items-center justify-between text-white mb-1">
+                                <span className="text-left">
+                                  {seeker.name} <span className="text-gray-400">({seeker.email})</span>
+                                </span>
+                                <button
+                                  onClick={() => handleDeleteSeeker(seeker.id)}
+                                  className="ml-2 px-2 py-1 bg-red-600 rounded hover:bg-red-700 text-xs disabled:opacity-60"
+                                  disabled={deletingSeekerId === seeker.id}
+                                >
+                                  {deletingSeekerId === seeker.id ? 'Deleting...' : 'Delete'}
+                                </button>
+                              </li>
                             ))}
                           </ul>
                         </div>
+                      )}
+                      
+                      {!activeSubTab && <p className="text-gray-400 text-left">Select a category to manage users.</p>}
+                    </div>
+                  </div>
+                )}
 
-                        {/* Admin Permissions Manager Component */}
+                {/* Show "settings" tab only if you have permission */}
+                {activeTab === "settings" && hasPermission('canAccessSettings') && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Settings</h2>
+                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+
+                      {/* Render My Profile Form */}
+                      {activeSubTab === "profile" && (
                         <div>
-                          {/* Title is already inside AdminPermissionsManager */}
-                          <AdminPermissionsManager />
+                          <h3 className="text-xl text-orange-400 mb-4 text-left">My Profile</h3>
+                          {profileLoading && <p>Loading profile...</p>}
+                          {profileError && <p className="text-red-400 mb-4">{profileError}</p>}
+                          {!profileLoading && (
+                            <form onSubmit={handleUpdateProfile} className="space-y-4">
+                              {/* Read-only fields */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300">Name</label>
+                                <input type="text" value={profileData.name} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300">Username</label>
+                                <input type="text" value={profileData.username} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
+                              </div>
+                               <div>
+                                <label className="block text-sm font-medium text-gray-300">Email</label>
+                                <input type="email" value={profileData.email} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
+                              </div>
+                               <div>
+                                <label className="block text-sm font-medium text-gray-300">Role</label>
+                                <input type="text" value={profileData.role} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
+                              </div>
+
+                              {/* Editable fields */}
+                               <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Last Name</label>
+                                <input
+                                  type="text"
+                                  name="lastName"
+                                  value={profileData.lastName}
+                                  onChange={handleProfileInputChange}
+                                  placeholder="Your last name"
+                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                />
+                              </div>
+                               <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Address</label>
+                                <input
+                                  type="text"
+                                  name="address"
+                                  value={profileData.address}
+                                  onChange={handleProfileInputChange}
+                                  placeholder="Your address"
+                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                />
+                              </div>
+                               <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Country</label>
+                                <input
+                                  type="text"
+                                  name="country"
+                                  value={profileData.country}
+                                  onChange={handleProfileInputChange}
+                                  placeholder="Your country"
+                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                />
+                              </div>
+                               <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+                                <input
+                                  type="tel"
+                                  name="phone"
+                                  value={profileData.phone}
+                                  onChange={handleProfileInputChange}
+                                  placeholder="Your phone number"
+                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                />
+                              </div>
+                              <hr className="border-gray-600"/>
+                               <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">New Password (leave blank to keep current)</label>
+                                <input
+                                  type="password"
+                                  name="password"
+                                  value={profileData.password}
+                                  onChange={handleProfileInputChange}
+                                  placeholder="New Password"
+                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                />
+                              </div>
+                               <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Confirm New Password</label>
+                                <input
+                                  type="password"
+                                  name="confirmPassword"
+                                  value={profileData.confirmPassword}
+                                  onChange={handleProfileInputChange}
+                                  placeholder="Confirm New Password"
+                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  disabled={!profileData.password} // Disable if new password is blank
+                                />
+                              </div>
+
+                              <button
+                                type="submit"
+                                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
+                                disabled={profileUpdating}
+                              >
+                                {profileUpdating ? 'Updating...' : 'Update Profile'}
+                              </button>
+                            </form>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Render Combined Admin Management */}
+                      {activeSubTab === "permissions" && hasPermission('canManageUsers') && (
+                        <div className="space-y-8">
+                          {/* Admin Creation Form */}
+                          <div>
+                            <h3 className="text-xl text-orange-400 mb-4 text-left">Create New Admin</h3>
+                            <form onSubmit={handleCreateAdmin} className="mb-6 flex gap-2 items-end flex-wrap">
+                              <input
+                                type="text"
+                                name="name"
+                                value={newAdmin.name}
+                                onChange={handleInputAdmin}
+                                placeholder="Name"
+                                className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                                required
+                              />
+                              <input
+                                type="text"
+                                name="username"
+                                value={newAdmin.username}
+                                onChange={handleInputAdmin}
+                                placeholder="Username"
+                                className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                                required
+                              />
+                              <input
+                                type="password"
+                                name="password"
+                                value={newAdmin.password}
+                                onChange={handleInputAdmin}
+                                placeholder="Password"
+                                className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                                required
+                              />
+                              <input
+                                type="email"
+                                name="email"
+                                value={newAdmin.email}
+                                onChange={handleInputAdmin}
+                                placeholder="Email"
+                                className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                                required
+                              />
+                              {/* UPDATED Role Input to Select Dropdown using defined array */}
+                              <select
+                                name="role"
+                                value={newAdmin.role} // Controlled component
+                                onChange={handleInputAdmin}
+                                className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                                required
+                              >
+                                <option value="" disabled>Select Role</option>
+                                {/* Iterate over the defined roles array */}
+                                {availableAdminRoles.map((roleValue) => (
+                                  <option key={roleValue} value={roleValue}>
+                                    {/* Capitalize first letter for display */}
+                                    {roleValue.charAt(0).toUpperCase() + roleValue.slice(1)}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                type="submit"
+                                className="bg-orange-500 text-white px-4 py-1 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
+                                disabled={creating}
+                              >
+                                {creating ? 'Creating...' : 'Add Admin'}
+                              </button>
+                            </form>
+                          </div>
+
+                          {/* Existing Admins List */}
+                          <div>
+                            <h3 className="text-xl text-orange-400 mb-2 text-left">Existing Admins</h3>
+                            {adminsLoading && <p className="text-gray-400 text-left">Loading admins...</p>}
+                            {adminsError && <p className="text-red-400 text-left">{adminsError}</p>}
+                            <ul className="mb-4">
+                              {admins.map((adm) => (
+                                <li key={adm.id} className="flex items-center justify-between text-white mb-1">
+                                <span className="text-left">{adm.name} <span className="text-gray-400">({adm.username} - {adm.email} - {adm.role})</span></span>
+                                <button
+                                  onClick={() => handleDeleteAdmin(adm.id)}
+                                  className="ml-2 px-2 py-1 bg-red-600 rounded hover:bg-red-700 text-xs disabled:opacity-60"
+                                  disabled={deletingId === adm.id}
+                                >
+                                  {deletingId === adm.id ? 'Deleting...' : 'Delete'}
+                                </button>
+                              </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* Admin Permissions Manager Component */}
+                          <div>
+                            {/* Title is already inside AdminPermissionsManager */}
+                            <AdminPermissionsManager />
+                          </div>
+                        </div>
+                      )}
+                      {/* Optional: Add a message if settings tab is active but no sub-tab is available/selected */}
+                      {!hasPermission('canManageUsers') && !activeSubTab && (
+                        <p className="text-gray-400 text-left">No settings available for your role.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Show "nfts" tab only if you have permission */}
+                {activeTab === "nfts" && hasPermission('canEditContent') && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage NFTs</h2>
+                    {activeSubTab === "add" && (
+                      <div className="mb-6">
+                        <div className="bg-black/30 p-4 rounded-lg">
+                          <form onSubmit={handleAddNFT} className="space-y-4">
+                            <input
+                              type="text"
+                              name="title"
+                              value={newNFT.title}
+                              onChange={handleInputChange}
+                              placeholder="NFT Title"
+                              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
+                              required
+                            />
+                            <input
+                              type="file"
+                              name="image"
+                              onChange={handleInputChange}
+                              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
+                              required
+                            />
+                            <textarea
+                              name="description"
+                              value={newNFT.description}
+                              onChange={handleInputChange}
+                              placeholder="Description"
+                              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
+                              required
+                            />
+                            <input
+                              type="text"
+                              name="value"
+                              value={newNFT.value}
+                              onChange={handleInputChange}
+                              placeholder="Value"
+                              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
+                              required
+                            />
+                            <input
+                              type="text"
+                              name="link"
+                              value={newNFT.link || ""}
+                              onChange={handleInputChange}
+                              placeholder="External Link"
+                              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
+                            />
+                            <button
+                              type="submit"
+                              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 w-auto"
+                            >
+                              Add NFT
+                            </button>
+                          </form>
                         </div>
                       </div>
                     )}
-                    {/* Optional: Add a message if settings tab is active but no sub-tab is available/selected */}
-                    {!hasPermission('canManageUsers') && !activeSubTab && (
-                      <p className="text-gray-400 text-left">No settings available for your role.</p>
+                    {activeSubTab === "delete" && (
+                      <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                        <h3 className="text-xl text-orange-400 mb-4">Delete NFTs</h3>
+                        {!isLoading && !error && nfts.length > 0 ? (
+                          <ul className="space-y-4">
+                            {nfts.map((nft) => {
+                              // Log the ID being used as key
+                              console.log(`Rendering NFT item with key: ${nft.id}, Title: ${nft.title}`);
+                              return (
+                                <li key={nft.id} className="flex items-center justify-between p-3 bg-black/30 rounded-lg">
+                                  <div className="text-left">
+                                    <p className="text-orange-500 font-bold">{nft.title}</p>
+                                    <p className="text-gray-300 text-sm">{nft.description}</p>
+                                    <p className="text-gray-300 text-sm">Value: {nft.value}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => handleDeleteNFT(nft.id, nft.imagePath)}
+                                    className="ml-4 p-2 bg-red-500 rounded text-white hover:bg-red-600"
+                                    disabled={!nft.id}
+                                  >
+                                    Delete
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          !isLoading && !error && <p className="text-gray-400 text-center">No NFTs available yet.</p>
+                        )}
+                      </div>
+                    )}
+                    {activeSubTab === "deleteAll" && (
+                      <div className="mt-6">
+                        <button
+                          onClick={handleDeleteAllNFTs}
+                          className="p-2 bg-red-500 rounded text-white hover:bg-red-600 w-auto"
+                        >
+                          Delete All NFTs
+                        </button>
+                      </div>
                     )}
                   </div>
-                </div>
-              )}
-
-              {/* Show "nfts" tab only if you have permission */}
-              {activeTab === "nfts" && hasPermission('canEditContent') && (
-                <div>
-                  <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Manage NFTs</h2>
-                  {activeSubTab === "add" && (
-                    <div className="mb-6">
-                      <div className="bg-black/30 p-4 rounded-lg">
-                        <form onSubmit={handleAddNFT} className="space-y-4">
+                )}
+                
+                {activeTab === "jobs" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Jobs</h2>
+                    {activeSubTab === "list" && (
+                      <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                        <h3 className="text-xl text-orange-400 mb-4">Jobs List</h3>
+                        {jobsLoading && <p className="text-gray-400">Loading jobs...</p>}
+                        {jobsError && <p className="text-red-400">{jobsError}</p>}
+                        {!jobsLoading && !jobsError && jobs.length === 0 && <p className="text-gray-400">No jobs available.</p>}
+                        <ul className="space-y-4">
+                          {jobs.map((job) => (
+                            <li key={job.id} className="flex justify-between items-center p-4 bg-black/30 rounded-lg">
+                              <div>
+                                <p className="text-orange-500 font-bold">{job.title}</p>
+                                <p className="text-gray-300 text-sm">{job.companyName}</p>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteJob(job.id)}
+                                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                                disabled={deletingJobId === job.id}
+                              >
+                                {deletingJobId === job.id ? "Deleting..." : "Delete"}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {activeSubTab === "create" && (
+                      <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                        <h3 className="text-xl text-orange-400 mb-4">Create Job</h3>
+                        <form onSubmit={handleCreateJob} className="space-y-4">
                           <input
                             type="text"
                             name="title"
-                            value={newNFT.title}
-                            onChange={handleInputChange}
-                            placeholder="NFT Title"
+                            value={newJob.title}
+                            onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
+                            placeholder="Job Title"
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
                             required
                           />
                           <input
-                            type="file"
-                            name="image"
-                            onChange={handleInputChange}
+                            type="text"
+                            name="companyName"
+                            placeholder="Company Name"
+                            value={newJob.companyName}
+                            onChange={(e) => setNewJob({ ...newJob, companyName: e.target.value })}
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
                             required
                           />
                           <textarea
                             name="description"
-                            value={newNFT.description}
-                            onChange={handleInputChange}
-                            placeholder="Description"
+                            value={newJob.description}
+                            onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
+                            placeholder="Job Description"
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
                             required
                           />
                           <input
                             type="text"
-                            name="value"
-                            value={newNFT.value}
-                            onChange={handleInputChange}
-                            placeholder="Value"
+                            name="location"
+                            value={newJob.location}
+                            onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
+                            placeholder="Location"
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                            required
                           />
                           <input
                             type="text"
-                            name="link"
-                            value={newNFT.link || ""}
-                            onChange={handleInputChange}
-                            placeholder="External Link"
+                            name="salary"
+                            value={newJob.salary}
+                            onChange={(e) => setNewJob({ ...newJob, salary: e.target.value })}
+                            placeholder="Salary"
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
+                          />
+                          <input
+                            type="text"
+                            name="sourceLink"
+                            value={newJob.sourceLink}
+                            onChange={(e) => setNewJob({ ...newJob, sourceLink: e.target.value })}
+                            placeholder="Source Link"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
+                            required
                           />
                           <button
                             type="submit"
-                            className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 w-auto"
+                            className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
                           >
-                            Add NFT
+                            Create Job
                           </button>
                         </form>
                       </div>
-                    </div>
-                  )}
-                  {activeSubTab === "delete" && (
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                      <h3 className="text-xl text-orange-400 mb-4">Delete NFTs</h3>
-                      {!isLoading && !error && nfts.length > 0 ? (
-                        <ul className="space-y-4">
-                          {nfts.map((nft) => {
-                            // Log the ID being used as key
-                            console.log(`Rendering NFT item with key: ${nft.id}, Title: ${nft.title}`);
-                            return (
-                              <li key={nft.id} className="flex items-center justify-between p-3 bg-black/30 rounded-lg">
-                                <div className="text-left">
-                                  <p className="text-orange-500 font-bold">{nft.title}</p>
-                                  <p className="text-gray-300 text-sm">{nft.description}</p>
-                                  <p className="text-gray-300 text-sm">Value: {nft.value}</p>
+                    )}
+                    {activeSubTab === "prices" && (
+                      <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                        <h3 className="text-xl text-orange-400 mb-4">Job Post Pricing Plans</h3>
+                        {jobPlansLoading && <p className="text-gray-400">Loading plans...</p>}
+                        {jobPlansError && <p className="text-red-400">{jobPlansError}</p>}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                          {jobPlans.map((plan) => (
+                            <div key={plan.id} className="bg-black/30 p-4 rounded-lg border border-gray-700 hover:border-orange-500 transition-all">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="text-lg font-semibold text-orange-400">{plan.name}</h4>
+                                <span className="text-xl font-bold text-white">{plan.price} USDT</span>
+                              </div>
+                              <p className="text-gray-300 mb-3 text-sm break-words overflow-hidden">{plan.description}</p>
+                              {plan.features.length > 0 && (
+                                <div className="mb-4">
+                                  <p className="text-sm font-medium text-gray-300 mb-1">Features:</p>
+                                  <ul className="list-disc pl-5 text-sm text-gray-400">
+                                    {plan.features.map((feature, idx) => (
+                                      <li key={idx} className="break-words">{feature}</li>
+                                    ))}
+                                  </ul>
                                 </div>
-                                <button
-                                  onClick={() => handleDeleteNFT(nft.id, nft.imagePath)}
-                                  className="ml-4 p-2 bg-red-500 rounded text-white hover:bg-red-600"
-                                  disabled={!nft.id}
+                              )}
+                              <div className="flex gap-2 mt-4">
+                                {plan.isPremium && (
+                                  <span className="bg-yellow-600/50 text-yellow-300 text-xs px-2 py-1 rounded mr-2">
+                                    Premium Plan
+                                  </span>
+                                )}
+                                {plan.isTopListed && (
+                                  <span className="bg-blue-600/50 text-blue-300 text-xs px-2 py-1 rounded">
+                                    Top Listed
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex gap-2 mt-4">
+                                <button 
+                                  onClick={() => handleEditPlan(plan)}
+                                  className="bg-orange-500 text-white px-3 py-1 rounded-lg hover:bg-orange-600 text-sm flex-1"
+                                >
+                                  Edit
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteJobPlan(plan.id)}
+                                  className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 text-sm flex-1"
                                 >
                                   Delete
                                 </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : (
-                        !isLoading && !error && <p className="text-gray-400 text-center">No NFTs available yet.</p>
-                      )}
-                    </div>
-                  )}
-                  {activeSubTab === "deleteAll" && (
-                    <div className="mt-6">
-                      <button
-                        onClick={handleDeleteAllNFTs}
-                        className="p-2 bg-red-500 rounded text-white hover:bg-red-600 w-auto"
-                      >
-                        Delete All NFTs
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {activeTab === "jobs" && (
-                <div>
-                  <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Manage Jobs</h2>
-                  {activeSubTab === "list" && (
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                      <h3 className="text-xl text-orange-400 mb-4">Jobs List</h3>
-                      {jobsLoading && <p className="text-gray-400">Loading jobs...</p>}
-                      {jobsError && <p className="text-red-400">{jobsError}</p>}
-                      {!jobsLoading && !jobsError && jobs.length === 0 && <p className="text-gray-400">No jobs available.</p>}
-                      <ul className="space-y-4">
-                        {jobs.map((job) => (
-                          <li key={job.id} className="flex justify-between items-center p-4 bg-black/30 rounded-lg">
-                            <div>
-                              <p className="text-orange-500 font-bold">{job.title}</p>
-                              <p className="text-gray-300 text-sm">{job.companyName}</p>
-                            </div>
-                            <button
-                              onClick={() => handleDeleteJob(job.id)}
-                              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                              disabled={deletingJobId === job.id}
-                            >
-                              {deletingJobId === job.id ? "Deleting..." : "Delete"}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {activeSubTab === "create" && (
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                      <h3 className="text-xl text-orange-400 mb-4">Create Job</h3>
-                      <form onSubmit={handleCreateJob} className="space-y-4">
-                        <input
-                          type="text"
-                          name="title"
-                          value={newJob.title}
-                          onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
-                          placeholder="Job Title"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                          required
-                        />
-                        <input
-                          type="text"
-                          name="companyName"
-                          placeholder="Company Name"
-                          value={newJob.companyName}
-                          onChange={(e) => setNewJob({ ...newJob, companyName: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                          required
-                        />
-                        <textarea
-                          name="description"
-                          value={newJob.description}
-                          onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
-                          placeholder="Job Description"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                          required
-                        />
-                        <input
-                          type="text"
-                          name="location"
-                          value={newJob.location}
-                          onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
-                          placeholder="Location"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                        />
-                        <input
-                          type="text"
-                          name="salary"
-                          value={newJob.salary}
-                          onChange={(e) => setNewJob({ ...newJob, salary: e.target.value })}
-                          placeholder="Salary"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                        />
-                        <input
-                          type="text"
-                          name="sourceLink"
-                          value={newJob.sourceLink}
-                          onChange={(e) => setNewJob({ ...newJob, sourceLink: e.target.value })}
-                          placeholder="Source Link"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                          required
-                        />
-                        <button
-                          type="submit"
-                          className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
-                        >
-                          Create Job
-                        </button>
-                      </form>
-                    </div>
-                  )}
-                  {activeSubTab === "prices" && (
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                      <h3 className="text-xl text-orange-400 mb-4">Job Post Pricing Plans</h3>
-                      {jobPlansLoading && <p className="text-gray-400">Loading plans...</p>}
-                      {jobPlansError && <p className="text-red-400">{jobPlansError}</p>}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        {jobPlans.map((plan) => (
-                          <div key={plan.id} className="bg-black/30 p-4 rounded-lg border border-gray-700 hover:border-orange-500 transition-all">
-                            <div className="flex justify-between items-start mb-2">
-                              <h4 className="text-lg font-semibold text-orange-400">{plan.name}</h4>
-                              <span className="text-xl font-bold text-white">{plan.price} USDT</span>
-                            </div>
-                            <p className="text-gray-300 mb-3 text-sm break-words overflow-hidden">{plan.description}</p>
-                            {plan.features.length > 0 && (
-                              <div className="mb-4">
-                                <p className="text-sm font-medium text-gray-300 mb-1">Features:</p>
-                                <ul className="list-disc pl-5 text-sm text-gray-400">
-                                  {plan.features.map((feature, idx) => (
-                                    <li key={idx} className="break-words">{feature}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            <div className="flex gap-2 mt-4">
-                              {plan.isPremium && (
-                                <span className="bg-yellow-600/50 text-yellow-300 text-xs px-2 py-1 rounded mr-2">
-                                  Premium Plan
-                                </span>
-                              )}
-                              {plan.isTopListed && (
-                                <span className="bg-blue-600/50 text-blue-300 text-xs px-2 py-1 rounded">
-                                  Top Listed
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex gap-2 mt-4">
-                              <button 
-                                onClick={() => handleEditPlan(plan)}
-                                className="bg-orange-500 text-white px-3 py-1 rounded-lg hover:bg-orange-600 text-sm flex-1"
-                              >
-                                Edit
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteJobPlan(plan.id)}
-                                className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 text-sm flex-1"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                        {jobPlans.length < 5 && (
-                          <div 
-                            className="bg-black/20 p-4 rounded-lg border border-dashed border-gray-600 hover:border-orange-500 transition-all flex flex-col items-center justify-center cursor-pointer"
-                            onClick={() => setIsEditingPlan(true)}
-                          >
-                            <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center mb-2">
-                              <span className="text-gray-300">Add New Plan</span>
-                              <span className="text-2xl font-bold text-orange-400">+</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Form for creating or editing plans */}
-                      {isEditingPlan && (
-                        <div className="bg-black/40 p-6 rounded-lg border border-gray-700 mb-8">
-                          <h4 className="text-lg font-semibold text-orange-400 mb-4">
-                            {selectedPlanForEdit ? `Edit Plan: ${selectedPlanForEdit.name}` : "Create New Plan"}
-                          </h4>
-                          <form onSubmit={selectedPlanForEdit ? handleUpdateJobPlan : handleCreateJobPlan} className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Plan Name</label>
-                              <input
-                                type="text"
-                                name="name"
-                                value={selectedPlanForEdit ? selectedPlanForEdit.name : newJobPlan.name}
-                                onChange={handleJobPlanInputChange}
-                                placeholder="Basic Plan, Premium Plan, etc."
-                                className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
-                                required
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Price</label>
-                              <div className="flex">
-                                <input
-                                  type="number"
-                                  name="price"
-                                  value={selectedPlanForEdit ? selectedPlanForEdit.price : newJobPlan.price}
-                                  onChange={handleJobPlanInputChange}
-                                  placeholder="70"
-                                  className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
-                                  required
-                                  min="0"
-                                  step="any"
-                                />
-                                <select
-                                  name="currency"
-                                  value={selectedPlanForEdit ? selectedPlanForEdit.currency : newJobPlan.currency}
-                                  onChange={handleJobPlanInputChange}
-                                  className="border border-gray-600 border-l-0 rounded-r-lg px-3 py-2 bg-black/50 text-white"
-                                  disabled
-                                >
-                                  <option value="USDT">USDT</option>
-                                </select>
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
-                              <textarea
-                                name="description"
-                                value={selectedPlanForEdit ? selectedPlanForEdit.description : newJobPlan.description}
-                                onChange={handleJobPlanInputChange}
-                                placeholder="Short description of what this plan includes"
-                                className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
-                                rows={3}
-                                required
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Duration (days)</label>
-                              <input
-                                type="number"
-                                name="duration"
-                                value={selectedPlanForEdit ? selectedPlanForEdit.duration : newJobPlan.duration}
-                                onChange={handleJobPlanInputChange}
-                                placeholder="30"
-                                className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
-                                required
-                                min="1"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Features</label>
-                              <div className="flex items-center mb-2">
-                                <input
-                                  type="text"
-                                  value={newFeature}
-                                  onChange={(e) => setNewFeature(e.target.value)}
-                                  placeholder="Add feature..."
-                                  className="flex-grow border border-gray-600 rounded-l-lg px-3 py-2 bg-black/50 text-white"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={handleAddFeature}
-                                  className="bg-orange-500 text-white px-3 py-2 rounded-r-lg hover:bg-orange-600"
-                                >
-                                  Add
-                                </button>
-                              </div>
-                              <ul className="space-y-1 max-h-40 overflow-y-auto bg-black/30 p-2 rounded-lg">
-                                {(selectedPlanForEdit ? selectedPlanForEdit.features : newJobPlan.features).map((feature, idx) => (
-                                  <li key={idx} className="flex items-center justify-between bg-black/40 px-3 py-1 rounded">
-                                    <span className="text-gray-300">{feature}</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveFeature(idx)}
-                                      className="text-red-400 hover:text-red-600 ml-2 focus:outline-none"
-                                    >
-                                      &times;
-                                    </button>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div className="flex space-x-4 mb-2">
-                              <div className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  id="isPremium"
-                                  name="isPremium"
-                                  checked={selectedPlanForEdit ? selectedPlanForEdit.isPremium : newJobPlan.isPremium}
-                                  onChange={handleJobPlanInputChange}
-                                  className="mr-2 h-4 w-4"
-                                />
-                                <label htmlFor="isPremium" className="text-gray-300">Premium Plan</label>
-                              </div>
-                              <div className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  id="isTopListed"
-                                  name="isTopListed"
-                                  checked={selectedPlanForEdit ? selectedPlanForEdit.isTopListed : newJobPlan.isTopListed}
-                                  onChange={handleJobPlanInputChange}
-                                  className="mr-2 h-4 w-4"
-                                />
-                                <label htmlFor="isTopListed" className="text-gray-300">Top Listed</label>
-                              </div>
-                            </div>
-
-                            <div className="flex justify-end gap-2 pt-2">
-                              <button
-                                type="button"
-                                onClick={handleCancelEdit}
-                                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="submit"
-                                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
-                              >
-                                {selectedPlanForEdit ? "Update Plan" : "Create Plan"}
-                              </button>
-                            </div>
-                          </form>
-                        </div>
-                      )}
-
-                      {/* Help information */}
-                      {!isEditingPlan && (
-                        <div className="bg-black/20 p-4 rounded-lg border border-gray-700 mb-8">
-                          <h4 className="text-md font-semibold text-orange-400 mb-2">Job Posting Plans Information</h4>
-                          <p className="text-gray-300 text-sm mb-2">
-                            These plans will be offered to employers when they want to post a new job.
-                          </p>
-                          <ul className="list-disc pl-5 text-sm text-gray-400">
-                            <li>Set different pricing tiers based on features and duration</li>
-                            <li>Mark premium plans to highlight them to users</li>
-                            <li>Use "Top Listed" for plans that place jobs at the top of search results</li>
-                            <li>All prices are charged in cryptocurrency via your web3 integration</li>
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Rendering of InstantJobsManager when the Instant Jobs tab is active */}
-              {activeTab === "instantJobs" && (
-                <div>
-                  <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Manage Instant Jobs</h2>
-                  <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                    <p className="text-gray-300 mb-4">
-                      Manage instant jobs and their associated settings.
-                    </p>
-                    
-                    {/* Main component loaded directly without checking subtab */}
-                    <InstantJobsManager />
-                  </div>
-                </div>
-              )}
-
-              {/* Ads Manager Tab Content */}
-              {activeTab === "ads" && (
-                <div>
-                  <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Ads Manager</h2>
-                  <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                    <p className="text-gray-300 mb-4">
-                      Manage advertising campaigns and ads for display on the website and app.
-                    </p>
-                    
-                    {/* Main component for ad management */}
-                    <AdManager />
-                  </div>
-                </div>
-              )}
-
-              {/* Rendering of the "Smart Contracts" section within Learn2Earn in the main dashboard area */}
-              {activeTab === "learn2earn" && activeSubTab === "contracts" && (
-                <div>
-                  <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Smart Contracts Management</h2>
-                  <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                    {/* Learn2Earn Fee Management Panel */}
-                    <Learn2EarnFeePanel />
-                    {/* Form to add or update contracts */}
-                    <div className="bg-black/30 p-5 rounded-lg border border-gray-700 mb-6">
-                      <h3 className="text-xl text-orange-400 mb-4">Add/Update Network Contract</h3>
-                      <form onSubmit={handleAddNetworkContract} className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-1">Network</label>
-                          <select
-                            name="network"
-                            value={networkContract.network}
-                            onChange={handleNetworkContractChange}
-                            className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
-                            required
-                          >
-                            <option value="sepolia">Sepolia (Ethereum Testnet)</option>
-                            <option value="mumbai">Mumbai (Polygon Testnet)</option>
-                            <option value="bscTestnet">BSC Testnet</option>
-                            <option value="ethereum">Ethereum Mainnet</option>
-                            <option value="polygon">Polygon Mainnet</option>
-                            <option value="bsc">Binance Smart Chain</option>
-                            <option value="arbitrum">Arbitrum</option>
-                            <option value="optimism">Optimism</option>
-                            <option value="avalanche">Avalanche</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-1">Contract Address</label>
-                          <input
-                            type="text"
-                            name="contractAddress"
-                            value={networkContract.contractAddress}
-                            onChange={handleNetworkContractChange}
-                            placeholder="0x..."
-                            className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
-                          <input
-                            type="text"
-                            name="type"
-                            value={networkContract.type}
-                            onChange={handleNetworkContractChange}
-                            placeholder="Contract Type"
-                            className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
-                            required
-                          />
-                        </div>
-                        {contractActionError && (
-                          <p className="text-red-500 text-sm">{contractActionError}</p>
-                        )}
-                        <button
-                          type="submit"
-                          className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60"
-                          disabled={isAddingContract}
-                        >
-                          {isAddingContract ? 'Processing...' : 'Add/Update Contract'}
-                        </button>
-                      </form>
-                    </div>
-
-                    {/* List of existing contracts */}
-                    <div>
-                      <h3 className="text-xl text-orange-400 mb-4">Current Smart Contracts</h3>
-                      {networkContracts.length === 0 ? (
-                        <p className="text-gray-400">No contract configurations found. Add one above.</p>
-                      ) : (
-                        <div className="space-y-4">
-                          {networkContracts.map((contract) => (
-                            <div key={contract.id} className="bg-black/30 p-4 rounded-lg border border-gray-700">
-                              <div className="flex flex-col md:flex-row justify-between">
-                                <div>
-                                  <h4 className="text-lg font-medium text-orange-300">
-                                    {contract.network.charAt(0).toUpperCase() + contract.network.slice(1)}
-                                  </h4>
-                                  <p className="text-sm text-gray-300 break-all">
-                                    Address: {contract.contractAddress}
-                                  </p>
-                                  <p className="text-sm text-gray-300 break-all">
-                                    Type: {contract.type}
-                                  </p>
-                                  <p className="text-xs text-gray-400">
-                                    Added: {formatFirestoreTimestamp(contract.createdAt)}
-                                    {contract.updatedAt && ` (Updated: ${formatFirestoreTimestamp(contract.updatedAt)})`}
-                                  </p>
-                                </div>
-                                <div className="flex mt-3 md:mt-0">
-                                  {/* Removed the "Edit" button as we have the Add/Update form above */}
-                                  <Learn2EarnTestButton 
-                                    network={contract.network}
-                                    contractAddress={contract.contractAddress}
-                                  />
-                                </div>
                               </div>
                             </div>
                           ))}
+                          {jobPlans.length < 5 && (
+                            <div 
+                              className="bg-black/20 p-4 rounded-lg border border-dashed border-gray-600 hover:border-orange-500 transition-all flex flex-col items-center justify-center cursor-pointer"
+                              onClick={() => setIsEditingPlan(true)}
+                            >
+                              <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center mb-2">
+                                <span className="text-gray-300">Add New Plan</span>
+                                <span className="text-2xl font-bold text-orange-400">+</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
+
+                        {/* Form for creating or editing plans */}
+                        {isEditingPlan && (
+                          <div className="bg-black/40 p-6 rounded-lg border border-gray-700 mb-8">
+                            <h4 className="text-lg font-semibold text-orange-400 mb-4">
+                              {selectedPlanForEdit ? `Edit Plan: ${selectedPlanForEdit.name}` : "Create New Plan"}
+                            </h4>
+                            <form onSubmit={selectedPlanForEdit ? handleUpdateJobPlan : handleCreateJobPlan} className="space-y-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Plan Name</label>
+                                <input
+                                  type="text"
+                                  name="name"
+                                  value={selectedPlanForEdit ? selectedPlanForEdit.name : newJobPlan.name}
+                                  onChange={handleJobPlanInputChange}
+                                  placeholder="Basic Plan, Premium Plan, etc."
+                                  className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Price</label>
+                                <div className="flex">
+                                  <input
+                                    type="number"
+                                    name="price"
+                                    value={selectedPlanForEdit ? selectedPlanForEdit.price : newJobPlan.price}
+                                    onChange={handleJobPlanInputChange}
+                                    placeholder="70"
+                                    className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                                    required
+                                    min="0"
+                                    step="any"
+                                  />
+                                  <select
+                                    name="currency"
+                                    value={selectedPlanForEdit ? selectedPlanForEdit.currency : newJobPlan.currency}
+                                    onChange={handleJobPlanInputChange}
+                                    className="border border-gray-600 border-l-0 rounded-r-lg px-3 py-2 bg-black/50 text-white"
+                                    disabled
+                                  >
+                                    <option value="USDT">USDT</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                                <textarea
+                                  name="description"
+                                  value={selectedPlanForEdit ? selectedPlanForEdit.description : newJobPlan.description}
+                                  onChange={handleJobPlanInputChange}
+                                  placeholder="Short description of what this plan includes"
+                                  className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                                  rows={3}
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Duration (days)</label>
+                                <input
+                                  type="number"
+                                  name="duration"
+                                  value={selectedPlanForEdit ? selectedPlanForEdit.duration : newJobPlan.duration}
+                                  onChange={handleJobPlanInputChange}
+                                  placeholder="30"
+                                  className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                                  required
+                                  min="1"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Features</label>
+                                <div className="flex items-center mb-2">
+                                  <input
+                                    type="text"
+                                    value={newFeature}
+                                    onChange={(e) => setNewFeature(e.target.value)}
+                                    placeholder="Add feature..."
+                                    className="flex-grow border border-gray-600 rounded-l-lg px-3 py-2 bg-black/50 text-white"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={handleAddFeature}
+                                    className="bg-orange-500 text-white px-3 py-2 rounded-r-lg hover:bg-orange-600"
+                                  >
+                                    Add
+                                  </button>
+                                </div>
+                                <ul className="space-y-1 max-h-40 overflow-y-auto bg-black/30 p-2 rounded-lg">
+                                  {(selectedPlanForEdit ? selectedPlanForEdit.features : newJobPlan.features).map((feature, idx) => (
+                                    <li key={idx} className="flex items-center justify-between bg-black/40 px-3 py-1 rounded">
+                                      <span className="text-gray-300">{feature}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveFeature(idx)}
+                                        className="text-red-400 hover:text-red-600 ml-2 focus:outline-none"
+                                      >
+                                        &times;
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <div className="flex space-x-4 mb-2">
+                                <div className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    id="isPremium"
+                                    name="isPremium"
+                                    checked={selectedPlanForEdit ? selectedPlanForEdit.isPremium : newJobPlan.isPremium}
+                                    onChange={handleJobPlanInputChange}
+                                    className="mr-2 h-4 w-4"
+                                  />
+                                  <label htmlFor="isPremium" className="text-gray-300">Premium Plan</label>
+                                </div>
+                                <div className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    id="isTopListed"
+                                    name="isTopListed"
+                                    checked={selectedPlanForEdit ? selectedPlanForEdit.isTopListed : newJobPlan.isTopListed}
+                                    onChange={handleJobPlanInputChange}
+                                    className="mr-2 h-4 w-4"
+                                  />
+                                  <label htmlFor="isTopListed" className="text-gray-300">Top Listed</label>
+                                </div>
+                              </div>
+
+                              <div className="flex justify-end gap-2 pt-2">
+                                <button
+                                  type="button"
+                                  onClick={handleCancelEdit}
+                                  className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+                                >
+                                  {selectedPlanForEdit ? "Update Plan" : "Create Plan"}
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        )}
+
+                        {/* Help information */}
+                        {!isEditingPlan && (
+                          <div className="bg-black/20 p-4 rounded-lg border border-gray-700 mb-8">
+                            <h4 className="text-md font-semibold text-orange-400 mb-2">Job Posting Plans Information</h4>
+                            <p className="text-gray-300 text-sm mb-2">
+                              These plans will be offered to employers when they want to post a new job.
+                            </p>
+                            <ul className="list-disc pl-5 text-sm text-gray-400">
+                              <li>Set different pricing tiers based on features and duration</li>
+                              <li>Mark premium plans to highlight them to users</li>
+                              <li>Use "Top Listed" for plans that place jobs at the top of search results</li>
+                              <li>All prices are charged in cryptocurrency via your web3 integration</li>
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Rendering of InstantJobsManager when the Instant Jobs tab is active */}
+                {activeTab === "instantJobs" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Instant Jobs</h2>
+                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                      <p className="text-gray-300 mb-4">
+                        Manage instant jobs and their associated settings.
+                      </p>
+                      
+                      {/* Main component loaded directly without checking subtab */}
+                      <InstantJobsManager />
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Accounting Dashboard Section */}
-              {activeTab === "accounting" && (
-                <div>
-                  <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Accounting Dashboard</h2>
-                  <div className="mt-6">
-                    <FinancialDashboard />
+                {/* Ads Manager Tab Content */}
+                {activeTab === "ads" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Ads Manager</h2>
+                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                      <p className="text-gray-300 mb-4">
+                        Manage advertising campaigns and ads for display on the website and app.
+                      </p>
+                      
+                      {/* Main component for ad management */}
+                      <AdManager />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Payment Settings Section */}
-              {activeTab === "payments" && activeSubTab === "config" && (
-                <div>
-                  <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Payment Configuration</h2>
+                {/* Rendering of the "Smart Contracts" section within Learn2Earn in the main dashboard area */}
+                {activeTab === "learn2earn" && activeSubTab === "contracts" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Smart Contracts Management</h2>
+                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                      {/* Learn2Earn Fee Management Panel */}
+                      <Learn2EarnFeePanel />
+                      {/* Form to add or update contracts */}
+                      <div className="bg-black/30 p-5 rounded-lg border border-gray-700 mb-6">
+                        <h3 className="text-xl text-orange-400 mb-4">Add/Update Network Contract</h3>
+                        <form onSubmit={handleAddNetworkContract} className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-1">Network</label>
+                            <select
+                              name="network"
+                              value={networkContract.network}
+                              onChange={handleNetworkContractChange}
+                              className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                              required
+                            >
+                              <option value="sepolia">Sepolia (Ethereum Testnet)</option>
+                              <option value="mumbai">Mumbai (Polygon Testnet)</option>
+                              <option value="bscTestnet">BSC Testnet</option>
+                              <option value="ethereum">Ethereum Mainnet</option>
+                              <option value="polygon">Polygon Mainnet</option>
+                              <option value="bsc">Binance Smart Chain</option>
+                              <option value="arbitrum">Arbitrum</option>
+                              <option value="optimism">Optimism</option>
+                              <option value="avalanche">Avalanche</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-1">Contract Address</label>
+                            <input
+                              type="text"
+                              name="contractAddress"
+                              value={networkContract.contractAddress}
+                              onChange={handleNetworkContractChange}
+                              placeholder="0x..."
+                              className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
+                            <input
+                              type="text"
+                              name="type"
+                              value={networkContract.type}
+                              onChange={handleNetworkContractChange}
+                              placeholder="Contract Type"
+                              className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                              required
+                            />
+                          </div>
+                          {contractActionError && (
+                            <p className="text-red-500 text-sm">{contractActionError}</p>
+                          )}
+                          <button
+                            type="submit"
+                            className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60"
+                            disabled={isAddingContract}
+                          >
+                            {isAddingContract ? 'Processing...' : 'Add/Update Contract'}
+                          </button>
+                        </form>
+                      </div>
+
+                      {/* List of existing contracts */}
+                      <div>
+                        <h3 className="text-xl text-orange-400 mb-4">Current Smart Contracts</h3>
+                        {networkContracts.length === 0 ? (
+                          <p className="text-gray-400">No contract configurations found. Add one above.</p>
+                        ) : (
+                          <div className="space-y-4">
+                            {networkContracts.map((contract) => (
+                              <div key={contract.id} className="bg-black/30 p-4 rounded-lg border border-gray-700">
+                                <div className="flex flex-col md:flex-row justify-between">
+                                  <div>
+                                    <h4 className="text-lg font-medium text-orange-300">
+                                      {contract.network.charAt(0).toUpperCase() + contract.network.slice(1)}
+                                    </h4>
+                                    <p className="text-sm text-gray-300 break-all">
+                                      Address: {contract.contractAddress}
+                                    </p>
+                                    <p className="text-sm text-gray-300 break-all">
+                                      Type: {contract.type}
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                      Added: {formatFirestoreTimestamp(contract.createdAt)}
+                                      {contract.updatedAt && ` (Updated: ${formatFirestoreTimestamp(contract.updatedAt)})`}
+                                    </p>
+                                  </div>
+                                  <div className="flex mt-3 md:mt-0">
+                                    {/* Removed the "Edit" button as we have the Add/Update form above */}
+                                    <Learn2EarnTestButton 
+                                      network={contract.network}
+                                      contractAddress={contract.contractAddress}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Accounting Dashboard Section */}
+                {activeTab === "accounting" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Accounting Dashboard</h2>
+                    <div className="mt-6">
+                      <FinancialDashboard />
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment Settings Section */}
+                {activeTab === "payments" && activeSubTab === "config" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Payment Configuration</h2>
+                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                      <PaymentSettings hasPermission={true} />
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "learn2earn" && activeSubTab === "list" && (
                   <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                    <PaymentSettings hasPermission={true} />
+                    <h3 className="text-xl text-orange-400 mb-4">Learn2Earn Opportunities</h3>
+                    {learn2earnLoading && <p className="text-gray-400">Loading opportunities...</p>}
+                    {learn2earnError && <p className="text-red-400">{learn2earnError}</p>}
+                    {!learn2earnLoading && !learn2earnError && learn2earns.length === 0 && <p className="text-gray-400">No Learn2Earn opportunities available.</p>}
+                    <ul className="space-y-4">
+                      {learn2earns.map((l2e) => (
+                        <li key={l2e.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-4 bg-black/30 rounded-lg border border-gray-700">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-orange-500 font-bold text-lg">{l2e.title}</span>
+                              <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${l2e.status === 'active' ? 'bg-green-700 text-green-300' : l2e.status === 'paused' ? 'bg-yellow-700 text-yellow-300' : 'bg-gray-700 text-gray-300'}`}>{l2e.status?.toUpperCase()}</span>
+                            </div>
+                            <div className="text-gray-300 text-sm mb-1">{l2e.description}</div>
+                            <div className="flex flex-wrap gap-4 text-xs text-gray-400 mb-1">
+                              <span>Network: <b>{l2e.network}</b></span>
+                              <span>Token: <b>{l2e.tokenSymbol}</b></span>
+                              <span>Amount: <b>{l2e.tokenAmount}</b></span>
+                              <span>Per User: <b>{l2e.tokenPerParticipant}</b></span>
+                              <span>Participants: <b>{l2e.totalParticipants || 0} / {l2e.maxParticipants || '∞'}</b></span>
+                              <span>Start: {formatFirestoreTimestamp(l2e.startDate)}</span>
+                              <span>End: {formatFirestoreTimestamp(l2e.endDate)}</span>
+                            </div>
+                            <div className="text-xs text-gray-500">ID: {l2e.id}</div>
+                          </div>
+                          <div className="flex flex-col gap-2 mt-4 md:mt-0 md:ml-6 min-w-[160px]">
+                            <button
+                              className={`px-3 py-1 rounded ${l2e.status === 'active' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white`}
+                              disabled={pausingLearn2EarnId === l2e.id}
+                              onClick={() => handleToggleLearn2EarnStatus(l2e.id, l2e.status)}
+                            >
+                              {pausingLearn2EarnId === l2e.id
+                                ? (l2e.status === 'active' ? 'Pausing...' : 'Activating...')
+                                : (l2e.status === 'active' ? 'Pause' : 'Activate')}
+                            </button>
+                            <button
+                              className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white"
+                              disabled={deletingLearn2EarnId === l2e.id}
+                              onClick={() => handleDeleteLearn2Earn(l2e.id)}
+                            >
+                              {deletingLearn2EarnId === l2e.id ? 'Deleting...' : 'Delete'}
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
-              )}
-
-              {activeTab === "learn2earn" && activeSubTab === "list" && (
-                <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                  <h3 className="text-xl text-orange-400 mb-4">Learn2Earn Opportunities</h3>
-                  {learn2earnLoading && <p className="text-gray-400">Loading opportunities...</p>}
-                  {learn2earnError && <p className="text-red-400">{learn2earnError}</p>}
-                  {!learn2earnLoading && !learn2earnError && learn2earns.length === 0 && <p className="text-gray-400">No Learn2Earn opportunities available.</p>}
-                  <ul className="space-y-4">
-                    {learn2earns.map((l2e) => (
-                      <li key={l2e.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-4 bg-black/30 rounded-lg border border-gray-700">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-orange-500 font-bold text-lg">{l2e.title}</span>
-                            <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${l2e.status === 'active' ? 'bg-green-700 text-green-300' : l2e.status === 'paused' ? 'bg-yellow-700 text-yellow-300' : 'bg-gray-700 text-gray-300'}`}>{l2e.status?.toUpperCase()}</span>
-                          </div>
-                          <div className="text-gray-300 text-sm mb-1">{l2e.description}</div>
-                          <div className="flex flex-wrap gap-4 text-xs text-gray-400 mb-1">
-                            <span>Network: <b>{l2e.network}</b></span>
-                            <span>Token: <b>{l2e.tokenSymbol}</b></span>
-                            <span>Amount: <b>{l2e.tokenAmount}</b></span>
-                            <span>Per User: <b>{l2e.tokenPerParticipant}</b></span>
-                            <span>Participants: <b>{l2e.totalParticipants || 0} / {l2e.maxParticipants || '∞'}</b></span>
-                            <span>Start: {formatFirestoreTimestamp(l2e.startDate)}</span>
-                            <span>End: {formatFirestoreTimestamp(l2e.endDate)}</span>
-                          </div>
-                          <div className="text-xs text-gray-500">ID: {l2e.id}</div>
-                        </div>
-                        <div className="flex flex-col gap-2 mt-4 md:mt-0 md:ml-6 min-w-[160px]">
-                          <button
-                            className={`px-3 py-1 rounded ${l2e.status === 'active' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white`}
-                            disabled={pausingLearn2EarnId === l2e.id}
-                            onClick={() => handleToggleLearn2EarnStatus(l2e.id, l2e.status)}
-                          >
-                            {pausingLearn2EarnId === l2e.id
-                              ? (l2e.status === 'active' ? 'Pausing...' : 'Activating...')
-                              : (l2e.status === 'active' ? 'Pause' : 'Activate')}
-                          </button>
-                          <button
-                            className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white"
-                            disabled={deletingLearn2EarnId === l2e.id}
-                            onClick={() => handleDeleteLearn2Earn(l2e.id)}
-                          >
-                            {deletingLearn2EarnId === l2e.id ? 'Deleting...' : 'Delete'}
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
+          </div>
         </div>
       </main>
     </Layout>
