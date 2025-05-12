@@ -1179,12 +1179,12 @@ const InstantJobDetailCard: React.FC<{
       return (
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-semibold text-orange-500">Micro-tasks (Instant Jobs)</h2>
+            <h2 className="text-3xl font-semibold text-orange-500">Instant Jobs</h2>
             <button
               onClick={() => setActiveSection('create')}
               className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
             >
-              Create New Micro-task
+              New Instant Job
             </button>
           </div>
           
@@ -1231,7 +1231,7 @@ const InstantJobDetailCard: React.FC<{
             >
               &larr; Back
             </button>
-            <h2 className="text-3xl font-semibold text-orange-500">Create New Micro-task</h2>
+            <h2 className="text-3xl font-semibold text-orange-500">Create New Instant Job</h2>
           </div>
           
           <form onSubmit={handleCreateInstantJob} className="space-y-4">
