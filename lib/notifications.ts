@@ -19,6 +19,15 @@ interface CompanyNotificationData {
   data?: any;
 }
 
+interface AdminNotificationData {
+  adminId: string;
+  title: string;
+  body: string;
+  type: string;
+  read?: boolean;
+  data?: any;
+}
+
 /**
  * Creates a generic notification in Firestore.
  * @param notification Notification data.

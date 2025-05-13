@@ -19,6 +19,7 @@ const POLL_INTERVAL = 10000; // 10 seconds
 interface NotificationsPanelProps {
   userId?: string;
   companyId?: string;
+  adminId?: string; // Adicionando suporte para adminId
   open?: boolean;
   onClose?: () => void;
   overlay?: boolean;
@@ -39,19 +40,38 @@ export function NotificationBell({ unreadCount, onClick }: { unreadCount: number
   );
 }
 
-export default function NotificationsPanel({ userId, companyId, open, onClose, overlay }: NotificationsPanelProps) {
+export default function NotificationsPanel({ userId, companyId, adminId, open, onClose, overlay }: NotificationsPanelProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const unreadCount = notifications.filter(n => !n.read).length;
+  
+  // Determinar o tipo de usuário para personalizar o título
+  const userType = userId ? 'user' : (companyId ? 'company' : (adminId ? 'admin' : ''));
 
   const fetchNotifications = async () => {
-    if (!userId && !companyId) {
+    if (!userId && !companyId && !adminId) {
       setLoading(false);
       return;
     }
-    setLoading(true);
-    try {
-      const notificationsRef = collection(db, "notifications");
+    setLoading(true);    try {
+      // Determinar qual coleção de notificações usar
+      const collectionName = adminId ? "adminNotifications" : "notifications";
+      const notificationsRef = collection(db, collectionName);
+      
+      // DEBUG: Lista todas as notificações na coleção (sem filtro)
+      const allNotificationsSnapshot = await getDocs(collection(db, collectionName));
+      const allNotifications = allNotificationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log(`DEBUG: ALL ${userType} notifications in Firestore:`, allNotifications);
+      
+      // DEBUG: Mostrar apenas notificações para este usuário específico
+      if (companyId) {
+        const companyNotifications = allNotifications.filter((n: any) => n.companyId === companyId);
+        console.log('DEBUG: Notifications for this companyId:', companyNotifications);
+      } else if (adminId) {
+        const adminNotifications = allNotifications.filter((n: any) => n.adminId === adminId);
+        console.log('DEBUG: Notifications for this adminId:', adminNotifications);
+      }
+      
       let q: Query<DocumentData> | undefined = undefined;
       if (userId) {
         q = query(
@@ -65,65 +85,130 @@ export default function NotificationsPanel({ userId, companyId, open, onClose, o
           where("companyId", "==", companyId),
           orderBy("createdAt", "desc")
         );
+      } else if (adminId) {
+        q = query(
+          notificationsRef,
+          where("adminId", "==", adminId),
+          orderBy("createdAt", "desc")
+        );
       }
       if (!q) {
         setLoading(false);
         return;
-      }
+      }      console.log('DEBUG: Fetching notifications for', 
+        userId ? `userId: ${userId}` : 
+        companyId ? `companyId: ${companyId}` : 
+        adminId ? `adminId: ${adminId}` : 'unknown');
+      
       const snapshot = await getDocs(q);
       const allDocs = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
-      let list: Notification[] = allDocs;
-      setNotifications(list.map((n: any) => ({
-        id: n.id,
-        title: n.title || n.data?.title || '',
-        body: n.body || n.data?.body || n.data?.message || '',
-        type: n.type || n.data?.type || '',
-        read: n.read ?? n.data?.read ?? false,
-        createdAt: n.createdAt && typeof n.createdAt.toDate === 'function'
-          ? n.createdAt.toDate()
-          : (typeof n.createdAt === 'string' ? new Date(n.createdAt) : (n.data?.createdAt && typeof n.data.createdAt.toDate === 'function' ? n.data.createdAt.toDate() : '')),
-        data: n.data || {},
-      })));
+      console.log('DEBUG: Raw notifications from Firestore:', allDocs);
+      if (allDocs.length === 0) {
+        console.warn(`DEBUG: No notifications found for this ${userType}.`);
+      }
+
+      // Map the notifications to ensure proper formatting
+      const mappedNotifications = allDocs.map((n: any) => {
+        console.log('DEBUG: Processing notification:', n);
+        
+        // Get the title from the right place
+        let title = '';
+        if (n.title) title = n.title;
+        else if (n.data?.title) title = n.data.title;
+        
+        // Get the body from the right place
+        let body = '';
+        if (n.body) body = n.body;
+        else if (n.data?.body) body = n.data.body;
+        
+        // Get the type
+        let type = n.type || n.data?.type || 'general';
+        
+        // Handle read status
+        let read = false;
+        if (typeof n.read === 'boolean') read = n.read;
+        else if (typeof n.data?.read === 'boolean') read = n.data.read;
+        
+        // Handle the timestamp (most critical part)
+        let createdAt: any = '';
+        if (n.createdAt) {
+          if (typeof n.createdAt.toDate === 'function') {
+            createdAt = n.createdAt.toDate();
+          } else if (typeof n.createdAt === 'string') {
+            createdAt = new Date(n.createdAt);
+          }
+        } else if (n.data?.createdAt) {
+          if (typeof n.data.createdAt.toDate === 'function') {
+            createdAt = n.data.createdAt.toDate();
+          } else if (typeof n.data.createdAt === 'string') {
+            createdAt = new Date(n.data.createdAt);
+          }
+        }
+        
+        // Log the final notification object for debugging
+        const result = {
+          id: n.id,
+          title,
+          body,
+          type,
+          read,
+          createdAt,
+          data: n.data || {}
+        };
+        
+        console.log('DEBUG: Mapped notification:', result);
+        return result;
+      });
+      
+      console.log('DEBUG: All mapped notifications:', mappedNotifications);
+      
+      // Set state with the mapped notifications
+      setNotifications(mappedNotifications);
     } catch (err) {
+      console.error('ERROR fetching notifications:', err);
       setNotifications([]);
     }
     setLoading(false);
   };
-
   useEffect(() => {
-    // Só executa se userId ou companyId estiverem definidos
-    if (!userId && !companyId) return;
+    // Só executa se userId, companyId ou adminId estiverem definidos
+    if (!userId && !companyId && !adminId) return;
     fetchNotifications();
     const interval = setInterval(fetchNotifications, POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [userId, companyId]);
-
+  }, [userId, companyId, adminId]);
   const markAsRead = async (id: string) => {
     try {
-      await updateDoc(doc(db, "notifications", id), { read: true });
+      // Determinar qual coleção usar
+      const collectionName = adminId ? "adminNotifications" : "notifications";
+      await updateDoc(doc(db, collectionName, id), { read: true });
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-    } catch {}
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
   const clearAllNotifications = async () => {
     setLoading(true);
-    try {
-      const notificationsRef = collection(db, "notifications");
+    try {      // Determinar qual coleção usar
+      const collectionName = adminId ? "adminNotifications" : "notifications";
+      const notificationsRef = collection(db, collectionName);
       const q = query(notificationsRef, orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
       
       // Criando array tipado para armazenar documentos a serem excluídos
       const docsToDelete: Array<{id: string}> = [];
-        // Filtrando os documentos conforme o userId ou companyId
+        // Filtrando os documentos conforme o userId, companyId ou adminId
       snapshot.docs.forEach(docSnap => {
         const data = docSnap.data();
         if (userId && data.userId === userId) {
           docsToDelete.push({ id: docSnap.id });
         } else if (companyId && data.companyId === companyId) {
           docsToDelete.push({ id: docSnap.id });
+        } else if (adminId && data.adminId === adminId) {
+          docsToDelete.push({ id: docSnap.id });
         }
-      });
-      const batchDeletes = docsToDelete.map(docToDelete => deleteDoc(doc(db, "notifications", docToDelete.id)));
+      });      const batchDeletes = docsToDelete.map(docToDelete => deleteDoc(doc(db, collectionName, docToDelete.id)));
       await Promise.all(batchDeletes);
       setNotifications([]);
     } catch (err) {
@@ -133,14 +218,58 @@ export default function NotificationsPanel({ userId, companyId, open, onClose, o
     setLoading(false);
   };
 
+  // Render a single notification item
+  const renderNotificationItem = (n: Notification) => {
+    // Debug the notification being rendered
+    console.log('DEBUG: Rendering notification item:', n);
+    
+    // Format the date safely
+    const formattedDate = (() => {
+      try {
+        if (!n.createdAt) return '';
+        
+        // If it's a Date object
+        if (n.createdAt instanceof Date) {
+          return n.createdAt.toLocaleString();
+        }
+        
+        // If it has a toDate method (Firestore timestamp)
+        if (typeof n.createdAt.toDate === 'function') {
+          return n.createdAt.toDate().toLocaleString();
+        }
+        
+        // If it's a string that can be parsed as a date
+        return new Date(n.createdAt).toLocaleString();
+      } catch (error) {
+        console.error('Error formatting date:', error);
+        return '';
+      }
+    })();
+    
+    return (
+      <div
+        key={n.id}
+        className={`p-3 rounded-lg border ${n.read ? 'border-gray-700 bg-black/40' : 'border-orange-500 bg-orange-900/20'} text-white shadow-sm cursor-pointer`}
+        tabIndex={0}
+        onClick={() => !n.read && markAsRead(n.id)}
+        onFocus={() => !n.read && markAsRead(n.id)}
+      >
+        <div className="font-semibold text-orange-300 mb-1">{n.title || 'Notification'}</div>
+        <div className="text-sm text-gray-200">{n.body}</div>
+        <div className="text-xs text-gray-400 mt-1">{formattedDate}</div>
+      </div>
+    );
+  };
+
   // Drawer overlay mode
   if (overlay && open) {
     return createPortal(
       <div className="fixed inset-0 z-[100] flex justify-end">
         <div className="fixed inset-0 bg-black/80" onClick={onClose} />
-        <div className="relative w-full max-w-md h-full bg-[#18120b] border-l border-orange-900 shadow-2xl flex flex-col animate-slide-in-right">
-          <div className="flex items-center justify-between p-4 border-b border-orange-900">
-            <span className="text-lg font-bold text-orange-400">Notifications</span>
+        <div className="relative w-full max-w-md h-full bg-[#18120b] border-l border-orange-900 shadow-2xl flex flex-col animate-slide-in-right">          <div className="flex items-center justify-between p-4 border-b border-orange-900">
+            <span className="text-lg font-bold text-orange-400">
+              {adminId ? 'Admin Notifications' : 'Notifications'}
+            </span>
             <div className="flex items-center gap-2">
               {notifications.length > 0 && (
                 <button onClick={clearAllNotifications} className="text-orange-400 hover:text-red-500 transition" title="Clear all notifications" aria-label="Clear all notifications">
@@ -158,21 +287,11 @@ export default function NotificationsPanel({ userId, companyId, open, onClose, o
             {loading ? (
               <div className="text-gray-400 text-center mt-10">Loading...</div>
             ) : notifications.length === 0 ? (
-              <div className="text-gray-400 text-center mt-10">No notifications.</div>
+              <div className="text-gray-400 text-center mt-10">
+                {adminId ? 'No admin notifications.' : 'No notifications.'}
+              </div>
             ) : (
-              notifications.map(n => (
-                <div
-                  key={n.id}
-                  className={`p-3 rounded-lg border ${n.read ? 'border-gray-700 bg-black/40' : 'border-orange-500 bg-orange-900/20'} text-white shadow-sm`}
-                  tabIndex={0}
-                  onClick={() => !n.read && markAsRead(n.id)}
-                  onFocus={() => !n.read && markAsRead(n.id)}
-                >
-                  <div className="font-semibold text-orange-300 mb-1">{n.title || 'Notification'}</div>
-                  <div className="text-sm text-gray-200">{n.body}</div>
-                  <div className="text-xs text-gray-400 mt-1">{n.createdAt ? new Date(n.createdAt?.toDate?.() || n.createdAt).toLocaleString() : ''}</div>
-                </div>
-              ))
+              notifications.map(n => renderNotificationItem(n))
             )}
           </div>
         </div>
@@ -207,17 +326,7 @@ export default function NotificationsPanel({ userId, companyId, open, onClose, o
           ) : notifications.length === 0 ? (
             <div className="text-gray-400 text-center py-4">No notifications.</div>
           ) : (
-            notifications.map(n => (
-              <div
-                key={n.id}
-                className={`p-2 rounded-lg border ${n.read ? 'border-gray-700 bg-black/40' : 'border-orange-500 bg-orange-900/20'} text-white cursor-pointer`}
-                onClick={() => !n.read && markAsRead(n.id)}
-              >
-                <div className="font-semibold text-orange-300 text-sm">{n.title || 'Notification'}</div>
-                <div className="text-xs text-gray-200">{n.body}</div>
-                <div className="text-xs text-gray-400 mt-1">{n.createdAt ? new Date(n.createdAt?.toDate?.() || n.createdAt).toLocaleString() : ''}</div>
-              </div>
-            ))
+            notifications.map(n => renderNotificationItem(n))
           )}
         </div>
       </div>
