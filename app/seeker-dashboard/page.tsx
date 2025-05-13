@@ -8,9 +8,9 @@ import { db } from "../../lib/firebase"; // Assuming db instance is correctly co
 import instantJobsService, { InstantJob, JobMessage } from '../../services/instantJobsService';
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
-import { BellIcon } from '@heroicons/react/24/outline';
 import WalletButton from '../../components/WalletButton';
 import { web3Service } from "../../services/web3Service";
+import NotificationsPanel from "../../components/ui/NotificationsPanel";
 
 // Function to create a notification for seeker
 async function createSeekerNotification({
@@ -1969,10 +1969,6 @@ const SeekerDashboard = () => {
   // Only allow sending messages if ticket is open AND acceptedBy is set
   const canSendMessage = selectedTicket && selectedTicket.status === 'open' && selectedTicket.acceptedBy;
 
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [showNotifications, setShowNotifications] = useState(false);
-  
   // Reference to the end of messages element (for auto-scroll)
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -1980,54 +1976,6 @@ const SeekerDashboard = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [ticketMessages]);
-
-  // Fetch seeker's notifications from the notifications collection every 10s
-  useEffect(() => {
-    if (!seekerId || !db) return;
-    let interval: NodeJS.Timeout;
-    
-    const fetchNotifications = async () => {
-      try {
-        const q = query(
-          collection(db, "notifications"),
-          where("userId", "==", seekerId)
-        );
-        const snapshot = await getDocs(q);
-        const notifs: Notification[] = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Notification));
-        notifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setNotifications(notifs);
-        setUnreadCount(notifs.filter(n => !n.read).length);
-      } catch (err) {
-        setNotifications([]);
-        setUnreadCount(0);
-      }
-    };
-
-    fetchNotifications();
-    interval = setInterval(fetchNotifications, 10000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [seekerId, db]);
-
-  // Mark all as read when opening the notification panel
-  const handleOpenNotifications = async () => {
-    setShowNotifications(true);
-    const unread = notifications.filter(n => !n.read);
-    for (const notif of unread) {
-      await updateDoc(doc(db, 'notifications', notif.id), { read: true });
-    }
-  };
-
-  // Mark notification as read when it is viewed (e.g., on click or scroll into view)
-  const markNotificationAsRead = async (notifId: string) => {
-    if (!db) return;
-    await updateDoc(doc(db, 'notifications', notifId), { read: true });
-  };
 
   // Detect and process notifications that require wallet connection
   useEffect(() => {
@@ -2164,17 +2112,7 @@ const SeekerDashboard = () => {
               />
             </div>
             {/* Notification bell absolutely positioned top right */}
-            <button
-              className="absolute top-0 right-0 mt-2 mr-2 z-10"
-              onClick={showNotifications ? () => setShowNotifications(false) : handleOpenNotifications}
-              title="Notifications"
-              aria-label="Notifications"
-            >
-              <BellIcon className="h-7 w-7 text-orange-400 hover:text-orange-300 transition" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold">{unreadCount}</span>
-              )}
-            </button>
+            <NotificationsPanel userId={seekerId} />
             <h2 className="text-xl font-semibold text-orange-400 w-full text-center mt-2">{seekerProfile.name || "User"}</h2>
             <p className="text-gray-400 text-sm truncate w-full text-center">{seekerProfile.email}</p>
             {/* Discreet Connect Wallet Button */}
@@ -2425,38 +2363,6 @@ const SeekerDashboard = () => {
             </div>
           )}
         </section>
-        {/* Notification panel (right side) */}
-        {showNotifications && (
-          <div className="fixed top-0 right-0 w-full md:w-96 h-full bg-black/90 z-50 shadow-lg border-l border-orange-900 flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-orange-900">
-              <span className="text-lg font-bold text-orange-400">Notifications</span>
-              <button onClick={() => setShowNotifications(false)} className="text-orange-400 hover:text-orange-200" title="Close notifications panel" aria-label="Close notifications panel">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {notifications.length === 0 ? (
-                <div className="text-gray-400 text-center mt-10">No notifications.</div>
-              ) : (
-                notifications.map(n => (
-                  <div
-                    key={n.id}
-                    className={`p-3 rounded-lg border ${n.read ? 'border-gray-700 bg-black/40' : 'border-orange-500 bg-orange-900/20'} text-white shadow-sm`}
-                    tabIndex={0}
-                    onClick={() => !n.read && markNotificationAsRead(n.id)}
-                    onFocus={() => !n.read && markNotificationAsRead(n.id)}
-                  >
-                    <div className="font-semibold text-orange-300 mb-1">{n.title || 'Notification'}</div>
-                    <div className="text-sm text-gray-200">{n.body}</div>
-                    <div className="text-xs text-gray-400 mt-1">{n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}</div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
       </main>
     </Layout>
   );
