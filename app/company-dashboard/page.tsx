@@ -262,11 +262,11 @@ const PostJobPage = (): JSX.Element => {
 
   const [jobsTab, setJobsTab] = useState<'offers' | 'instant'>('offers');
 
+  const isProduction = process.env.NEXT_PUBLIC_DEPLOY_STAGE === 'production';
+
   // Function to fetch pricing plans from Firebase
   const fetchPricingPlans = useCallback(async () => {
     try {
-      if (!db) throw new Error("Firestore is not initialized");
-
       const pricingPlansCollection = collection(db, "jobPlans"); // Changed to "jobPlans"
       const pricingPlansSnapshot = await getDocs(pricingPlansCollection);
 
@@ -793,6 +793,11 @@ const PostJobPage = (): JSX.Element => {
                 </div>
               );
             })}
+          </div>
+        ) : isProduction ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <h2 className="text-4xl font-bold mb-4 text-orange-500">Coming Soon</h2>
+            <p className="text-lg text-gray-300">This feature will be available soon.</p>
           </div>
         ) : (
           <div className="bg-black/70 rounded-lg shadow-lg p-6">
