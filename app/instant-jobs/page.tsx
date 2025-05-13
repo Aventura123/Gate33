@@ -48,7 +48,20 @@ const COMMON_SKILLS = [
   "Short-term Work"
 ];
 
+const isProduction = process.env.NEXT_PUBLIC_DEPLOY_STAGE === "production";
+
 export default function InstantJobsPage() {
+  if (isProduction) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4 text-orange-500">Coming Soon</h1>
+          <p className="text-lg text-gray-300">This feature will be available soon.</p>
+        </div>
+      </div>
+    );
+  }
+
   const [availableJobs, setAvailableJobs] = useState<InstantJob[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
