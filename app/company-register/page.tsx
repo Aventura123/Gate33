@@ -8,20 +8,7 @@ import Layout from '../../components/Layout';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 
-const isProduction = process.env.NEXT_PUBLIC_DEPLOY_STAGE === "production";
-
 const CompanyRegisterPage: React.FC = () => {
-  if (isProduction) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4 text-orange-500">Coming Soon</h1>
-          <p className="text-lg text-gray-300">This feature will be available soon.</p>
-        </div>
-      </div>
-    );
-  }
-
   const [formData, setFormData] = useState({
     companyName: "",
     industry: "",
