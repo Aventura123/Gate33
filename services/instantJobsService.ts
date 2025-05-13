@@ -4,6 +4,7 @@ import { web3Service } from "./web3Service";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 import { instantJobsEscrowService } from "./instantJobsEscrowService";
+import { createCompanyNotification, createNotification } from "../lib/notifications";
 
 // Commission fee percentage for Gate33 platform
 const PLATFORM_COMMISSION_PERCENTAGE = 5; // 5% commission
@@ -99,17 +100,14 @@ class InstantJobsService {
         acceptedByName: workerName,
         updatedAt: serverTimestamp()
       });
-      
-      // Send notification to the company
-      const notifCollection = collection(db, "notifications");
-      await addDoc(notifCollection, {
-        recipientId: jobData.companyId,
-        recipientType: 'company',
+        // Send notification to the company
+      await createCompanyNotification({
+        companyId: jobData.companyId,
         title: "Micro-task accepted",
-        message: `Your micro-task "${jobData.title}" has been accepted by ${workerName}`,
+        body: `Your micro-task "${jobData.title}" has been accepted by ${workerName}`,
+        type: "instant_job_accepted",
         read: false,
-        jobId: jobId,
-        createdAt: serverTimestamp()
+        data: { jobId }
       });
     } catch (error) {
       console.error("Error accepting micro-task:", error);
@@ -218,17 +216,14 @@ class InstantJobsService {
           // Continue anyway, we've updated the Firestore status
         }
       }
-      
-      // Send notification to the company
-      const notifCollection = collection(db, "notifications");
-      await addDoc(notifCollection, {
-        recipientId: jobData.companyId,
-        recipientType: 'company',
+        // Send notification to the company
+      await createCompanyNotification({
+        companyId: jobData.companyId,
         title: "Micro-task completed",
-        message: `The micro-task "${jobData.title}" has been marked as completed. Please review and approve.`,
+        body: `The micro-task "${jobData.title}" has been marked as completed. Please review and approve.`,
+        type: "instant_job_completed",
         read: false,
-        jobId: jobId,
-        createdAt: serverTimestamp()
+        data: { jobId }
       });
     } catch (error) {
       console.error("Error marking micro-task as completed:", error);
@@ -629,36 +624,29 @@ class InstantJobsService {
         where("jobId", "==", application.jobId),
         where("id", "!=", applicationId)
       );
-      
       const otherAppsSnapshot = await getDocs(q);
-      
-      otherAppsSnapshot.forEach(async (appDoc) => {
+      for (const appDoc of otherAppsSnapshot.docs) {
         await updateDoc(doc(db, "jobApplications", appDoc.id), {
           status: 'rejected'
         });
-        
         // Notify rejected applicants
-        await addDoc(collection(db, "notifications"), {
-          recipientId: appDoc.data().workerId,
-          recipientType: 'worker',
+        await createNotification({
+          userId: appDoc.data().workerId,
           title: "Application rejected",
-          message: `Your application for "${jobData.title}" was not selected`,
+          body: `Your application for "${jobData.title}" was not selected`,
+          type: "instant_job_application_rejected",
           read: false,
-          jobId: application.jobId,
-          createdAt: serverTimestamp()
+          data: { jobId: application.jobId }
         });
-      });
-      
+      }
       // Notify approved worker - Modified to include wallet connection request
-      await addDoc(collection(db, "notifications"), {
-        recipientId: application.workerId,
-        recipientType: 'worker',
+      await createNotification({
+        userId: application.workerId,
         title: "Application approved",
-        message: `Congratulations! Your application for "${jobData.title}" has been approved. Please connect your wallet in your dashboard to receive payment when the job is completed.`,
+        body: `Congratulations! Your application for "${jobData.title}" has been approved. Please connect your wallet in your dashboard to receive payment when the job is completed.`,
+        type: "wallet_needed",
         read: false,
-        jobId: application.jobId,
-        type: "wallet_needed", // Adding a special type to identify this notification
-        createdAt: serverTimestamp()
+        data: { jobId: application.jobId }
       });
     } catch (error) {
       console.error("Error approving application:", error);

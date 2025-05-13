@@ -7,7 +7,17 @@ import { db } from "../../lib/firebase";
 import { useRouter } from "next/navigation";
 import { useAdminPermissions } from "../../hooks/useAdminPermissions";
 import { logSystemActivity, logAdminAction } from "../../utils/logSystem";
-import { createNotification, createSupportMessageNotification } from "../../lib/notifications";
+import { 
+  createNotification, 
+  createSupportMessageNotification, 
+  createCompanyNotification,
+  createSupportMessageNotificationForCompany,
+  createTicketStatusNotificationForCompany,
+  createTicketStatusNotification,
+  createTicketAcceptedNotificationForCompany,
+  createTicketAcceptedNotification
+  // Remova ou adicione aqui apenas funções que realmente existem em ../../lib/notifications
+} from "../../lib/notifications";
 import '../../styles/support-dashboard.css';
 
 // Define the interface for support ticket
@@ -778,19 +788,30 @@ const SupportDashboard: React.FC = () => {
         acceptedByName: userName,
         acceptedAt: new Date().toISOString(),
         status: "open"
-      });
-
-      // Fetch ticket to get seekerId
+      });      // Fetch ticket to determine if it's a company or seeker ticket
       const ticketSnap = await getDoc(ticketRef);
       if (ticketSnap.exists()) {
         const ticket = ticketSnap.data();
-        if (ticket.seekerId) {
-          await createNotification({
-            userId: ticket.seekerId,
-            title: "Your support ticket was accepted",
-            body: "A support agent has accepted your ticket and will assist you soon.",
-            type: "support"
-          });
+        
+        // Check if this is a company ticket
+        const isCompanyTicket = ticket.userType === 'company';
+        
+        if (isCompanyTicket && ticket.userId) {
+          // Use company notification for company tickets
+          await createTicketAcceptedNotificationForCompany(
+            ticketId,
+            ticket.userId,
+            userName
+          );
+          console.log(`Ticket accepted notification sent to company ${ticket.userId}`);
+        } else if (ticket.seekerId) {
+          // Use regular notification for seeker tickets
+          await createTicketAcceptedNotification(
+            ticketId,
+            ticket.seekerId,
+            userName
+          );
+          console.log(`Ticket accepted notification sent to seeker ${ticket.seekerId}`);
         }
       }
 
@@ -929,9 +950,28 @@ const SupportDashboard: React.FC = () => {
         message: newMessage,
         createdAt: new Date().toISOString()
       });
+        // Determine if this is a company ticket or seeker ticket
+      let isCompanyTicket = false;
+      let companyId = null;
       
-      // Notify seeker of new support message
-      if (seekerId) {
+      if (ticketSnap.exists()) {
+        const ticketData = ticketSnap.data();
+        isCompanyTicket = ticketData.userType === 'company';
+        companyId = isCompanyTicket ? ticketData.userId : null;
+      }
+      
+      // Send notification based on user type (company or seeker)
+      if (isCompanyTicket && companyId) {
+        // This is a company ticket, use company notification
+        await createSupportMessageNotificationForCompany(
+          selectedTicket.id,
+          companyId,
+          newMessage,
+          userName
+        );
+        console.log(`Support message notification sent to company ${companyId}`);
+      } else if (seekerId) {
+        // This is a seeker ticket
         await createSupportMessageNotification(
           selectedTicket.id,
           seekerId,
@@ -940,7 +980,7 @@ const SupportDashboard: React.FC = () => {
         );
         console.log(`Support message notification sent to seeker ${seekerId}`);
       } else {
-        console.log("No seekerId found for notification in ticket", selectedTicket.id);
+        console.log("No recipient ID found for notification in ticket", selectedTicket.id);
         
         // Fallback - try to find seekerId from ticket email
         if (selectedTicket.seekerEmail) {
@@ -1094,8 +1134,7 @@ const SupportDashboard: React.FC = () => {
           timestamp: new Date().toISOString()
         }
       );
-      
-      // Send a system message to the ticket
+        // Send a system message to the ticket
       await addDoc(collection(db, "supportMessages"), {
         ticketId,
         senderId: userId,
@@ -1105,6 +1144,33 @@ const SupportDashboard: React.FC = () => {
         createdAt: new Date().toISOString(),
         isSystemMessage: true
       });
+      
+      // Fetch ticket to determine if it's a company or seeker ticket
+      const ticketSnap = await getDoc(doc(db, "supportTickets", ticketId));
+      if (ticketSnap.exists()) {
+        const ticket = ticketSnap.data();
+        
+        // Check if this is a company ticket
+        const isCompanyTicket = ticket.userType === 'company';
+        
+        if (isCompanyTicket && ticket.userId) {
+          // Use company notification for company tickets
+          await createTicketStatusNotificationForCompany(
+            ticketId,
+            ticket.userId,
+            "closed"
+          );
+          console.log(`Ticket closed notification sent to company ${ticket.userId}`);
+        } else if (ticket.seekerId) {
+          // Use regular notification for seeker tickets
+          await createTicketStatusNotification(
+            ticketId,
+            ticket.seekerId,
+            "closed"
+          );
+          console.log(`Ticket closed notification sent to seeker ${ticket.seekerId}`);
+        }
+      }
       
       // Reload the ticket messages
       fetchTicketMessages(ticketId);

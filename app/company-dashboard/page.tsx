@@ -21,6 +21,7 @@ import WalletButton from '../../components/WalletButton';
 import JobPostPayment from "./JobPostPayment";
 import CompanyWelcome from "./CompanyWelcome";
 import NotificationsPanel, { NotificationBell } from '../../components/ui/NotificationsPanel';
+import { createCompanyNotification } from '../../lib/notifications';
 
 // Interface for Support Ticket
 interface SupportTicket {
@@ -2756,8 +2757,7 @@ const manualSyncStatuses = async () => {
         createdAt: serverTimestamp(),
         isSystemMessage: true
       });
-      
-      // Create notification for support team
+        // Create notification for support team
       const notificationsCollection = collection(db, "supportNotifications");
       await addDoc(notificationsCollection, {
         ticketId: docRef.id,
@@ -2768,6 +2768,16 @@ const manualSyncStatuses = async () => {
         status: "new",
         createdAt: serverTimestamp(),
         read: false
+      });
+      
+      // Create standardized notification for the company
+      await createCompanyNotification({
+        companyId: companyId,
+        title: "Support Ticket Created",
+        body: `Your support ticket "${newTicketData.subject}" has been created. Our team will respond shortly.`,
+        type: "support_ticket_created",
+        read: false,
+        data: { ticketId: docRef.id }
       });
       
       // Reset form and fetch updated list
@@ -2811,8 +2821,7 @@ const manualSyncStatuses = async () => {
       await updateDoc(ticketRef, {
         updatedAt: serverTimestamp()
       });
-      
-      // Create notification for support team
+        // Create notification for support team
       const notificationsCollection = collection(db, "supportNotifications");
       await addDoc(notificationsCollection, {
         ticketId: selectedTicketId,
@@ -2824,6 +2833,8 @@ const manualSyncStatuses = async () => {
         createdAt: serverTimestamp(),
         read: false
       });
+      
+      // No need to create a notification for the company here since they're the ones sending the message
       
       // Reload messages
       fetchTicketMessages(selectedTicketId);
