@@ -68,7 +68,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             
             {/* Funcionalidades de emprego e oportunidades */}
             <a href="/jobs" className="hover:text-orange-500">Jobs</a>
-            {!isProduction && (
+            {isProduction ? (
+              <span className="text-gray-500 cursor-not-allowed opacity-60">Instant Jobs (Coming Soon)</span>
+            ) : (
               <a href="/instant-jobs" className="hover:text-orange-500">Instant Jobs</a>
             )}
             <a href="/learn2earn" className="hover:text-orange-500">Learn2Earn</a>
@@ -117,7 +119,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="border-t border-gray-700 my-0.5"></div>
           
           <a href="/jobs" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Jobs</a>
-          {!isProduction && (
+          {isProduction ? (
+            <span className="block py-1.5 text-base text-gray-500 cursor-not-allowed opacity-60">Instant Jobs (Coming Soon)</span>
+          ) : (
             <a href="/instant-jobs" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Instant Jobs</a>
           )}
           <a href="/learn2earn" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Learn2Earn</a>
@@ -178,7 +182,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">Quick Links</h4>
             <nav className="text-gray-400 text-xs sm:text-sm">
               <a href="/jobs" className="block hover:text-orange-500 mb-1 sm:mb-2">Jobs</a>
-              {!isProduction && (
+              {isProduction ? (
+                <span className="block mb-1 sm:mb-2 text-gray-500 cursor-not-allowed opacity-60">Instant Jobs (Coming Soon)</span>
+              ) : (
                 <a href="/instant-jobs" className="block hover:text-orange-500 mb-1 sm:mb-2">Instant Jobs</a>
               )}
               <a href="/learn2earn" className="block hover:text-orange-500 mb-1 sm:mb-2">Learn2Earn</a>
