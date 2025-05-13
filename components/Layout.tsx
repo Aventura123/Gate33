@@ -6,6 +6,7 @@ import UserProfileButton from './UserProfileButton';
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const isProduction = process.env.NEXT_PUBLIC_DEPLOY_STAGE === "production";
 
   // Verificar se o usuário está logado para decidir quais botões mostrar
   useEffect(() => {
@@ -67,7 +68,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             
             {/* Funcionalidades de emprego e oportunidades */}
             <a href="/jobs" className="hover:text-orange-500">Jobs</a>
-            <a href="/instant-jobs" className="hover:text-orange-500">Instant Jobs</a>
+            {!isProduction && (
+              <a href="/instant-jobs" className="hover:text-orange-500">Instant Jobs</a>
+            )}
             <a href="/learn2earn" className="hover:text-orange-500">Learn2Earn</a>
             
             {/* Ferramentas e recursos */}
@@ -114,7 +117,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="border-t border-gray-700 my-0.5"></div>
           
           <a href="/jobs" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Jobs</a>
-          <a href="/instant-jobs" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Instant Jobs</a>
+          {!isProduction && (
+            <a href="/instant-jobs" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Instant Jobs</a>
+          )}
           <a href="/learn2earn" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Learn2Earn</a>
           
           <div className="border-t border-gray-700 my-0.5"></div>
@@ -173,7 +178,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">Quick Links</h4>
             <nav className="text-gray-400 text-xs sm:text-sm">
               <a href="/jobs" className="block hover:text-orange-500 mb-1 sm:mb-2">Jobs</a>
-              <a href="/instant-jobs" className="block hover:text-orange-500 mb-1 sm:mb-2">Instant Jobs</a>
+              {!isProduction && (
+                <a href="/instant-jobs" className="block hover:text-orange-500 mb-1 sm:mb-2">Instant Jobs</a>
+              )}
               <a href="/learn2earn" className="block hover:text-orange-500 mb-1 sm:mb-2">Learn2Earn</a>
               <a href="/nft" className="block hover:text-orange-500 mb-1 sm:mb-2">NFT</a>
               <a href="/crypto-tools" className="block hover:text-orange-500 mb-1 sm:mb-2">Crypto Tools</a>
