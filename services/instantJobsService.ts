@@ -63,12 +63,13 @@ class InstantJobsService {
       // Add a notification for administrators
       const notificationsCollection = collection(db, "adminNotifications");
       await addDoc(notificationsCollection, {
+        adminId: "admin", // ou o id real do admin se disponível
+        title: "Novo micro-task criado",
+        body: `New micro-task created by ${jobData.companyName}: ${jobData.title}`,
         type: "instantJob",
-        message: `New micro-task created by ${jobData.companyName}: ${jobData.title}`,
-        jobId: jobRef.id,
-        companyId: jobData.companyId,
         read: false,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        data: { jobId: jobRef.id, companyId: jobData.companyId }
       });
       
       return jobRef.id;
@@ -163,16 +164,14 @@ class InstantJobsService {
         updatedAt: serverTimestamp()
       });
       
-      // Send notification to the worker
-      const notifCollection = collection(db, "notifications");
-      await addDoc(notifCollection, {
-        recipientId: jobData.acceptedBy,
-        recipientType: 'worker',
+      // Send notification to the worker (funds deposited)
+      await createNotification({
+        userId: jobData.acceptedBy,
         title: "Funds deposited",
-        message: `Funds have been deposited in escrow for the task "${jobData.title}". You can start working now.`,
+        body: `Funds have been deposited in escrow for the task \"${jobData.title}\". You can start working now.`,
+        type: "funds_deposited",
         read: false,
-        jobId: jobId,
-        createdAt: serverTimestamp()
+        data: { jobId }
       });
       
     } catch (error) {
@@ -288,16 +287,14 @@ class InstantJobsService {
         }
       }
       
-      // Send notification to the worker
-      const notifCollection = collection(db, "notifications");
-      await addDoc(notifCollection, {
-        recipientId: jobData.acceptedBy,
-        recipientType: 'worker',
+      // Send notification to the worker (job approved)
+      await createNotification({
+        userId: jobData.acceptedBy,
         title: "Micro-task approved",
-        message: `Congratulations! The micro-task "${jobData.title}" has been approved. Payment will be sent soon.`,
+        body: `Congratulations! The micro-task \"${jobData.title}\" has been approved. Payment will be sent soon.`,
+        type: "instant_job_approved",
         read: false,
-        jobId: jobId,
-        createdAt: serverTimestamp()
+        data: { jobId }
       });
     } catch (error) {
       console.error("Error approving micro-task:", error);
@@ -376,14 +373,13 @@ class InstantJobsService {
         ? `New message with ${attachmentUrls.length} attachment(s) for task "${jobData.title}"`
         : `New message for task "${jobData.title}"`;
         
-      await addDoc(notifCollection, {
-        recipientId,
-        recipientType,
+      await createNotification({
+        userId: recipientId,
         title: "New message",
-        message: notifMessage,
+        body: notifMessage,
+        type: "instant_job_message",
         read: false,
-        jobId: messageData.jobId,
-        createdAt: serverTimestamp()
+        data: { jobId: messageData.jobId, attachments: attachmentUrls }
       });
       
       return messageRef.id;
@@ -514,15 +510,13 @@ class InstantJobsService {
       });
       
       // Send notification to the company
-      const notifCollection = collection(db, "notifications");
-      await addDoc(notifCollection, {
-        recipientId: jobData.companyId,
-        recipientType: 'company',
+      await createCompanyNotification({
+        companyId: jobData.companyId,
         title: "New application",
-        message: `${workerName} has applied for your micro-task "${jobData.title}"`,
+        body: `${workerName} has applied for your micro-task \"${jobData.title}\"`,
+        type: "instant_job_application",
         read: false,
-        jobId: jobId,
-        createdAt: serverTimestamp()
+        data: { jobId }
       });
     } catch (error) {
       console.error("Error applying for micro-task:", error);
