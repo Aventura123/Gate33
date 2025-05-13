@@ -58,19 +58,8 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
       const collectionName = adminId ? "adminNotifications" : "notifications";
       const notificationsRef = collection(db, collectionName);
       
-      // DEBUG: Lista todas as notificações na coleção (sem filtro)
       const allNotificationsSnapshot = await getDocs(collection(db, collectionName));
       const allNotifications = allNotificationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      console.log(`DEBUG: ALL ${userType} notifications in Firestore:`, allNotifications);
-      
-      // DEBUG: Mostrar apenas notificações para este usuário específico
-      if (companyId) {
-        const companyNotifications = allNotifications.filter((n: any) => n.companyId === companyId);
-        console.log('DEBUG: Notifications for this companyId:', companyNotifications);
-      } else if (adminId) {
-        const adminNotifications = allNotifications.filter((n: any) => n.adminId === adminId);
-        console.log('DEBUG: Notifications for this adminId:', adminNotifications);
-      }
       
       let q: Query<DocumentData> | undefined = undefined;
       if (userId) {
@@ -95,21 +84,14 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
       if (!q) {
         setLoading(false);
         return;
-      }      console.log('DEBUG: Fetching notifications for', 
-        userId ? `userId: ${userId}` : 
-        companyId ? `companyId: ${companyId}` : 
-        adminId ? `adminId: ${adminId}` : 'unknown');
-      
+      }      
       const snapshot = await getDocs(q);
       const allDocs = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
-      console.log('DEBUG: Raw notifications from Firestore:', allDocs);
       if (allDocs.length === 0) {
-        console.warn(`DEBUG: No notifications found for this ${userType}.`);
       }
 
       // Map the notifications to ensure proper formatting
       const mappedNotifications = allDocs.map((n: any) => {
-        console.log('DEBUG: Processing notification:', n);
         
         // Get the title from the right place
         let title = '';
@@ -145,7 +127,6 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
           }
         }
         
-        // Log the final notification object for debugging
         const result = {
           id: n.id,
           title,
@@ -156,16 +137,11 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
           data: n.data || {}
         };
         
-        console.log('DEBUG: Mapped notification:', result);
         return result;
       });
       
-      console.log('DEBUG: All mapped notifications:', mappedNotifications);
-      
-      // Set state with the mapped notifications
       setNotifications(mappedNotifications);
     } catch (err) {
-      console.error('ERROR fetching notifications:', err);
       setNotifications([]);
     }
     setLoading(false);
@@ -184,7 +160,6 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
       await updateDoc(doc(db, collectionName, id), { read: true });
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     } catch (error) {
-      console.error('Error marking notification as read:', error);
     }
   };
 
@@ -212,17 +187,12 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
       await Promise.all(batchDeletes);
       setNotifications([]);
     } catch (err) {
-      console.error("Erro ao excluir notificações:", err);
-      // Optionally handle error
     }
     setLoading(false);
   };
 
   // Render a single notification item
   const renderNotificationItem = (n: Notification) => {
-    // Debug the notification being rendered
-    console.log('DEBUG: Rendering notification item:', n);
-    
     // Format the date safely
     const formattedDate = (() => {
       try {
@@ -241,7 +211,6 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
         // If it's a string that can be parsed as a date
         return new Date(n.createdAt).toLocaleString();
       } catch (error) {
-        console.error('Error formatting date:', error);
         return '';
       }
     })();
