@@ -703,7 +703,7 @@ const PostJobPage = (): JSX.Element => {
               return (
                 <div
                   key={job.id}
-                  className={`bg-black/60 rounded-lg border border-orange-900/30 transition-all duration-200 cursor-pointer hover:shadow-lg ${isExpanded ? 'ring-2 ring-orange-500' : ''}`}
+                  className={`bg-black/60 rounded-lg border border-orange-900/30 transition-all duration-200 cursor-pointer hover:shadow-lg`}
                   onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
                 >
                   <div className="flex items-center justify-between p-4">
@@ -810,7 +810,7 @@ const PostJobPage = (): JSX.Element => {
                   {instantJobs.map((job) => (
                     <div
                       key={job.id}
-                      className={`bg-black/60 rounded-lg border border-orange-900/30 p-4 cursor-pointer hover:shadow-lg ${selectedJobId === job.id ? 'ring-2 ring-orange-500' : ''}`}
+                      className={`bg-black/60 rounded-lg border border-orange-900/30 p-4 cursor-pointer hover:shadow-lg`}
                       onClick={() => {
                         setSelectedJobId(job.id ?? null);
                         setSelectedJob(job);
@@ -2903,7 +2903,7 @@ const manualSyncStatuses = async () => {
               supportTickets.map((ticket) => (
                 <div
                   key={ticket.id}
-                  className={`bg-black/50 border border-gray-700 hover:border-orange-400 rounded-lg p-3 cursor-pointer transition-colors ${selectedTicketId === ticket.id ? 'border-orange-500' : ''}`}
+                  className={`bg-black/50 border border-gray-700 hover:border-orange-400 rounded-lg p-3 cursor-pointer transition-colors`}
                   onClick={() => handleSelectTicket(ticket)}
                 >
                   <div className="flex justify-between items-center">
@@ -3217,7 +3217,7 @@ const manualSyncStatuses = async () => {
                   <ul className="ml-6 mt-2 space-y-1">
                     <li>
                       <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'list' ? 'bg-orange-500 text-white ring-2 ring-orange-500' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'list' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
                         onClick={() => setJobOffersSubTab('list')}
                       >
                         All Offers
@@ -3225,7 +3225,7 @@ const manualSyncStatuses = async () => {
                     </li>
                     <li>
                       <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'new' ? 'bg-orange-500 text-white ring-2 ring-orange-500' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'new' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
                         onClick={() => setJobOffersSubTab('new')}
                       >
                         New Job Offer
@@ -3233,7 +3233,7 @@ const manualSyncStatuses = async () => {
                     </li>
                     <li>
                       <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'instant' ? 'bg-orange-500 text-white ring-2 ring-orange-500' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'instant' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
                         onClick={() => setJobOffersSubTab('instant')}
                       >
                         Instant Jobs
