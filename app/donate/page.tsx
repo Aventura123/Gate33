@@ -11,6 +11,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { USDT_ADDRESSES, TOKEN_DECIMALS } from '../../config/tokenConfig';
 import DonationThankYouCard from '../../components/ui/DonationThankYouCard';
+import { useWallet } from '../../components/WalletProvider';
+import { getHttpRpcUrls } from '../../config/rpcConfig';
 
 // Donation options
 interface CryptoCurrency {
@@ -164,9 +166,6 @@ const TOKEN_ADDRESSES: TokenContractAddresses = {
 };
 
 export default function DonatePage() {
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string>('');
-  const [currentNetwork, setCurrentNetwork] = useState<string | null>(null);
   const [selectedCrypto, setSelectedCrypto] = useState<CryptoCurrency | null>(null);
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
   const [donationAmount, setDonationAmount] = useState<string>('');
@@ -178,39 +177,16 @@ export default function DonatePage() {
   const [estimatedTokens, setEstimatedTokens] = useState<number | null>(null);
   const [usdValue, setUsdValue] = useState<number | null>(null);
 
-  // Check wallet connection when component mounts
-  useEffect(() => {
-    if (web3Service.isWalletConnected()) {
-      const walletInfo = web3Service.getWalletInfo();
-      if (walletInfo) {
-        setWalletConnected(true);
-        setWalletAddress(walletInfo.address);
-        
-        console.log("Wallet connected to network:", walletInfo.networkName);
-        
-        // Map network name to our network ids
-        const networkMap: Record<string, string> = {
-          'Ethereum Mainnet': 'ethereum',
-          'Ethereum': 'ethereum',
-          'Polygon': 'polygon',
-          'Polygon Mainnet': 'polygon',
-          'BSC': 'bsc',
-          'BSC Testnet': 'bsc',
-          'BNB Smart Chain': 'bsc',
-          'Avalanche': 'avalanche',
-          'Avalanche C-Chain': 'avalanche',
-          'Avalanche Mainnet': 'avalanche',
-          'Optimism': 'optimism',
-          'Optimism Mainnet': 'optimism',
-          'OP Mainnet': 'optimism'
-        };
-        
-        const mappedNetwork = networkMap[walletInfo.networkName] || null;
-        console.log("Mapped network:", mappedNetwork, "Original network name:", walletInfo.networkName);
-        setCurrentNetwork(mappedNetwork);
-      }
-    }
-  }, []);
+  // Use global wallet context
+  const {
+    walletAddress,
+    currentNetwork,
+    isConnectingWallet,
+    connectWallet,
+    disconnectWallet,
+    switchNetwork: contextSwitchNetwork,
+    isUsingWalletConnect,
+  } = useWallet();
 
   // Recalcular o valor estimado quando a criptomoeda ou a rede mudar
   useEffect(() => {
@@ -220,61 +196,16 @@ export default function DonatePage() {
     }
   }, [selectedCrypto, selectedNetwork, donationStep]);
 
-  // Handle wallet connection
-  const handleConnect = async (address: string) => {
-    setWalletAddress(address);
-    setWalletConnected(true);
-    
-    const walletInfo = web3Service.getWalletInfo();
-    if (walletInfo) {
-      console.log("Wallet connected to network:", walletInfo.networkName);
-      
-      // Map network name to our network ids
-      const networkMap: Record<string, string> = {
-        'Ethereum Mainnet': 'ethereum',
-        'Ethereum': 'ethereum',
-        'Polygon': 'polygon',
-        'Polygon Mainnet': 'polygon',
-        'BSC': 'bsc',
-        'BSC Testnet': 'bsc',
-        'BNB Smart Chain': 'bsc',
-        'Avalanche': 'avalanche',
-        'Avalanche C-Chain': 'avalanche',
-        'Avalanche Mainnet': 'avalanche',
-        'Optimism': 'optimism',
-        'Optimism Mainnet': 'optimism',
-        'OP Mainnet': 'optimism'
-      };
-      
-      const mappedNetwork = networkMap[walletInfo.networkName] || null;
-      console.log("Mapped network:", mappedNetwork, "Original network name:", walletInfo.networkName);
-      setCurrentNetwork(mappedNetwork);
-    }
-  };
-
-  // Handle wallet disconnect
-  const handleDisconnect = () => {
-    setWalletAddress('');
-    setWalletConnected(false);
-    setCurrentNetwork(null);
-  };
-
   // Handle cryptocurrency selection
   const handleCryptoSelect = (crypto: CryptoCurrency) => {
     setSelectedCrypto(crypto);
-    
-    // If only one network is available for this crypto, select it automatically
-    if (crypto.networks.length === 1) {
-      const network = networks.find(n => n.id === crypto.networks[0]) || null;
-      setSelectedNetwork(network);
-      setDonationStep('enter_amount');
-      
-      // Quando mudar diretamente para enter_amount, garantir que o valor seja recalculado
-      if (donationAmount && parseFloat(donationAmount) > 0) {
-        setTimeout(() => calculateEstimatedTokens(donationAmount, crypto.symbol), 100);
-      }
-    } else {
-      setDonationStep('select_network');
+    // Seleciona automaticamente a primeira rede disponível para a moeda
+    const defaultNetwork = networks.find(n => crypto.networks.includes(n.id)) || null;
+    setSelectedNetwork(defaultNetwork);
+    setDonationStep('enter_amount');
+    // Quando mudar diretamente para enter_amount, garantir que o valor seja recalculado
+    if (donationAmount && parseFloat(donationAmount) > 0) {
+      setTimeout(() => calculateEstimatedTokens(donationAmount, crypto.symbol), 100);
     }
   };
 
@@ -322,113 +253,106 @@ export default function DonatePage() {
       setError("Please enter a valid donation amount");
       return;
     }
-    
+    if (usdValue !== null && usdValue < 1) {
+      setError("Minimum donation is 1 USDT or equivalent");
+      return;
+    }
     setDonationStep('confirmation');
   };
 
   // Switch to the correct network if needed
   const switchNetwork = async (networkId: string): Promise<boolean> => {
     try {
-      if (!walletConnected) {
+      if (!walletAddress) {
         throw new Error("Please connect your wallet first");
       }
-      
       setError(null); // Clear any previous error
-      
+
+      // Corrige o nome da rede para buscar o RPC correto
+      const rpcNetworkId = networkId === 'binance' ? 'bsc' : networkId;
+      const rpcUrls = getHttpRpcUrls(rpcNetworkId);
+      if (!rpcUrls.length) {
+        throw new Error(`No RPC URLs configured for network ${networkId}`);
+      }
+
       // Configurações específicas para doações (usando mainnet para todas as redes)
-      const donationNetworkConfig = {
+      // Agora centralizado em config/rpcConfig.ts, não precisa mais de rpcUrl/currencySymbol duplicados
+      const networkConfigs: Record<string, { chainId: number; name: string; blockExplorer: string; currencySymbol: string }> = {
         'ethereum': {
-          chainId: 1, // Ethereum Mainnet
+          chainId: 1,
           name: 'Ethereum Mainnet',
-          rpcUrl: 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
+          blockExplorer: 'https://etherscan.io',
           currencySymbol: 'ETH',
-          blockExplorer: 'https://etherscan.io'
         },
         'polygon': {
-          chainId: 137, // Polygon Mainnet
+          chainId: 137,
           name: 'Polygon Mainnet',
-          rpcUrl: 'https://polygon-rpc.com',
+          blockExplorer: 'https://polygonscan.com',
           currencySymbol: 'MATIC',
-          blockExplorer: 'https://polygonscan.com'
         },
         'bsc': {
-          chainId: 56, // BSC Mainnet (diferente da BSC Testnet usada para jobs)
+          chainId: 56,
           name: 'Binance Smart Chain',
-          rpcUrl: 'https://bsc-dataseed.binance.org/',
+          blockExplorer: 'https://bscscan.com',
           currencySymbol: 'BNB',
-          blockExplorer: 'https://bscscan.com'
         },
         'avalanche': {
-          chainId: 43114, // Avalanche Mainnet
+          chainId: 43114,
           name: 'Avalanche C-Chain',
-          rpcUrl: 'https://api.avax.network/ext/bc/C/rpc',
+          blockExplorer: 'https://snowtrace.io',
           currencySymbol: 'AVAX',
-          blockExplorer: 'https://snowtrace.io'
         },
         'optimism': {
-          chainId: 10, // Optimism Mainnet
+          chainId: 10,
           name: 'Optimism',
-          rpcUrl: 'https://mainnet.optimism.io',
+          blockExplorer: 'https://optimistic.etherscan.io',
           currencySymbol: 'ETH',
-          blockExplorer: 'https://optimistic.etherscan.io'
-        }
+        },
       };
-      
-      // Verificar se a rede solicitada existe em nossa configuração de doações
-      if (!donationNetworkConfig[networkId as keyof typeof donationNetworkConfig]) {
+
+      if (!networkConfigs[networkId]) {
         throw new Error(`Network ${networkId} is not supported for donations`);
       }
-      
-      // Obter configuração da rede para doações
-      const networkConfig = donationNetworkConfig[networkId as keyof typeof donationNetworkConfig];
-      
-      // Show processing message
+      const netConfig = networkConfigs[networkId];
       setError("Requesting network switch... Please confirm in your wallet.");
-      
       if (!window.ethereum) {
         throw new Error("No crypto wallet found. Please install MetaMask.");
       }
-
       try {
-        // Tentar trocar para a rede
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: `0x${networkConfig.chainId.toString(16)}` }],
+          params: [{ chainId: `0x${netConfig.chainId.toString(16)}` }],
         });
-        
-        setCurrentNetwork(networkId);
         setError(null); // Clear message after success
         return true;
       } catch (switchError: any) {
-        // Se a rede não está adicionada à MetaMask, tentamos adicioná-la
         if (switchError.code === 4902) {
           try {
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
               params: [
                 {
-                  chainId: `0x${networkConfig.chainId.toString(16)}`,
-                  chainName: networkConfig.name,
+                  chainId: `0x${netConfig.chainId.toString(16)}`,
+                  chainName: netConfig.name,
                   nativeCurrency: {
-                    name: networkConfig.currencySymbol,
-                    symbol: networkConfig.currencySymbol,
+                    name: netConfig.currencySymbol,
+                    symbol: netConfig.currencySymbol,
                     decimals: 18,
                   },
-                  rpcUrls: [networkConfig.rpcUrl],
-                  blockExplorerUrls: [networkConfig.blockExplorer],
+                  rpcUrls: rpcUrls,
+                  blockExplorerUrls: [netConfig.blockExplorer],
                 },
               ],
             });
             return await switchNetwork(networkId); // Tenta novamente após adicionar
           } catch (addError: any) {
             console.error("Error adding network:", addError);
-            setError(`Unable to add ${selectedNetwork?.name}: ${addError.message}`);
+            setError(`Unable to add ${selectedNetwork?.name || networkId}: ${addError.message}`);
             return false;
           }
         }
-        
         console.error("Error switching network:", switchError);
-        setError(`Unable to switch to ${selectedNetwork?.name}: ${switchError.message}`);
+        setError(`Unable to switch to ${selectedNetwork?.name || networkId}: ${switchError.message}`);
         return false;
       }
     } catch (error: any) {
@@ -466,7 +390,7 @@ export default function DonatePage() {
         throw new Error("Donation details are incomplete.");
       }
   
-      if (!walletConnected) {
+      if (!walletAddress) {
         throw new Error("Please connect your wallet first.");
       }
   
@@ -712,11 +636,7 @@ export default function DonatePage() {
             
             <div className="mb-8 flex justify-center">
               <div className="inline-flex rounded-md shadow">
-                <WalletButton
-                  onConnect={handleConnect}
-                  onDisconnect={handleDisconnect}
-                  className="px-8 py-3"
-                />
+                <WalletButton className="px-8 py-3" />
               </div>
             </div>
             
@@ -761,7 +681,8 @@ export default function DonatePage() {
                 </div>
               )}
 
-              {donationStep === 'select_network' && selectedCrypto && (
+              {/* Remove select_network step and go directly to enter_amount */}
+              {donationStep === 'enter_amount' && selectedCrypto && selectedNetwork && (
                 <div>
                   <button 
                     onClick={() => setDonationStep('select_crypto')} 
@@ -770,70 +691,28 @@ export default function DonatePage() {
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
-                    Back to Cryptocurrencies
-                  </button>
-                  
-                  <h3 className="text-xl font-semibold mb-4">2. Select Network</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {networks
-                      .filter(network => selectedCrypto.networks.includes(network.id))
-                      .map((network) => (
-                        <div 
-                          key={network.id}
-                          className="p-4 rounded-lg cursor-pointer border border-gray-700 hover:border-orange-500 hover:bg-gray-800 transition duration-200"
-                          onClick={() => handleNetworkSelect(network)}
-                        >
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 mr-3 flex-shrink-0">
-                              <div className="w-full h-full bg-gray-700 rounded-full flex items-center justify-center">
-                                {network.id.substring(0, 3).toUpperCase()}
-                              </div>
-                            </div>
-                            <div>
-                              <h4 className="font-medium">{network.name}</h4>
-                              <p className="text-sm text-gray-400">
-                                Supports: {network.supportedTokens.join(', ')}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {donationStep === 'enter_amount' && selectedCrypto && selectedNetwork && (
-                <div>
-                  <button 
-                    onClick={() => selectedCrypto.networks.length > 1 ? setDonationStep('select_network') : setDonationStep('select_crypto')} 
-                    className="mb-4 text-orange-400 hover:text-orange-300 flex items-center"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
                     Back
                   </button>
                   
-                  <h3 className="text-xl font-semibold mb-4">3. Enter Donation Amount</h3>
+                  <h3 className="text-xl font-semibold mb-4">2. Enter Donation Amount</h3>
                   
                   <div className="mb-6">
                     <div className="flex items-center bg-gray-800 rounded-lg p-3 border border-gray-700">
                       <div className="mr-3">
                         <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-                          {selectedCrypto.symbol}
+                          {selectedCrypto?.symbol}
                         </div>
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium">{selectedCrypto.name}</p>
-                        <p className="text-sm text-gray-400">on {selectedNetwork.name}</p>
+                        <p className="font-medium">{selectedCrypto?.name}</p>
+                        <p className="text-sm text-gray-400">on {selectedNetwork?.name}</p>
                       </div>
                     </div>
                   </div>
                   
                   <div className="mb-6">
                     <label htmlFor="amount" className="block text-sm font-medium text-gray-400 mb-2">
-                      Amount ({selectedCrypto.symbol})
+                      Amount ({selectedCrypto?.symbol})
                     </label>
                     <div className="mt-1 relative rounded-md shadow-sm">
                       <input
@@ -846,7 +725,7 @@ export default function DonatePage() {
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <span className="text-gray-500 sm:text-sm">
-                          {selectedCrypto.symbol}
+                          {selectedCrypto?.symbol}
                         </span>
                       </div>
                     </div>
@@ -856,12 +735,21 @@ export default function DonatePage() {
                   {usdValue !== null && estimatedTokens !== null && (
                     <div className="mt-4 p-4 bg-gray-800/60 border border-orange-500/20 rounded-lg text-center">
                       <p className="text-sm text-gray-300 mb-2">Estimated value of your donation:</p>
-                      <p className="text-xl font-bold text-white mb-1">
-                        ${usdValue.toFixed(2)} <span className="text-gray-400">USD</span></p>
+                      {usdValue !== null ? (
+                        <p className="text-xl font-bold text-white mb-1">
+                          ${usdValue.toFixed(2)} <span className="text-gray-400">USD</span>
+                        </p>
+                      ) : (
+                        <p className="text-xl font-bold text-white mb-1">- <span className="text-gray-400">USD</span></p>
+                      )}
                       <p className="text-sm text-gray-400 mb-2">You will receive approximately:</p>
-                      <p className="text-2xl font-bold text-orange-500 mb-1">
-                        {Math.floor(estimatedTokens)} <span className="text-gray-300">G33 Tokens</span>
-                      </p>
+                      {estimatedTokens !== null ? (
+                        <p className="text-2xl font-bold text-orange-500 mb-1">
+                          {Math.floor(estimatedTokens)} <span className="text-gray-300">G33 Tokens</span>
+                        </p>
+                      ) : (
+                        <p className="text-2xl font-bold text-orange-500 mb-1">- <span className="text-gray-300">G33 Tokens</span></p>
+                      )}
                       <p className="text-xs text-gray-400 mt-2">1 G33 Token for each $1 USD donated</p>
                     </div>
                   )}
@@ -871,7 +759,7 @@ export default function DonatePage() {
                       type="button"
                       className="px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                       onClick={handleConfirmDonation}
-                      disabled={!donationAmount || parseFloat(donationAmount) <= 0}
+                      disabled={!donationAmount || parseFloat(donationAmount) <= 0 || (usdValue !== null && usdValue < 1)}
                     >
                       Continue
                     </button>
@@ -891,97 +779,39 @@ export default function DonatePage() {
                     Back
                   </button>
                   
-                  <h3 className="text-xl font-semibold mb-4">4. Confirm Your Donation</h3>
+                  <h3 className="text-xl font-semibold mb-4">3. Confirm Your Donation</h3>
                   
                   <div className="bg-gray-800 rounded-lg p-6 mb-6">
                     <div className="flex justify-between mb-4">
                       <span className="text-gray-400">Amount:</span>
                       <span className="font-medium">
-                        {donationAmount} {selectedCrypto.symbol}
+                        {donationAmount} {selectedCrypto?.symbol}
                       </span>
                     </div>
-                    
                     <div className="flex justify-between mb-4">
                       <span className="text-gray-400">Network:</span>
                       <span className="font-medium">
-                        {selectedNetwork.name}
+                        {currentNetwork ? (networks.find(n => n.id === currentNetwork)?.name || currentNetwork) : (selectedNetwork?.name || '-')}
                       </span>
                     </div>
-                    
-                    {selectedNetwork.id === 'avalanche' && selectedCrypto.symbol === 'AVAX' ? (
-                      <div className="mt-6">
-                        {walletConnected ? (
-                          <div>
-                            <p className="text-xs text-gray-400 mb-2">
-                              Connected wallet: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
-                            </p>
-                            
-                            {/* Exibir aviso apenas quando a rede atual for diferente da rede selecionada */}
-                            {walletConnected && currentNetwork && selectedNetwork && currentNetwork !== selectedNetwork.id ? (
-                              <div className="p-3 bg-yellow-900/30 border border-yellow-800/50 rounded-lg mb-4">
-                                <p className="text-sm mb-3">
-                                  You need to switch to {selectedNetwork.name} network to continue.
-                                </p>
-                                <button
-                                  type="button"
-                                  className="w-full px-4 py-2 text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                                  onClick={() => switchNetwork(selectedNetwork.id)}
-                                >
-                                  Switch to {selectedNetwork.name}
-                                </button>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <div className="p-3 bg-yellow-900/30 border border-yellow-800/50 rounded-lg mb-4">
-                            <p className="text-sm">
-                              Please connect your wallet to proceed with the donation.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="mt-6">
-                        {walletConnected ? (
-                          <div>
-                            <p className="text-xs text-gray-400 mb-2">
-                              Connected wallet: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
-                            </p>
-                            
-                            {/* Exibir aviso apenas quando a rede atual for diferente da rede selecionada */}
-                            {walletConnected && currentNetwork && selectedNetwork && currentNetwork !== selectedNetwork.id ? (
-                              <div className="p-3 bg-yellow-900/30 border border-yellow-800/50 rounded-lg mb-4">
-                                <p className="text-sm mb-3">
-                                  You need to switch to {selectedNetwork.name} network to continue.
-                                </p>
-                                <button
-                                  type="button"
-                                  className="w-full px-4 py-2 text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                                  onClick={() => switchNetwork(selectedNetwork.id)}
-                                >
-                                  Switch to {selectedNetwork.name}
-                                </button>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <div className="p-3 bg-yellow-900/30 border border-yellow-800/50 rounded-lg mb-4">
-                            <p className="text-sm">
-                              Please connect your wallet to proceed with the donation.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex justify-between mb-4">
+                      <span className="text-gray-400">G33 Tokens:</span>
+                      <span className="font-medium">
+                        {estimatedTokens !== null ? Math.floor(estimatedTokens) : '-'} G33
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mb-2">
+                      Wallet: {walletAddress ? `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}` : '-'}
+                    </p>
                   </div>
                   
                   <div className="flex justify-center">
-                    {selectedNetwork.id === 'avalanche' && selectedCrypto.symbol === 'AVAX' ? (
+                    {selectedNetwork?.id === 'avalanche' && selectedCrypto?.symbol === 'AVAX' ? (
                       <button
                         type="button"
                         className="px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                         onClick={processDonation}
-                        disabled={!walletConnected || isProcessing}
+                        disabled={!walletAddress || isProcessing}
                       >
                         {isProcessing ? "Processing..." : "Complete Donation"}
                       </button>
@@ -990,7 +820,7 @@ export default function DonatePage() {
                         type="button"
                         className="px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                         onClick={processDonation}
-                        disabled={!walletConnected || isProcessing}
+                        disabled={!walletAddress || isProcessing}
                       >
                         {isProcessing ? "Processing..." : "Complete Donation"}
                       </button>

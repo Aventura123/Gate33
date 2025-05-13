@@ -108,6 +108,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       let walletInfo;
       if (type === 'walletconnect') {
         walletInfo = await web3Service.connectWalletConnect();
+        // Defensive WalletConnect session event listener to prevent errors
+        if (web3Service.wcV2Provider && typeof web3Service.wcV2Provider.on === 'function') {
+          // Prevent duplicate listeners
+          web3Service.wcV2Provider.removeAllListeners?.('session_event');
+          web3Service.wcV2Provider.on('session_event', (event: any) => {
+            // Defensive: log or ignore session events to prevent WalletConnect errors
+            // console.debug('[WalletConnect] session_event:', event);
+          });
+        }
       } else {
         walletInfo = await web3Service.connectWallet();
       }

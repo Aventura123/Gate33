@@ -34,6 +34,15 @@ const WalletModal: React.FC<WalletModalProps> = ({
   onDisconnect, 
   onSwitchNetwork 
 }) => {  
+  // Show loading if currentNetwork is not ready
+  if (!currentNetwork) {
+    return (
+      <ModalBackdrop open={open} onClose={onClose}>
+        <div className="p-8 text-center text-orange-400">Loading network info...</div>
+      </ModalBackdrop>
+    );
+  }
+
   // Helper for network details  
   const getNetworkDetails = (network: string) => {
     switch (network) {
