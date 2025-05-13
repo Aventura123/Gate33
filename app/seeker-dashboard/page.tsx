@@ -8,9 +8,10 @@ import { db } from "../../lib/firebase"; // Assuming db instance is correctly co
 import instantJobsService, { InstantJob, JobMessage } from '../../services/instantJobsService';
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
+import { BellIcon } from '@heroicons/react/24/outline';
 import WalletButton from '../../components/WalletButton';
 import { web3Service } from "../../services/web3Service";
-import NotificationsPanel from "../../components/ui/NotificationsPanel";
+import NotificationsPanel, { NotificationBell } from '../../components/ui/NotificationsPanel';
 
 // Function to create a notification for seeker
 async function createSeekerNotification({
@@ -1969,6 +1970,10 @@ const SeekerDashboard = () => {
   // Only allow sending messages if ticket is open AND acceptedBy is set
   const canSendMessage = selectedTicket && selectedTicket.status === 'open' && selectedTicket.acceptedBy;
 
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  
   // Reference to the end of messages element (for auto-scroll)
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -1976,6 +1981,54 @@ const SeekerDashboard = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [ticketMessages]);
+
+  // Fetch seeker's notifications from the notifications collection every 10s
+  useEffect(() => {
+    if (!seekerId || !db) return;
+    let interval: NodeJS.Timeout;
+    
+    const fetchNotifications = async () => {
+      try {
+        const q = query(
+          collection(db, "notifications"),
+          where("userId", "==", seekerId)
+        );
+        const snapshot = await getDocs(q);
+        const notifs: Notification[] = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as Notification));
+        notifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setNotifications(notifs);
+        setUnreadCount(notifs.filter(n => !n.read).length);
+      } catch (err) {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
+    };
+
+    fetchNotifications();
+    interval = setInterval(fetchNotifications, 10000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [seekerId, db]);
+
+  // Mark all as read when opening the notification panel
+  const handleOpenNotifications = async () => {
+    setShowNotifications(true);
+    const unread = notifications.filter(n => !n.read);
+    for (const notif of unread) {
+      await updateDoc(doc(db, 'notifications', notif.id), { read: true });
+    }
+  };
+
+  // Mark notification as read when it is viewed (e.g., on click or scroll into view)
+  const markNotificationAsRead = async (notifId: string) => {
+    if (!db) return;
+    await updateDoc(doc(db, 'notifications', notifId), { read: true });
+  };
 
   // Detect and process notifications that require wallet connection
   useEffect(() => {
@@ -2062,6 +2115,28 @@ const SeekerDashboard = () => {
     }
   };
 
+  // Notification unread count state
+  useEffect(() => {
+    if (!seekerId || !db) return;
+    let interval: NodeJS.Timeout;
+    const fetchUnread = async () => {
+      try {
+        const q = query(
+          collection(db, "notifications"),
+          where("userId", "==", seekerId),
+          where("read", "==", false)
+        );
+        const snapshot = await getDocs(q);
+        setUnreadCount(snapshot.size);
+      } catch {
+        setUnreadCount(0);
+      }
+    };
+    fetchUnread();
+    interval = setInterval(fetchUnread, 10000);
+    return () => clearInterval(interval);
+  }, [seekerId]);
+
   return (    <Layout>
       <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex relative">
         {/* Mobile menu toggle button */}
@@ -2112,7 +2187,9 @@ const SeekerDashboard = () => {
               />
             </div>
             {/* Notification bell absolutely positioned top right */}
-            <NotificationsPanel userId={seekerId} />
+            <div className="absolute top-2 right-2 z-20">
+              <NotificationBell unreadCount={unreadCount} onClick={() => setShowNotifications(true)} />
+            </div>
             <h2 className="text-xl font-semibold text-orange-400 w-full text-center mt-2">{seekerProfile.name || "User"}</h2>
             <p className="text-gray-400 text-sm truncate w-full text-center">{seekerProfile.email}</p>
             {/* Discreet Connect Wallet Button */}
@@ -2363,6 +2440,13 @@ const SeekerDashboard = () => {
             </div>
           )}
         </section>
+        {/* Notification panel (right side overlay) */}
+        <NotificationsPanel
+          userId={seekerId}
+          open={showNotifications}
+          onClose={() => setShowNotifications(false)}
+          overlay
+        />
       </main>
     </Layout>
   );

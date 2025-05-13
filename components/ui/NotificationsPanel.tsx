@@ -1,5 +1,6 @@
 import { BellIcon } from '@heroicons/react/24/outline';
-import { Fragment, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { collection, query, where, getDocs, orderBy, updateDoc, doc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 
@@ -18,21 +19,47 @@ const POLL_INTERVAL = 10000; // 10 seconds
 interface NotificationsPanelProps {
   userId?: string;
   companyId?: string;
+  open?: boolean;
+  onClose?: () => void;
+  overlay?: boolean;
 }
 
-export default function NotificationsPanel({ userId, companyId }: NotificationsPanelProps) {
+export function NotificationBell({ unreadCount, onClick }: { unreadCount: number; onClick: () => void }) {
+  return (
+    <button
+      className="relative focus:outline-none"
+      onClick={onClick}
+      aria-label="Notifications"
+    >
+      <BellIcon className="h-7 w-7 text-orange-400 hover:text-orange-300 transition" />
+      {unreadCount > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold">{unreadCount}</span>
+      )}
+    </button>
+  );
+}
+
+export default function NotificationsPanel({ userId, companyId, open, onClose, overlay }: NotificationsPanelProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showPanel, setShowPanel] = useState(false);
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const fetchNotifications = async () => {
-    const filterId = userId || companyId;
-    const filterField = userId ? "userId" : companyId ? "companyId" : null;
-    if (!filterId || !filterField) return;
+    let filterId, filterField, collectionName;
+    if (userId) {
+      filterId = userId;
+      filterField = "userId";
+      collectionName = "seekersNotifications";
+    } else if (companyId) {
+      filterId = companyId;
+      filterField = "companyId";
+      collectionName = "notifications";
+    } else {
+      return;
+    }
     setLoading(true);
     try {
-      const notificationsRef = collection(db, "notifications");
+      const notificationsRef = collection(db, collectionName);
       const q = query(
         notificationsRef,
         where(filterField, "==", filterId),
@@ -63,46 +90,47 @@ export default function NotificationsPanel({ userId, companyId }: NotificationsP
     } catch {}
   };
 
-  return (
-    <div className="relative inline-block text-left">
-      <button
-        className="relative focus:outline-none"
-        onClick={() => setShowPanel(!showPanel)}
-        aria-label="Notifications"
-      >
-        <BellIcon className="h-7 w-7 text-orange-400" />
-        {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
-            {unreadCount}
-          </span>
-        )}
-      </button>
-      {showPanel && (
-        <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-          <div className="py-2 px-4">
-            <h3 className="text-lg font-semibold mb-2">Notifications</h3>
+  // Drawer overlay mode
+  if (overlay && open) {
+    return createPortal(
+      <div className="fixed inset-0 z-[100] flex justify-end">
+        <div className="fixed inset-0 bg-black/80" onClick={onClose} />
+        <div className="relative w-full max-w-md h-full bg-[#18120b] border-l border-orange-900 shadow-2xl flex flex-col animate-slide-in-right">
+          <div className="flex items-center justify-between p-4 border-b border-orange-900">
+            <span className="text-lg font-bold text-orange-400">Notifications</span>
+            <button onClick={onClose} className="text-orange-400 hover:text-orange-200" title="Close notifications panel" aria-label="Close notifications panel">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {loading ? (
-              <div className="text-gray-500">Loading...</div>
+              <div className="text-gray-400 text-center mt-10">Loading...</div>
             ) : notifications.length === 0 ? (
-              <div className="text-gray-500">No notifications</div>
+              <div className="text-gray-400 text-center mt-10">No notifications.</div>
             ) : (
-              <ul className="max-h-80 overflow-y-auto">
-                {notifications.map(n => (
-                  <li
-                    key={n.id}
-                    className={`p-2 rounded cursor-pointer ${n.read ? 'bg-gray-100' : 'bg-orange-50 font-bold'}`}
-                    onClick={() => markAsRead(n.id)}
-                  >
-                    <div className="text-sm">{n.title}</div>
-                    <div className="text-xs text-gray-600">{n.body}</div>
-                    <div className="text-xs text-gray-400">{new Date(n.createdAt?.toDate?.() || n.createdAt).toLocaleString()}</div>
-                  </li>
-                ))}
-              </ul>
+              notifications.map(n => (
+                <div
+                  key={n.id}
+                  className={`p-3 rounded-lg border ${n.read ? 'border-gray-700 bg-black/40' : 'border-orange-500 bg-orange-900/20'} text-white shadow-sm`}
+                  tabIndex={0}
+                  onClick={() => !n.read && markAsRead(n.id)}
+                  onFocus={() => !n.read && markAsRead(n.id)}
+                >
+                  <div className="font-semibold text-orange-300 mb-1">{n.title || 'Notification'}</div>
+                  <div className="text-sm text-gray-200">{n.body}</div>
+                  <div className="text-xs text-gray-400 mt-1">{n.createdAt ? new Date(n.createdAt?.toDate?.() || n.createdAt).toLocaleString() : ''}</div>
+                </div>
+              ))
             )}
           </div>
         </div>
-      )}
-    </div>
-  );
+      </div>,
+      typeof window !== 'undefined' ? document.body : ({} as any)
+    );
+  }
+
+  // Bell only (for sidebar/profile card)
+  return null;
 }

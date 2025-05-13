@@ -20,9 +20,7 @@ import MessageSystem from '../../components/instant-jobs/MessageSystem';
 import WalletButton from '../../components/WalletButton';
 import JobPostPayment from "./JobPostPayment";
 import CompanyWelcome from "./CompanyWelcome";
-import { BellIcon } from '@heroicons/react/24/outline';
-// Import the new notification component
-import NotificationsPanel from "../../components/ui/NotificationsPanel";
+import NotificationsPanel, { NotificationBell } from '../../components/ui/NotificationsPanel';
 
 // Interface for Support Ticket
 interface SupportTicket {
@@ -141,8 +139,7 @@ const PostJobPage = (): JSX.Element => {
   const [isUploading, setIsUploading] = useState(false);
   const [companyId, setCompanyId] = useState("");
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<string[]>([]); // State for notifications
   // Add state for company profile data with new fields initialized
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile>({
     name: "",
@@ -268,6 +265,8 @@ const PostJobPage = (): JSX.Element => {
 
   const isProduction = process.env.NEXT_PUBLIC_DEPLOY_STAGE === 'production';
 
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   // Function to fetch pricing plans from Firebase
   const fetchPricingPlans = useCallback(async () => {
     try {
@@ -471,6 +470,41 @@ const PostJobPage = (): JSX.Element => {
       reloadData();
     }
   }, [activeTab, reloadData]);
+
+  // Function to fetch notifications
+  const fetchNotifications = useCallback(async () => {
+    if (!db || !companyId) return;
+    try {
+      const jobCollection = collection(db, "jobs");
+      const q = query(jobCollection, where("companyId", "==", companyId));
+      const jobSnapshot = await getDocs(q);
+  
+      const fetchedNotifications: string[] = [];
+      const currentDate = new Date();
+  
+      jobSnapshot.docs.forEach((doc) => {
+        const jobData = doc.data();
+        const createdAt = jobData.createdAt?.toDate(); // Assuming Firestore timestamp
+        if (createdAt) {
+          const diffDays = Math.floor((currentDate.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffDays === 5) {
+            fetchedNotifications.push(`Your job "${jobData.title}" will expire in 25 days.`);
+          }
+        }
+      });
+  
+      setNotifications(fetchedNotifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  }, [db, companyId]);
+  
+  // Fetch notifications when the "notifications" tab is active
+  useEffect(() => {
+    if (activeTab === "notifications") {
+      fetchNotifications();
+    }
+  }, [activeTab, fetchNotifications]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -720,11 +754,9 @@ const PostJobPage = (): JSX.Element => {
                           <span className="text-orange-300">Company:</span> {job.company}
                         </div>
                         <div>
-                          <span className="text-orange-300">Employment Type:</span> {job.employmentType || '-'}
-                        </div>
+                          <span className="text-orange-300">Employment Type:</span> {job.employmentType || '-'}</div>
                         <div>
-                          <span className="text-orange-300">Experience Level:</span> {job.experienceLevel || '-'}
-                        </div>
+                          <span className="text-orange-300">Experience Level:</span> {job.experienceLevel || '-'}</div>
                         <div>
                           <span className="text-orange-300">Plan:</span> {planName}
                         </div>
@@ -894,6 +926,23 @@ const PostJobPage = (): JSX.Element => {
           </div>
         </form>
       </div>
+    );
+  };
+
+  // Function to render the Notifications tab
+  const renderNotifications = () => {
+    if (notifications.length === 0) {
+      return <p className="text-gray-300">No notifications at the moment.</p>;
+    }
+  
+    return (
+      <ul className="space-y-4">
+        {notifications.map((notification, index) => (
+          <li key={index} className="bg-black/50 p-4 rounded-lg text-gray-300">
+            {notification}
+          </li>
+        ))}
+      </ul>
     );
   };
 
@@ -1354,6 +1403,13 @@ const InstantJobDetailCard: React.FC<{
         return renderInstantJobsTab();
       case "settings":
         return renderSettings();
+      case "notifications":
+        return (
+          <div className="bg-black/70 p-10 rounded-lg shadow-lg">
+            <h2 className="text-3xl font-semibold text-orange-500 mb-6">Notifications</h2>
+            {renderNotifications()}
+          </div>
+        );
       case "learn2earn":
         return (
           <div className="bg-black/70 p-10 rounded-lg shadow-lg">
@@ -2826,6 +2882,18 @@ const manualSyncStatuses = async () => {
               New Ticket
             </button>
           </div>
+          {/* Notifications at the top */}
+          {notifications.length > 0 && (
+            <div className="mb-4">
+              <ul className="space-y-2">
+                {notifications.map((notification, index) => (
+                  <li key={index} className="bg-black/50 p-2 rounded text-gray-300 text-sm">
+                    {notification}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {/* Ticket list */}
           <div className="space-y-2">
             {supportTickets.length === 0 ? (
@@ -3069,6 +3137,29 @@ const manualSyncStatuses = async () => {
       setMobileMenuOpen(false); // Close menu after tab selection on mobile
     }
   };
+
+  // Fetch unread count for bell badge
+  useEffect(() => {
+    if (!companyId || !db) return;
+    let interval: NodeJS.Timeout;
+    const fetchUnread = async () => {
+      try {
+        const q = query(
+          collection(db, "notifications"),
+          where("companyId", "==", companyId),
+          where("read", "==", false)
+        );
+        const snapshot = await getDocs(q);
+        setUnreadCount(snapshot.size);
+      } catch {
+        setUnreadCount(0);
+      }
+    };
+    fetchUnread();
+    interval = setInterval(fetchUnread, 10000);
+    return () => clearInterval(interval);
+  }, [companyId]);
+
   return (
     <Layout>
       <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex relative">
@@ -3096,7 +3187,7 @@ const manualSyncStatuses = async () => {
           className={`${isMobile ? 'fixed left-0 top-0 h-full z-40 transform transition-transform duration-300 ease-in-out ' + (mobileMenuOpen ? 'translate-x-0' : '-translate-x-full') : 'relative'} w-full md:w-1/4 bg-black/70 p-6 flex flex-col`}
         >
           {/* Profile Photo Section */}
-          <div className="flex flex-col items-center mb-6">
+          <div className="relative flex flex-col items-center mb-6">
             <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
               {/* Loading Spinner */}
               {(isUploading || isLoadingProfile) && (
@@ -3118,6 +3209,10 @@ const manualSyncStatuses = async () => {
                 onChange={handleUserPhotoChange}
                 disabled={isUploading || isLoadingProfile}
               />
+            </div>
+            {/* Notification bell absolutely positioned top right */}
+            <div className="absolute top-2 right-2 z-20">
+              <NotificationBell unreadCount={unreadCount} onClick={() => setShowNotifications(true)} />
             </div>
             {/* Display Company Name from Profile */}
             <h2 className="text-xl font-bold text-orange-500 text-center break-words">
@@ -3203,6 +3298,17 @@ const manualSyncStatuses = async () => {
                   Settings
                 </button>
               </li>
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "notifications" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  onClick={() => {
+                    handleTabChange("notifications");
+                    fetchNotifications();
+                  }}
+                >
+                  Notifications
+                </button>
+              </li>
             </ul>
           </div>
           
@@ -3230,9 +3336,13 @@ const manualSyncStatuses = async () => {
             ) : jobOffersSubTab === 'instant' ? renderInstantJobsTab() : null
           ) : renderContent()}
         </section>
-
-        {/* Notification bell and panel (reusable component) */}
-        <NotificationsPanel companyId={companyId} />
+        {/* Notification panel (right side overlay) */}
+        <NotificationsPanel
+          companyId={companyId}
+          open={showNotifications}
+          onClose={() => setShowNotifications(false)}
+          overlay
+        />
       </main>
     </Layout>
   );
