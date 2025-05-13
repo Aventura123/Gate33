@@ -600,34 +600,14 @@ const SupportDashboard: React.FC = () => {
     try {
       if (!db) throw new Error("Firestore is not initialized.");
       const ticketsCollection = collection(db, "supportTickets");
-      
-      // Only fetch company tickets that are not closed
-      const activeCompanyTicketsQuery = query(
-        ticketsCollection,
-        where("userType", "==", "company"),
-        where("status", "!=", "closed")
-      );
-      
-      const querySnapshot = await getDocs(activeCompanyTicketsQuery);
+      // Fetch all company tickets, filter in memory
+      const querySnapshot = await getDocs(query(ticketsCollection, where("userType", "==", "company")));
       const ticketsList = querySnapshot.docs
         .map((doc) => ({
           id: doc.id,
-          subject: doc.data().subject || '',
-          category: doc.data().category || '',
-          userName: doc.data().userName || '',
-          userType: doc.data().userType || '',
-          description: doc.data().description || '',
-          status: doc.data().status || 'open',
-          createdAt: doc.data().createdAt || '',
-          updatedAt: doc.data().updatedAt || '',
-          acceptedBy: doc.data().acceptedBy,
-          acceptedByName: doc.data().acceptedByName,
-          attachmentUrl: doc.data().attachmentUrl,
-          closedBy: doc.data().closedBy,
-          closedByName: doc.data().closedByName,
-          closedAt: doc.data().closedAt,
-        }));
-        
+          ...(doc.data() as { status?: string })
+        }))
+        .filter((t) => t.status !== "closed");
       setCompanyTickets(ticketsList);
       setFilteredCompanyTickets(ticketsList);
     } catch (error) {

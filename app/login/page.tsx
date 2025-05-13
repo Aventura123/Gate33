@@ -43,6 +43,25 @@ function UnifiedLoginPage() {
     }
 
     try {
+      // Check if email exists in admins collection (block admin login for both forms)
+      const adminsRef = collection(db, "admins");
+      const adminsQ = query(adminsRef, where("email", "==", seekerEmail));
+      const adminsSnapshot = await getDocs(adminsQ);
+      if (!adminsSnapshot.empty) {
+        setError("This email is not registered for login on this page.");
+        setIsLoading(false);
+        return;
+      }
+      // Check if email exists in companies collection
+      const companiesRef = collection(db, "companies");
+      const companiesQ = query(companiesRef, where("email", "==", seekerEmail));
+      const companiesSnapshot = await getDocs(companiesQ);
+      if (!companiesSnapshot.empty) {
+        setError("This email is not registered for login on this page.");
+        setIsLoading(false);
+        return;
+      }
+
       console.log("Starting login process for email:", seekerEmail);
 
       const seekersRef = collection(db, "seekers");
@@ -94,8 +113,25 @@ function UnifiedLoginPage() {
     setError("");
     setIsLoading(true);
     try {
-      console.log("Trying to log in with:", { companyUsername });
-      // Send email and password as expected by backend
+      // Check if username/email exists in admins collection (block admin login for both forms)
+      const adminsRef = collection(db, "admins");
+      const adminsQ = query(adminsRef, where("email", "==", companyUsername));
+      const adminsSnapshot = await getDocs(adminsQ);
+      if (!adminsSnapshot.empty) {
+        setError("This email is not registered for login on this page.");
+        setIsLoading(false);
+        return;
+      }
+      // Check if username/email exists in seekers collection
+      const seekersRef = collection(db, "seekers");
+      const seekersQ = query(seekersRef, where("email", "==", companyUsername));
+      const seekersSnapshot = await getDocs(seekersQ);
+      if (!seekersSnapshot.empty) {
+        setError("This email is not registered for login on this page.");
+        setIsLoading(false);
+        return;
+      }
+      // Sends email and password to the backend normally
       const res = await fetch("/api/company/login", {
         method: "POST",
         headers: { 
