@@ -294,6 +294,10 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     setJobData((prev) => ({ ...prev, pricingPlanId: "", paymentStatus: "pending", paymentId: prev.paymentId || "" }));
   };
 
+  // State para perguntas de triagem
+  const [enableScreeningQuestions, setEnableScreeningQuestions] = useState(false);
+  const [screeningQuestions, setScreeningQuestions] = useState<string[]>([]);
+
   // Render
   return (
     <div className="bg-black/70 p-8 rounded-lg shadow-lg">
@@ -379,10 +383,76 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
           {/* SCREENING QUESTIONS */}
           <div>
             <label className="block text-orange-400 font-semibold mb-1">Screening Questions</label>
-            {[0,1,2,3,4].map(idx => (
-              <input key={idx} name={`question${idx+1}`} value={jobData[`question${idx+1}`] || ''} onChange={e => setJobData(prev => ({ ...prev, [`question${idx+1}`]: e.target.value }))} placeholder={`Question ${idx+1}`} className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white mb-2" />
-            ))}
-            <div className="text-gray-400 text-xs">By default, we ask for cover letter, CV, GitHub, LinkedIn, Telegram, current salary, location and phone number.</div>
+            <div className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                id="enableScreeningQuestions"
+                checked={enableScreeningQuestions}
+                onChange={e => {
+                  setEnableScreeningQuestions(e.target.checked);
+                  if (!e.target.checked) setScreeningQuestions([]);
+                }}
+                className="mr-2"
+              />
+              <label htmlFor="enableScreeningQuestions" className="text-white">Add custom questions?</label>
+            </div>
+            {enableScreeningQuestions && (
+              <div>
+                {screeningQuestions.map((q, idx) => (
+                  <div key={idx} className="flex items-center mb-2 gap-2">
+                    <input
+                      type="text"
+                      value={q}
+                      onChange={e => {
+                        const updated = [...screeningQuestions];
+                        updated[idx] = e.target.value;
+                        setScreeningQuestions(updated);
+                        setJobData(prev => ({ ...prev, [`question${idx+1}`]: e.target.value }));
+                      }}
+                      placeholder={`Question ${idx+1}`}
+                      className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                    />
+                    <button
+                      type="button"
+                      className="text-red-400 px-2 py-1 rounded hover:bg-red-900/30"
+                      onClick={() => {
+                        const updated = screeningQuestions.filter((_, i) => i !== idx);
+                        setScreeningQuestions(updated);
+                        setJobData(prev => {
+                          const newData = { ...prev };
+                          // Limpa todas as questões
+                          for (let i = 1; i <= 5; i++) {
+                            delete newData[`question${i}`];
+                          }
+                          // Reorganiza as chaves para manter question1, question2, ...
+                          updated.forEach((q, i) => {
+                            newData[`question${i+1}`] = q;
+                          });
+                          return newData;
+                        });
+                      }}
+                      aria-label="Remove question"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                {screeningQuestions.length < 5 && (
+                  <button
+                    type="button"
+                    className="text-orange-400 px-2 py-1 rounded hover:bg-orange-900/30 mt-1 text-sm font-medium"
+                    onClick={() => {
+                      const updated = [...screeningQuestions, ''];
+                      setScreeningQuestions(updated);
+                      setJobData(prev => ({ ...prev, [`question${updated.length}`]: '' }));
+                    }}
+                  >
+                    + Add question
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="text-gray-400 text-xs mt-2">By default, we ask for cover letter, CV, GitHub, LinkedIn, Telegram, current salary, location and phone number.</div>
           </div>
           {/* --- FIM DO NOVO FORMULÁRIO --- */}
           <div className="space-y-6">
