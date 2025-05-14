@@ -1,21 +1,20 @@
 "use client";
 
+import { use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { db, storage } from "../../../../lib/firebase";
 import { collection, addDoc, doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Button } from "../../../../components/ui/button";
 import { useToast } from "../../../../hooks/use-toast";
 import Layout from "../../../../components/Layout";
-import RelatedJobs from "../../../../components/RelatedJobs";
+import RelatedJobs from "../../RelatedJobs";
 
-export default function ApplyJobPage({ params }: { params: { jobId: string } }) {
+export default function ApplyJobPage({ params }: { params: Promise<{ jobId: string }> }) {
   const router = useRouter();
   const { toast } = useToast();
-  // Adicionando o tipo correto ao unwrap os parâmetros
-  const unwrappedParams = use(params) as { jobId: string };
-  const { jobId } = unwrappedParams;
+  const { jobId } = use(params);
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,7 +41,7 @@ export default function ApplyJobPage({ params }: { params: { jobId: string } }) 
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const jobRef = doc(db, "jobs", unwrappedParams.jobId);
+        const jobRef = doc(db, "jobs", jobId);
         const jobSnap = await getDoc(jobRef);
         if (jobSnap.exists()) {
           const jobData = jobSnap.data();
@@ -66,12 +65,12 @@ export default function ApplyJobPage({ params }: { params: { jobId: string } }) 
         setLoading(false);
       }    };
     fetchJob();
-  }, [unwrappedParams.jobId]);
+  }, [jobId]);
 
   // Fetch seeker profile (simulate auth)
   useEffect(() => {    const token = typeof window !== "undefined" ? localStorage.getItem("seekerToken") : null;
     if (!token) {
-      router.replace("/login?redirect=/jobs/apply/" + unwrappedParams.jobId);
+      router.replace("/login?redirect=/jobs/apply/" + jobId);
       return;
     }
     const seekerId = atob(token);    async function fetchProfile() {
@@ -128,7 +127,7 @@ export default function ApplyJobPage({ params }: { params: { jobId: string } }) 
         }
       }    }
     fetchProfile();
-  }, [unwrappedParams.jobId, router]);
+  }, [jobId, router]);
 
   // Handle CV file selection
   const handleCvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,7 +211,7 @@ export default function ApplyJobPage({ params }: { params: { jobId: string } }) 
         }
       }        // Create application document
       await addDoc(collection(db, "applications"), {
-        jobId: unwrappedParams.jobId,
+        jobId: jobId,
         jobTitle: job?.title,
         companyId: job?.companyId,
         companyName: job?.companyName,
@@ -650,7 +649,7 @@ export default function ApplyJobPage({ params }: { params: { jobId: string } }) 
               <div className="bg-black/80 rounded-lg p-5 sticky top-24">
                 <h3 className="text-xl font-bold text-orange-400 mb-4">Similar Jobs</h3>
                 <div>
-                  <RelatedJobs currentJobId={unwrappedParams.jobId} maxJobs={4} />
+                  <RelatedJobs currentJobId={jobId} maxJobs={4} />
                 </div>
               </div>
             </div>
