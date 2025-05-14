@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import { useRouter } from "next/navigation";
 
 // Definindo os tipos
 interface Job {
@@ -108,6 +109,9 @@ export default function JobsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  const [applyModalOpen, setApplyModalOpen] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const router = useRouter();
   
   // Novos estados para filtros adicionais
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -562,15 +566,18 @@ export default function JobsPage() {
                         </div>
                       </div>
                       
-                      <Button asChild className="mt-2 bg-orange-500 hover:bg-orange-600 text-white transition-colors">
-                        <a
-                          href={job.applyLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Apply Now
-                        </a>
+                      <Button
+                        className="mt-2 bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (job.applyLink && job.applyLink.length > 0) {
+                            window.open(job.applyLink, "_blank");
+                          } else {
+                            router.push(`/jobs/apply/${job.id}`);
+                          }
+                        }}
+                      >
+                        Apply Now
                       </Button>
                     </div>
                   )}
