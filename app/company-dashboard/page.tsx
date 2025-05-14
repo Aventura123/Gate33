@@ -87,6 +87,12 @@ interface Job {
   paymentStatus?: 'pending' | 'completed' | 'failed';
   paymentId?: string;
   expiresAt?: import("firebase/firestore").Timestamp;
+  planCurrency?: string;
+  paymentAmount?: string;
+  screeningQuestions?: string[];
+  companyWebsite?: string;
+  managerName?: string;
+  notes?: string;
 }
 
 // Add an interface for Company Profile
@@ -759,19 +765,35 @@ const PostJobPage = (): JSX.Element => {
                     {isExpanded && (
                       <div className="px-6 pb-4 pt-2 text-sm text-gray-200">
                         <div className="mb-2">
-                          <span className="font-semibold text-orange-300">Description:</span> {job.description}
+                          <span className="font-semibold text-orange-300">Description:</span> {job.description || '-'}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                           <div>
-                            <span className="text-orange-300">Company:</span> {job.company}
+                            <span className="text-orange-300">Company:</span> {job.company || '-'}
                           </div>
                           <div>
-                            <span className="text-orange-300">Employment Type:</span> {job.employmentType || '-'}</div>
+                            <span className="text-orange-300">Employment Type:</span> {job.employmentType || '-'}
+                          </div>
                           <div>
                             <span className="text-orange-300">Experience Level:</span> {job.experienceLevel || '-'}</div>
                           <div>
                             <span className="text-orange-300">Plan:</span> {planName}
                           </div>
+                          {job.planCurrency && (
+                            <div>
+                              <span className="text-orange-300">Plan Currency:</span> {job.planCurrency}
+                            </div>
+                          )}
+                          {job.paymentAmount && (
+                            <div>
+                              <span className="text-orange-300">Payment Amount:</span> {job.paymentAmount}
+                            </div>
+                          )}
+                          {job.paymentStatus && (
+                            <div>
+                              <span className="text-orange-300">Payment Status:</span> {job.paymentStatus}
+                            </div>
+                          )}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           <div>
@@ -783,9 +805,21 @@ const PostJobPage = (): JSX.Element => {
                         </div>
                         {job.requiredSkills && (
                           <div className="mt-2">
-                            <span className="text-orange-300">Skills:</span> {job.requiredSkills}
+                            <span className="text-orange-300">Skills:</span> {Array.isArray(job.requiredSkills) ? job.requiredSkills.join(', ') : job.requiredSkills}
                           </div>
                         )}
+                        {job.screeningQuestions && Array.isArray(job.screeningQuestions) && job.screeningQuestions.length > 0 &&
+                          (!job.applicationLink || (job.applicationLink && job.applicationLink.length > 0)) && (
+                            <div className="mt-2">
+                              <span className="text-orange-300">Screening Questions:</span>
+                              <ul className="list-disc list-inside ml-4">
+                                {job.screeningQuestions.map((q: string, idx: number) => (
+                                  <li key={idx}>{q}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )
+                        }
                         {job.applicationLink && (
                           <div className="mt-2">
                             <span className="text-orange-300">Application Link:</span> <a href={job.applicationLink} className="underline text-orange-400" target="_blank" rel="noopener noreferrer">{job.applicationLink}</a>
@@ -796,9 +830,29 @@ const PostJobPage = (): JSX.Element => {
                             <span className="text-orange-300">Contact Email:</span> {job.contactEmail}
                           </div>
                         )}
-                        {job.paymentStatus && (
+                        {job.companyWebsite && (
                           <div className="mt-2">
-                            <span className="text-orange-300">Payment Status:</span> {job.paymentStatus}
+                            <span className="text-orange-300">Company Website:</span> <a href={job.companyWebsite} className="underline text-orange-400" target="_blank" rel="noopener noreferrer">{job.companyWebsite}</a>
+                          </div>
+                        )}
+                        {job.managerName && (
+                          <div className="mt-2">
+                            <span className="text-orange-300">Manager Name:</span> {job.managerName}
+                          </div>
+                        )}
+                        {job.salaryRange && (
+                          <div className="mt-2">
+                            <span className="text-orange-300">Salary Range:</span> {job.salaryRange}
+                          </div>
+                        )}
+                        {job.location && (
+                          <div className="mt-2">
+                            <span className="text-orange-300">Location:</span> {job.location}
+                          </div>
+                        )}
+                        {job.notes && (
+                          <div className="mt-2">
+                            <span className="text-orange-300">Notes:</span> {job.notes}
                           </div>
                         )}
                       </div>
@@ -2507,7 +2561,6 @@ const manualSyncStatuses = async () => {
       
       setTicketMessages(fetchedMessages);
     } catch (error) {
-      console.error("Error fetching ticket messages:", error);
     }
   }, [db]);
 

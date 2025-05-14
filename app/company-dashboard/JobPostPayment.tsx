@@ -267,8 +267,16 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
         planCurrency: planCurrency || 'NATIVE',
         featured: selectedPlan.name.toLowerCase().includes('premium') || selectedPlan.name.toLowerCase().includes('featured'),
         priorityListing: selectedPlan.name.toLowerCase().includes('premium'),
+        // Company info
+        companyName: companyProfile.name || jobData.company,
+        companyWebsite: companyProfile.website || '',
+        companyDescription: companyProfile.description || '',
+        companyLocation: companyProfile.location || '',
+        // Manager info
+        managerName: companyProfile.responsiblePerson || '',
       };
       await addDoc(jobCollection, jobToSave);
+      
       setJobData((prev) => ({ ...prev, paymentStatus: "completed", paymentId: paymentRef.id }));
       
       // Clear the timeout since we're done processing
@@ -452,7 +460,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                 )}
               </div>
             )}
-            <div className="text-gray-400 text-xs mt-2">By default, we ask for cover letter, CV, GitHub, LinkedIn, Telegram, current salary, location and phone number.</div>
+            <div className="text-gray-400 text-xs mt-2">By default, we ask for CV, LinkedIn, location and others .</div>
           </div>
           {/* --- FIM DO NOVO FORMULÁRIO --- */}
           <div className="space-y-6">
