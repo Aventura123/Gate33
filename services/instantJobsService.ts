@@ -44,7 +44,96 @@ export interface JobMessage {
   attachments?: string[];
 }
 
+// Interface simplificada para o formulário de Instant Job
+export interface InstantJobFormData {
+  title: string;
+  description: string;
+  category: string;
+  budget: number;
+  currency: string;
+  deadline: Date;
+  requiredSkills: string[];
+  companyName: string; 
+  tags: string[];
+}
+
+// Valores padrão simplificados para inicializar o formulário de Instant Job
+export const defaultInstantJobFormData: InstantJobFormData = {
+  title: '',
+  description: '',
+  category: '',
+  budget: 0,
+  currency: 'ETH',
+  deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias a partir de hoje
+  requiredSkills: [],
+  companyName: '',
+  tags: []
+};
+
 class InstantJobsService {
+  /**
+   * Valida os dados do formulário de Instant Job
+   * @param formData Dados do formulário
+   * @returns Objeto com resultado da validação
+   */
+  validateInstantJobData(formData: InstantJobFormData): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!formData.title?.trim()) {
+      errors.push('Job title is required');
+    }
+    
+    if (!formData.description?.trim()) {
+      errors.push('Job description is required');
+    }
+    
+    if (formData.budget <= 0) {
+      errors.push('Budget must be greater than zero');
+    }
+    
+    if (!formData.deadline || !(formData.deadline instanceof Date)) {
+      errors.push('Valid deadline is required');
+    } else if (formData.deadline < new Date()) {
+      errors.push('Deadline must be in the future');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+  
+  /**
+   * Converte os dados do formulário para o formato usado pelo serviço
+   * @param formData Dados do formulário
+   * @param companyId ID da empresa
+   * @returns Dados formatados para criação do Instant Job
+   */
+  prepareInstantJobData(
+    formData: InstantJobFormData, 
+    companyId: string
+  ): Omit<InstantJob, 'id' | 'createdAt' | 'updatedAt' | 'status'> {
+    // Use tags como requiredSkills se disponível, caso contrário use um array vazio
+    const requiredSkills = formData.tags?.length > 0 ? formData.tags : [];
+    
+    return {
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      companyId,
+      companyName: formData.companyName,
+      budget: formData.budget,
+      currency: formData.currency,
+      deadline: formData.deadline,
+      requiredSkills
+    };
+  }
+
+  /**
+   * Cria um novo Instant Job
+   * @param jobData Dados do job formatados corretamente
+   * @returns ID do novo job criado
+   */
   async createInstantJob(jobData: Omit<InstantJob, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<string> {
     try {
       if (!db) throw new Error("Firestore is not initialized");

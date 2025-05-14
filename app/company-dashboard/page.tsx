@@ -9,19 +9,20 @@ import { db } from "../../lib/firebase";
 import web3Service from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
 // Import learn2earnContractService
-// Import learn2earnContractService
 import learn2earnContractService from "../../services/learn2earnContractService";
 // Import the Learn2Earn interfaces
 import { Learn2Earn, Learn2EarnTask, NewLearn2Earn } from "../../types/learn2earn";
 // Importing necessary services and components for Instant Jobs
 import instantJobsService, { InstantJob, JobMessage } from '../../services/instantJobsService';
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
+import InstantJobForm from '../../components/instant-jobs/InstantJobForm';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
 import WalletButton from '../../components/WalletButton';
 import JobPostPayment from "./JobPostPayment";
 import CompanyWelcome from "./CompanyWelcome";
 import NotificationsPanel, { NotificationBell } from '../../components/ui/NotificationsPanel';
 import { createCompanyNotification } from '../../lib/notifications';
+import { formatDate } from "../../utils/formatDate"; // Importando a função formatDate
 import dynamic from "next/dynamic";
 // Dynamically import EvolutionChart with SSR disabled
 const EvolutionChart = dynamic(() => import("./EvolutionChart"), { ssr: false });
@@ -71,7 +72,7 @@ interface Job {
   description: string;
   category: string;
   company: string;
-  requiredSkills: string;
+  requiredSkills: string | string[]; // Permitindo ambos os tipos para compatibilidade
   salaryRange: string;
   location: string;
   employmentType: string;
@@ -201,17 +202,7 @@ const PostJobPage = (): JSX.Element => {
   const [selectedJob, setSelectedJob] = useState<InstantJob | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [jobMessages, setJobMessages] = useState<JobMessage[]>([]);
-  const [isSendingMessage, setIsSendingMessage] = useState(false);
-  const [activeSection, setActiveSection] = useState<'list' | 'create' | 'detail'>('list');
-  const [newInstantJobData, setNewInstantJobData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    budget: 0,
-    currency: 'ETH',
-    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    requiredSkills: ''
-  });
+  const [isSendingMessage, setIsSendingMessage] = useState(false);  const [activeSection, setActiveSection] = useState<'list' | 'create' | 'detail'>('list');
   
   // Support Tickets states
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
@@ -1011,55 +1002,8 @@ const PostJobPage = (): JSX.Element => {
       setIsSendingMessage(false);
     }
   };
-  
-  // Function to create a new Instant Job
-  const handleCreateInstantJob = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      if (!walletAddress) {
-        alert("Connect your wallet to create a micro-task.");
-        return;
-      }
-      
-      const jobData = {
-        title: newInstantJobData.title,
-        description: newInstantJobData.description,
-        category: newInstantJobData.category,
-        companyId,
-        companyName: companyProfile.name,
-        budget: newInstantJobData.budget,
-        currency: newInstantJobData.currency,
-        deadline: new Date(newInstantJobData.deadline),
-        requiredSkills: newInstantJobData.requiredSkills.split(',').map(skill => skill.trim())
-      };
-      
-      const jobId = await instantJobsService.createInstantJob(jobData);
-      
-      alert("Micro-task created successfully!");
-      
-      // Reset form and go back to list
-      setNewInstantJobData({
-        title: '',
-        description: '',
-        category: '',
-        budget: 0,
-        currency: 'ETH',
-        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        requiredSkills: ''
-      });
-      
-      setActiveSection('list');
-      loadInstantJobs();
-    } catch (error) {
-      console.error("Error creating micro-task:", error);
-      if (error instanceof Error) {
-        alert(`Failed to create micro-task: ${error.message}`);
-      } else {
-        alert("Failed to create micro-task: Unknown error.");
-      }
-    }
-  };
+  // We no longer need handleCreateInstantJob since we moved this functionality
+  // to the InstantJobForm component
   
   // Function to approve a completed job
   const handleApproveJob = async (jobId: string) => {
@@ -1142,7 +1086,7 @@ const InstantJobDetailCard: React.FC<{
         <div className="flex flex-wrap gap-4 text-xs text-gray-400 mb-2">
           <div>Budget: <span className="text-orange-300 font-semibold">{job.budget} {job.currency}</span></div>
           <div>Deadline: <span className="text-orange-300">{formatDateOrTimestamp(job.deadline, {dateOnly: true})}</span></div>
-          <div>Skills: <span className="text-orange-300">{job.requiredSkills?.join(', ') || '-'}</span></div>
+          <div>Skills: <span className="text-orange-300">{Array.isArray(job.requiredSkills) ? job.requiredSkills.join(', ') : job.requiredSkills || '-'}</span></div>
         </div>
         <div className="text-xs text-gray-400 mb-2">Status: <span className="text-orange-300">{job.status || '-'}</span></div>
         {job.id && (
@@ -1199,125 +1143,19 @@ const InstantJobDetailCard: React.FC<{
     </div>
   );
 };
-
   // Render the Instant Jobs tab
   const renderInstantJobsTab = () => {
-    // Always show the creation form directly, using the exact form code already present
+    // Use our new InstantJobForm component
     return (
-      <div className="bg-black/70 p-10 rounded-lg shadow-lg">
-        <h2 className="text-3xl font-semibold text-orange-500 mb-6">Create New Instant Job</h2>
-        <form onSubmit={handleCreateInstantJob} className="space-y-4">
-          {/* Task Title */}
-          <div>
-            <label className="block text-white mb-2">Task Title</label>
-            <input
-              type="text"
-              value={newInstantJobData.title}
-              onChange={e => setNewInstantJobData({ ...newInstantJobData, title: e.target.value })}
-              placeholder="e.g., Develop a smart contract for ICO"
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-              required
-            />
-          </div>
-          {/* Description */}
-          <div>
-            <label className="block text-white mb-2">Detailed Description</label>
-            <textarea
-              value={newInstantJobData.description}
-              onChange={e => setNewInstantJobData({ ...newInstantJobData, description: e.target.value })}
-              placeholder="Describe in detail what you need..."
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white h-32"
-              required
-            />
-          </div>
-          {/* Category */}
-          <div>
-            <label className="block text-white mb-2">Category</label>
-            <select
-              value={newInstantJobData.category}
-              onChange={e => setNewInstantJobData({ ...newInstantJobData, category: e.target.value })}
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-              required
-            >
-              <option value="">Select a category</option>
-              <option value="Development">Development</option>
-              <option value="Design">Design</option>
-              <option value="Marketing">Marketing</option>
-              <option value="Content">Content</option>
-              <option value="Research">Research</option>
-              <option value="Testing">Testing</option>
-              <option value="Data Entry">Data Entry</option>
-              <option value="Support">Support</option>
-              <option value="Microtasks">Microtasks</option>
-              <option value="Blockchain">Blockchain</option>
-              <option value="Web3">Web3</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          {/* Budget and Currency */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-white mb-2">Budget</label>
-              <input
-                type="number"
-                value={newInstantJobData.budget}
-                onChange={e => setNewInstantJobData({ ...newInstantJobData, budget: Number(e.target.value) })}
-                className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-white mb-2">Currency</label>
-              <select
-                value={newInstantJobData.currency}
-                onChange={e => setNewInstantJobData({ ...newInstantJobData, currency: e.target.value })}
-                className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-                required
-              >
-                <option value="ETH">ETH</option>
-                <option value="USDT">USDT</option>
-                <option value="USDC">USDC</option>
-                <option value="DAI">DAI</option>
-                <option value="BNB">BNB</option>
-                <option value="MATIC">MATIC</option>
-                <option value="SOL">SOL</option>
-              </select>
-            </div>
-          </div>
-          {/* Deadline */}
-          <div>
-            <label className="block text-white mb-2">Deadline</label>
-            <input
-              type="date"
-              value={newInstantJobData.deadline instanceof Date ? newInstantJobData.deadline.toISOString().split('T')[0] : newInstantJobData.deadline}
-              onChange={e => setNewInstantJobData({ ...newInstantJobData, deadline: new Date(e.target.value) })}
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-              required
-            />
-          </div>
-          {/* Required Skills */}
-          <div>
-            <label className="block text-white mb-2">Required Skills (comma separated)</label>
-            <input
-              type="text"
-              value={newInstantJobData.requiredSkills}
-              onChange={e => setNewInstantJobData({ ...newInstantJobData, requiredSkills: e.target.value })}
-              placeholder="e.g., Solidity, React, Web3.js"
-              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-              required
-            />
-          </div>
-          {/* Actions */}
-          <div className="flex justify-end mt-6 gap-2">
-            <button type="button" className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded" onClick={() => setActiveSection('list')}>
-              Cancel
-            </button>
-            <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded">
-              Create Micro-task
-            </button>
-          </div>
-        </form>
-      </div>
+      <InstantJobForm 
+        companyId={companyId}
+        companyName={companyProfile.name}
+        onJobCreated={() => {
+          setActiveSection('list');
+          loadInstantJobs();
+        }}
+        onCancel={() => setActiveSection('list')}
+      />
     );
   };
 
@@ -1808,46 +1646,6 @@ const InstantJobDetailCard: React.FC<{
 
   // Reset learn2earn form
   const resetLearn2EarnForm = () => {
-    setLearn2EarnData({
-      title: "",
-      description: "",
-      tokenSymbol: "",
-      tokenAmount: 0,
-      tokenAddress: "",
-      tokenPerParticipant: 0,
-      totalParticipants: 0,
-      maxParticipants: undefined,
-      startDate: null,
-      endDate: null,
-      tasks: [],
-      status: 'draft',
-      contractAddress: "",
-      transactionHash: "",
-      socialLinks: {
-        discord: "",
-        telegram: "",
-        twitter: "",
-        website: ""
-      },
-      network: '',
-    });
-    setCurrentTask({
-      type: 'content',
-      title: "",
-      description: "",
-      contentText: "",
-    });
-    setCurrentQuestionOptions(['', '', '', '']);
-    setCorrectOptionIndex(0);
-    setLearn2EarnStep('info');
-    setDepositError(null);
-  };
-
-  // Format date for display
-  const formatDate = (timestamp: any) => {
-    if (!timestamp) return 'N/A';
-    const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
-    return date.toLocaleDateString();
   };
 
   // Handle learn2earn activation/deactivation

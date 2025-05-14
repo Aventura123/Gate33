@@ -32,9 +32,30 @@ interface JobPostPaymentProps {
   reloadData: () => void;
 }
 
+// Estender a interface para incluir as perguntas dinâmicas
+interface JobDataType {
+  title: string;
+  description: string;
+  category: string;
+  company: string;
+  requiredSkills: string;
+  salaryRange: string;
+  location: string;
+  employmentType: string;
+  experienceLevel: string;
+  blockchainExperience: string;
+  remoteOption: string;
+  contactEmail: string;
+  applicationLink: string;
+  pricingPlanId: string;
+  paymentStatus: 'pending' | 'completed' | 'failed';
+  paymentId: string;
+  [key: `question${number}`]: string | undefined;
+}
+
 const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfile, reloadData }) => {
   // States and logic identical to the original dashboard flow
-  const [jobData, setJobData] = useState({
+  const [jobData, setJobData] = useState<JobDataType>({
     title: "",
     description: "",
     category: "",
@@ -279,38 +300,92 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
       {paymentStep === 'form' && (
         <form onSubmit={e => {
           e.preventDefault();
-          if (!jobData.title || !jobData.description || !jobData.category || !jobData.contactEmail || !jobData.applicationLink) {
-            alert("Please fill in all required fields.");
-            return;
-          }
           setPaymentStep('select-plan');
         }}>
+          {/* --- NOVO FORMULÁRIO DE JOB OFFER --- */}
+          <div className="space-y-6 mb-8">
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Job Title *</label>
+              <input name="title" value={jobData.title} onChange={handleChange} required className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
+            </div>
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Company Name *</label>
+              <input name="company" value={jobData.company} onChange={handleChange} required className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
+            </div>
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Job Description *</label>
+              {/* Rich text pode ser substituído por um editor depois */}
+              <textarea name="description" value={jobData.description} onChange={handleChange} required rows={6} className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
+            </div>
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Job Location</label>
+              <input name="location" value={jobData.location} onChange={handleChange} placeholder="Leave blank if 100% Remote" className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
+            </div>
+            <div className="flex gap-2 items-end">
+              <div>
+                <label className="block text-orange-400 font-semibold mb-1">Salary Range</label>
+                <div className="flex gap-2">
+                  <input name="salaryMin" type="number" min="0" placeholder="Min" className="w-24 p-2 rounded bg-black/50 border border-gray-700 text-white" onChange={e => setJobData(prev => ({ ...prev, salaryRange: `${e.target.value}-${(prev.salaryRange.split('-')[1] || '')}` }))} />
+                  <span className="text-gray-400">-</span>
+                  <input name="salaryMax" type="number" min="0" placeholder="Max" className="w-24 p-2 rounded bg-black/50 border border-gray-700 text-white" onChange={e => setJobData(prev => ({ ...prev, salaryRange: `${(prev.salaryRange.split('-')[0] || '')}-${e.target.value}` }))} />
+                  <select name="salaryCurrency" className="p-2 rounded bg-black/50 border border-gray-700 text-white">
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="BRL">BRL</option>
+                  </select>
+                  <select name="salaryPeriod" className="p-2 rounded bg-black/50 border border-gray-700 text-white">
+                    <option value="Year">Year</option>
+                    <option value="Month">Month</option>
+                    <option value="Hour">Hour</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="block text-orange-400 font-semibold mb-1">Country Filter</label>
+            <div className="flex gap-4 mb-2">
+              <label><input type="radio" name="countryMode" value="include" checked className="mr-1" readOnly /> Include countries</label>
+              <label><input type="radio" name="countryMode" value="exclude" className="mr-1" readOnly /> Exclude countries</label>
+            </div>
+            {/* Substitua por um componente de seleção de países/regiões se necessário */}
+            <input name="countries" placeholder="Select countries..." className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
+          </div>
+          <div>
+            <label className="block text-orange-400 font-semibold mb-1">Tags</label>
+            <div className="flex flex-wrap gap-2">
+              {['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Anti Money Laundering','Human Resources','C++','Memes','Site Reliability Engineering','ReFi','Stablecoin','Full-stack Developer','Developer Relations','iOS','Android Developer','GameFi','Talent Acquisition','Node.js','Search Engine Optimization','AI','DePIN','CEX','Berachain','Real World Assets'].map(tag => (
+                <button type="button" key={tag} onClick={() => setJobData(prev => ({ ...prev, requiredSkills: prev.requiredSkills.includes(tag) ? prev.requiredSkills.replace(tag+',','').replace(tag,'') : (prev.requiredSkills ? prev.requiredSkills+','+tag : tag) }))} className={`px-3 py-1 rounded-full border text-sm ${jobData.requiredSkills.includes(tag) ? 'bg-orange-500 text-white border-orange-500' : 'bg-black/50 text-gray-300 border-gray-700'}`}>{tag}</button>
+              ))}
+            </div>
+          </div>
+          {/* MÉTODO DE APLICAÇÃO */}
+          <div>
+            <label className="block text-orange-400 font-semibold mb-1">Application Method</label>
+            <div className="flex gap-4 mb-2">
+              <label><input type="radio" name="applicationMethod" value="email" checked={!jobData.applicationLink} onChange={() => setJobData(prev => ({ ...prev, applicationLink: '' }))} /> Email (Recommended)</label>
+              <label><input type="radio" name="applicationMethod" value="form" checked={!!jobData.applicationLink} onChange={() => setJobData(prev => ({ ...prev, applicationLink: 'https://' }))} /> Redirect to a form</label>
+            </div>
+            {!!jobData.applicationLink && (
+              <input name="applicationLink" value={jobData.applicationLink} onChange={handleChange} placeholder="https://your-form-link.com" className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
+            )}
+          </div>
+          {/* OPÇÕES DE CV/VÍDEO */}
+          <div className="flex gap-4 items-center">
+            <label><input type="checkbox" name="requireCV" checked={jobData.employmentType === 'requireCV'} onChange={e => setJobData(prev => ({ ...prev, employmentType: e.target.checked ? 'requireCV' : '' }))} /> Require CV attachment</label>
+            <label><input type="checkbox" name="allowVideo" checked={jobData.experienceLevel === 'allowVideo'} onChange={e => setJobData(prev => ({ ...prev, experienceLevel: e.target.checked ? 'allowVideo' : '' }))} /> Allow Video Applications</label>
+            <label><input type="checkbox" name="requireVideo" checked={jobData.blockchainExperience === 'requireVideo'} onChange={e => setJobData(prev => ({ ...prev, blockchainExperience: e.target.checked ? 'requireVideo' : '' }))} /> Require Video Applications</label>
+          </div>
+          {/* SCREENING QUESTIONS */}
+          <div>
+            <label className="block text-orange-400 font-semibold mb-1">Screening Questions</label>
+            {[0,1,2,3,4].map(idx => (
+              <input key={idx} name={`question${idx+1}`} value={jobData[`question${idx+1}`] || ''} onChange={e => setJobData(prev => ({ ...prev, [`question${idx+1}`]: e.target.value }))} placeholder={`Question ${idx+1}`} className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white mb-2" />
+            ))}
+            <div className="text-gray-400 text-xs">By default, we ask for cover letter, CV, GitHub, LinkedIn, Telegram, current salary, location and phone number.</div>
+          </div>
+          {/* --- FIM DO NOVO FORMULÁRIO --- */}
           <div className="space-y-6">
-            <input type="text" name="title" value={jobData.title} onChange={handleChange} placeholder="Job Title" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
-            <textarea name="description" value={jobData.description} onChange={handleChange} placeholder="Job Description" rows={4} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required></textarea>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" name="category" value={jobData.category} onChange={handleChange} placeholder="Category" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
-              <input type="text" name="company" value={jobData.company} onChange={handleChange} placeholder="Company Name" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" name="requiredSkills" value={jobData.requiredSkills} onChange={handleChange} placeholder="Required Skills" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-              <input type="text" name="salaryRange" value={jobData.salaryRange} onChange={handleChange} placeholder="Salary Range" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" name="location" value={jobData.location} onChange={handleChange} placeholder="Location" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-              <input type="text" name="employmentType" value={jobData.employmentType} onChange={handleChange} placeholder="Employment Type" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" name="experienceLevel" value={jobData.experienceLevel} onChange={handleChange} placeholder="Experience Level" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-              <input type="text" name="blockchainExperience" value={jobData.blockchainExperience} onChange={handleChange} placeholder="Blockchain Experience" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" name="remoteOption" value={jobData.remoteOption} onChange={handleChange} placeholder="Remote Option" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="email" name="contactEmail" value={jobData.contactEmail} onChange={handleChange} placeholder="Contact Email" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
-              <input type="url" name="applicationLink" value={jobData.applicationLink} onChange={handleChange} placeholder="Application URL" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
-            </div>
             <button type="submit" className="w-full bg-orange-500 text-white py-3 rounded-full font-semibold text-lg hover:bg-orange-600 mt-6">Continue</button>
           </div>
         </form>
@@ -340,8 +415,9 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
           <div className="flex justify-between mt-8">
             <button onClick={() => setPaymentStep('form')} className="bg-gray-700 text-white py-2 px-6 rounded-lg font-semibold hover:bg-gray-800">Back</button>
             <button onClick={() => {
-              if (!selectedPlan && jobData.pricingPlanId) {
-                const plan = pricingPlans.find(p => p.id === jobData.pricingPlanId) || null;
+              let plan = selectedPlan;
+              if (!plan && jobData.pricingPlanId) {
+                plan = pricingPlans.find(p => p.id === jobData.pricingPlanId) || null;
                 setSelectedPlan(plan);
               }
               if (!jobData.pricingPlanId) {
