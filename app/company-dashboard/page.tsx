@@ -1202,197 +1202,123 @@ const InstantJobDetailCard: React.FC<{
 
   // Render the Instant Jobs tab
   const renderInstantJobsTab = () => {
-    // Show list of Instant Jobs
-    if (activeSection === 'list') {
-      return (
-        <div>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-semibold text-orange-500">Instant Jobs</h2>
-            <button
-              onClick={() => setActiveSection('create')}
-              className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
-            >
-              New Instant Job
-            </button>
+    // Always show the creation form directly, using the exact form code already present
+    return (
+      <div className="bg-black/70 p-10 rounded-lg shadow-lg">
+        <h2 className="text-3xl font-semibold text-orange-500 mb-6">Create New Instant Job</h2>
+        <form onSubmit={handleCreateInstantJob} className="space-y-4">
+          {/* Task Title */}
+          <div>
+            <label className="block text-white mb-2">Task Title</label>
+            <input
+              type="text"
+              value={newInstantJobData.title}
+              onChange={e => setNewInstantJobData({ ...newInstantJobData, title: e.target.value })}
+              placeholder="e.g., Develop a smart contract for ICO"
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
+              required
+            />
           </div>
-          
-          {instantJobs.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-300">You haven't created any micro-tasks yet.</p>
-              <button
-                onClick={() => setActiveSection('create')}
-                className="mt-4 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
-              >
-                Create First Micro-task
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {instantJobs.map(job => (
-                <InstantJobCard
-                  key={job.id}
-                  job={job}
-                  onClick={(jobId) => {
-                    setSelectedJobId(jobId);
-                    setSelectedJob(job);
-                    setActiveSection('detail');
-                  }}
-                  showActionButtons={true}
-                  onApprove={handleApproveJob}
-                  isCompanyView={true}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-    
-    // Show creation form
-    if (activeSection === 'create') {
-      return (
-        <div>
-          <div className="flex items-center mb-6">
-            <button
-              onClick={() => setActiveSection('list')}
-              className="text-orange-400 hover:text-orange-300 mr-3"
-            >
-              &larr; Back
-            </button>
-            <h2 className="text-3xl font-semibold text-orange-500">Create New Instant Job</h2>
+          {/* Description */}
+          <div>
+            <label className="block text-white mb-2">Detailed Description</label>
+            <textarea
+              value={newInstantJobData.description}
+              onChange={e => setNewInstantJobData({ ...newInstantJobData, description: e.target.value })}
+              placeholder="Describe in detail what you need..."
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white h-32"
+              required
+            />
           </div>
-          
-          <form onSubmit={handleCreateInstantJob} className="space-y-4">
+          {/* Category */}
+          <div>
+            <label className="block text-white mb-2">Category</label>
+            <select
+              value={newInstantJobData.category}
+              onChange={e => setNewInstantJobData({ ...newInstantJobData, category: e.target.value })}
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
+              required
+            >
+              <option value="">Select a category</option>
+              <option value="Development">Development</option>
+              <option value="Design">Design</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Content">Content</option>
+              <option value="Research">Research</option>
+              <option value="Testing">Testing</option>
+              <option value="Data Entry">Data Entry</option>
+              <option value="Support">Support</option>
+              <option value="Microtasks">Microtasks</option>
+              <option value="Blockchain">Blockchain</option>
+              <option value="Web3">Web3</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          {/* Budget and Currency */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-300 mb-2">Task Title</label>
+              <label className="block text-white mb-2">Budget</label>
               <input
-                type="text"
-                value={newInstantJobData.title}
-                onChange={(e) => setNewInstantJobData({...newInstantJobData, title: e.target.value})}
-                placeholder="e.g., Develop a smart contract for ICO"
+                type="number"
+                value={newInstantJobData.budget}
+                onChange={e => setNewInstantJobData({ ...newInstantJobData, budget: Number(e.target.value) })}
                 className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
                 required
               />
             </div>
-            
             <div>
-              <label className="block text-gray-300 mb-2">Detailed Description</label>
-              <textarea
-                value={newInstantJobData.description}
-                onChange={(e) => setNewInstantJobData({...newInstantJobData, description: e.target.value})}
-                placeholder="Describe in detail what you need..."
-                className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white h-32"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-gray-300 mb-2">Category</label>
+              <label className="block text-white mb-2">Currency</label>
               <select
-                value={newInstantJobData.category}
-                onChange={(e) => setNewInstantJobData({...newInstantJobData, category: e.target.value})}
+                value={newInstantJobData.currency}
+                onChange={e => setNewInstantJobData({ ...newInstantJobData, currency: e.target.value })}
                 className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
                 required
               >
-                <option value="">Select a category</option>
-                <option value="development">Development</option>
-                <option value="design">Design</option>
-                <option value="marketing">Marketing</option>
-                <option value="content">Content</option>
-                <option value="research">Research</option>
-                <option value="smart-contracts">Smart Contracts</option>
-                <option value="testing">Testing</option>
-                <option value="other">Other</option>
+                <option value="ETH">ETH</option>
+                <option value="USDT">USDT</option>
+                <option value="USDC">USDC</option>
+                <option value="DAI">DAI</option>
+                <option value="BNB">BNB</option>
+                <option value="MATIC">MATIC</option>
+                <option value="SOL">SOL</option>
               </select>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-gray-300 mb-2">Budget</label>
-                <input
-                  type="number"
-                  value={newInstantJobData.budget}
-                  onChange={(e) => setNewInstantJobData({...newInstantJobData, budget: parseFloat(e.target.value)})}
-                  min="0"
-                  step="0.01"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-gray-300 mb-2">Currency</label>
-                <select
-                  value={newInstantJobData.currency}
-                  onChange={(e) => setNewInstantJobData({...newInstantJobData, currency: e.target.value})}
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-                  required
-                >
-                  <option value="ETH">ETH</option>
-                  <option value="MATIC">MATIC</option>
-                  <option value="USDT">USDT</option>
-                  <option value="USDC">USDC</option>
-                </select>
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-gray-300 mb-2">Deadline</label>
-              <input
-                type="date"
-                value={newInstantJobData.deadline.toISOString().split('T')[0]}
-                onChange={(e) => setNewInstantJobData({...newInstantJobData, deadline: new Date(e.target.value)})}
-                className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-gray-300 mb-2">Required Skills (comma separated)</label>
-              <input
-                type="text"
-                value={newInstantJobData.requiredSkills}
-                onChange={(e) => setNewInstantJobData({...newInstantJobData, requiredSkills: e.target.value})}
-                placeholder="e.g., Solidity, React, Web3.js"
-                className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-                required
-              />
-            </div>
-            
-            <div className="flex justify-end mt-6">
-              <button
-                type="button"
-                onClick={() => setActiveSection('list')}
-                className="bg-gray-700 hover:bg-gray-600 text-white mr-4"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-              >
-                Create Micro-task
-              </button>
-            </div>
-          </form>
-        </div>
-      );
-    }
-    
-    // Show micro-task details with messages
-    if (activeSection === 'detail' && selectedJob) {
-      return <InstantJobDetailCard
-        job={selectedJob}
-        messages={jobMessages}
-        onBack={() => setActiveSection('list')}
-        onSendMessage={handleSendMessage}
-        isSending={isSendingMessage}
-        companyProfile={companyProfile}
-        handleApproveJob={handleApproveJob}
-      />;
-    }
-    
-    return <div>Loading...</div>;
+          </div>
+          {/* Deadline */}
+          <div>
+            <label className="block text-white mb-2">Deadline</label>
+            <input
+              type="date"
+              value={newInstantJobData.deadline instanceof Date ? newInstantJobData.deadline.toISOString().split('T')[0] : newInstantJobData.deadline}
+              onChange={e => setNewInstantJobData({ ...newInstantJobData, deadline: new Date(e.target.value) })}
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
+              required
+            />
+          </div>
+          {/* Required Skills */}
+          <div>
+            <label className="block text-white mb-2">Required Skills (comma separated)</label>
+            <input
+              type="text"
+              value={newInstantJobData.requiredSkills}
+              onChange={e => setNewInstantJobData({ ...newInstantJobData, requiredSkills: e.target.value })}
+              placeholder="e.g., Solidity, React, Web3.js"
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
+              required
+            />
+          </div>
+          {/* Actions */}
+          <div className="flex justify-end mt-6 gap-2">
+            <button type="button" className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded" onClick={() => setActiveSection('list')}>
+              Cancel
+            </button>
+            <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded">
+              Create Micro-task
+            </button>
+          </div>
+        </form>
+      </div>
+    );
   };
 
   // Render content based on active tab
@@ -1676,7 +1602,7 @@ const InstantJobDetailCard: React.FC<{
       alert("Tokens per participant cannot exceed total token amount");
       return;
     }
-    
+
     setIsProcessingDeposit(true);
     setDepositError(null);
     
