@@ -22,12 +22,14 @@ import JobPostPayment from "./JobPostPayment";
 import CompanyWelcome from "./CompanyWelcome";
 import NotificationsPanel, { NotificationBell } from '../../components/ui/NotificationsPanel';
 import { createCompanyNotification } from '../../lib/notifications';
+import dynamic from "next/dynamic";
+// Dynamically import EvolutionChart with SSR disabled
+const EvolutionChart = dynamic(() => import("./EvolutionChart"), { ssr: false });
 
 // Interface for Support Ticket
 interface SupportTicket {
   id: string;
   userId: string;
-  userName?: string;
   userEmail?: string;
   subject: string;
   description: string;
@@ -113,6 +115,14 @@ interface CompanyProfile {
   comments?: string;
   officialDocumentUrl?: string;
   // Add other relevant fields as needed
+}
+
+// Helper to get a Date from Timestamp or Date
+function getDate(ts: Date | import('firebase/firestore').Timestamp | undefined): Date | undefined {
+  if (!ts) return undefined;
+  if (ts instanceof Date) return ts;
+  if (typeof (ts as any)?.toDate === 'function') return (ts as any).toDate();
+  return new Date(ts as any);
 }
 
 const PostJobPage = (): JSX.Element => {
@@ -268,6 +278,8 @@ const PostJobPage = (): JSX.Element => {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [totalApplications, setTotalApplications] = useState<number>(0);
+
   // Function to fetch pricing plans from Firebase
   const fetchPricingPlans = useCallback(async () => {
     try {
@@ -682,171 +694,180 @@ const PostJobPage = (): JSX.Element => {
   
     return (
       <div className="w-full">
-        <div className="flex gap-8 mb-6">
-          <button
-            className={`text-3xl font-semibold mr-4 transition-colors ${jobsTab === 'offers' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
-            onClick={() => setJobsTab('offers')}
-          >
-            All Job Offers
-          </button>
-          <button
-            className={`text-2xl font-semibold transition-colors ${jobsTab === 'instant' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
-            onClick={() => setJobsTab('instant')}
-          >
-            All Instant Jobs
-          </button>
-        </div>
-        {jobsTab === 'offers' ? (
-          <div className="space-y-3">
-            {companyJobs.map((job) => {
-              const createdAt = job.createdAt?.toDate?.() || null;
-              const expirationDate = job.expiresAt?.toDate?.() || (createdAt && job.pricingPlanId ? new Date(createdAt.getTime() + (pricingPlans.find(p => p.id === job.pricingPlanId)?.duration || 30) * 24 * 60 * 60 * 1000) : null);
-              const planName = job.pricingPlanId ? (pricingPlans.find(p => p.id === job.pricingPlanId)?.name || "Basic") : "Basic";
-              const isExpanded = expandedJobId === job.id;
-    
-              return (
-                <div
-                  key={job.id}
-                  className={`bg-black/60 rounded-lg border border-orange-900/30 transition-all duration-200 cursor-pointer hover:shadow-lg`}
-                  onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
-                >
-                  <div className="flex items-center justify-between p-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 w-full">
-                      <div>
-                        <span className="block text-xs text-orange-300">Title</span>
-                        <span className="font-semibold text-orange-400">{job.title}</span>
-                      </div>
-                      <div>
-                        <span className="block text-xs text-orange-300">Category</span>
-                        <span className="text-gray-200">{job.category}</span>
-                      </div>
-                      {!isExpanded ? (
-                        <>
-                          <div>
-                            <span className="block text-xs text-orange-300">Start Date</span>
-                            <span className="text-gray-200">{createdAt ? createdAt.toLocaleDateString() : '-'}</span>
-                          </div>
-                          <div>
-                            <span className="block text-xs text-orange-300">Expires</span>
-                            <span className="text-gray-200">{expirationDate ? expirationDate.toLocaleDateString() : '-'}</span>
-                          </div>
-                        </>
-                      ) : (
+        <div className="bg-black/70 rounded-lg shadow-lg p-6">
+          {/* Main section title */}
+          <h2 className="text-3xl font-bold text-orange-500 mb-2">All Offers</h2>
+          <div className="flex gap-6 mb-6 items-end border-b border-orange-900/60">
+            <button
+              className={`relative text-base font-semibold mr-2 transition-colors pb-1 ${jobsTab === 'offers' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
+              onClick={() => setJobsTab('offers')}
+            >
+              All Job Offers
+              {jobsTab === 'offers' && (
+                <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
+              )}
+            </button>
+            <button
+              className={`relative text-base font-semibold transition-colors pb-1 ${jobsTab === 'instant' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
+              onClick={() => setJobsTab('instant')}
+            >
+              All Instant Jobs
+              {jobsTab === 'instant' && (
+                <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
+              )}
+            </button>
+          </div>
+          {jobsTab === 'offers' ? (
+            <div className="space-y-3">
+              {companyJobs.map((job) => {
+                const createdAt = job.createdAt?.toDate?.() || null;
+                const expirationDate = job.expiresAt?.toDate?.() || (createdAt && job.pricingPlanId ? new Date(createdAt.getTime() + (pricingPlans.find(p => p.id === job.pricingPlanId)?.duration || 30) * 24 * 60 * 60 * 1000) : null);
+                const planName = job.pricingPlanId ? (pricingPlans.find(p => p.id === job.pricingPlanId)?.name || "Basic") : "Basic";
+                const isExpanded = expandedJobId === job.id;
+                return (
+                  <div
+                    key={job.id}
+                    className={`bg-black/60 rounded-lg border border-orange-900/30 transition-all duration-200 cursor-pointer hover:shadow-lg`}
+                    onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
+                  >
+                    <div className="flex items-center justify-between p-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 w-full">
                         <div>
-                          <span className="block text-xs text-orange-300">Salary</span>
-                          <span className="text-gray-200">{job.salaryRange || '-'}</span>
+                          <span className="block text-xs text-orange-300">Title</span>
+                          <span className="font-semibold text-orange-400">{job.title}</span>
                         </div>
-                      )}
+                        <div>
+                          <span className="block text-xs text-orange-300">Category</span>
+                          <span className="text-gray-200">{job.category}</span>
+                        </div>
+                        {!isExpanded ? (
+                          <>
+                            <div>
+                              <span className="block text-xs text-orange-300">Start Date</span>
+                              <span className="text-gray-200">{createdAt ? createdAt.toLocaleDateString() : '-'}</span>
+                            </div>
+                            <div>
+                              <span className="block text-xs text-orange-300">Expires</span>
+                              <span className="text-gray-200">{expirationDate ? expirationDate.toLocaleDateString() : '-'}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div>
+                            <span className="block text-xs text-orange-300">Salary</span>
+                            <span className="text-gray-200">{job.salaryRange || '-'}</span>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleDeleteJob(job.id); }}
+                        className="ml-4 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm flex-shrink-0"
+                      >
+                        Delete
+                      </button>
                     </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); handleDeleteJob(job.id); }}
-                      className="ml-4 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm flex-shrink-0"
-                    >
-                      Delete
-                    </button>
+                    {isExpanded && (
+                      <div className="px-6 pb-4 pt-2 text-sm text-gray-200">
+                        <div className="mb-2">
+                          <span className="font-semibold text-orange-300">Description:</span> {job.description}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                          <div>
+                            <span className="text-orange-300">Company:</span> {job.company}
+                          </div>
+                          <div>
+                            <span className="text-orange-300">Employment Type:</span> {job.employmentType || '-'}</div>
+                          <div>
+                            <span className="text-orange-300">Experience Level:</span> {job.experienceLevel || '-'}</div>
+                          <div>
+                            <span className="text-orange-300">Plan:</span> {planName}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-orange-300">Created At:</span> {createdAt ? createdAt.toLocaleDateString() : '-'}
+                          </div>
+                          <div>
+                            <span className="text-orange-300">Expires:</span> {expirationDate ? expirationDate.toLocaleDateString() : '-'}
+                          </div>
+                        </div>
+                        {job.requiredSkills && (
+                          <div className="mt-2">
+                            <span className="text-orange-300">Skills:</span> {job.requiredSkills}
+                          </div>
+                        )}
+                        {job.applicationLink && (
+                          <div className="mt-2">
+                            <span className="text-orange-300">Application Link:</span> <a href={job.applicationLink} className="underline text-orange-400" target="_blank" rel="noopener noreferrer">{job.applicationLink}</a>
+                          </div>
+                        )}
+                        {job.contactEmail && (
+                          <div className="mt-2">
+                            <span className="text-orange-300">Contact Email:</span> {job.contactEmail}
+                          </div>
+                        )}
+                        {job.paymentStatus && (
+                          <div className="mt-2">
+                            <span className="text-orange-300">Payment Status:</span> {job.paymentStatus}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {isExpanded && (
-                    <div className="px-6 pb-4 pt-2 text-sm text-gray-200">
-                      <div className="mb-2">
-                        <span className="font-semibold text-orange-300">Description:</span> {job.description}
+                );
+              })}
+            </div>
+          ) : isProduction ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <h2 className="text-4xl font-bold mb-4 text-orange-500">Coming Soon</h2>
+              <p className="text-lg text-gray-300">This feature will be available soon.</p>
+            </div>
+          ) : (
+            <div className="bg-black/70 rounded-lg shadow-lg p-6">
+              {/* Unified Instant Jobs UI for both dedicated tab and Job Offers > Instant Jobs */}
+              {activeSection === 'list' ? (
+                instantJobs.length === 0 ? (
+                  <div className="text-center py-8 text-gray-300">No instant jobs found.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {instantJobs.map((job) => (
+                      <div
+                        key={job.id}
+                        className={`bg-black/60 rounded-lg border border-orange-900/30 p-4 cursor-pointer hover:shadow-lg`}
+                        onClick={() => {
+                          setSelectedJobId(job.id ?? null);
+                          setSelectedJob(job);
+                          setActiveSection('detail');
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-semibold text-orange-400">{job.title}</div>
+                            <div className="text-xs text-orange-300">{job.category}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-gray-200 font-bold">{job.budget} {job.currency}</div>
+                            <div className="text-xs text-gray-400">Deadline: {formatDateOrTimestamp(job.deadline, {dateOnly: true})}</div>
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-400 line-clamp-2">{job.description}</div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                        <div>
-                          <span className="text-orange-300">Company:</span> {job.company}
-                        </div>
-                        <div>
-                          <span className="text-orange-300">Employment Type:</span> {job.employmentType || '-'}</div>
-                        <div>
-                          <span className="text-orange-300">Experience Level:</span> {job.experienceLevel || '-'}</div>
-                        <div>
-                          <span className="text-orange-300">Plan:</span> {planName}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div>
-                          <span className="text-orange-300">Created At:</span> {createdAt ? createdAt.toLocaleDateString() : '-'}
-                        </div>
-                        <div>
-                          <span className="text-orange-300">Expires:</span> {expirationDate ? expirationDate.toLocaleDateString() : '-'}
-                        </div>
-                      </div>
-                      {job.requiredSkills && (
-                        <div className="mt-2">
-                          <span className="text-orange-300">Skills:</span> {job.requiredSkills}
-                        </div>
-                      )}
-                      {job.applicationLink && (
-                        <div className="mt-2">
-                          <span className="text-orange-300">Application Link:</span> <a href={job.applicationLink} className="underline text-orange-400" target="_blank" rel="noopener noreferrer">{job.applicationLink}</a>
-                        </div>
-                      )}
-                      {job.contactEmail && (
-                        <div className="mt-2">
-                          <span className="text-orange-300">Contact Email:</span> {job.contactEmail}
-                        </div>
-                      )}
-                      {job.paymentStatus && (
-                        <div className="mt-2">
-                          <span className="text-orange-300">Payment Status:</span> {job.paymentStatus}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : isProduction ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <h2 className="text-4xl font-bold mb-4 text-orange-500">Coming Soon</h2>
-            <p className="text-lg text-gray-300">This feature will be available soon.</p>
-          </div>
-        ) : (
-          <div className="bg-black/70 rounded-lg shadow-lg p-6">
-            {/* Unified Instant Jobs UI for both dedicated tab and Job Offers > Instant Jobs */}
-            {activeSection === 'list' ? (
-              instantJobs.length === 0 ? (
-                <div className="text-center py-8 text-gray-300">No instant jobs found.</div>
-              ) : (
-                <div className="space-y-3">
-                  {instantJobs.map((job) => (
-                    <div
-                      key={job.id}
-                      className={`bg-black/60 rounded-lg border border-orange-900/30 p-4 cursor-pointer hover:shadow-lg`}
-                      onClick={() => {
-                        setSelectedJobId(job.id ?? null);
-                        setSelectedJob(job);
-                        setActiveSection('detail');
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-semibold text-orange-400">{job.title}</div>
-                          <div className="text-xs text-orange-300">{job.category}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-gray-200 font-bold">{job.budget} {job.currency}</div>
-                          <div className="text-xs text-gray-400">Deadline: {formatDateOrTimestamp(job.deadline, {dateOnly: true})}</div>
-                        </div>
-                      </div>
-                      <div className="mt-2 text-xs text-gray-400 line-clamp-2">{job.description}</div>
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : activeSection === 'detail' && selectedJob ? (
-              <InstantJobDetailCard
-                job={selectedJob}
-                messages={jobMessages}
-                onBack={() => setActiveSection('list')}
-                onSendMessage={handleSendMessage}
-                isSending={isSendingMessage}
-                companyProfile={companyProfile}
-                handleApproveJob={handleApproveJob}
-              />
-            ) : null}
-          </div>
-        )}
+                    ))}
+                  </div>
+                )
+              ) : activeSection === 'detail' && selectedJob ? (
+                <InstantJobDetailCard
+                  job={selectedJob}
+                  messages={jobMessages}
+                  onBack={() => setActiveSection('list')}
+                  onSendMessage={handleSendMessage}
+                  isSending={isSendingMessage}
+                  companyProfile={companyProfile}
+                  handleApproveJob={handleApproveJob}
+                />
+              ) : null}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -1378,13 +1399,67 @@ const InstantJobDetailCard: React.FC<{
   const renderContent = () => {
     switch (activeTab) {
       case "profile":
+        // Dados para o gráfico de evolução (últimos 8 períodos)
+        const now = new Date();
+        const periods = Array.from({ length: 8 }, (_, i) => {
+          const d = new Date(now);
+          d.setDate(now.getDate() - (7 - i));
+          return d;
+        });
+        // Função para formatar data (ex: 14/05)
+        const fmt = (d: Date) => `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth()+1).toString().padStart(2, "0")}`;
+        // Contagem por período
+        const evolutionData = periods.map(date => {
+          const jobsCount = jobs.filter(j => j.createdAt && getDate(j.createdAt)! <= date).length;
+          const instantJobsCount = instantJobs.filter(j => j.createdAt && getDate(j.createdAt)! <= date).length;
+          const l2eCount = learn2earn.filter(l => {
+            if (!l.createdAt) return false;
+            if (typeof l.createdAt === 'string') return new Date(l.createdAt) <= date;
+            return getDate(l.createdAt)! <= date;
+          }).length;
+          return {
+            date: fmt(date),
+            jobs: jobsCount,
+            instantJobs: instantJobsCount,
+            learn2earn: l2eCount,
+          };
+        });
         return (
-          <CompanyWelcome
-            name={companyProfile.name}
-            industry={companyProfile.industry}
-            country={companyProfile.country}
-            responsiblePerson={companyProfile.responsiblePerson}
-          />
+          <>
+            <CompanyWelcome
+              name={companyProfile.name}
+              industry={companyProfile.industry}
+              country={companyProfile.country}
+              responsiblePerson={companyProfile.responsiblePerson}
+            />
+            {/* Quick summary of job offers and counts */}
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 my-8">
+              <div className="bg-black/60 rounded-lg p-5 flex flex-col items-center border border-orange-900/30">
+                <span className="text-sm text-gray-400 mb-1">Active Jobs</span>
+                <span className="text-2xl font-bold text-orange-400">{jobs.filter(j => !j.expiresAt || (j.expiresAt && j.expiresAt.toDate() > new Date())).length}</span>
+              </div>
+              <div className="bg-black/60 rounded-lg p-5 flex flex-col items-center border border-orange-900/30">
+                <span className="text-sm text-gray-400 mb-1">Expired Jobs</span>
+                <span className="text-2xl font-bold text-orange-400">{jobs.filter(j => j.expiresAt && j.expiresAt.toDate() <= new Date()).length}</span>
+              </div>
+              <div className="bg-black/60 rounded-lg p-5 flex flex-col items-center border border-orange-900/30">
+                <span className="text-sm text-gray-400 mb-1">Total Applications</span>
+                <span className="text-2xl font-bold text-orange-400">{totalApplications}</span>
+              </div>
+              <div className="bg-black/60 rounded-lg p-5 flex flex-col items-center border border-orange-900/30">
+                <span className="text-sm text-gray-400 mb-1">Instant Jobs</span>
+                <span className="text-2xl font-bold text-orange-400">{instantJobs.length}</span>
+              </div>
+              <div className="bg-black/60 rounded-lg p-5 flex flex-col items-center border border-orange-900/30">
+                <span className="text-sm text-gray-400 mb-1">Learn2Earn</span>
+                <span className="text-2xl font-bold text-orange-400">{learn2earn.length}</span>
+              </div>
+            </div>
+            {/* Evolution chart section - translated title */}
+            <div className="mt-2">
+              <EvolutionChart data={evolutionData} />
+            </div>
+          </>
         );
       case "myJobs":
         return (
@@ -1448,8 +1523,6 @@ const InstantJobDetailCard: React.FC<{
         console.error("Error checking wallet connection:", error);
       }
     };
-    
-    checkWalletConnection();
   }, []);
 
   useEffect(() => {
@@ -3170,6 +3243,33 @@ const manualSyncStatuses = async () => {
     interval = setInterval(fetchUnread, 10000);
     return () => clearInterval(interval);
   }, [companyId]);
+
+  // Fetch total applications when jobs change
+  useEffect(() => {
+    const fetchTotalApplications = async () => {
+      if (!db || jobs.length === 0) {
+        setTotalApplications(0);
+        return;
+      }
+      try {
+        const jobIds = jobs.map(j => j.id);
+        // Firestore 'in' queries are limited to 10 items, so batch if needed
+        let total = 0;
+        const batchSize = 10;
+        for (let i = 0; i < jobIds.length; i += batchSize) {
+          const batchIds = jobIds.slice(i, i + batchSize);
+          const q = query(collection(db, "jobApplications"), where("jobId", "in", batchIds));
+          const snapshot = await getDocs(q);
+          total += snapshot.size;
+        }
+        setTotalApplications(total);
+      } catch (error) {
+        console.error("Error fetching total applications:", error);
+        setTotalApplications(0);
+      }
+    };
+    fetchTotalApplications();
+  }, [jobs, db]);
 
   return (
     <Layout>

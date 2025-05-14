@@ -30,7 +30,7 @@ export function NotificationBell({ unreadCount, onClick }: { unreadCount: number
     <button
       className="relative focus:outline-none"
       onClick={onClick}
-      aria-label="Notifications"
+      aria-label="Notificações"
     >
       <BellIcon className="h-7 w-7 text-orange-400 hover:text-orange-300 transition" />
       {unreadCount > 0 && (
@@ -58,7 +58,7 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
       const collectionName = adminId ? "adminNotifications" : "notifications";
       const notificationsRef = collection(db, collectionName);
       
-      const allNotificationsSnapshot = await getDocs(collection(db, collectionName));
+    const allNotificationsSnapshot = await getDocs(collection(db, collectionName));
       const allNotifications = allNotificationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
       let q: Query<DocumentData> | undefined = undefined;
@@ -223,7 +223,7 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
         onClick={() => !n.read && markAsRead(n.id)}
         onFocus={() => !n.read && markAsRead(n.id)}
       >
-        <div className="font-semibold text-orange-300 mb-1">{n.title || 'Notification'}</div>
+        <div className="font-semibold text-orange-300 mb-1">{n.title || 'Notificação'}</div>
         <div className="text-sm text-gray-200">{n.body}</div>
         <div className="text-xs text-gray-400 mt-1">{formattedDate}</div>
       </div>
@@ -237,15 +237,15 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
         <div className="fixed inset-0 bg-black/80" onClick={onClose} />
         <div className="relative w-full max-w-md h-full bg-[#18120b] border-l border-orange-900 shadow-2xl flex flex-col animate-slide-in-right">          <div className="flex items-center justify-between p-4 border-b border-orange-900">
             <span className="text-lg font-bold text-orange-400">
-              {adminId ? 'Admin Notifications' : 'Notifications'}
+              {adminId ? 'Notificações de Administrador' : 'Notificações'}
             </span>
             <div className="flex items-center gap-2">
               {notifications.length > 0 && (
-                <button onClick={clearAllNotifications} className="text-orange-400 hover:text-red-500 transition" title="Clear all notifications" aria-label="Clear all notifications">
+                <button onClick={clearAllNotifications} className="text-orange-400 hover:text-red-500 transition" title="Limpar todas as notificações" aria-label="Limpar todas as notificações">
                   <TrashIcon className="h-6 w-6" />
                 </button>
               )}
-              <button onClick={onClose} className="text-orange-400 hover:text-orange-200" title="Close notifications panel" aria-label="Close notifications panel">
+              <button onClick={onClose} className="text-orange-400 hover:text-orange-200" title="Fechar painel de notificações" aria-label="Fechar painel de notificações">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -254,10 +254,10 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {loading ? (
-              <div className="text-gray-400 text-center mt-10">Loading...</div>
+              <div className="text-gray-400 text-center mt-10">A carregar...</div>
             ) : notifications.length === 0 ? (
               <div className="text-gray-400 text-center mt-10">
-                {adminId ? 'No admin notifications.' : 'No notifications.'}
+                {adminId ? 'Sem notificações de administrador.' : 'Sem notificações.'}
               </div>
             ) : (
               notifications.map(n => renderNotificationItem(n))
@@ -273,15 +273,15 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
     return (
       <div className="notifications-panel bg-[#18120b] border border-orange-900 rounded-lg shadow-xl p-4 w-80 max-h-96 overflow-y-auto">
         <div className="flex items-center justify-between mb-3 border-b border-orange-900 pb-2">
-          <span className="text-lg font-bold text-orange-400">Notifications</span>
+          <span className="text-lg font-bold text-orange-400">Notificações</span>
           <div className="flex items-center gap-2">
             {notifications.length > 0 && (
-              <button onClick={clearAllNotifications} className="text-orange-400 hover:text-red-500 transition" title="Clear all notifications">
+              <button onClick={clearAllNotifications} className="text-orange-400 hover:text-red-500 transition" title="Limpar todas as notificações">
                 <TrashIcon className="h-5 w-5" />
               </button>
             )}
             {onClose && (
-              <button onClick={onClose} className="text-orange-400 hover:text-orange-200" title="Close notifications panel">
+              <button onClick={onClose} className="text-orange-400 hover:text-orange-200" title="Fechar painel de notificações">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -291,9 +291,9 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
         </div>
         <div className="space-y-2">
           {loading ? (
-            <div className="text-gray-400 text-center py-4">Loading...</div>
+            <div className="text-gray-400 text-center py-4">A carregar...</div>
           ) : notifications.length === 0 ? (
-            <div className="text-gray-400 text-center py-4">No notifications.</div>
+            <div className="text-gray-400 text-center py-4">Sem notificações.</div>
           ) : (
             notifications.map(n => renderNotificationItem(n))
           )}

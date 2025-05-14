@@ -63,8 +63,8 @@ class InstantJobsService {
       // Add a notification for administrators
       const notificationsCollection = collection(db, "adminNotifications");
       await addDoc(notificationsCollection, {
-        adminId: "admin", // ou o id real do admin se disponível
-        title: "Novo micro-task criado",
+        adminId: "admin", // or the real admin id if available
+        title: "New micro-task created",
         body: `New micro-task created by ${jobData.companyName}: ${jobData.title}`,
         type: "instantJob",
         read: false,
