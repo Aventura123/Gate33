@@ -9,7 +9,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Button } from "../../../../components/ui/button";
 import { useToast } from "../../../../hooks/use-toast";
 import Layout from "../../../../components/Layout";
-import RelatedJobs from "../../RelatedJobs";
+import AdsSidebar from '../../AdsSidebar';
 
 export default function ApplyJobPage({ params }: { params: Promise<{ jobId: string }> }) {
   const router = useRouter();
@@ -328,7 +328,7 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
               <div className="bg-black/30 p-4 rounded-md border border-orange-500/10">
                 <h3 className="text-orange-300 text-lg font-semibold mb-2 flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Requirements
                 </h3>
@@ -643,24 +643,21 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
             </svg>
             Back to Jobs
           </button>
-        </div>          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Coluna de vagas relacionadas (cross-selling) */}
-            <div className="lg:col-span-3 xl:col-span-2 order-2 lg:order-1">
-              <div className="bg-black/80 rounded-lg p-5 sticky top-24">
-                <h3 className="text-xl font-bold text-orange-400 mb-4">Similar Jobs</h3>
-                <div>
-                  <RelatedJobs currentJobId={jobId} maxJobs={4} />
-                </div>
-              </div>
-            </div>
-            
-            {/* Coluna do formulário (centralizada) */}
-            <div className="lg:col-span-9 xl:col-span-10 order-1 lg:order-2 flex justify-center items-start">
-              <div className="w-full max-w-3xl mx-auto">
-                {renderContent()}
-              </div>
-            </div>
+        </div>          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-14 gap-4 lg:gap-6">
+        {/* Coluna de anúncios (à esquerda) */}
+        <div className="lg:col-span-2 xl:col-span-2 order-2 lg:order-1">
+          <AdsSidebar />
         </div>
+        
+        {/* Coluna do formulário principal (centro-esquerda) */}
+        <div className="lg:col-span-7 xl:col-span-9 order-1 lg:order-2">
+          <div className="w-full">
+            {renderContent()}
+          </div>
+        </div>
+        
+        {/* Coluna de vagas relacionadas (à direita do formulário) */}        {/* Similar Jobs section removed */}
+      </div>
       </div>
     </Layout>
   );
