@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback, useContext } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, orderBy, serverTimestamp } from "firebase/firestore";
 import { Learn2Earn, Learn2EarnTask } from "../../types/learn2earn";
 import learn2earnContractService from "../../services/learn2earnContractService";
-import { WalletContext } from "../../components/WalletProvider";
+import { useWallet } from "../../components/WalletProvider";
+import { ethers } from "ethers";
 
 interface Learn2EarnManagerProps {
   db: any;
@@ -51,20 +52,15 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   const [depositError, setDepositError] = useState<string | null>(null);
   const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
   const [availableNetworks, setAvailableNetworks] = useState<string[]>([]);
-  const [isLoadingNetworks, setIsLoadingNetworks] = useState(false);
-  const [syncWarnings, setSyncWarnings] = useState<{id:string; msg:string}[]>([]);
+  const [isLoadingNetworks, setIsLoadingNetworks] = useState(false);  const [syncWarnings, setSyncWarnings] = useState<{id:string; msg:string}[]>([]);
   const [syncing, setSyncing] = useState(false);
+  // Acesse o contexto da carteira usando o hook useWallet
+  const wallet = useWallet();
 
-  // Corrija o uso do contexto WalletContext para evitar erro de tipo
-  const wallet = useContext(WalletContext) as {
-    walletAddress?: string;
-    connectWallet?: () => Promise<void>;
-    web3Service?: any;
-  };
-
-  const walletAddress = wallet?.walletAddress ?? null;
-  const handleConnectWallet = wallet?.connectWallet ?? (async () => {});
-  const web3Service = wallet?.web3Service;
+  const walletAddress = wallet.walletAddress;
+  const handleConnectWallet = wallet.connectWallet;
+  const currentNetwork = wallet.currentNetwork;
+  // Se precisar de provider/signer para contratos, crie um utilitário no provider ou use um hook específico, igual aos outros componentes
 
   // --- Funções e useEffects principais (fetch, create, toggle, etc) ---
 
@@ -137,7 +133,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         try {
           const contractAddresses = await learn2earnContractService.getContractAddresses(l2l.network);
           if (!contractAddresses.contractAddress) continue;
-          const provider = await web3Service.getWeb3Provider();
+          const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : null;
           if (!provider) continue;
           const contract = new (window as any).ethers.Contract(
             contractAddresses.contractAddress,
@@ -174,7 +170,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
       try {
         const contractAddresses = await learn2earnContractService.getContractAddresses(l2l.network);
         if (!contractAddresses.contractAddress) continue;
-        const provider = await web3Service.getWeb3Provider();
+        const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : null;
         if (!provider) continue;
         const contract = new (window as any).ethers.Contract(
           contractAddresses.contractAddress,
