@@ -636,7 +636,7 @@ export default function DonatePage() {
             
             <div className="mb-8 flex justify-center">
               <div className="inline-flex rounded-md shadow">
-                <WalletButton className="px-8 py-3" />
+                <WalletButton className="px-8 py-3" availableNetworks={["ethereum", "polygon", "binance", "avalanche", "optimism"]} />
               </div>
             </div>
             
