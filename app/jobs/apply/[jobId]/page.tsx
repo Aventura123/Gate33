@@ -174,7 +174,6 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
       setCvUploading(false);
     }
   };
-
   // Handle submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,13 +208,16 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
           setSubmitting(false);
           return;
         }
-      }        // Create application document
-      await addDoc(collection(db, "applications"), {
+      }
+      
+      // Criar o documento de aplicação no Firestore
+      const applicationData = {
         jobId: jobId,
         jobTitle: job?.title,
         companyId: job?.companyId,
         companyName: job?.companyName,
-        seekerId,seekerName: name,
+        seekerId,
+        seekerName: name,
         seekerEmail: email,
         seekerPhone: phone,
         phoneCountry: phoneCountry,
@@ -233,8 +235,12 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
         screeningAnswers,
         appliedAt: serverTimestamp(),
         status: "pending", // Initial status
-      });
-        // Update seeker profile with the new information
+      };
+      
+      // Salvar na coleção applications
+      const applicationRef = await addDoc(collection(db, "applications"), applicationData);
+      
+      // Update seeker profile with the new information
       try {
         const seekerRef = doc(db, "seekers", seekerId);
         await updateDoc(seekerRef, {
@@ -255,9 +261,39 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
         console.error("Error updating seeker profile:", error);
         // We don't want to block the application process if profile update fails
       }
+        // Enviar e-mail de notificação e criar notificação no sistema
+      try {
+        const notificationResponse = await fetch('/api/jobs/application-notification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...applicationData,
+            screeningQuestions: job?.screeningQuestions || [],
+          }),
+        });
+        
+        const notificationData = await notificationResponse.json();
+        
+        if (!notificationData.success) {
+          console.warn("Notification emails could not be sent:", notificationData.message);
+        } else {
+          console.log("Application notification sent successfully");
+          
+          // Se os emails foram enviados, mostrar notificação de sucesso para o usuário
+          toast({ 
+            title: "Application Submitted Successfully",
+            description: "The company has been notified of your application",
+            variant: "success"
+          });
+        }
+      } catch (notificationErr) {
+        console.error("Failed to send application notification:", notificationErr);
+        // Não bloquear o processo de aplicação se o envio de e-mail falhar
+      }
       
       setSuccess(true);
-      // Add this job to seeker's applied jobs list
     } catch (err) {
       console.error("Application submission error:", err);
       setError("Failed to submit application.");
