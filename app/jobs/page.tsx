@@ -7,7 +7,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { useRouter } from "next/navigation";
 
-// Definindo os tipos
+// Defining the types
 interface Job {
   id: string;
   jobTitle: string;
@@ -23,10 +23,10 @@ interface Job {
   isFeatured: boolean;
   acceptsCryptoPay: boolean;
   experienceLevel: string; // Junior, Mid, Senior
-  techTags?: string[]; // Array de tags tecnológicas específicas
+  techTags?: string[]; // Array of specific technology tags
 }
 
-// Array de categorias para o filtro
+// Array of categories for the filter
 const JOB_CATEGORIES = [
   "All",
   "Engineering",
@@ -42,7 +42,7 @@ const JOB_CATEGORIES = [
   "Other"
 ];
 
-// Array de tecnologias web3/blockchain comuns
+// Array of common web3/blockchain technologies
 const TECH_TAGS = [
   "Solidity",
   "Rust",
@@ -86,7 +86,7 @@ const TECH_TAGS = [
   "WalletConnect"
 ];
 
-// Array de tipos de trabalho
+// Array of job types
 const JOB_TYPES = [
   "All Types",
   "Full-Time",
@@ -95,7 +95,7 @@ const JOB_TYPES = [
   "Freelance"
 ];
 
-// Array de níveis de experiência
+// Array of experience levels
 const EXPERIENCE_LEVELS = [
   "All Levels",
   "Junior",
@@ -113,18 +113,18 @@ export default function JobsPage() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const router = useRouter();
   
-  // Novos estados para filtros adicionais
+  // New states for additional filters
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedJobType, setSelectedJobType] = useState("All Types");
   const [selectedExperienceLevel, setSelectedExperienceLevel] = useState("All Levels");
   const [showCryptoPayOnly, setShowCryptoPayOnly] = useState(false);
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
   
-  // Estado para filtro de tags tecnológicas
+  // State for technology tags filter
   const [selectedTechTags, setSelectedTechTags] = useState<string[]>([]);
   const [showTechTagsFilter, setShowTechTagsFilter] = useState(false);
 
-  // Função para extrair tags tecnológicas de uma string de habilidades
+  // Function to extract technology tags from a skills string
   const extractTechTags = (skills: string): string[] => {
     if (!skills) return [];
     
@@ -137,7 +137,7 @@ export default function JobsPage() {
     );
   };
 
-  // Cálculo do tempo decorrido desde a postagem
+  // Calculate time elapsed since posting
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -152,13 +152,13 @@ export default function JobsPage() {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        if (!db) throw new Error("Firestore não está inicializado");
+        if (!db) throw new Error("Firestore is not initialized");
 
         const jobCollection = collection(db, "jobs");
         const jobSnapshot = await getDocs(jobCollection);
         const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => {
           const skillsString = doc.data().requiredSkills || "";
-          // Extrair tags tecnológicas automaticamente das habilidades
+          // Automatically extract technology tags from skills
           const techTags = extractTechTags(skillsString);
           
           return {
@@ -176,12 +176,12 @@ export default function JobsPage() {
             isFeatured: doc.data().isFeatured || false,
             acceptsCryptoPay: doc.data().acceptsCryptoPay || false,
             experienceLevel: doc.data().experienceLevel || "Mid-Level",
-            techTags: techTags, // Adicionar as tags extraídas
+            techTags: techTags, // Add the extracted tags
           };
         });
         setJobs(fetchedJobs);
       } catch (error) {
-        console.error("Erro ao buscar jobs no Firestore:", error);
+        console.error("Error fetching jobs from Firestore:", error);
       }
     };
 
@@ -198,7 +198,7 @@ export default function JobsPage() {
       const matchesCryptoPay = !showCryptoPayOnly || job.acceptsCryptoPay;
       const matchesFeatured = !showFeaturedOnly || job.isFeatured;
       
-      // Verificar se o job contém todas as tags de tecnologia selecionadas
+      // Check if the job contains all the selected technology tags
       const matchesTechTags = selectedTechTags.length === 0 || 
         selectedTechTags.every(tag => job.techTags?.includes(tag));
       
