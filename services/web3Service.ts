@@ -2,7 +2,6 @@ import { ethers } from 'ethers';
 import { collection, addDoc, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { 
-  PAYMENT_RECEIVER_ADDRESS, 
   NETWORK_CONFIG, 
   SERVICE_FEE_PERCENTAGE, 
   TRANSACTION_TIMEOUT 
@@ -1313,27 +1312,14 @@ class Web3Service {
     try {
       // Fetch configuration document from Firestore
       const configDoc = await getDoc(doc(db, "settings", "paymentConfig"));
-      
       if (configDoc.exists()) {
         return configDoc.data();
       }
-      
-      // If it doesn't exist, return default settings
-      return {
-        receiverAddress: PAYMENT_RECEIVER_ADDRESS,
-        serviceFee: SERVICE_FEE_PERCENTAGE,
-        transactionTimeout: TRANSACTION_TIMEOUT,
-        contracts: {}
-      };
+      // If it doesn't exist, throw error (no fallback)
+      throw new Error('Payment configuration not found in Firestore.');
     } catch (error) {
       console.error('Error fetching payment configurations:', error);
-      // In case of error, return default settings
-      return {
-        receiverAddress: PAYMENT_RECEIVER_ADDRESS,
-        serviceFee: SERVICE_FEE_PERCENTAGE,
-        transactionTimeout: TRANSACTION_TIMEOUT,
-        contracts: {}
-      };
+      throw error;
     }
   }
 
@@ -1344,17 +1330,14 @@ class Web3Service {
     try {
       // Fetch configuration document from Firestore
       const configDoc = await getDoc(doc(db, "settings", "paymentConfig"));
-      
       if (configDoc.exists() && configDoc.data().receiverAddress) {
         return configDoc.data().receiverAddress;
       }
-      
-      // If not found in Firestore, use the default value from settings
-      return PAYMENT_RECEIVER_ADDRESS;
+      // If not found in Firestore, throw error (no fallback)
+      throw new Error('Payment receiver address not found in Firestore.');
     } catch (error) {
       console.error('Error fetching payment address:', error);
-      // In case of error, return the default address from settings
-      return PAYMENT_RECEIVER_ADDRESS;
+      throw error;
     }
   }
 
