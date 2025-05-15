@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '../../../../lib/firebase';
 import { getDoc, doc } from 'firebase/firestore';
-import { createJobApplicationNotification } from '../../../../utils/jobApplicationNotifications';
+import { createCompanyNotification } from '../../../../lib/notifications';
 
-// Função para enviar e-mails usando o serviço de e-mail existente
+// Function to send emails using the existing email service
 async function sendEmail(to: string | string[], subject: string, message: string) {
   try {
     const { sendEmail: sendEmailService } = await import('../../../../utils/emailService');
     
-    // Se for um array, enviar para cada destinatário
+    // If it's an array, send to each recipient
     if (Array.isArray(to)) {
       for (const recipient of to) {
         await sendEmailService({
           to: recipient,
           subject,
-          text: "Uma nova aplicação para vaga foi recebida.",
+          text: "A new job application has been received.",
           html: message
         });
       }
@@ -22,14 +22,14 @@ async function sendEmail(to: string | string[], subject: string, message: string
       await sendEmailService({
         to,
         subject,
-        text: "Uma nova aplicação para vaga foi recebida.",
+        text: "A new job application has been received.",
         html: message
       });
     }
     
     return true;
   } catch (error) {
-    console.error("Erro ao enviar e-mail de notificação de aplicação:", error);
+    console.error("Error sending application notification email:", error);
     return false;
   }
 }
@@ -61,21 +61,21 @@ export async function POST(request: NextRequest) {
       screeningQuestions
     } = body;
     
-    // Validar campos obrigatórios
+    // Validate required fields
     if (!jobId || !companyId || !seekerId || !seekerEmail) {
       return NextResponse.json(
-        { success: false, message: 'Campos obrigatórios faltando' },
+        { success: false, message: 'Missing required fields' },
         { status: 400 }
       );
     }
     
-    // Buscar o e-mail da empresa
+    // Get company email
     const companyRef = doc(db, "companies", companyId);
     const companyDoc = await getDoc(companyRef);
     
     if (!companyDoc.exists()) {
       return NextResponse.json(
-        { success: false, message: 'Empresa não encontrada' },
+        { success: false, message: 'Company not found' },
         { status: 404 }
       );
     }
@@ -85,30 +85,30 @@ export async function POST(request: NextRequest) {
     
     if (!companyEmail) {
       return NextResponse.json(
-        { success: false, message: 'E-mail da empresa não encontrado' },
+        { success: false, message: 'Company email not found' },
         { status: 400 }
       );
     }
     
-    // Preparar o HTML do e-mail para a empresa
+    // Prepare company email HTML
     const emailHtmlCompany = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #FF6B00; border-radius: 5px;">
-        <h2 style="color: #FF6B00; border-bottom: 2px solid #FF6B00; padding-bottom: 10px;">Nova Aplicação Recebida para: ${jobTitle}</h2>
+        <h2 style="color: #FF6B00; border-bottom: 2px solid #FF6B00; padding-bottom: 10px;">New Application Received for: ${jobTitle}</h2>
         
         <div style="margin-bottom: 20px;">
-          <h3 style="color: #333;">Informações do Candidato:</h3>
+          <h3 style="color: #333;">Candidate Information:</h3>
           <ul style="list-style: none; padding-left: 0;">
-            <li><strong>Nome:</strong> ${seekerName}</li>
+            <li><strong>Name:</strong> ${seekerName}</li>
             <li><strong>Email:</strong> ${seekerEmail}</li>
-            <li><strong>Telefone:</strong> ${phoneCountry} ${seekerPhone}</li>
-            <li><strong>Anos de Experiência:</strong> ${yearsOfExperience}</li>
-            <li><strong>Experiência com Web3:</strong> ${web3Experience || 'Não informado'}</li>
-            <li><strong>Salário Atual:</strong> ${currentSalary || 'Não informado'}</li>
+            <li><strong>Phone:</strong> ${phoneCountry} ${seekerPhone}</li>
+            <li><strong>Years of Experience:</strong> ${yearsOfExperience}</li>
+            <li><strong>Web3 Experience:</strong> ${web3Experience || 'Not provided'}</li>
+            <li><strong>Current Salary:</strong> ${currentSalary || 'Not provided'}</li>
           </ul>
         </div>
         
         <div style="margin-bottom: 20px;">
-          <h3 style="color: #333;">Perfis Sociais e Portfolio:</h3>
+          <h3 style="color: #333;">Social Profiles and Portfolio:</h3>
           <ul style="list-style: none; padding-left: 0;">
             ${linkedinProfile ? `<li><strong>LinkedIn:</strong> <a href="${linkedinProfile}" target="_blank">${linkedinProfile}</a></li>` : ''}
             ${githubProfile ? `<li><strong>GitHub:</strong> <a href="${githubProfile}" target="_blank">${githubProfile}</a></li>` : ''}
@@ -118,32 +118,32 @@ export async function POST(request: NextRequest) {
         </div>
         
         <div style="margin-bottom: 20px;">
-          <h3 style="color: #333;">Carta de Apresentação:</h3>
+          <h3 style="color: #333;">Cover Letter:</h3>
           <p style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #FF6B00;">${resumeLetter.replace(/\n/g, '<br>')}</p>
         </div>
         
         ${cvUrl ? `
         <div style="margin-bottom: 20px;">
-          <h3 style="color: #333;">Currículo Anexado:</h3>
-          <p><a href="${cvUrl}" target="_blank" style="color: #FF6B00; font-weight: bold;">Baixar currículo</a></p>
+          <h3 style="color: #333;">Attached CV:</h3>
+          <p><a href="${cvUrl}" target="_blank" style="color: #FF6B00; font-weight: bold;">Download CV</a></p>
         </div>
         ` : ''}
         
         ${videoUrl ? `
         <div style="margin-bottom: 20px;">
-          <h3 style="color: #333;">Vídeo de Apresentação:</h3>
-          <p><a href="${videoUrl}" target="_blank" style="color: #FF6B00; font-weight: bold;">Assistir vídeo</a></p>
+          <h3 style="color: #333;">Introduction Video:</h3>
+          <p><a href="${videoUrl}" target="_blank" style="color: #FF6B00; font-weight: bold;">Watch video</a></p>
         </div>
         ` : ''}
         
         ${screeningQuestions && screeningQuestions.length > 0 ? `
         <div style="margin-bottom: 20px;">
-          <h3 style="color: #333;">Respostas às perguntas:</h3>
+          <h3 style="color: #333;">Screening Questions & Answers:</h3>
           <ul style="background-color: #f9f9f9; padding: 15px;">
             ${screeningQuestions.map((question: string, index: number) => `
               <li style="margin-bottom: 10px;">
                 <p style="font-weight: bold; margin-bottom: 5px;">${question}</p>
-                <p style="color: #444;">${screeningAnswers[index] || 'Sem resposta'}</p>
+                <p style="color: #444;">${screeningAnswers[index] || 'No answer'}</p>
               </li>
             `).join('')}
           </ul>
@@ -151,71 +151,68 @@ export async function POST(request: NextRequest) {
         ` : ''}
         
         <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; color: #777; font-size: 14px;">
-          <p>Este é um e-mail automático do sistema Gate33. Para acessar todas as aplicações, entre em seu painel de controle.</p>
+          <p>This is an automatic email from the Gate33 system. To access all applications, log in to your dashboard.</p>
         </div>
       </div>
     `;
     
-    // Preparar o HTML do e-mail para o candidato
+    // Prepare candidate email HTML
     const emailHtmlCandidate = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #FF6B00; border-radius: 5px;">
-        <h2 style="color: #FF6B00; border-bottom: 2px solid #FF6B00; padding-bottom: 10px;">Sua aplicação foi enviada com sucesso!</h2>
+        <h2 style="color: #FF6B00; border-bottom: 2px solid #FF6B00; padding-bottom: 10px;">Your application was sent successfully!</h2>
         
         <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-          Obrigado por se candidatar à vaga <strong>${jobTitle}</strong> na empresa <strong>${companyName}</strong>.
+          Thank you for applying to the position <strong>${jobTitle}</strong> at <strong>${companyName}</strong>.
         </p>
         
         <div style="background-color: #f9f9f9; border-left: 4px solid #FF6B00; padding: 15px; margin-bottom: 20px;">
-          <p style="margin: 0;"><strong>Detalhes da sua aplicação:</strong></p>
+          <p style="margin: 0;"><strong>Application details:</strong></p>
           <ul>
-            <li>Vaga: ${jobTitle}</li>
-            <li>Empresa: ${companyName}</li>
-            <li>Data: ${new Date().toLocaleString()}</li>
+            <li>Position: ${jobTitle}</li>
+            <li>Company: ${companyName}</li>
+            <li>Date: ${new Date().toLocaleString()}</li>
           </ul>
         </div>
         
-        <p style="color: #333;">A empresa revisará sua aplicação e entrará em contato caso seu perfil atenda aos requisitos da vaga.</p>
+        <p style="color: #333;">The company will review your application and contact you if your profile matches the job requirements.</p>
         
         <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; color: #777; font-size: 14px;">
-          <p>Este é um e-mail automático do sistema Gate33. Para acompanhar suas aplicações, acesse seu painel de controle.</p>
+          <p>This is an automatic email from the Gate33 system. To track your applications, log in to your dashboard.</p>
         </div>
       </div>
     `;
     
-    // Enviar e-mail para a empresa
+    // Send email to company
     const companyEmailSent = await sendEmail(
       companyEmail,
-      `Nova aplicação recebida: ${jobTitle} - ${seekerName}`,
+      `New application received: ${jobTitle} - ${seekerName}`,
       emailHtmlCompany
     );
-      // Enviar cópia para o candidato
+      // Send copy to candidate
     const candidateEmailSent = await sendEmail(
       seekerEmail,
-      `Sua aplicação para: ${jobTitle} - ${companyName}`,
+      `Your application for: ${jobTitle} - ${companyName}`,
       emailHtmlCandidate
     );
-    
-    // Criar notificação para a empresa no sistema
-    const notificationResult = await createJobApplicationNotification(
+
+    // Create notification for company
+    await createCompanyNotification({
       companyId,
-      seekerId,
-      seekerName,
-      jobId,
-      jobTitle
-    );
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Notificações enviadas com sucesso',
-      companyEmailSent,
-      candidateEmailSent,
-      notificationCreated: notificationResult.success
+      title: "New application",
+      body: `${seekerName} applied for the job: ${jobTitle}`,
+      type: "job_application",
+      read: false,
+      data: {
+        jobId,
+        seekerId,
+        seekerName
+      }
     });
     
   } catch (error) {
-    console.error('Erro na API de notificação de aplicação:', error);
+    console.error("Error processing application:", error);
     return NextResponse.json(
-      { success: false, message: 'Erro interno do servidor' },
+      { success: false, message: 'Error processing application' },
       { status: 500 }
     );
   }

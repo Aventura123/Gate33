@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 
-// Exemplo de anúncios específicos para Web3/Blockchain/Crypto
+// Example ads for Web3/Blockchain/Crypto
 const ads = [
   { 
     id: 1, 

@@ -167,14 +167,19 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
               onClick={() => handleMobileMenuOptionClick("jobs", "create")}
             >
               Create Job
-            </li>
-            <li
+            </li>            <li
               className={`cursor-pointer p-1 rounded-lg text-center md:text-left text-sm w-3/4 ${
                 activeSubTab === "prices" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
               }`}
               onClick={() => handleMobileMenuOptionClick("jobs", "prices")}
             >
               Job Plans
+            </li>
+            <li
+              className={`cursor-pointer p-1 rounded-lg text-center md:text-left text-sm w-3/4 bg-blue-600 text-white`}
+              onClick={() => window.location.href = '/admin/job-notification-test'}
+            >
+              Test Job Notification
             </li>
           </ul>
         )}

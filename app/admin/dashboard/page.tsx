@@ -2318,8 +2318,7 @@ const fetchEmployersList = async () => {
                     }}
                   >
                     Create Job
-                  </li>
-                  <li
+                  </li>                  <li
                     className={`cursor-pointer p-2 rounded-lg text-center ${
                       activeSubTab === "prices" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
                     }`}
@@ -2329,6 +2328,17 @@ const fetchEmployersList = async () => {
                     }}
                   >
                     Job Pricing
+                  </li>
+                  <li
+                    className={`cursor-pointer p-2 rounded-lg text-center ${
+                      activeSubTab === "test-notification" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
+                    }`}
+                    onClick={() => {
+                      // Navigate to the test notification page
+                      router.push("/admin/job-notification-test");
+                    }}
+                  >
+                    Test Job Notification
                   </li>
                 </ul>
               )}
