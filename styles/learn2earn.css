@@ -73,29 +73,3 @@
 .progress-bar-71-80 { width: 80%; }
 .progress-bar-81-90 { width: 90%; }
 .progress-bar-91-100 { width: 100%; }
-
-/* Animação para fade in utilizada nos cards expandidos */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-in-out forwards;
-}
-
-/* Efeito de hover nos cards de Learn2Earn */
-.learn2earn-card {
-  transition: all 0.3s ease;
-}
-
-.learn2earn-card:hover {
-  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.2);
-  transform: translateY(-2px);
-}
