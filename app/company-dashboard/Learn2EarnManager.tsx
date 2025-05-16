@@ -43,6 +43,11 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   const [feePercent, setFeePercent] = useState<number>(5);
   const [learn2EarnSubTab, setLearn2EarnSubTab] = useState<'new' | 'my'>('my');
   const [learn2EarnStep, setLearn2EarnStep] = useState<'info' | 'tasks' | 'confirmation'>('info');
+  // Estados de sincronização
+  const [syncing, setSyncing] = useState(false);
+  const [syncWarnings, setSyncWarnings] = useState<{id: string; msg: string}[]>([]);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [nextSyncTime, setNextSyncTime] = useState<Date | null>(null);
   const [learn2earnData, setLearn2EarnData] = useState<Omit<Learn2Earn, 'id' | 'companyId'>>({
     title: "",
     description: "",
@@ -71,10 +76,8 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   const [correctOptionIndex, setCorrectOptionIndex] = useState(0);
   const [isDepositConfirmed, setIsDepositConfirmed] = useState(false);
   const [depositError, setDepositError] = useState<string | null>(null);
-  const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
-  const [availableNetworks, setAvailableNetworks] = useState<string[]>([]);
-  const [isLoadingNetworks, setIsLoadingNetworks] = useState(false);  const [syncWarnings, setSyncWarnings] = useState<{id:string; msg:string}[]>([]);
-  const [syncing, setSyncing] = useState(false);
+  const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);  const [availableNetworks, setAvailableNetworks] = useState<string[]>([]);
+  const [isLoadingNetworks, setIsLoadingNetworks] = useState(false);
   // Acesse o contexto da carteira usando o hook useWallet
   const wallet = useWallet();
 
@@ -133,60 +136,20 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     } finally {
       setIsLoadingNetworks(false);
     }
-  }, [learn2earnContractService]);
-
-  // Buscar redes ao ativar aba
+  }, [learn2earnContractService]);  // Buscar redes ao ativar aba  
   useEffect(() => {
     fetchAvailableNetworks();
   }, [fetchAvailableNetworks]);
-
+  
   // Função dummy para detalhes (placeholder)
   const fetchL2LStats = (l2lId: string) => {};
-
-  // Estados e funções de sincronização
-  useEffect(() => {
-    const syncStatuses = async () => {
-      if (!learn2earn || learn2earn.length === 0) return;
-      setSyncing(true);
-      const warnings: {id:string; msg:string}[] = [];
-      for (const l2l of learn2earn) {
-        if (!l2l.learn2earnId || !l2l.network) continue;
-        try {
-          const contractAddresses = await learn2earnContractService.getContractAddresses(l2l.network);
-          if (!contractAddresses.contractAddress) continue;
-          const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : null;
-          if (!provider) continue;
-          const contract = new (window as any).ethers.Contract(
-            contractAddresses.contractAddress,
-            [
-              "function learn2earns(uint256) view returns (string id, address tokenAddress, uint256 tokenAmount, uint256 startTime, uint256 endTime, uint256 maxParticipants, uint256 participantCount, bool active)"
-            ],
-            provider
-          );
-          const onChain = await contract.learn2earns(Number(l2l.learn2earnId));
-          const onChainActive = Boolean(onChain.active);
-          const firebaseActive = l2l.status === 'active';
-          if (onChainActive !== firebaseActive) {
-            const newStatus = onChainActive ? 'active' : 'completed';
-            await updateDoc(doc(db, "learn2earn", l2l.id), { status: newStatus });
-            warnings.push({id: l2l.id, msg: `Status synchronized: Blockchain=${onChainActive ? 'Active' : 'Inactive'}, Firebase=${l2l.status}`});
-            l2l.status = newStatus;
-          }
-        } catch (err) {
-          warnings.push({id: l2l.id, msg: `Error synchronizing Learn2Earn status: ${l2l.title}`});
-        }
-      }
-      setSyncWarnings(warnings);
-      setSyncing(false);
-    };
-    syncStatuses();
-  }, [JSON.stringify(learn2earn)]);
-
-  const manualSyncStatuses = async () => {
+  // Função para sincronizar status
+  const syncStatuses = useCallback(async () => {
     if (!learn2earn || learn2earn.length === 0) return;
     setSyncing(true);
     const warnings: {id:string; msg:string}[] = [];
-    for (const l2l of learn2earn) {
+    console.log(`Iniciando sincronização de Learn2Earn - ${new Date().toISOString()}`);
+      for (const l2l of learn2earn) {
       if (!l2l.learn2earnId || !l2l.network) continue;
       try {
         const contractAddresses = await learn2earnContractService.getContractAddresses(l2l.network);
@@ -213,10 +176,93 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         warnings.push({id: l2l.id, msg: `Error synchronizing Learn2Earn status: ${l2l.title}`});
       }
     }
+    
     setSyncWarnings(warnings);
     setSyncing(false);
-  };
-
+    // Atualiza o horário da última sincronização
+    setLastSyncTime(new Date());
+    
+    return warnings;
+  }, [learn2earn, db]);  // Efeito para executar sincronização ao carregar o componente
+  useEffect(() => {
+    syncStatuses();
+  }, [syncStatuses]);
+  
+  // Sincronização automática à meia-noite
+  useEffect(() => {
+    // Função para calcular quando será a próxima meia-noite
+    const getNextMidnight = () => {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      return tomorrow;
+    };
+    
+    // Função para agendar a próxima sincronização
+    const scheduleNextSync = () => {
+      const nextMidnight = getNextMidnight();
+      const timeUntilMidnight = nextMidnight.getTime() - Date.now();
+      
+      console.log(`Agendando próxima sincronização para ${nextMidnight.toLocaleString()}`);
+      setNextSyncTime(nextMidnight);
+      
+      // Configura o timer para a próxima meia-noite
+      const timer = setTimeout(() => {
+        console.log("Executando sincronização automática à meia-noite");
+        syncStatuses().then(() => {
+          setLastSyncTime(new Date());
+          scheduleNextSync(); // Agendar a próxima sincronização
+        });
+      }, timeUntilMidnight);
+      
+      return timer;
+    };
+    
+    // Inicia o agendamento quando o componente é montado
+    const timer = scheduleNextSync();
+    
+    // Limpa o timer quando o componente é desmontado
+    return () => clearTimeout(timer);
+  }, [syncStatuses]);
+  
+  // Sincronização automática à meia-noite
+  useEffect(() => {
+    // Função para calcular quando será a próxima meia-noite
+    const getNextMidnight = () => {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      return tomorrow;
+    };
+    
+    // Função para agendar a próxima sincronização
+    const scheduleNextSync = () => {
+      const nextMidnight = getNextMidnight();
+      const timeUntilMidnight = nextMidnight.getTime() - Date.now();
+      
+      console.log(`Agendando próxima sincronização para ${nextMidnight.toLocaleString()}`);
+      setNextSyncTime(nextMidnight);
+      
+      // Configura o timer para a próxima meia-noite
+      const timer = setTimeout(() => {
+        console.log("Executando sincronização automática à meia-noite");
+        syncStatuses().then(() => {
+          setLastSyncTime(new Date());
+          scheduleNextSync(); // Agendar a próxima sincronização
+        });
+      }, timeUntilMidnight);
+      
+      return timer;
+    };
+    
+    // Inicia o agendamento quando o componente é montado
+    const timer = scheduleNextSync();
+    
+    // Limpa o timer quando o componente é desmontado
+    return () => clearTimeout(timer);
+  }, [syncStatuses]);
   // Handler para mudanças no formulário Learn2Earn
   const handleLearn2EarnChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -973,25 +1019,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         // --- renderMyLearn2Earn migrated JSX ---
         isLoadingLearn2Earn || syncing ? (
           <p className="text-gray-300 py-4">Loading & synchronizing Learn2Earn opportunities...</p>
-        ) : (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              {syncWarnings.length > 0 && (
-                <div className="bg-yellow-900/40 border border-yellow-600 text-yellow-300 p-3 rounded flex-1 mr-4">
-                  <b>Status synchronization:</b>
-                  <ul className="list-disc ml-5">
-                    {syncWarnings.map(w => <li key={w.id}>{w.msg}</li>)}
-                  </ul>
-                </div>
-              )}
-              <button
-                className={`bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded ${syncing ? 'opacity-60 cursor-not-allowed' : ''}`}
-                disabled={syncing}
-                onClick={manualSyncStatuses}
-              >
-                {syncing ? 'Synchronizing...' : 'Status synchronization'}
-              </button>
-            </div>
+        ) : (          <div>
             <div>
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-semibold text-orange-500">Your Learn2Earn Opportunities</h3>
