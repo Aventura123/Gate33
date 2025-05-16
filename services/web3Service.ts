@@ -53,10 +53,9 @@ class Web3Service {
 
   /**
    * Gets the name of a network from its chainId
-   */
-  private getNetworkNameForChainId(chainId: number): string {
+   */  private getNetworkNameForChainId(chainId: number): string {
     // Specific identification for BSC Testnet (97)
-    if (chainId === 97) return 'BSC Testnet';
+    if (chainId === 97) return 'BNB Smart Chain Testnet';
     // Other common networks
     if (chainId === 1) return 'Ethereum Mainnet';
     if (chainId === 56) return 'Binance Smart Chain';

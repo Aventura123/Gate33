@@ -1,75 +1,5 @@
 // Web3 payment system configurations
 import { db } from "../lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
-
-// Wallet address that will receive payments (FALLBACK - used only when Firebase configuration is unavailable)
-export const PAYMENT_RECEIVER_ADDRESS = process.env.NEXT_PUBLIC_PAYMENT_ADDRESS || '0xC5669da4aF25d78382683a69f3E13364894c756D';
-
-/**
- * Configuration for blockchain payment contracts
- * IMPORTANT: These addresses are FALLBACK values only.
- * The system prioritizes addresses from Firebase settings/paymentConfig.
- * These values are used only if Firebase configuration is unavailable.
- */
-export const CONTRACT_ADDRESSES = {
-  // Ethereum mainnet contract address (fallback)
-  ethereum: "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B", // Real address
-  
-  // Polygon (Matic) mainnet contract address (fallback)
-  polygon: "0x058C232c6211cA64A9Ffb573029B1E133F44A7B6", // Real address
-  
-  // Binance Smart Chain contract address (fallback)
-  binance: "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B", // Real address
-  
-  // Binance Testnet contract address (fallback)
-  binanceTestnet: "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B", // Real address
-  
-  // Avalanche C-Chain contract address (fallback)
-  avalanche: "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B", // Real address
-  
-  // Optimism contract address (fallback)
-  optimism: "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B", // Real address
-  
-  // Job payment-specific contract address (fallback)
-  jobPayment: "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B" // Real address for job payments
-};
-
-// Function to load contract address from Firebase
-export async function loadContractAddressFromFirebase(): Promise<string> {
-  try {
-    // First try to fetch from settings
-    const configSnap = await getDocs(collection(db, "settings"));
-    let contracts: Record<string, string> = {};
-    if (!configSnap.empty) {
-      const data = configSnap.docs[0].data();
-      if (data.contracts && data.contracts.binanceTestnet) {
-        console.log('Contract loaded from settings:', data.contracts.binanceTestnet);
-        return data.contracts.binanceTestnet;
-      }
-    }
-    
-    // If not found in settings, try to fetch from contractConfigs
-    const contractsCollection = collection(db, "contractConfigs");
-    const q = query(contractsCollection, where("type", "==", "payment"));
-    const contractSnapshot = await getDocs(q);
-    
-    if (!contractSnapshot.empty) {
-      const contractData = contractSnapshot.docs[0].data();
-      if (contractData.contractAddress) {
-        console.log('Contract loaded from contractConfigs:', contractData.contractAddress);
-        return contractData.contractAddress;
-      }
-    }
-    
-    // If none found, return the default fallback address
-    console.log('Using fallback contract address:', CONTRACT_ADDRESSES.binanceTestnet);
-    return CONTRACT_ADDRESSES.binanceTestnet;
-  } catch (error) {
-    console.error("Error loading contract address from Firebase:", error);
-    // In case of error, return the default fallback address
-    return CONTRACT_ADDRESSES.binanceTestnet;
-  }
-}
 
 // Network configurations
 export const NETWORK_CONFIG = {
@@ -95,8 +25,8 @@ export const NETWORK_CONFIG = {
   },
   binanceTestnet: {
     chainId: 97, // BSC Testnet chainId
-    name: 'BSC Testnet',
-    rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+    name: 'BNB Smart Chain Testnet',
+    rpcUrl: 'https://bsc-testnet.public.blastapi.io',
     currencySymbol: 'tBNB',
     blockExplorer: 'https://testnet.bscscan.com'
   },
@@ -121,11 +51,6 @@ export const SERVICE_FEE_PERCENTAGE = 5; // 5%
 
 // Maximum time to wait for transaction confirmation (in milliseconds)
 export const TRANSACTION_TIMEOUT = 60000; // 1 minute
-
-// Smart contract configuration for job payments
-
-// Contract address for the job payment system - will be dynamically loaded from Firebase
-export const JOB_PAYMENT_ADDRESS: string = CONTRACT_ADDRESSES.binanceTestnet; 
 
 // ABI for the job payment contract
 export const JOB_PAYMENT_ABI = [
@@ -276,10 +201,7 @@ export const PAYMENT_CONFIG = {
 };
 
 export default {
-  JOB_PAYMENT_ADDRESS,
-  loadContractAddressFromFirebase,
   JOB_PAYMENT_ABI,
   SUPPORTED_CHAINS,
-  DEFAULT_CHAIN_ID,
-  CONTRACT_ADDRESSES
+  DEFAULT_CHAIN_ID
 };

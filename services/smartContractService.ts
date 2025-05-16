@@ -126,9 +126,8 @@ class SmartContractService {
       3: 'Ropsten Testnet',
       4: 'Rinkeby Testnet',
       5: 'Goerli Testnet',
-      42: 'Kovan Testnet',
-      56: 'Binance Smart Chain',
-      97: 'BSC Testnet',
+      42: 'Kovan Testnet',      56: 'Binance Smart Chain',
+      97: 'BNB Smart Chain Testnet',
       137: 'Polygon (Matic)',
       80001: 'Mumbai Testnet (Polygon)',
       42161: 'Arbitrum One',
@@ -1395,17 +1394,12 @@ class SmartContractService {
       const paymentContract = new ethers.Contract(this.contractAddress, contractABI, signer);
       // 16. Endereço do destinatário principal (mainWallet)
       const settingsCollection = collection(db, "settings");
-      const settingsDoc = await getDoc(doc(settingsCollection, "paymentConfig"));
-      let recipientAddress = "";
+      const settingsDoc = await getDoc(doc(settingsCollection, "paymentConfig"));      let recipientAddress = "";
       if (settingsDoc.exists() && settingsDoc.data().mainWallet) {
         recipientAddress = settingsDoc.data().mainWallet;
       } else {
-        try {
-          const configModule = await import('../config/paymentConfig');
-          recipientAddress = configModule.PAYMENT_RECEIVER_ADDRESS;
-        } catch (e) {
-          recipientAddress = "0x0000000000000000000000000000000000000000";
-        }
+        // Use um endereço padrão se não for encontrado no Firebase
+        recipientAddress = "0x0000000000000000000000000000000000000000";
       }
       if (!recipientAddress) {
         throw new Error("Recipient address is not configured");
