@@ -7,6 +7,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { Learn2Earn } from "../../types/learn2earn";
 import { formatDate } from "../../utils/formatDate";
+import WalletButton from '../../components/WalletButton';
 
 export default function Learn2EarnPage() {
   const [learn2earns, setLearn2Earns] = useState<Learn2Earn[]>([]);
@@ -101,7 +102,12 @@ export default function Learn2EarnPage() {
             <h1 className="text-4xl font-bold text-white mb-4">Learn2Earn Opportunities</h1>
             <p className="text-xl text-gray-300">Complete educational tasks and earn crypto rewards</p>
           </div>
-          
+
+          {/* WalletButton for connection (hidden, but can be triggered programmatically) */}
+          <div className="hidden">
+            <WalletButton />
+          </div>
+
           {/* Filters */}
           <div className="flex justify-center mb-8">
             <div className="inline-flex rounded-md shadow-sm" role="group">

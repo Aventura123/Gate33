@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { web3Service } from '../../services/web3Service';
+import { useWallet } from '../WalletProvider';
 import learn2earnContractService from '../../services/learn2earnContractService';
 import { collection, addDoc, query, where, getDocs, updateDoc, doc, increment, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import WalletButton from '../WalletButton';
 
 interface ParticipationFormProps {
   learn2earnId: string;  // This is the Firestore document ID
@@ -17,8 +18,12 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
   network,
   onRegistrationComplete 
 }) => {
-  const [walletAddress, setWalletAddress] = useState('');
-  const [isConnecting, setIsConnecting] = useState(false);
+  const {
+    walletAddress,
+    isConnectingWallet,
+    connectWallet,
+    currentNetwork
+  } = useWallet();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -36,31 +41,9 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
   // Add new state for tracking if the opportunity has ended
   const [hasEnded, setHasEnded] = useState(false);
   const [hasTimeSyncIssue, setHasTimeSyncIssue] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
   
-  const handleConnectWallet = async () => {
-    setIsConnecting(true);
-    setError(null);
-    setNetworkMismatch(false);
-    setInvalidId(false);
-    setInvalidSignature(false);
-    
-    try {
-      const walletInfo = await web3Service.connectWallet();
-      if (walletInfo && walletInfo.address) {
-        setWalletAddress(walletInfo.address);
-        // Check if user has already registered participation
-        checkParticipation(walletInfo.address);
-      } else {
-        throw new Error('Unable to get wallet address');
-      }
-    } catch (err: any) {
-      console.error('Error connecting wallet:', err);
-      setError(err.message || 'Failed to connect wallet');
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
   // Function to check if user has already registered participation
   const checkParticipation = async (address: string) => {
     try {
@@ -89,10 +72,12 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
   // Function to register participation
   const handleRegisterParticipation = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!walletAddress) {
-      setError('Please connect your wallet first');
-      return;
+      await connectWallet();
+      if (!walletAddress) {
+        setError('Please connect your wallet first');
+        return;
+      }
     }
     
     setRegistering(true);
@@ -142,10 +127,12 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!walletAddress) {
-      setError('Please connect your wallet first');
-      return;
+      await connectWallet();
+      if (!walletAddress) {
+        setError('Please connect your wallet first');
+        return;
+      }
     }
 
     if (!isRegistered) {
@@ -242,23 +229,40 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
   // Check participation on component load if wallet is already connected
   useEffect(() => {
-    const checkWalletAndParticipation = async () => {
-      try {
-        const walletInfo = await web3Service.connectWallet();
-        if (walletInfo && walletInfo.address) {
-          setWalletAddress(walletInfo.address);
-          checkParticipation(walletInfo.address);
-        }
-      } catch (err) {
-        console.error("Error checking wallet on load:", err);
-      }
-    };
-    
-    checkWalletAndParticipation();
-  }, [learn2earnId]);
+    if (walletAddress) {
+      checkParticipation(walletAddress);
+    }
+  }, [learn2earnId, walletAddress]);
+  
+  // Helper: should show switch network button?
+  const shouldShowSwitchNetwork = walletAddress && network && currentNetwork && currentNetwork !== network;
+  
+  // Open WalletModal automatically if network mismatch
+  useEffect(() => {
+    if (shouldShowSwitchNetwork) {
+      setShowNetworkModal(true);
+    } else {
+      setShowNetworkModal(false);
+    }
+  }, [shouldShowSwitchNetwork]);
   
   return (
     <div>
+      {/* WalletModal for network switching (auto-open) */}
+      {showNetworkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="absolute inset-0" onClick={() => setShowNetworkModal(false)} />
+          <div className="relative z-10">
+            <WalletButton
+              showNetworkSelector={true}
+              title="Switch Network"
+              onConnect={() => setShowNetworkModal(false)}
+              className="w-full"
+            />
+          </div>
+        </div>
+      )}
+      
       {success ? (
         <div className="bg-green-500/20 border border-green-500 rounded-lg p-6 text-center">
           <div className="text-green-500 text-5xl mb-4">✓</div>
@@ -350,26 +354,29 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
           </button>
         </div>
       ) : networkMismatch ? (
-        <div className="bg-orange-500/20 border border-orange-500 rounded-lg p-6">
-          <h3 className="text-xl font-semibold text-orange-400 mb-2">Network Mismatch</h3>
-          <p className="text-gray-300 mb-4">
-            Please make sure you're connected to the <strong className="text-orange-400">{network}</strong> network in your wallet.
-          </p>
-          <div className="flex space-x-3">
-            <button
-              onClick={handleConnectWallet}
-              className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg"
-            >
-              Switch Network
-            </button>
-            <button
-              onClick={() => setNetworkMismatch(false)}
-              className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg"
-            >
-              Dismiss
-            </button>
+        <>
+          {/* Network mismatch: open WalletModal automatically, no button */}
+          {showNetworkModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+              <div className="absolute inset-0" onClick={() => setShowNetworkModal(false)} />
+              <div className="relative z-10">
+                <WalletButton
+                  showNetworkSelector={true}
+                  title="Switch Network"
+                  onConnect={() => setShowNetworkModal(false)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          )}
+          <div className="bg-orange-500/20 border border-orange-500 rounded-lg p-6 text-center">
+            <h3 className="text-xl font-semibold text-orange-400 mb-2">Network Mismatch</h3>
+            <p className="text-gray-300 mb-4">
+              Please make sure you're connected to the <strong className="text-orange-400">{network}</strong> network in your wallet.
+            </p>
+            <p className="text-orange-400 text-sm">Select the correct network in the modal above.</p>
           </div>
-        </div>
+        </>
       ) : (
         <>
           <p className="text-gray-300 mb-6">
@@ -377,22 +384,37 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
           </p>
           
           {!walletAddress ? (
-            <button
-              type="button"
-              onClick={handleConnectWallet}
-              disabled={isConnecting}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg flex justify-center items-center"
-            >
-              {isConnecting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Connecting Wallet...
-                </>
-              ) : "Connect Wallet to Participate"}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setShowWalletModal(true)}
+                disabled={isConnectingWallet}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg flex justify-center items-center"
+              >
+                {isConnectingWallet ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Connecting Wallet...
+                  </>
+                ) : "Connect Wallet to Participate"}
+              </button>
+              {showWalletModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                  <div className="absolute inset-0" onClick={() => setShowWalletModal(false)} />
+                  <div className="relative z-10">
+                    <WalletButton 
+                      showNetworkSelector={false}
+                      title="Connect Wallet"
+                      onConnect={() => setShowWalletModal(false)}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           ) : !participationChecked ? (
             <div className="flex justify-center">
               <svg className="animate-spin h-10 w-10 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
