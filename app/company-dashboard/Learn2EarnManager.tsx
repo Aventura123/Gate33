@@ -1178,10 +1178,13 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                             <div className="mt-2 flex space-x-2 justify-end">
                               {/* Remove End Campaign button, keep only View Details */}
                               <button
-                                onClick={(e) => { e.stopPropagation(); fetchL2LStats(item.id); }}
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setExpandedCardId(isExpanded ? null : item.id);
+                                }}
                                 className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
                               >
-                                View Details
+                                {isExpanded ? 'Hide Details' : 'View Details'}
                               </button>
                             </div>
                             <div className="mt-2">
@@ -1208,6 +1211,33 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                                     ></div>
                                   );
                                 })()}
+                              </div>
+                            </div>
+                            {/* --- NEW: Learn2Earn Details Section --- */}
+                            <div className="mt-6">
+                              <h5 className="text-lg font-semibold text-orange-400 mb-2">Learn2Earn Details</h5>
+                              <div className="mb-4 text-gray-300">
+                                <strong>Description:</strong> {item.description}
+                              </div>
+                              {item.tasks && item.tasks.length > 0 && (
+                                <div className="mb-4">
+                                  <h6 className="text-md font-medium text-orange-300 mb-2">Tasks</h6>
+                                  <div className="space-y-4">
+                                    {item.tasks.map((task) => (
+                                      <React.Suspense fallback={<div>Loading task...</div>} key={task.id}>
+                                        {/* Lazy import to avoid circular import issues if any */}
+                                        {(() => {
+                                          const TaskCard = require('../../components/learn2earn/TaskCard').default;
+                                          return <TaskCard task={task} isReadOnly />;
+                                        })()}
+                                      </React.Suspense>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {/* Optionally, show rules or other info here */}
+                              <div className="mb-2 text-gray-400 text-xs">
+                                <strong>Rules:</strong> Complete all tasks and quizzes to earn rewards. Tokens are distributed per participant as specified.
                               </div>
                             </div>
                           </div>

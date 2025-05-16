@@ -2,7 +2,7 @@ import { db } from "../lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 /**
- * Tipos de ações que podem ser registradas no sistema
+ * Types of actions that can be logged in the system
  */
 export type SystemLogAction = 
   | "login" 
@@ -15,12 +15,12 @@ export type SystemLogAction =
   | "payment" 
   | "admin_action" 
   | "system"
-  | "contract_activity"   // Adicionado para monitoramento de contratos
-  | "token_distribution" // Adicionado para distribuição de tokens
-  | "wallet_alert";      // Adicionado para alertas da carteira
+  | "contract_activity"   // Added for contract monitoring
+  | "token_distribution"  // Added for token distribution
+  | "wallet_alert";       // Added for wallet alerts
 
 /**
- * Interface para os dados de log do sistema
+ * Interface for system log data
  */
 export interface SystemLogData {
   action: SystemLogAction;
@@ -29,11 +29,11 @@ export interface SystemLogData {
 }
 
 /**
- * Registra uma ação no sistema de logs
- * @param action Tipo de ação realizada
- * @param user ID ou nome do usuário que realizou a ação
- * @param details Detalhes adicionais sobre a ação
- * @returns Promise com o ID do log criado ou null em caso de erro
+ * Logs an action in the system logs
+ * @param action Type of action performed
+ * @param user ID or name of the user who performed the action
+ * @param details Additional details about the action
+ * @returns Promise with the ID of the created log or null in case of error
  */
 export async function logSystemActivity(
   action: SystemLogAction,
@@ -42,39 +42,39 @@ export async function logSystemActivity(
 ): Promise<string | null> {
   try {
     if (!db) {
-      console.error("Firebase não está inicializado");
+      console.error("Firebase is not initialized");
       return null;
     }
 
-    // Cria a coleção systemLogs se ela não existir
+    // Creates the systemLogs collection if it does not exist
     const logsCollection = collection(db, "systemLogs");
 
-    // Cria o documento de log
+    // Creates the log document
     const logData: SystemLogData & { timestamp: any } = {
       action,
       user,
       details,
-      timestamp: serverTimestamp() // Usa o timestamp do servidor para consistência
+      timestamp: serverTimestamp() // Uses server timestamp for consistency
     };
 
-    // Adiciona o documento à coleção
+    // Adds the document to the collection
     const docRef = await addDoc(logsCollection, logData);
-    console.log(`Log registrado com sucesso: ${action} por ${user}`);
+    console.log(`Log successfully registered: ${action} by ${user}`);
     
     return docRef.id;
   } catch (error) {
-    console.error("Erro ao registrar log:", error);
+    console.error("Error registering log:", error);
     return null;
   }
 }
 
 /**
- * Registra uma ação administrativa no sistema de logs
- * @param adminId ID do administrador
- * @param adminName Nome do administrador
- * @param action Descrição da ação realizada
- * @param details Detalhes adicionais sobre a ação
- * @returns Promise com o ID do log criado ou null em caso de erro
+ * Logs an administrative action in the system logs
+ * @param adminId Administrator ID
+ * @param adminName Administrator name
+ * @param action Description of the action performed
+ * @param details Additional details about the action
+ * @returns Promise with the ID of the created log or null in case of error
  */
 export async function logAdminAction(
   adminId: string,
@@ -94,11 +94,11 @@ export async function logAdminAction(
 }
 
 /**
- * Registra atividade relacionada a contratos inteligentes
- * @param contractName Nome do contrato (ex: "Learn2EarnContract")
- * @param activityType Tipo de atividade (ex: "claim", "distribution", "transaction")
- * @param details Detalhes da atividade
- * @returns Promise com o ID do log criado ou null em caso de erro
+ * Logs activity related to smart contracts
+ * @param contractName Contract name (e.g., "Learn2EarnContract")
+ * @param activityType Type of activity (e.g., "claim", "distribution", "transaction")
+ * @param details Activity details
+ * @returns Promise with the ID of the created log or null in case of error
  */
 export async function logContractActivity(
   contractName: string,
@@ -116,11 +116,11 @@ export async function logContractActivity(
 }
 
 /**
- * Registra atividade de distribuição de tokens G33
- * @param recipient Endereço que recebeu os tokens
- * @param amount Quantidade de tokens distribuídos
- * @param details Detalhes adicionais sobre a distribuição
- * @returns Promise com o ID do log criado ou null em caso de erro 
+ * Logs G33 token distribution activity
+ * @param recipient Address that received the tokens
+ * @param amount Amount of tokens distributed
+ * @param details Additional details about the distribution
+ * @returns Promise with the ID of the created log or null in case of error 
  */
 export async function logTokenDistribution(
   recipient: string,
@@ -139,11 +139,11 @@ export async function logTokenDistribution(
 }
 
 /**
- * Registra um alerta relacionado à carteira de serviço
- * @param walletAddress Endereço da carteira
- * @param alertType Tipo de alerta (ex: "low_balance", "high_gas", "suspicious_tx")
- * @param details Detalhes do alerta
- * @returns Promise com o ID do log criado ou null em caso de erro
+ * Logs an alert related to the service wallet
+ * @param walletAddress Wallet address
+ * @param alertType Type of alert (e.g., "low_balance", "high_gas", "suspicious_tx")
+ * @param details Alert details
+ * @returns Promise with the ID of the created log or null in case of error
  */
 export async function logWalletAlert(
   walletAddress: string,
@@ -160,7 +160,7 @@ export async function logWalletAlert(
   );
 }
 
-// Exportação de utility para uso em outros módulos
+// Utility export for use in other modules
 export const logSystem = {
   info: async (message: string, details: Record<string, any> = {}) => {
     return logSystemActivity("system", "SYSTEM", { message, level: "info", ...details });
