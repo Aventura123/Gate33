@@ -37,13 +37,13 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   companyId,
   companyProfile,
 }) => {
-  // --- Estados principais ---
+  // --- Main states ---
   const [learn2earn, setLearn2Earn] = useState<Learn2Earn[]>([]);
   const [isLoadingLearn2Earn, setIsLoadingLearn2Earn] = useState(false);
   const [feePercent, setFeePercent] = useState<number>(5);
   const [learn2EarnSubTab, setLearn2EarnSubTab] = useState<'new' | 'my'>('my');
   const [learn2EarnStep, setLearn2EarnStep] = useState<'info' | 'tasks' | 'confirmation'>('info');
-  // Estados de sincronização
+  // Sync states
   const [syncing, setSyncing] = useState(false);
   const [syncWarnings, setSyncWarnings] = useState<{id: string; msg: string}[]>([]);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
@@ -78,17 +78,20 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   const [depositError, setDepositError] = useState<string | null>(null);
   const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);  const [availableNetworks, setAvailableNetworks] = useState<string[]>([]);
   const [isLoadingNetworks, setIsLoadingNetworks] = useState(false);
-  // Acesse o contexto da carteira usando o hook useWallet
+  // Expansion state for Learn2Earn cards
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
+  // Access wallet context using useWallet hook
   const wallet = useWallet();
 
   const walletAddress = wallet.walletAddress;
   const handleConnectWallet = wallet.connectWallet;
   const currentNetwork = wallet.currentNetwork;
-  // Se precisar de provider/signer para contratos, crie um utilitário no provider ou use um hook específico, igual aos outros componentes
+  // If you need provider/signer for contracts, create a utility in provider or use a specific hook, like other components
 
-  // --- Funções e useEffects principais (fetch, create, toggle, etc) ---
+  // --- Main functions and useEffects (fetch, create, toggle, etc) ---
 
-  // Função para alternar status (ativar/desativar) Learn2Earn
+  // Function to toggle status (activate/deactivate) Learn2Earn
   const toggle = async (learn2earn: Learn2Earn, newStatus: 'active' | 'completed' | 'draft') => {
     try {
       const learn2EarnRef = doc(db,"learn2earn", learn2earn.id);
@@ -100,7 +103,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     }
   };
 
-  // Função para buscar oportunidades Learn2Earn
+  // Function to fetch Learn2Earn opportunities
   const fetchLearn2Earn = useCallback(async () => {
     if (!db || !companyId) return;
     setIsLoadingLearn2Earn(true);
@@ -120,12 +123,12 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     }
   }, [db, companyId]);
 
-  // Efeito para buscar Learn2Earn ao ativar a aba
+  // Effect to fetch Learn2Earn when tab is activated
   useEffect(() => {
     fetchLearn2Earn();
   }, [fetchLearn2Earn]);
 
-  // Função para buscar redes disponíveis
+  // Function to fetch available networks
   const fetchAvailableNetworks = useCallback(async () => {
     setIsLoadingNetworks(true);
     try {
@@ -136,19 +139,19 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     } finally {
       setIsLoadingNetworks(false);
     }
-  }, [learn2earnContractService]);  // Buscar redes ao ativar aba  
+  }, [learn2earnContractService]);  // Fetch networks when tab is activated  
   useEffect(() => {
     fetchAvailableNetworks();
   }, [fetchAvailableNetworks]);
   
-  // Função dummy para detalhes (placeholder)
+  // Dummy function for details (placeholder)
   const fetchL2LStats = (l2lId: string) => {};
-  // Função para sincronizar status
+  // Function to sync status
   const syncStatuses = useCallback(async () => {
     if (!learn2earn || learn2earn.length === 0) return;
     setSyncing(true);
     const warnings: {id:string; msg:string}[] = [];
-    console.log(`Iniciando sincronização de Learn2Earn - ${new Date().toISOString()}`);
+    console.log(`Starting Learn2Earn sync - ${new Date().toISOString()}`);
     for (const l2l of learn2earn) {
       try {
         let newStatus = l2l.status;
@@ -196,18 +199,18 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         const maxParticipants = typeof l2l.maxParticipants === "number" && !isNaN(l2l.maxParticipants) ? l2l.maxParticipants : undefined;
         const totalParticipants = typeof l2l.totalParticipants === "number" && !isNaN(l2l.totalParticipants) ? l2l.totalParticipants : 0;
 
-        // Regra 1: Se ainda não começou
+        // Rule 1: If not started yet
         if (startDate && now < startDate) {
           newStatus = "draft";
         }
-        // Regra 2: Se já terminou (data ou participantes)
+        // Rule 2: If already ended (date or participants)
         else if (
           (endDate && now > endDate) ||
           (maxParticipants !== undefined && totalParticipants >= maxParticipants)
         ) {
           newStatus = "completed";
         }
-        // Regra 3: Se está ativo (começou mas não terminou)
+        // Rule 3: If active (started but not ended)
         else if (
           startDate && now >= startDate &&
           (!endDate || now <= endDate) &&
@@ -215,7 +218,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         ) {
           newStatus = "active";
         } else {
-          // fallback defensivo
+          // defensive fallback
           newStatus = "draft";
         }
 
@@ -233,14 +236,14 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     setSyncing(false);
     setLastSyncTime(new Date());
     return warnings;
-  }, [learn2earn, db]);  // Efeito para executar sincronização ao carregar o componente
+  }, [learn2earn, db]);  // Effect to run sync on component load
   useEffect(() => {
     syncStatuses();
   }, [syncStatuses]);
   
-  // Sincronização automática à meia-noite
+  // Automatic sync at midnight
   useEffect(() => {
-    // Função para calcular quando será a próxima meia-noite
+    // Function to calculate next midnight
     const getNextMidnight = () => {
       const now = new Date();
       const tomorrow = new Date(now);
@@ -249,30 +252,30 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
       return tomorrow;
     };
     
-    // Função para agendar a próxima sincronização
+    // Function to schedule next sync
     const scheduleNextSync = () => {
       const nextMidnight = getNextMidnight();
       const timeUntilMidnight = nextMidnight.getTime() - Date.now();
       
-      console.log(`Agendando próxima sincronização para ${nextMidnight.toLocaleString()}`);
+      console.log(`Scheduling next sync for ${nextMidnight.toLocaleString()}`);
       setNextSyncTime(nextMidnight);
       
-      // Configura o timer para a próxima meia-noite
+      // Set timer for next midnight
       const timer = setTimeout(() => {
-        console.log("Executando sincronização automática à meia-noite");
+        console.log("Running automatic sync at midnight");
         syncStatuses().then(() => {
           setLastSyncTime(new Date());
-          scheduleNextSync(); // Agendar a próxima sincronização
+          scheduleNextSync(); // Schedule next sync
         });
       }, timeUntilMidnight);
       
       return timer;
     };
     
-    // Inicia o agendamento quando o componente é montado
+    // Start scheduling when component mounts
     const timer = scheduleNextSync();
     
-    // Limpa o timer quando o componente é desmontado
+    // Clear timer when component unmounts
     return () => clearTimeout(timer);
   }, [syncStatuses]);
   
@@ -332,12 +335,12 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     }
   };
 
-  // Handler para datas
+  // Handler for dates
   const handleDateChange = (name: 'startDate' | 'endDate', date: Date) => {
     setLearn2EarnData({...learn2earnData, [name]: date});
   };
 
-  // Handler para adicionar tarefa
+  // Handler to add task
   const addTask = () => {
     if (!currentTask.title || !currentTask.description) {
       alert("Please fill in all task fields");
@@ -354,7 +357,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         ...currentTask,
         id: Date.now().toString(),
         options: currentQuestionOptions,
-        correctOption: correctOptionIndex // <-- deve ser number
+        correctOption: correctOptionIndex // <-- should be number
       };
     }
     setLearn2EarnData({
@@ -371,7 +374,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     setCorrectOptionIndex(0);
   };
 
-  // Handler para remover tarefa
+  // Handler to remove task
   const removeTask = (taskId: string) => {
     setLearn2EarnData({
       ...learn2earnData,
@@ -379,13 +382,13 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     });
   };
 
-  // Handler para mudanças no formulário de tarefa
+  // Handler for task form changes
   const handleTaskChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setCurrentTask({ ...currentTask, [name]: value });
   };
 
-  // Função para criar Learn2Earn
+  // Function to create Learn2Earn
   const createLearn2Earn = async () => {
     if (!db || !companyId) {
       alert("Not authenticated. Please login again.");
@@ -540,9 +543,9 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     }
   };
 
-  // Função para resetar o formulário
+  // Function to reset the form
   const resetLearn2EarnForm = () => {
-    // Pode ser implementado conforme necessário
+    // Can be implemented as needed
   };
 
   // Helper to format date for display
@@ -560,7 +563,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     return 'N/A';
   };
 
-  // --- Renderização principal ---
+  // --- Main rendering ---
   return (
     <div>
       {/* Tabs to switch between "My L2L" and "New L2L" */}
@@ -1106,123 +1109,112 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {learn2earn.map((item) => (
-                    <div key={item.id} className="bg-black/30 p-6 rounded-lg border border-gray-700">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="text-xl font-medium text-orange-300">{item.title}</h4>
-                          <div className="mt-2">
-                            <p className="text-gray-300">{item.description}</p>
+                  {learn2earn.map((item) => {
+                    const isExpanded = expandedCardId === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`bg-black/30 rounded-lg border border-gray-700 transition-all duration-200 ${isExpanded ? 'p-6' : 'p-3 cursor-pointer hover:shadow-lg'}`}
+                        onClick={() => setExpandedCardId(isExpanded ? null : item.id)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="text-lg font-medium text-orange-300 truncate max-w-xs">{item.title}</h4>
+                            <p className="text-gray-400 text-sm truncate max-w-xs">{item.description}</p>
                           </div>
-                        </div>
-                        <div className="flex">
                           <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                             item.status === 'active' ? 'bg-green-500/20 text-green-400' :
                             item.status === 'completed' ? 'bg-orange-500/20 text-orange-400' :
                             'bg-gray-500/20 text-gray-400'
                           }`}>
-                            
                             {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                           </span>
                         </div>
+                        {isExpanded && (
+                          <div className="mt-4 space-y-2">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div className="bg-black/20 p-3 rounded-md">
+                                <div className="text-sm text-gray-400">Token</div>
+                                <div className="text-lg font-medium text-white">
+                                  {item.tokenAmount} {item.tokenSymbol}
+                                </div>
+                              </div>
+                              <div className="bg-black/20 p-3 rounded-md">
+                                <div className="text-sm text-gray-400">Reward Per User</div>
+                                <div className="text-lg font-medium text-white">
+                                  {item.tokenPerParticipant} {item.tokenSymbol}
+                                </div>
+                              </div>
+                              <div className="bg-black/20 p-3 rounded-md">
+                                <div className="text-sm text-gray-400">Participants</div>
+                                <div className="text-lg font-medium text-white">
+                                  {item.totalParticipants || 0} / {item.maxParticipants || '∞'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="bg-black/20 p-3 rounded-md">
+                                <div className="text-sm text-gray-400">Start Date</div>
+                                <div className="text-white">{formatDate(item.startDate)}</div>
+                              </div>
+                              <div className="bg-black/20 p-3 rounded-md">
+                                <div className="text-sm text-gray-400">End Date</div>
+                                <div className="text-white">{formatDate(item.endDate)}</div>
+                              </div>
+                              <div className="bg-black/20 p-3 rounded-md col-span-1 md:col-span-2">
+                                <div className="text-sm text-gray-400">Network</div>
+                                <div className="flex items-center">
+                                  <span className="bg-gray-700 text-xs px-2 py-1 rounded mr-2">
+                                    {(item.network ?? "N/A").toUpperCase()}
+                                  </span>
+                                  {item.contractAddress && (
+                                    <span className="text-xs text-gray-400 truncate">
+                                      Token Contract: {item.tokenAddress ? item.tokenAddress.substring(0, 8) + '...' + item.tokenAddress.substring(item.tokenAddress.length - 6) : 'N/A'}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-2 flex space-x-2 justify-end">
+                              {/* Remove End Campaign button, keep only View Details */}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); fetchL2LStats(item.id); }}
+                                className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                              >
+                                View Details
+                              </button>
+                            </div>
+                            <div className="mt-2">
+                              <div className="flex justify-between text-xs text-gray-400 mb-1">
+                                <span>Token Distribution Progress</span>
+                                <span>
+                                  {calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount)}%
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-700 rounded-full h-2.5">
+                                {(() => {
+                                  const percentage = calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount);
+                                  let widthClass = 'progress-bar-fill-0';
+                                  if (percentage > 0) {
+                                    if (percentage <= 25) widthClass = 'progress-bar-fill-25';
+                                    else if (percentage <= 50) widthClass = 'progress-bar-fill-50';
+                                    else if (percentage <= 75) widthClass = 'progress-bar-fill-75';
+                                    else widthClass = 'progress-bar-fill-100';
+                                  }
+                                  return (
+                                    <div
+                                      className={`bg-orange-500 h-2.5 rounded-full ${widthClass}`}
+                                      aria-label={`Progress: ${percentage}%`}
+                                    ></div>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-black/20 p-3 rounded-md">
-                          <div className="text-sm text-gray-400">Token</div>
-                          <div className="text-lg font-medium text-white">
-                            {item.tokenAmount} {item.tokenSymbol}
-                          </div>
-                        </div>
-                        <div className="bg-black/20 p-3 rounded-md">
-                          <div className="text-sm text-gray-400">Reward Per User</div>
-                          <div className="text-lg font-medium text-white">
-                            {item.tokenPerParticipant} {item.tokenSymbol}
-                          </div>
-                        </div>
-                        <div className="bg-black/20 p-3 rounded-md">
-                          <div className="text-sm text-gray-400">Participants</div>
-                          <div className="text-lg font-medium text-white">
-                            {item.totalParticipants || 0} / {item.maxParticipants || '∞'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-black/20 p-3 rounded-md">
-                          <div className="text-sm text-gray-400">Start Date</div>
-                          <div className="text-white">
-                            {formatDate(item.startDate)}
-                          </div>
-                        </div>
-                        <div className="bg-black/20 p-3 rounded-md">
-                          <div className="text-sm text-gray-400">End Date</div>
-                          <div className="text-white">
-                            {formatDate(item.endDate)}
-                          </div>
-                        </div>
-                        <div className="bg-black/20 p-3 rounded-md col-span-1 md:col-span-2">
-                          <div className="text-sm text-gray-400">Network</div>
-                          <div className="flex items-center">
-                            <span className="bg-gray-700 text-xs px-2 py-1 rounded mr-2">
-                              {(item.network ?? "N/A").toUpperCase()}
-                            </span>
-                            {item.contractAddress && (
-                              <span className="text-xs text-gray-400 truncate">
-                                Contract: {item.contractAddress.substring(0, 8)}...{item.contractAddress.substring(item.contractAddress.length - 6)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 flex space-x-2 justify-end">
-                        {item.status === 'draft' ? (
-                          <button 
-                            onClick={() => toggle(item, 'active')}
-                            className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
-                          >
-                            Activate
-                          </button>
-                        ) : item.status === 'active' ? (
-                          <button 
-                            onClick={() => toggle(item, 'completed')}
-                            className="bg-orange-600 text-white px-3 py-1 rounded-md hover:bg-orange-700"
-                          >
-                            End Campaign
-                          </button>
-                        ) : null}
-                        <button
-                          onClick={() => fetchL2LStats(item.id)}
-                          className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
-                        >
-                          View Details
-                        </button>                      </div>                      <div className="mt-4">
-                        <div className="flex justify-between text-xs text-gray-400 mb-1">
-                          <span>Token Distribution Progress</span>
-                          <span>
-                            {calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount)}%
-                          </span>
-                        </div>                        <div className="w-full bg-gray-700 rounded-full h-2.5">
-                          {/* Use classes CSS específicas baseadas na porcentagem */}
-                          {(() => {
-                            const percentage = calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount);
-                            let widthClass = 'progress-bar-fill-0';
-                            
-                            if (percentage > 0) {
-                              if (percentage <= 25) widthClass = 'progress-bar-fill-25';
-                              else if (percentage <= 50) widthClass = 'progress-bar-fill-50';
-                              else if (percentage <= 75) widthClass = 'progress-bar-fill-75';
-                              else widthClass = 'progress-bar-fill-100';
-                            }
-                            
-                            return (                              <div 
-                                className={`bg-orange-500 h-2.5 rounded-full ${widthClass}`}
-                                aria-label={`Progress: ${percentage}%`}
-                              ></div>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
