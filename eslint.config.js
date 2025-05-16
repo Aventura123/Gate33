@@ -1,13 +1,12 @@
 const tsPlugin = require('@typescript-eslint/eslint-plugin');
 const tsParser = require('@typescript-eslint/parser');
 
-module.exports = [
-  {
+module.exports = [  {
     ignores: [
       'functions/lib/**',
       'functions/run-sync-learn2earn.js'
     ],
-    files: ['**/*.ts', '**/*.js'],
+    files: ['functions/**/*.ts', 'functions/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
