@@ -4,6 +4,27 @@ import { Learn2Earn, Learn2EarnTask } from "../../types/learn2earn";
 import learn2earnContractService from "../../services/learn2earnContractService";
 import { useWallet } from "../../components/WalletProvider";
 import { ethers } from "ethers";
+import "../../styles/learn2earn.css";
+
+// Utility function to calculate progress percentage
+const calculateProgressPercentage = (totalParticipants: number | undefined, tokenPerParticipant: number, tokenAmount: number): number => {
+  return Math.min(100, Math.round((totalParticipants || 0) * tokenPerParticipant / tokenAmount * 100));
+};
+
+// Utility function to get the appropriate CSS class for progress bar
+const getProgressBarClass = (percentage: number): string => {
+  if (percentage === 0) return "progress-bar-fill-0"; // Usa classe com largura zero explícita
+  if (percentage > 0 && percentage <= 10) return "progress-bar-1-10"; // 1-10%
+  if (percentage <= 20) return "progress-bar-11-20";
+  if (percentage <= 30) return "progress-bar-21-30";
+  if (percentage <= 40) return "progress-bar-31-40";
+  if (percentage <= 50) return "progress-bar-41-50";
+  if (percentage <= 60) return "progress-bar-51-60";
+  if (percentage <= 70) return "progress-bar-61-70";
+  if (percentage <= 80) return "progress-bar-71-80";
+  if (percentage <= 90) return "progress-bar-81-90";
+  return "progress-bar-91-100";
+};
 
 interface Learn2EarnManagerProps {
   db: any;
@@ -1087,22 +1108,31 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                           className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
                         >
                           View Details
-                        </button>
-                      </div>
-                      <div className="mt-4">
+                        </button>                      </div>                      <div className="mt-4">
                         <div className="flex justify-between text-xs text-gray-400 mb-1">
                           <span>Token Distribution Progress</span>
                           <span>
-                            {Math.min(100, Math.round((item.totalParticipants || 0) * item.tokenPerParticipant / item.tokenAmount * 100))}%
+                            {calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount)}%
                           </span>
-                        </div>
-                        <div className="w-full bg-gray-700 rounded-full h-2.5">
-                          <div 
-                            className="bg-orange-500 h-2.5 rounded-full progress-bar" 
-                            style={{
-                              width: `${Math.min(100, Math.round((item.totalParticipants || 0) * item.tokenPerParticipant / item.tokenAmount * 100))}%`
-                            }}
-                          ></div>
+                        </div>                        <div className="w-full bg-gray-700 rounded-full h-2.5">
+                          {/* Use classes CSS específicas baseadas na porcentagem */}
+                          {(() => {
+                            const percentage = calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount);
+                            let widthClass = 'progress-bar-fill-0';
+                            
+                            if (percentage > 0) {
+                              if (percentage <= 25) widthClass = 'progress-bar-fill-25';
+                              else if (percentage <= 50) widthClass = 'progress-bar-fill-50';
+                              else if (percentage <= 75) widthClass = 'progress-bar-fill-75';
+                              else widthClass = 'progress-bar-fill-100';
+                            }
+                            
+                            return (                              <div 
+                                className={`bg-orange-500 h-2.5 rounded-full ${widthClass}`}
+                                aria-label={`Progress: ${percentage}%`}
+                              ></div>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>

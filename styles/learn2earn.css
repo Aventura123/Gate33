@@ -42,3 +42,34 @@
 .progress-step-2 { width: 60%; }
 .progress-step-3 { width: 80%; }
 .progress-step-4 { width: 100%; }
+
+/* Dynamic progress class that uses CSS custom property without inline styles */
+.dynamic-progress {
+  height: 100%;
+  width: 0; /* Garante que a largura padrão seja 0 se não for especificada */
+  background-color: rgb(249, 115, 22); /* bg-orange-500 */
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* Classe para barra de progresso dinâmica usando variável CSS */
+.progress-bar-dynamic {
+  width: var(--progress-width, 0%);
+  height: 100%;
+  background-color: rgb(249, 115, 22); /* bg-orange-500 */
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* Dynamic progress classes for different percentage ranges */
+.progress-bar-0-10 { width: 0%; }  /* Corrigido para 0% quando realmente é 0% */
+.progress-bar-1-10 { width: 10%; } /* Nova classe para 1-10% */
+.progress-bar-11-20 { width: 20%; }
+.progress-bar-21-30 { width: 30%; }
+.progress-bar-31-40 { width: 40%; }
+.progress-bar-41-50 { width: 50%; }
+.progress-bar-51-60 { width: 60%; }
+.progress-bar-61-70 { width: 70%; }
+.progress-bar-71-80 { width: 80%; }
+.progress-bar-81-90 { width: 90%; }
+.progress-bar-91-100 { width: 100%; }
