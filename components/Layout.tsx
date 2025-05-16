@@ -175,7 +175,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="col-span-2 sm:col-span-1">
             <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">About Gate33</h4>
             <p className="text-gray-400 text-xs sm:text-sm">
-              Your trusted partner for exchange listings.
+              Your trusted platform for secure work, real opportunities, and user protection in the Web3 job market.
             </p>
           </div>
           <div>
