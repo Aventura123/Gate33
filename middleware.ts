@@ -63,7 +63,7 @@ export function middleware(request: NextRequest) {
     if (adminRoutes.some(route => request.nextUrl.pathname.startsWith(route))) {
       return NextResponse.redirect(new URL('/admin-login', request.url));
     } else if (companyRoutes.some(route => request.nextUrl.pathname.startsWith(route))) {
-      return NextResponse.redirect(new URL('/company-login', request.url));
+      return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
