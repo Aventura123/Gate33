@@ -1,6 +1,16 @@
 // Web3 payment system configurations
 import { db } from "../lib/firebase";
 
+// Contract addresses for each network (fallback values)
+export const CONTRACT_ADDRESSES = {
+  ethereum: '0x0000000000000000000000000000000000000000',
+  polygon: '0x0000000000000000000000000000000000000000',
+  binance: '0x0000000000000000000000000000000000000000',
+  binanceTestnet: '0x0000000000000000000000000000000000000000',
+  avalanche: '0x0000000000000000000000000000000000000000',
+  optimism: '0x0000000000000000000000000000000000000000'
+};
+
 // Network configurations
 export const NETWORK_CONFIG = {
   ethereum: {
