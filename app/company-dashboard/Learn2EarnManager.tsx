@@ -1132,6 +1132,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                         </div>
                         {isExpanded && (
                           <div className="mt-4 space-y-2">
+                            {/* Resumo detalhado do L2L (como antes) */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <div className="bg-black/20 p-3 rounded-md">
                                 <div className="text-sm text-gray-400">Token</div>
@@ -1175,19 +1176,8 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                                 </div>
                               </div>
                             </div>
-                            <div className="mt-2 flex space-x-2 justify-end">
-                              {/* Remove End Campaign button, keep only View Details */}
-                              <button
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  setExpandedCardId(isExpanded ? null : item.id);
-                                }}
-                                className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
-                              >
-                                {isExpanded ? 'Hide Details' : 'View Details'}
-                              </button>
-                            </div>
-                            <div className="mt-2">
+                            {/* Token Distribution Progress */}
+                            <div className="mt-4">
                               <div className="flex justify-between text-xs text-gray-400 mb-1">
                                 <span>Token Distribution Progress</span>
                                 <span>
@@ -1197,49 +1187,54 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                               <div className="w-full bg-gray-700 rounded-full h-2.5">
                                 {(() => {
                                   const percentage = calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount);
-                                  let widthClass = 'progress-bar-fill-0';
-                                  if (percentage > 0) {
-                                    if (percentage <= 25) widthClass = 'progress-bar-fill-25';
-                                    else if (percentage <= 50) widthClass = 'progress-bar-fill-50';
-                                    else if (percentage <= 75) widthClass = 'progress-bar-fill-75';
-                                    else widthClass = 'progress-bar-fill-100';
-                                  }
                                   return (
                                     <div
-                                      className={`bg-orange-500 h-2.5 rounded-full ${widthClass}`}
+                                      className="bg-orange-500 h-2.5 rounded-full"
+                                      style={{ width: `${percentage}%` }}
                                       aria-label={`Progress: ${percentage}%`}
                                     ></div>
                                   );
                                 })()}
                               </div>
                             </div>
-                            {/* --- NEW: Learn2Earn Details Section --- */}
-                            <div className="mt-6">
-                              <h5 className="text-lg font-semibold text-orange-400 mb-2">Learn2Earn Details</h5>
-                              <div className="mb-4 text-gray-300">
-                                <strong>Description:</strong> {item.description}
-                              </div>
-                              {item.tasks && item.tasks.length > 0 && (
-                                <div className="mb-4">
-                                  <h6 className="text-md font-medium text-orange-300 mb-2">Tasks</h6>
-                                  <div className="space-y-4">
-                                    {item.tasks.map((task) => (
-                                      <React.Suspense fallback={<div>Loading task...</div>} key={task.id}>
-                                        {/* Lazy import to avoid circular import issues if any */}
-                                        {(() => {
-                                          const TaskCard = require('../../components/learn2earn/TaskCard').default;
-                                          return <TaskCard task={task} isReadOnly />;
-                                        })()}
-                                      </React.Suspense>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              {/* Optionally, show rules or other info here */}
-                              <div className="mb-2 text-gray-400 text-xs">
-                                <strong>Rules:</strong> Complete all tasks and quizzes to earn rewards. Tokens are distributed per participant as specified.
-                              </div>
+                            <div className="mt-2 flex space-x-2 justify-end">
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setLearn2Earn(learn2earn => learn2earn.map(l2l => l2l.id === item.id ? { ...l2l, _showFullDetails: !(l2l as any)._showFullDetails } : l2l));
+                                }}
+                                className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                              >
+                                {(item as any)._showFullDetails ? 'Hide Details' : 'View Details'}
+                              </button>
                             </div>
+                            {/* Full details only if requested */}
+                            {(item as any)._showFullDetails && (
+                              <div className="mt-6">
+                                <h5 className="text-lg font-semibold text-orange-400 mb-2">Learn2Earn Details</h5>
+                                <div className="mb-4 text-gray-300">
+                                  <strong>Description:</strong> {item.description}
+                                </div>
+                                {item.tasks && item.tasks.length > 0 && (
+                                  <div className="mb-4">
+                                    <h6 className="text-md font-medium text-orange-300 mb-2">Tasks</h6>
+                                    <div className="space-y-4">
+                                      {item.tasks.map((task) => (
+                                        <React.Suspense fallback={<div>Loading task...</div>} key={task.id}>
+                                          {(() => {
+                                            const TaskCard = require('../../components/learn2earn/TaskCard').default;
+                                            return <TaskCard task={task} isReadOnly />;
+                                          })()}
+                                        </React.Suspense>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="mb-2 text-gray-400 text-xs">
+                                  <strong>Rules:</strong> Complete all tasks and quizzes to earn rewards. Tokens are distributed per participant as specified.
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
