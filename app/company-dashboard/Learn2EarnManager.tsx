@@ -36,13 +36,13 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   db,
   companyId,
   companyProfile,
-}) => {
-  // --- Estados principais ---
+}) => {  // --- Estados principais ---
   const [learn2earn, setLearn2Earn] = useState<Learn2Earn[]>([]);
   const [isLoadingLearn2Earn, setIsLoadingLearn2Earn] = useState(false);
   const [feePercent, setFeePercent] = useState<number>(5);
   const [learn2EarnSubTab, setLearn2EarnSubTab] = useState<'new' | 'my'>('my');
   const [learn2EarnStep, setLearn2EarnStep] = useState<'info' | 'tasks' | 'confirmation'>('info');
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
   // Estados de sincronização
   const [syncing, setSyncing] = useState(false);
   const [syncWarnings, setSyncWarnings] = useState<{id: string; msg: string}[]>([]);
@@ -140,9 +140,16 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   useEffect(() => {
     fetchAvailableNetworks();
   }, [fetchAvailableNetworks]);
-  
-  // Função dummy para detalhes (placeholder)
+    // Função dummy para detalhes (placeholder)
   const fetchL2LStats = (l2lId: string) => {};
+  
+  // Função para alternar a expansão do cartão
+  const toggleCardExpansion = (cardId: string) => {
+    setExpandedCards((prev) => ({
+      ...prev,
+      [cardId]: !prev[cardId]
+    }));
+  };
   // Função para sincronizar status
   const syncStatuses = useCallback(async () => {
     if (!learn2earn || learn2earn.length === 0) return;
@@ -1046,104 +1053,71 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                     Create Your First Learn2Earn
                   </button>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  {learn2earn.map((item) => (
-                    <div key={item.id} className="bg-black/30 p-6 rounded-lg border border-gray-700">
+              ) : (                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {learn2earn.map((item) => (                    <div 
+                      key={item.id} 
+                      className={`bg-black/30 p-4 rounded-lg border border-gray-700 transition-all duration-300 cursor-pointer learn2earn-card
+                        ${expandedCards[item.id] ? 'col-span-full row-span-1' : ''}`}
+                      onClick={() => toggleCardExpansion(item.id)}
+                    >
+                      {/* Cabeçalho do card - sempre visível */}
                       <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="text-xl font-medium text-orange-300">{item.title}</h4>
-                          <div className="mt-2">
-                            <p className="text-gray-300">{item.description}</p>
-                          </div>
-                        </div>
-                        <div className="flex">
-                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                        <div className="flex-grow">
+                          <h4 className="text-xl font-medium text-orange-300 truncate">{item.title}</h4>
+                          
+                          {/* Badge de status */}
+                          <span className={`inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full ${
                             item.status === 'active' ? 'bg-green-500/20 text-green-400' :
                             item.status === 'completed' ? 'bg-orange-500/20 text-orange-400' :
                             'bg-gray-500/20 text-gray-400'
                           }`}>
-                            
                             {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                           </span>
                         </div>
-                      </div>
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-black/20 p-3 rounded-md">
-                          <div className="text-sm text-gray-400">Token</div>
-                          <div className="text-lg font-medium text-white">
-                            {item.tokenAmount} {item.tokenSymbol}
-                          </div>
-                        </div>
-                        <div className="bg-black/20 p-3 rounded-md">
-                          <div className="text-sm text-gray-400">Reward Per User</div>
-                          <div className="text-lg font-medium text-white">
-                            {item.tokenPerParticipant} {item.tokenSymbol}
-                          </div>
-                        </div>
-                        <div className="bg-black/20 p-3 rounded-md">
-                          <div className="text-sm text-gray-400">Participants</div>
-                          <div className="text-lg font-medium text-white">
-                            {item.totalParticipants || 0} / {item.maxParticipants || '∞'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-black/20 p-3 rounded-md">
-                          <div className="text-sm text-gray-400">Start Date</div>
-                          <div className="text-white">
-                            {formatDate(item.startDate)}
-                          </div>
-                        </div>
-                        <div className="bg-black/20 p-3 rounded-md">
-                          <div className="text-sm text-gray-400">End Date</div>
-                          <div className="text-white">
-                            {formatDate(item.endDate)}
-                          </div>
-                        </div>
-                        <div className="bg-black/20 p-3 rounded-md col-span-1 md:col-span-2">
-                          <div className="text-sm text-gray-400">Network</div>
-                          <div className="flex items-center">
-                            <span className="bg-gray-700 text-xs px-2 py-1 rounded mr-2">
-                              {(item.network ?? "N/A").toUpperCase()}
-                            </span>
-                            {item.contractAddress && (
-                              <span className="text-xs text-gray-400 truncate">
-                                Contract: {item.contractAddress.substring(0, 8)}...{item.contractAddress.substring(item.contractAddress.length - 6)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 flex space-x-2 justify-end">
-                        {item.status === 'draft' ? (
-                          <button 
-                            onClick={() => toggle(item, 'active')}
-                            className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
-                          >
-                            Activate
-                          </button>
-                        ) : item.status === 'active' ? (
-                          <button 
-                            onClick={() => toggle(item, 'completed')}
-                            className="bg-orange-600 text-white px-3 py-1 rounded-md hover:bg-orange-700"
-                          >
-                            End Campaign
-                          </button>
-                        ) : null}
-                        <button
-                          onClick={() => fetchL2LStats(item.id)}
-                          className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                        
+                        {/* Ícone de expandir/colapsar */}
+                        <button 
+                          className="text-gray-400 hover:text-white p-1 focus:outline-none" 
+                          aria-label={expandedCards[item.id] ? "Minimize" : "Expand"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleCardExpansion(item.id);
+                          }}
                         >
-                          View Details
-                        </button>                      </div>                      <div className="mt-4">
+                          {expandedCards[item.id] ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                              <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 8z"/>
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                              <path fillRule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/>
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                      
+                      {/* Informações compactas - sempre visíveis */}
+                      <div className="mt-3 flex justify-between items-center text-sm">
+                        <div>
+                          <span className="text-gray-400">Token: </span>
+                          <span className="text-white font-medium">{item.tokenAmount} {item.tokenSymbol}</span>
+                        </div>
+                        <div>
+                          <span className="bg-gray-700 text-xs px-2 py-1 rounded">
+                            {(item.network ?? "N/A").toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Barra de progresso - sempre visível */}
+                      <div className="mt-3">
                         <div className="flex justify-between text-xs text-gray-400 mb-1">
-                          <span>Token Distribution Progress</span>
+                          <span>Distribution Progress</span>
                           <span>
                             {calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount)}%
                           </span>
-                        </div>                        <div className="w-full bg-gray-700 rounded-full h-2.5">
-                          {/* Use classes CSS específicas baseadas na porcentagem */}
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
                           {(() => {
                             const percentage = calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount);
                             let widthClass = 'progress-bar-fill-0';
@@ -1155,14 +1129,101 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                               else widthClass = 'progress-bar-fill-100';
                             }
                             
-                            return (                              <div 
-                                className={`bg-orange-500 h-2.5 rounded-full ${widthClass}`}
+                            return (
+                              <div 
+                                className={`bg-orange-500 h-2 rounded-full ${widthClass}`}
                                 aria-label={`Progress: ${percentage}%`}
                               ></div>
                             );
                           })()}
                         </div>
                       </div>
+                      
+                      {/* Conteúdo expandido - visível apenas quando expandido */}
+                      {expandedCards[item.id] && (
+                        <div className="mt-4 animate-fadeIn">
+                          {/* Descrição */}
+                          <div className="mb-4">
+                            <p className="text-gray-300">{item.description}</p>
+                          </div>
+                          
+                          {/* Detalhes principais em grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                            <div className="bg-black/20 p-3 rounded-md">
+                              <div className="text-sm text-gray-400">Reward Per User</div>
+                              <div className="text-lg font-medium text-white">
+                                {item.tokenPerParticipant} {item.tokenSymbol}
+                              </div>
+                            </div>
+                            <div className="bg-black/20 p-3 rounded-md">
+                              <div className="text-sm text-gray-400">Participants</div>
+                              <div className="text-lg font-medium text-white">
+                                {item.totalParticipants || 0} / {item.maxParticipants || '∞'}
+                              </div>
+                            </div>
+                            <div className="bg-black/20 p-3 rounded-md">
+                              <div className="text-sm text-gray-400">Contract</div>
+                              <div className="text-sm font-medium text-gray-300 truncate">
+                                {item.contractAddress && (
+                                  <span>
+                                    {item.contractAddress.substring(0, 8)}...{item.contractAddress.substring(item.contractAddress.length - 6)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Datas */}
+                          <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div className="bg-black/20 p-3 rounded-md">
+                              <div className="text-sm text-gray-400">Start Date</div>
+                              <div className="text-white">
+                                {formatDate(item.startDate)}
+                              </div>
+                            </div>
+                            <div className="bg-black/20 p-3 rounded-md">
+                              <div className="text-sm text-gray-400">End Date</div>
+                              <div className="text-white">
+                                {formatDate(item.endDate)}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Botões de ação */}
+                          <div className="flex space-x-2 justify-end">
+                            {item.status === 'draft' ? (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();  // Evitar que o card colapse ao clicar no botão
+                                  toggle(item, 'active');
+                                }}
+                                className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
+                              >
+                                Activate
+                              </button>
+                            ) : item.status === 'active' ? (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggle(item, 'completed');
+                                }}
+                                className="bg-orange-600 text-white px-3 py-1 rounded-md hover:bg-orange-700"
+                              >
+                                End Campaign
+                              </button>
+                            ) : null}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                fetchL2LStats(item.id);
+                              }}
+                              className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                            >
+                              View Details
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
