@@ -11,20 +11,10 @@ const calculateProgressPercentage = (totalParticipants: number | undefined, toke
   return Math.min(100, Math.round((totalParticipants || 0) * tokenPerParticipant / tokenAmount * 100));
 };
 
-// Utility function to get the appropriate CSS class for progress bar
-const getProgressBarClass = (percentage: number): string => {
-  if (percentage === 0) return "progress-bar-fill-0"; // Usa classe com largura zero explícita
-  if (percentage > 0 && percentage <= 10) return "progress-bar-1-10"; // 1-10%
-  if (percentage <= 20) return "progress-bar-11-20";
-  if (percentage <= 30) return "progress-bar-21-30";
-  if (percentage <= 40) return "progress-bar-31-40";
-  if (percentage <= 50) return "progress-bar-41-50";
-  if (percentage <= 60) return "progress-bar-51-60";
-  if (percentage <= 70) return "progress-bar-61-70";
-  if (percentage <= 80) return "progress-bar-71-80";
-  if (percentage <= 90) return "progress-bar-81-90";
-  return "progress-bar-91-100";
-};
+function getProgressBarFillClass(percent: number) {
+  const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+  return `progress-bar-fill progress-bar-fill-${safePercent}`;
+}
 
 interface Learn2EarnManagerProps {
   db: any;
@@ -1184,17 +1174,11 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                                   {calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount)}%
                                 </span>
                               </div>
-                              <div className="w-full bg-gray-700 rounded-full h-2.5">
-                                {(() => {
-                                  const percentage = calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount);
-                                  return (
-                                    <div
-                                      className="bg-orange-500 h-2.5 rounded-full"
-                                      style={{ width: `${percentage}%` }}
-                                      aria-label={`Progress: ${percentage}%`}
-                                    ></div>
-                                  );
-                                })()}
+                              <div className="progress-bar w-full">
+                                <div
+                                  className={getProgressBarFillClass(calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount))}
+                                  aria-label={`Progress: ${calculateProgressPercentage(item.totalParticipants, item.tokenPerParticipant, item.tokenAmount)}%`}
+                                ></div>
                               </div>
                             </div>
                             <div className="mt-2 flex space-x-2 justify-end">

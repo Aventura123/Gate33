@@ -260,7 +260,6 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
 
   const handleGoToDashboard = () => {
     if (!userInfo) return;
-    
     switch (userInfo.type) {
       case 'seeker':
         router.push("/seeker-dashboard");
@@ -273,6 +272,10 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
         break;
       case 'support':
         router.push("/support-dashboard");
+        break;
+      default:
+        // Fallback: go to a generic dashboard or home
+        router.push("/");
         break;
     }
   };
