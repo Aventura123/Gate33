@@ -8,18 +8,21 @@ import path from 'path';
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("POST /api/company/photo - Iniciando requisição");
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const companyId = formData.get("companyId") as string | null;
 
     if (!file || !companyId) {
+      console.log("POST /api/company/photo - Dados inválidos:", { hasFile: !!file, hasCompanyId: !!companyId });
       return NextResponse.json({ 
         error: "Invalid request", 
-        message: "File and companyId are required" 
+        message: "File and companyId are required",
+        success: false
       }, { status: 400 });
     }
 
-    console.log("Iniciando upload de foto para empresa:", companyId);
+    console.log("POST /api/company/photo - Iniciando upload de foto para empresa:", companyId);
     console.log("Tipo de arquivo:", file.type);
     console.log("Tamanho do arquivo:", file.size, "bytes");
 
@@ -47,33 +50,43 @@ export async function POST(req: NextRequest) {
       console.log("Gerando referência para Firebase Storage:", filePath);
 
       const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-
-      if (!storage) {
-        throw new Error("Firebase Storage is not initialized. Please check your Firebase configuration.");
+      const buffer = Buffer.from(arrayBuffer);      if (!storage) {
+        console.error("POST /api/company/photo - Firebase Storage não inicializado");
+        return NextResponse.json({
+          error: "Storage not initialized",
+          message: "Firebase Storage connection failed",
+          success: false
+        }, { status: 500 });
       }
 
+      console.log("POST /api/company/photo - Referência ao Firebase Storage criada");
       const storageRef = ref(storage, filePath);
+      
+      console.log("POST /api/company/photo - Iniciando upload do buffer");
       const snapshot = await uploadBytes(storageRef, buffer);
 
       console.log("Upload concluído, obtendo URL de download...");
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      if (!db) {
-        throw new Error("Firestore is not initialized. Please check your Firebase configuration.");
+      const downloadURL = await getDownloadURL(snapshot.ref);      if (!db) {
+        console.error("POST /api/company/photo - Firestore não inicializado");
+        return NextResponse.json({
+          error: "Database not initialized",
+          message: "Firestore connection failed",
+          success: false
+        }, { status: 500 });
       }
 
+      console.log("POST /api/company/photo - Referência ao Firestore criada");
       const companyRef = doc(db, "companies", companyId);
       const companyDoc = await getDoc(companyRef);
 
       if (companyDoc.exists()) {
-        console.log("Atualizando documento da empresa no Firestore...");
+        console.log("POST /api/company/photo - Atualizando documento da empresa no Firestore...");
         await updateDoc(companyRef, {
           photoURL: downloadURL,
           updatedAt: new Date().toISOString()
         });
       } else {
-        console.log("Criando novo documento de empresa no Firestore...");
+        console.log("POST /api/company/photo - Criando novo documento de empresa no Firestore...");
         await setDoc(companyRef, {
           companyId: companyId,
           photoURL: downloadURL,
@@ -81,10 +94,12 @@ export async function POST(req: NextRequest) {
           updatedAt: new Date().toISOString()
         });
       }
-
+      
+      console.log("POST /api/company/photo - Operação concluída com sucesso, retornando URL:", downloadURL);
       return NextResponse.json({ 
         success: true, 
-        url: downloadURL 
+        url: downloadURL,
+        photoURL: downloadURL
       }, { status: 200 });
     } catch (storageError: any) {
       console.error("Erro durante o upload para Firebase Storage:", storageError);
@@ -106,34 +121,59 @@ export async function POST(req: NextRequest) {
 // GET: Buscar foto de perfil de uma empresa específica
 export async function GET(req: NextRequest) {
   try {
+    console.log("GET /api/company/photo - Iniciando requisição");
     const url = new URL(req.url);
     const companyId = url.searchParams.get("companyId");
 
+    console.log("GET /api/company/photo - CompanyId:", companyId);
+
     if (!companyId) {
+      console.log("GET /api/company/photo - CompanyId não fornecido");
       return NextResponse.json({ error: "companyId é obrigatório" }, { status: 400 });
     }
 
     if (!db) {
-      throw new Error("Firestore is not initialized. Please check your Firebase configuration.");
+      console.error("GET /api/company/photo - Firestore não inicializado");
+      // Em vez de lançar erro, vamos retornar uma resposta JSON
+      return NextResponse.json({ 
+        error: "Firestore not initialized", 
+        message: "Database connection failed" 
+      }, { status: 500 });
     }
 
     // Buscar informações da empresa no Firestore
+    console.log("GET /api/company/photo - Buscando dados da empresa:", companyId);
     const companyRef = doc(db, "companies", companyId);
-    const companyDoc = await getDoc(companyRef);
-
-    if (companyDoc.exists()) {
+    const companyDoc = await getDoc(companyRef);    if (companyDoc.exists()) {
       const companyData = companyDoc.data();
+      console.log("GET /api/company/photo - Empresa encontrada, dados:", {
+        name: companyData.name,
+        hasPhoto: !!companyData.photoURL
+      });
+      
       return NextResponse.json({ 
         photoUrl: companyData.photoURL || null,
-        companyData: companyData
+        photoURL: companyData.photoURL || null,
+        success: true
       });
     } else {
-      return NextResponse.json({ photoUrl: null });
+      console.log("GET /api/company/photo - Empresa não encontrada");
+      return NextResponse.json({ 
+        photoUrl: null, 
+        photoURL: null,
+        success: true,
+        message: "Company not found"
+      });
     }
   } catch (error: any) {
     console.error("Erro ao buscar foto da empresa:", error);
+    console.error("Stack trace:", error.stack);
     return NextResponse.json(
-      { error: "Erro ao buscar foto da empresa", message: error.message },
+      { 
+        error: "Erro ao buscar foto da empresa", 
+        message: error.message,
+        success: false
+      },
       { status: 500 }
     );
   }

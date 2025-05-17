@@ -149,8 +149,7 @@ const PostJobPage = (): JSX.Element => {
     pricingPlanId: "",
     paymentStatus: "pending" as 'pending' | 'completed' | 'failed',
     paymentId: "" // Add paymentId field
-  });
-  const [activeTab, setActiveTab] = useState("Overview");
+  });  const [activeTab, setActiveTab] = useState("profile");
   const [userPhoto, setUserPhoto] = useState(""); 
   const [isUploading, setIsUploading] = useState(false);
   const [companyId, setCompanyId] = useState("");
@@ -283,21 +282,47 @@ const PostJobPage = (): JSX.Element => {
       console.error("Error decoding token:", error);
       router.replace("/login");
     }
-  };
-
-  const fetchCompanyPhoto = async (id: string) => {
+  };  const fetchCompanyPhoto = async (id: string) => {
     try {
+      console.log("Fetchando foto para companyId:", id);
       const response = await fetch(`/api/company/photo?companyId=${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.photoUrl) {
-          setUserPhoto(data.photoUrl); // Ensure photo is fetched from Firebase
-        } else {
-          setUserPhoto(""); // Clear photo if not found
+      console.log("Resposta do servidor:", response.status, response.statusText);
+      
+      if (!response.ok) {
+        console.error("Erro ao buscar foto:", response.status, response.statusText);
+        setUserPhoto(""); // Clear photo on error
+        return;
+      }
+      
+      let data;
+      try {
+        const textResponse = await response.text();
+        console.log("Resposta bruta:", textResponse.substring(0, 200)); // Log primeiros 200 caracteres
+        
+        try {
+          data = JSON.parse(textResponse);
+          console.log("Dados JSON parseados com sucesso:", data);
+        } catch (jsonError) {
+          console.error("Erro ao fazer parse do JSON:", jsonError);
+          console.error("Resposta não é um JSON válido:", textResponse.substring(0, 200));
+          setUserPhoto(""); // Clear photo on error
+          return;
         }
+      } catch (textError) {
+        console.error("Erro ao ler resposta como texto:", textError);
+        setUserPhoto(""); // Clear photo on error
+        return;
+      }
+      
+      if (data.photoUrl || data.photoURL) {
+        console.log("URL da foto encontrada:", data.photoUrl || data.photoURL);
+        setUserPhoto(data.photoUrl || data.photoURL); // Verificando ambos os campos
+      } else {
+        console.log("Nenhuma URL de foto encontrada nos dados");
+        setUserPhoto(""); // Clear photo if not found
       }
     } catch (error) {
-      console.error("Error fetching company photo:", error);
+      console.error("Erro ao buscar foto da empresa:", error);
       setUserPhoto(""); // Clear photo on error
     }
   };
@@ -399,8 +424,7 @@ const PostJobPage = (): JSX.Element => {
           throw new Error("Token is missing or invalid.");
         }
         const decodedToken = atob(token);
-        setCompanyId(decodedToken);
-        // Fetch data once companyId is set
+        setCompanyId(decodedToken);        // Fetch data once companyId is set
         fetchCompanyPhoto(decodedToken);
         fetchCompanyProfile(decodedToken); // Fetch profile initially
         // Fetch jobs related to this company
@@ -411,6 +435,16 @@ const PostJobPage = (): JSX.Element => {
           const jobSnapshot = await getDocs(q);
           const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Job));
           setJobs(fetchedJobs);
+          
+          // Also fetch instant jobs when the component mounts
+          try {
+            console.log('[InstantJobs] Loading initial jobs for companyId:', decodedToken);
+            const instantJobs = await instantJobsService.getInstantJobsByCompany(decodedToken);
+            console.log('[InstantJobs] Initial jobs fetched:', instantJobs);
+            setInstantJobs(instantJobs);
+          } catch (error) {
+            console.error('Error loading initial instant jobs:', error);
+          }
         };
         fetchInitialJobs();
       } catch (error) {
@@ -443,7 +477,6 @@ const PostJobPage = (): JSX.Element => {
     // Ensure value is always a string
     setCompanyProfile({ ...companyProfile, [name]: value ?? "" });
   };
-
   const handleUserPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && companyId) {
@@ -462,7 +495,7 @@ const PostJobPage = (): JSX.Element => {
       formData.append("companyId", companyId);
 
       try {
-        console.log("Sending file to server...", {
+        console.log("Enviando arquivo para o servidor...", {
           fileName: file.name,
           fileType: file.type,
           fileSize: file.size,
@@ -474,27 +507,47 @@ const PostJobPage = (): JSX.Element => {
           body: formData,
         });
         
-        console.log("Response received from server:", {
+        console.log("Resposta recebida do servidor:", {
           status: response.status,
           statusText: response.statusText
         });
 
-        const responseData = await response.json();
-        console.log("Response data:", responseData);
+        // Tentar ler a resposta primeiro como texto para garantir que seja um JSON válido
+        let responseData;
+        const responseText = await response.text();
+        console.log("Resposta do texto:", responseText.substring(0, 200));
+        
+        try {
+          responseData = JSON.parse(responseText);
+          console.log("Dados da resposta:", responseData);
+        } catch (jsonError) {
+          console.error("Erro ao analisar JSON:", jsonError);
+          throw new Error("Resposta do servidor não é um JSON válido");
+        }
         
         if (!response.ok) {
-          throw new Error(responseData.message || "Failed to upload photo");
+          throw new Error(responseData.message || "Falha ao fazer upload da foto");
         }
-
+        
         // Update the photo with the URL returned by the server
-        setUserPhoto(responseData.url);
-        console.log("Upload completed successfully!");
+        const photoUrl = responseData.url || responseData.photoURL || responseData.photoUrl;
+        if (photoUrl) {
+          console.log("URL da foto recebida:", photoUrl);
+          setUserPhoto(photoUrl);
+        } else {
+          console.warn("Nenhuma URL de foto encontrada na resposta");
+        }
+        
+        console.log("Upload concluído com sucesso!");
         
         // Reload the data to ensure everything is updated
         reloadData();
       } catch (error: any) {
-        console.error("Detailed error while uploading company photo:", error);
-        alert(`Failed to upload photo: ${error.message || "Unknown error"}`);
+        console.error("Erro detalhado ao enviar foto da empresa:", error);
+        alert(`Falha ao fazer upload da foto: ${error.message || "Erro desconhecido"}`);
+        
+        // Reverter para foto anterior ou limpar
+        fetchCompanyPhoto(companyId);
       } finally {
         setIsUploading(false);
       }
@@ -1078,9 +1131,11 @@ const InstantJobDetailCard: React.FC<{
       />
     );
   };
-
   // Render content based on active tab
   const renderContent = () => {
+    console.log('Rendering content for activeTab:', activeTab);
+    console.log('Current instantJobs count:', instantJobs.length);
+    
     switch (activeTab) {
       case "profile":
         // Dados para o gráfico de evolução (últimos 8 períodos)
