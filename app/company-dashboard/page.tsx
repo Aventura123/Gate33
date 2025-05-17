@@ -150,7 +150,7 @@ const PostJobPage = (): JSX.Element => {
     paymentStatus: "pending" as 'pending' | 'completed' | 'failed',
     paymentId: "" // Add paymentId field
   });
-  const [activeTab, setActiveTab] = useState("newJob");
+  const [activeTab, setActiveTab] = useState("Overview");
   const [userPhoto, setUserPhoto] = useState(""); 
   const [isUploading, setIsUploading] = useState(false);
   const [companyId, setCompanyId] = useState("");
@@ -223,6 +223,7 @@ const PostJobPage = (): JSX.Element => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [totalApplications, setTotalApplications] = useState<number>(0);
+  const [learn2earn, setLearn2earn] = useState<any[]>([]); // Novo estado para Learn2Earn
 
   // Function to fetch pricing plans from Firebase
   const fetchPricingPlans = useCallback(async () => {
@@ -245,6 +246,29 @@ const PostJobPage = (): JSX.Element => {
   useEffect(() => {
     fetchPricingPlans();
   }, [fetchPricingPlans]);
+
+  // Função para buscar os Learn2Earn da empresa
+  const fetchLearn2Earn = useCallback(async () => {
+    if (!db || !companyId) return;
+    try {
+      const l2eCollection = collection(db, "learn2earn");
+      const q = query(l2eCollection, where("companyId", "==", companyId));
+      const snapshot = await getDocs(q);
+      const fetched = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt || null,
+      }));
+      setLearn2earn(fetched);
+    } catch (error) {
+      setLearn2earn([]);
+    }
+  }, [db, companyId]);
+
+  // Buscar Learn2Earn ao carregar ou mudar companyId
+  useEffect(() => {
+    fetchLearn2Earn();
+  }, [fetchLearn2Earn]);
 
   const checkAuthentication = () => {
     try {
@@ -855,7 +879,6 @@ const PostJobPage = (): JSX.Element => {
       </div>
     );
   };
-  // Removed old notifications tab render function
 
   // Functions for Instant Jobs
   // Function to load Instant Jobs
@@ -998,8 +1021,7 @@ const InstantJobDetailCard: React.FC<{
       </div>
       <div className="border-t border-orange-900/30 pt-4">
         <h4 className="text-lg font-semibold text-orange-400 mb-2">Messages</h4>
-        <div className="max-h-48 overflow-y-auto space-y-2 mb-4">
-          {messages.length === 0 ? (
+        <div className="max-h-48 overflow-y-auto space-y-2 mb-4">          {messages.length === 0 ? (
             <div className="text-gray-400 text-sm">No messages yet.</div>
           ) : (
             messages.map((msg, idx) => (
@@ -1074,11 +1096,12 @@ const InstantJobDetailCard: React.FC<{
         const evolutionData = periods.map(date => {
           const jobsCount = jobs.filter(j => j.createdAt && getDate(j.createdAt)! <= date).length;
           const instantJobsCount = instantJobs.filter(j => j.createdAt && getDate(j.createdAt)! <= date).length;
+          const learn2earnCount = learn2earn.filter(l2e => l2e.createdAt && getDate(l2e.createdAt)! <= date).length;
           return {
             date: fmt(date),
             jobs: jobsCount,
             instantJobs: instantJobsCount,
-            learn2earn: 0,
+            learn2earn: learn2earnCount,
           };
         });
         return (
@@ -1109,7 +1132,7 @@ const InstantJobDetailCard: React.FC<{
               </div>
               <div className="bg-black/60 rounded-lg p-5 flex flex-col items-center border border-orange-900/30">
                 <span className="text-sm text-gray-400 mb-1">Learn2Earn</span>
-                <span className="text-2xl font-bold text-orange-400">0</span>
+                <span className="text-2xl font-bold text-orange-400">{learn2earn.length}</span>
               </div>
             </div>
             {/* Evolution chart section - translated title */}
@@ -1135,7 +1158,7 @@ const InstantJobDetailCard: React.FC<{
       case "instantJobs":
         return renderInstantJobsTab();
       case "settings":
-        return renderSettings();      // Removed old notifications case
+        return renderSettings();
       case "learn2earn":
         return (
           <div className="bg-black/70 p-10 rounded-lg shadow-lg">
@@ -1158,11 +1181,6 @@ const InstantJobDetailCard: React.FC<{
         return <div>Page not found.</div>;
     }
   };
-
-  // Fix the spinner class name (typo)
-  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
-    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
-  </div>
 
   useEffect(() => {
     const loadPricingPlans = async () => {
@@ -1429,8 +1447,7 @@ const InstantJobDetailCard: React.FC<{
             {supportTickets.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-300">You have no support tickets.</p>
-              </div>
-            ) : (
+              </div>            ) : (
               supportTickets.map((ticket) => (
                 <div
                   key={ticket.id}
@@ -1490,8 +1507,7 @@ const InstantJobDetailCard: React.FC<{
               </div>
               <div className="border-t border-gray-700 pt-4">
                 <h4 className="text-orange-400 font-semibold mb-2">Messages</h4>
-                <div className="max-h-64 overflow-y-auto space-y-3 mb-4">
-                  {ticketMessages.length === 0 ? (
+                <div className="max-h-64 overflow-y-auto space-y-3 mb-4">                  {ticketMessages.length === 0 ? (
                     <div className="text-gray-400">No messages yet.</div>
                   ) : (
                     ticketMessages.map(msg => (
@@ -1733,7 +1749,7 @@ const InstantJobDetailCard: React.FC<{
             </div>
             {/* Display Company Name from Profile */}
             <h2 className="text-xl font-bold text-orange-500 text-center break-words">
-              {companyProfile.name || "Company Dashboard"}
+              {companyProfile.name || "Company Overview"}
             </h2>
             <WalletButton />
             {/* Navigation */}
@@ -1743,7 +1759,7 @@ const InstantJobDetailCard: React.FC<{
                   className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "profile" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
                   onClick={() => handleTabChange("profile")}
                 >
-                  Profile
+                  Overview
                 </button>
               </li>
               <li>
@@ -1826,7 +1842,8 @@ const InstantJobDetailCard: React.FC<{
               <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4a1 1 0 10-2 0v4.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L14 11.586V7z" clipRule="evenodd" />
             </svg>
             Logout
-          </button>        </aside>
+          </button>
+        </aside>
         
         {/* Main Content Area - Updated for mobile responsiveness */}
         <section className={`w-full ${isMobile ? 'p-6' : 'md:w-3/4 p-6'} overflow-y-auto ${isMobile && mobileMenuOpen ? 'opacity-30' : 'opacity-100'} transition-opacity duration-300`}>
