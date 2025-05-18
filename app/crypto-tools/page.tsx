@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 // @ts-ignore
 import jazzicon from '@metamask/jazzicon';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+// Firebase imports removidos - não mais necessários para FlexCard
 import WalletButton from '../../components/WalletButton';
 import { web3Service } from '../../services/web3Service';
 import Layout from '../../components/Layout';
@@ -742,14 +741,26 @@ function FlexCard({ address, isConnected, className }: { address: `0x${string}` 
       const data = generateDeterministicData(input);
       setCardData(data);
       
-      await addDoc(collection(db, 'flexCards'), { 
-        address: input, 
-        created: new Date(),
-        displayName: `Wallet ${formatWalletAddress(input)}`,
-        score: data.score,
-        nftCount: data.nftCount,
-        age: data.age
-      });
+      // Armazenar localmente no localStorage para referência futura (opcional)
+      try {
+        const flexCardsHistory = JSON.parse(localStorage.getItem('flexCardsHistory') || '[]');
+        flexCardsHistory.push({
+          address: input,
+          created: new Date().toISOString(),
+          displayName: `Wallet ${formatWalletAddress(input)}`,
+          score: data.score,
+          nftCount: data.nftCount,
+          age: data.age
+        });
+        // Manter apenas os últimos 10 cartões
+        if (flexCardsHistory.length > 10) {
+          flexCardsHistory.splice(0, flexCardsHistory.length - 10);
+        }
+        localStorage.setItem('flexCardsHistory', JSON.stringify(flexCardsHistory));
+      } catch (storageError) {
+        // Silenciosamente ignora erros de localStorage
+        console.log('Não foi possível salvar no localStorage:', storageError);
+      }
       
       setCardGenerated(true);
       setMsg('Awesome flex card created! Your friends will be sooo jealous! 😎');
