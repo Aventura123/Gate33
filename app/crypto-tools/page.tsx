@@ -14,110 +14,8 @@ import CryptoTable from './components/CryptoTable';
 import CryptoDetails from './components/CryptoDetails';
 import MarketCapComparison from './components/MarketCapComparison';
 import { useCryptocurrencies } from './lib/hooks';
+import { useWallet } from '../../components/WalletProvider';
 import './styles/crypto-tools.css';
-
-// Global wallet connection state (to share between components)
-const useWalletState = () => {
-  const [address, setAddress] = useState<`0x${string}` | undefined>(undefined);
-  const [isConnected, setIsConnected] = useState(false);
-  const [networkError, setNetworkError] = useState<string | null>(null);
-  const [networkInfo, setNetworkInfo] = useState<{name: string, chainId: number} | null>(null);
-
-  // Check initial wallet connection with higher tolerance for failures
-  useEffect(() => {
-    const checkWalletConnection = async () => {
-      try {
-        if (web3Service.isWalletConnected()) {
-          const walletInfo = web3Service.getWalletInfo();
-          if (walletInfo) {
-            setAddress(walletInfo.address as `0x${string}`);
-            setIsConnected(true);
-            setNetworkError(null);
-            
-            // Get network information with error handling
-            try {
-              const network = await web3Service.getNetworkInfo();
-              setNetworkInfo(network);
-              
-              // Check if there was an error detecting the network
-              if (web3Service.connectionError) {
-                setNetworkError(web3Service.connectionError);
-              } else {
-                setNetworkError(null);
-              }
-            } catch (networkErr) {
-              console.warn("Error getting network information:", networkErr);
-              setNetworkError("Failed to detect network. Using fallback provider.");
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error checking wallet connection:", error);
-        setNetworkError("Error connecting to wallet. Please try again.");
-      }
-    };
-    
-    // Timeout to ensure Ethereum APIs are loaded
-    setTimeout(checkWalletConnection, 500);
-    
-    // Set an interval to periodically check the connection
-    const networkCheckInterval = setInterval(async () => {
-      if (isConnected) {
-        try {
-          const network = await web3Service.getNetworkInfo();
-          setNetworkInfo(network);
-          
-          if (web3Service.connectionError) {
-            setNetworkError(web3Service.connectionError);
-          } else {
-            setNetworkError(null);
-          }
-        } catch (err) {
-          console.warn("Error during periodic network check:", err);
-          setNetworkError("Network connection unstable. Using fallback provider.");
-        }
-      }
-    }, 10000); // Check every 10 seconds
-    
-    return () => clearInterval(networkCheckInterval);
-  }, [isConnected]);
-
-  // Add listeners for network change events
-  useEffect(() => {
-    const handleChainChanged = () => {
-      // Reload the page when the network changes to avoid inconsistent state
-      window.location.reload();
-    };
-
-    const handleAccountsChanged = (accounts: string[]) => {
-      if (accounts.length === 0) {
-        // User disconnected the wallet
-        setAddress(undefined);
-        setIsConnected(false);
-      } else {
-        // User switched account
-        setAddress(accounts[0] as `0x${string}`);
-        setIsConnected(true);
-      }
-    };
-
-    // Add event listeners if ethereum is available
-    if (typeof window !== 'undefined' && window.ethereum) {
-      window.ethereum.on('chainChanged', handleChainChanged);
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-    }
-
-    // Remove event listeners on component unmount
-    return () => {
-      if (typeof window !== 'undefined' && window.ethereum) {
-        window.ethereum.removeListener('chainChanged', handleChainChanged);
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-      }
-    };
-  }, []);
-
-  return { address, isConnected, networkError, networkInfo, setAddress, setIsConnected };
-};
 
 // Component to display network errors with instructions to resolve
 function NetworkErrorAlert({ error, retry }: { error: string | null, retry: () => void }) {
@@ -1239,7 +1137,30 @@ function NFTProfilePicCard({ address, isConnected }: { address: `0x${string}` | 
 
 // Main component of the page
 export default function CryptoToolsPage() {
-  const { address, isConnected, networkError, networkInfo, setAddress, setIsConnected } = useWalletState();
+  // Estado da carteira obtido diretamente do WalletProvider global
+  const { walletAddress, currentNetwork, walletError } = useWallet();
+  const address = walletAddress as `0x${string}` | undefined;
+  const isConnected = !!walletAddress;
+  const networkError = walletError;
+  
+  // Estado local para informações da rede
+  const [networkInfo, setNetworkInfo] = useState<{name: string, chainId: number} | null>(null);
+  
+  // Atualizar informações da rede quando a carteira for conectada
+  useEffect(() => {
+    const updateNetworkInfo = async () => {
+      if (isConnected && currentNetwork) {
+        try {
+          const network = await web3Service.getNetworkInfo();
+          setNetworkInfo(network);
+        } catch (err) {
+          console.warn("Error getting network information:", err);
+        }
+      }
+    };
+    
+    updateNetworkInfo();
+  }, [isConnected, currentNetwork]);
   const [selectedCoinId, setSelectedCoinId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<number>(0);
   const [visibleRows, setVisibleRows] = useState(10); // State to control visible rows
@@ -1296,38 +1217,21 @@ export default function CryptoToolsPage() {
               </p>
             </div>
           </div>
-          
-          {/* Wallet connection bar */}
+            {/* Wallet connection bar */}
           <div className="mb-8 p-4 bg-gradient-to-r from-orange-900/30 to-gray-900/50 rounded-lg border border-orange-500/30">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div>
-                <h2 className="text-xl font-bold text-orange-400">Connect your wallet</h2>
-                <p className="text-gray-400 text-sm">Connect to access additional features and functionalities</p>
+                <h2 className="text-xl font-bold text-orange-400">Crypto Tools</h2>
+                <p className="text-gray-400 text-sm">Connect your wallet to access additional features and functionalities</p>
               </div>
               
               <div className="flex items-center gap-2">
-                {isConnected && (
-                  <div className="bg-orange-900/30 px-3 py-1 rounded-lg text-sm border border-orange-500/30">
-                    <span className="text-gray-400 mr-1">Connected:</span>
-                    <span className="text-orange-400">{formatWalletAddress(address)}</span>
-                  </div>
-                )}
-                
-                <WalletButton 
-                  onConnect={async (addr) => {
-                    setAddress(addr as `0x${string}`);
-                    setIsConnected(true);
-                  }}
-                  onDisconnect={() => {
-                    setAddress(undefined);
-                    setIsConnected(false);
-                  }}
+                <WalletButton
                   className="wallet-connect-btn"
                 />
               </div>
             </div>
-            
-            {/* Display network error messages */}
+              {/* Display network error messages */}
             {networkError && (
               <NetworkErrorAlert 
                 error={networkError} 
@@ -1335,17 +1239,6 @@ export default function CryptoToolsPage() {
                   window.location.reload();
                 }} 
               />
-            )}
-            
-            {/* Network information */}
-            {isConnected && networkInfo && (
-              <div className="mt-3 bg-orange-900/20 p-2 rounded text-sm inline-flex items-center">
-                <div className={`w-2 h-2 rounded-full mr-2 ${
-                  networkInfo.chainId === 1 ? 'bg-green-500' : 'bg-yellow-500'
-                }`}></div>
-                <span className="text-gray-400 mr-1">Rede:</span>
-                <span className="text-white">{networkInfo.name}</span>
-              </div>
             )}
           </div>
 
