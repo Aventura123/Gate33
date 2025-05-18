@@ -5,6 +5,7 @@ import { db } from "../../lib/firebase";
 import { collection, addDoc, getDoc, doc, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import jobService from "../../services/jobService";
 import { useWallet } from '../../components/WalletProvider';
+import AIJobAssistant from "./AIJobAssistant";
 
 interface PricingPlan {
   id: string;
@@ -32,7 +33,7 @@ interface JobPostPaymentProps {
   reloadData: () => void;
 }
 
-// Estender a interface para incluir as perguntas dinâmicas
+// Extend the interface to include dynamic questions and new fields for the AI Job Assistant
 interface JobDataType {
   title: string;
   description: string;
@@ -50,6 +51,10 @@ interface JobDataType {
   pricingPlanId: string;
   paymentStatus: 'pending' | 'completed' | 'failed';
   paymentId: string;
+  // AI Job Assistant fields - reintegrated
+  responsibilities: string;
+  idealCandidate: string;
+  screeningQuestions?: string[];
   [key: `question${number}`]: string | undefined;
 }
 
@@ -71,14 +76,18 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     applicationLink: "",
     pricingPlanId: "",
     paymentStatus: "pending" as 'pending' | 'completed' | 'failed',
-    paymentId: ""
+    paymentId: "",
+    // Reintegrating the specific fields
+    responsibilities: "",
+    idealCandidate: "",
+    screeningQuestions: []
   });
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
   const [paymentStep, setPaymentStep] = useState<'form' | 'select-plan' | 'review' | 'processing' | 'completed'>('form');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   
-  // Usar contexto global da carteira
+  // Use global wallet context
   const {
     walletAddress,
     currentNetwork,
@@ -302,7 +311,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     setJobData((prev) => ({ ...prev, pricingPlanId: "", paymentStatus: "pending", paymentId: prev.paymentId || "" }));
   };
 
-  // State para perguntas de triagem
+  // State for screening questions
   const [enableScreeningQuestions, setEnableScreeningQuestions] = useState(false);
   const [screeningQuestions, setScreeningQuestions] = useState<string[]>([]);
 
@@ -314,21 +323,111 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
           e.preventDefault();
           setPaymentStep('select-plan');
         }}>
-          {/* --- NOVO FORMULÁRIO DE JOB OFFER --- */}
+          {/* --- NEW JOB OFFER FORM --- */}
           <div className="space-y-6 mb-8">
             <div>
               <label className="block text-orange-400 font-semibold mb-1">Job Title *</label>
               <input name="title" value={jobData.title} onChange={handleChange} required className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
-            </div>
-            <div>
+            </div>            <div>
               <label className="block text-orange-400 font-semibold mb-1">Company Name *</label>
               <input name="company" value={jobData.company} onChange={handleChange} required className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
             </div>
-            <div>
+            
+            <AIJobAssistant 
+              jobData={jobData} 
+              updateJobData={setJobData} 
+              companyProfile={companyProfile}
+              setScreeningQuestions={questions => {
+                setScreeningQuestions(questions);
+                if (questions && questions.length > 0) setEnableScreeningQuestions(true);
+              }}
+            />            <div>
               <label className="block text-orange-400 font-semibold mb-1">Job Description *</label>
-              {/* Rich text pode ser substituído por um editor depois */}
-              <textarea name="description" value={jobData.description} onChange={handleChange} required rows={6} className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
+              {/* Rich text can be replaced by an editor later */}
+              <textarea 
+                name="description" 
+                value={jobData.description} 
+                onChange={handleChange} 
+                required 
+                rows={10} 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                placeholder="Enter a complete job description"
+              />
+              <p className="text-xs text-gray-400 mt-1">Include details about the position and technical requirements.</p>
             </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Responsibilities</label>
+              <textarea 
+                name="responsibilities" 
+                value={jobData.responsibilities} 
+                onChange={handleChange} 
+                rows={6} 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                placeholder="List key responsibilities for this role. Use bullet points (•) for better readability."
+              />
+              <p className="text-xs text-gray-400 mt-1">Describe the main tasks and responsibilities of the position. Use bullet points • or - for better readability.</p>
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Ideal Candidate</label>
+              <textarea 
+                name="idealCandidate" 
+                value={jobData.idealCandidate} 
+                onChange={handleChange} 
+                rows={6} 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                placeholder="Describe your ideal candidate's profile, including soft skills and cultural fit"
+              />
+              <p className="text-xs text-gray-400 mt-1">Describe the ideal candidate profile, including soft skills and cultural fit. Use bullet points • or - for better readability.</p>
+            </div>
+              <div>
+              <label className="block text-orange-400 font-semibold mb-1">Required Skills</label>
+              <div className="mb-2">
+                <input 
+                  name="requiredSkills"
+                  type="text"
+                  value={jobData.requiredSkills} 
+                  onChange={handleChange} 
+                  className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                  placeholder="Enter skills separated by commas or use the tags below"
+                />
+                <p className="text-xs text-gray-400 mt-1">Skills will appear as tags on the job post. Select from common tags below or add your own above.</p>
+              </div>
+              
+              {/* Display selected skills as tags */}
+              {jobData.requiredSkills && (
+                <div className="mt-3">
+                  <label className="block text-sm text-gray-300 mb-1">Selected Skills:</label>
+                  <div className="flex flex-wrap gap-2">
+                    {jobData.requiredSkills.split(',').map((skill, index) => {
+                      const trimmedSkill = skill.trim();
+                      if (!trimmedSkill) return null;
+                      
+                      return (
+                        <div key={index} className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm flex items-center">
+                          {trimmedSkill}
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const skills = jobData.requiredSkills.split(',')
+                                .map(s => s.trim())
+                                .filter(s => s !== trimmedSkill)
+                                .join(', ');
+                              setJobData(prev => ({ ...prev, requiredSkills: skills }));
+                            }}
+                            className="ml-2 text-white hover:text-orange-200"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+            
             <div>
               <label className="block text-orange-400 font-semibold mb-1">Job Location</label>
               <input name="location" value={jobData.location} onChange={handleChange} placeholder="Leave blank if 100% Remote" className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
@@ -360,18 +459,38 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
               <label><input type="radio" name="countryMode" value="include" checked className="mr-1" readOnly /> Include countries</label>
               <label><input type="radio" name="countryMode" value="exclude" className="mr-1" readOnly /> Exclude countries</label>
             </div>
-            {/* Substitua por um componente de seleção de países/regiões se necessário */}
+            {/* Replace with a country/region selection component if needed */}
             <input name="countries" placeholder="Select countries..." className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
-          </div>
-          <div>
-            <label className="block text-orange-400 font-semibold mb-1">Tags</label>
+          </div>          <div>
+            <label className="block text-orange-400 font-semibold mb-1">Common Skill Tags</label>
             <div className="flex flex-wrap gap-2">
               {['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Anti Money Laundering','Human Resources','C++','Memes','Site Reliability Engineering','ReFi','Stablecoin','Full-stack Developer','Developer Relations','iOS','Android Developer','GameFi','Talent Acquisition','Node.js','Search Engine Optimization','AI','DePIN','CEX','Berachain','Real World Assets'].map(tag => (
-                <button type="button" key={tag} onClick={() => setJobData(prev => ({ ...prev, requiredSkills: prev.requiredSkills.includes(tag) ? prev.requiredSkills.replace(tag+',','').replace(tag,'') : (prev.requiredSkills ? prev.requiredSkills+','+tag : tag) }))} className={`px-3 py-1 rounded-full border text-sm ${jobData.requiredSkills.includes(tag) ? 'bg-orange-500 text-white border-orange-500' : 'bg-black/50 text-gray-300 border-gray-700'}`}>{tag}</button>
+                <button 
+                  type="button" 
+                  key={tag} 
+                  onClick={() => {
+                    const skills = jobData.requiredSkills;
+                    const skillsArray = skills ? skills.split(',').map(s => s.trim()) : [];
+                    const exists = skillsArray.includes(tag);
+                    
+                    let newSkills;
+                    if (exists) {
+                      newSkills = skillsArray.filter(s => s !== tag).join(', ');
+                    } else {
+                      newSkills = skills ? `${skills}, ${tag}` : tag;
+                    }
+                    
+                    setJobData(prev => ({ ...prev, requiredSkills: newSkills }));
+                  }} 
+                  className={`px-3 py-1 rounded-full border text-sm ${jobData.requiredSkills.includes(tag) ? 'bg-orange-500 text-white border-orange-500' : 'bg-black/50 text-gray-300 border-gray-700'}`}
+                >
+                  {tag}
+                </button>
               ))}
             </div>
+            <p className="text-xs text-gray-400 mt-2">Click on tags to add or remove them from the required skills.</p>
           </div>
-          {/* MÉTODO DE APLICAÇÃO */}
+          {/* APPLICATION METHOD */}
           <div>
             <label className="block text-orange-400 font-semibold mb-1">Application Method</label>
             <div className="flex gap-4 mb-2">
@@ -382,7 +501,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
               <input name="applicationLink" value={jobData.applicationLink} onChange={handleChange} placeholder="https://your-form-link.com" className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
             )}
           </div>
-          {/* OPÇÕES DE CV/VÍDEO */}
+          {/* CV/VIDEO OPTIONS */}
           <div className="flex gap-4 items-center">
             <label><input type="checkbox" name="requireCV" checked={jobData.employmentType === 'requireCV'} onChange={e => setJobData(prev => ({ ...prev, employmentType: e.target.checked ? 'requireCV' : '' }))} /> Require CV attachment</label>
             <label><input type="checkbox" name="allowVideo" checked={jobData.experienceLevel === 'allowVideo'} onChange={e => setJobData(prev => ({ ...prev, experienceLevel: e.target.checked ? 'allowVideo' : '' }))} /> Allow Video Applications</label>
@@ -403,8 +522,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                 className="mr-2"
               />
               <label htmlFor="enableScreeningQuestions" className="text-white">Add custom questions?</label>
-            </div>
-            {enableScreeningQuestions && (
+            </div>            {enableScreeningQuestions && (
               <div>
                 {screeningQuestions.map((q, idx) => (
                   <div key={idx} className="flex items-center mb-2 gap-2">
@@ -415,7 +533,15 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                         const updated = [...screeningQuestions];
                         updated[idx] = e.target.value;
                         setScreeningQuestions(updated);
-                        setJobData(prev => ({ ...prev, [`question${idx+1}`]: e.target.value }));
+                          // Update both the legacy question fields and the new screeningQuestions array
+                        setJobData(prev => { 
+                          const newData = { ...prev };
+                          newData[`question${idx+1}`] = e.target.value;
+                          
+                          // Update the array of screening questions
+                          newData.screeningQuestions = updated;
+                          return newData;
+                        });
                       }}
                       placeholder={`Question ${idx+1}`}
                       className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
@@ -428,14 +554,18 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                         setScreeningQuestions(updated);
                         setJobData(prev => {
                           const newData = { ...prev };
-                          // Limpa todas as questões
+                            // Clear all questions
                           for (let i = 1; i <= 5; i++) {
                             delete newData[`question${i}`];
                           }
-                          // Reorganiza as chaves para manter question1, question2, ...
+                          
+                          // Reorganize keys to maintain question1, question2, ...
                           updated.forEach((q, i) => {
                             newData[`question${i+1}`] = q;
                           });
+                          
+                          // Update the array of screening questions
+                          newData.screeningQuestions = updated;
                           return newData;
                         });
                       }}
@@ -452,7 +582,14 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                     onClick={() => {
                       const updated = [...screeningQuestions, ''];
                       setScreeningQuestions(updated);
-                      setJobData(prev => ({ ...prev, [`question${updated.length}`]: '' }));
+                      
+                      setJobData(prev => {
+                        const newData = { ...prev };
+                        newData[`question${updated.length}`] = '';
+                          // Also update the array of screening questions
+                        newData.screeningQuestions = updated;
+                        return newData;
+                      });
                     }}
                   >
                     + Add question
@@ -460,9 +597,9 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                 )}
               </div>
             )}
-            <div className="text-gray-400 text-xs mt-2">By default, we ask for CV, LinkedIn, location and others .</div>
+            <div className="text-gray-400 text-xs mt-2">By default, we ask for CV, LinkedIn, location and others. AI Job Assistant can help generate relevant screening questions.</div>
           </div>
-          {/* --- FIM DO NOVO FORMULÁRIO --- */}
+          {/* --- END OF NEW FORM --- */}
           <div className="space-y-6">
             <button type="submit" className="w-full bg-orange-500 text-white py-3 rounded-full font-semibold text-lg hover:bg-orange-600 mt-6">Continue</button>
           </div>

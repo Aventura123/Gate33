@@ -24,6 +24,8 @@ import dynamic from "next/dynamic";
 const EvolutionChart = dynamic(() => import("./EvolutionChart"), { ssr: false });
 // Import the Learn2EarnManager
 import Learn2EarnManager from "./Learn2EarnManager";
+// Import the AI Job Assistant
+import AIJobAssistant from "./AIJobAssistant";
 
 // Interface for Support Ticket
 interface SupportTicket {
