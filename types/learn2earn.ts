@@ -11,6 +11,11 @@ export interface Learn2EarnTask {
   question?: string;
   options?: string[];
   correctOption?: number;
+  contentType?: 'full' | 'link';
+  externalUrl?: string;
+  linkTitle?: string;
+  linkDescription?: string;
+  resourceType?: 'website' | 'video' | 'document' | 'article';
 }
 
 // Define the main Learn2Earn interface

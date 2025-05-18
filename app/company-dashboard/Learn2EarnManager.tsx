@@ -268,10 +268,9 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     // Clear timer when component unmounts
     return () => clearTimeout(timer);
   }, [syncStatuses]);
-  
-  // Sincronização automática à meia-noite
+    // Automatic synchronization at midnight
   useEffect(() => {
-    // Função para calcular quando será a próxima meia-noite
+    // Function to calculate when the next midnight will be
     const getNextMidnight = () => {
       const now = new Date();
       const tomorrow = new Date(now);
@@ -280,33 +279,32 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
       return tomorrow;
     };
     
-    // Função para agendar a próxima sincronização
+    // Function to schedule the next synchronization
     const scheduleNextSync = () => {
       const nextMidnight = getNextMidnight();
       const timeUntilMidnight = nextMidnight.getTime() - Date.now();
       
-      console.log(`Agendando próxima sincronização para ${nextMidnight.toLocaleString()}`);
+      console.log(`Scheduling next synchronization for ${nextMidnight.toLocaleString()}`);
       setNextSyncTime(nextMidnight);
       
-      // Configura o timer para a próxima meia-noite
+      // Set timer for next midnight
       const timer = setTimeout(() => {
-        console.log("Executando sincronização automática à meia-noite");
+        console.log("Running automatic synchronization at midnight");
         syncStatuses().then(() => {
           setLastSyncTime(new Date());
-          scheduleNextSync(); // Agendar a próxima sincronização
+          scheduleNextSync(); // Schedule next sync
         });
       }, timeUntilMidnight);
       
       return timer;
     };
     
-    // Inicia o agendamento quando o componente é montado
+    // Start scheduling when the component mounts
     const timer = scheduleNextSync();
     
-    // Limpa o timer quando o componente é desmontado
+    // Clear timer when the component unmounts
     return () => clearTimeout(timer);
-  }, [syncStatuses]);
-  // Handler para mudanças no formulário Learn2Earn
+  }, [syncStatuses]);  // Handler for Learn2Earn form changes
   const handleLearn2EarnChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'tokenAmount' || name === 'totalParticipants' || name === 'tokenPerParticipant') {
@@ -329,13 +327,30 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   const handleDateChange = (name: 'startDate' | 'endDate', date: Date) => {
     setLearn2EarnData({...learn2earnData, [name]: date});
   };
-
   // Handler to add task
   const addTask = () => {
     if (!currentTask.title || !currentTask.description) {
       alert("Please fill in all task fields");
       return;
     }
+    
+    // Validations for specific task types
+    if (currentTask.type === 'content' && currentTask.contentType === 'link') {
+      if (!currentTask.externalUrl) {
+        alert("Please enter a resource URL");
+        return;
+      }
+      if (!currentTask.linkTitle) {
+        alert("Please enter a display text for the link");
+        return;
+      }
+    } else if (currentTask.type === 'content' && (!currentTask.contentType || currentTask.contentType === 'full')) {
+      if (!currentTask.contentText || currentTask.contentText.trim() === '') {
+        alert("Please add some educational content");
+        return;
+      }
+    }
+    
     let newTask: Learn2EarnTask;
     if (currentTask.type === 'content') {
       newTask = {
@@ -460,19 +475,23 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
       } else {
         endDate = new Date();
         endDate.setDate(endDate.getDate() + 30);
-      }
-      const now = new Date();
+      }      const now = new Date();
       const minStartTime = new Date(now.getTime() + 5 * 60 * 1000);
       if (startDate < now) {
         startDate = minStartTime;
       }
       const endBuffer = 1 * 60 * 60 * 1000;
-      const adjustedEndDate = new Date(endDate.getTime() + endBuffer);
+      const adjustedEndDate = new Date(endDate.getTime() + endBuffer);      // Calculate the total value to be sent, considering that the contract subtracts the fee
+      // To ensure that the specified amount is actually available for distribution
+      // If the user wants to distribute X tokens, we need to send X / (1 - fee/100) tokens
+      const feeMultiplier = 1 - (feePercent / 100);
+      const adjustedTokenAmount = learn2earnData.tokenAmount / feeMultiplier;
+      
       const depositResult = await learn2earnContractService.createLearn2Earn(
         normalizedNetwork,
         learn2earnFirebaseId,
         learn2earnData.tokenAddress,
-        learn2earnData.tokenAmount,
+        adjustedTokenAmount, // Adjusted value to compensate for the fee deduction
         startDate,
         endDate,
         learn2earnData.maxParticipants || 0
@@ -699,12 +718,11 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                     value={learn2earnData.tokenAmount || ''}
                     onChange={handleLearn2EarnChange}
                     placeholder="Total amount of tokens to distribute"
-                    className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                    required
+                    className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"                    required
                     min="0"
                     step="0.000001"
                   />
-                  <p className="text-xs text-gray-400 mt-1">Fee: {feePercent}% of total tokens</p>
+                  <p className="text-xs text-gray-400 mt-1">Fee: {feePercent}% (will be added to the specified token amount)</p>
                 </div>
                 <div>
                   <label className="block text-gray-300 mb-2">Tokens Per Participant</label>
@@ -821,8 +839,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                     className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
                   />
                 </div>
-              </div>
-              {/* Next Button */}
+              </div>            {/* Next Button */}
               <div className="mt-4 flex justify-end">
                 <button
                   type="submit"
@@ -892,18 +909,180 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                 placeholder="Brief description of what the user will learn"
                 className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
               />
-            </div>
-
-            {currentTask.type === 'content' ? (
+            </div>            {currentTask.type === 'content' ? (
               <div className="mb-6">
-                <label className="block text-gray-300 mb-2">Educational Content</label>
-                <textarea
-                  name="contentText"
-                  value={currentTask.contentText}
-                  onChange={handleTaskChange}
-                  placeholder="Enter educational content or paste a video URL"
-                  className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white h-32"
-                ></textarea>
+                <div className="mb-4 flex items-center">
+                  <label className="block text-gray-300 mr-4">Content Type:</label>
+                  <div className="flex space-x-3">
+                    <div className="flex items-center">
+                      <input 
+                        type="radio" 
+                        id="content-type-full" 
+                        name="contentType"
+                        checked={!currentTask.contentType || currentTask.contentType === 'full'} 
+                        onChange={() => setCurrentTask({...currentTask, contentType: 'full'})}
+                        className="mr-2" 
+                      />
+                      <label htmlFor="content-type-full" className="text-white text-sm">Rich Content</label>
+                    </div>
+                    <div className="flex items-center">
+                      <input 
+                        type="radio" 
+                        id="content-type-link" 
+                        name="contentType"
+                        checked={currentTask.contentType === 'link'} 
+                        onChange={() => setCurrentTask({...currentTask, contentType: 'link'})}
+                        className="mr-2" 
+                      />
+                      <label htmlFor="content-type-link" className="text-white text-sm">External Link Only</label>
+                    </div>
+                  </div>
+                </div>
+                
+                {(!currentTask.contentType || currentTask.contentType === 'full') ? (
+                  <>
+                    <label className="block text-gray-300 mb-2">Educational Content</label>
+                    <div className="mb-2 flex space-x-2">
+                      <button 
+                        type="button"                      onClick={() => {
+                          const textArea = document.querySelector('textarea[name="contentText"]') as HTMLTextAreaElement;
+                          if (textArea) {
+                            const start = textArea.selectionStart;
+                            const end = textArea.selectionEnd;
+                            const text = currentTask.contentText || '';
+                            const newText = text.substring(0, start) + '**Bold Text**' + text.substring(end);
+                            setCurrentTask({...currentTask, contentText: newText});
+                          }
+                        }}
+                        className="bg-gray-800 text-white px-2 py-1 text-sm rounded hover:bg-gray-700"
+                      >
+                        B
+                      </button>
+                      <button 
+                        type="button"                      onClick={() => {
+                          const textArea = document.querySelector('textarea[name="contentText"]') as HTMLTextAreaElement;
+                          if (textArea) {
+                            const start = textArea.selectionStart;
+                            const end = textArea.selectionEnd;
+                            const text = currentTask.contentText || '';
+                            const newText = text.substring(0, start) + '*Italic Text*' + text.substring(end);
+                            setCurrentTask({...currentTask, contentText: newText});
+                          }
+                        }}
+                        className="bg-gray-800 text-white px-2 py-1 text-sm rounded hover:bg-gray-700 italic"
+                      >
+                        I
+                      </button>
+                      <button 
+                        type="button"                      onClick={() => {
+                          const textArea = document.querySelector('textarea[name="contentText"]') as HTMLTextAreaElement;
+                          if (textArea) {
+                            const start = textArea.selectionStart;
+                            const text = currentTask.contentText || '';
+                            const newText = text.substring(0, start) + '\n• List item\n• Another item\n• One more item\n' + text.substring(start);
+                            setCurrentTask({...currentTask, contentText: newText});
+                          }
+                        }}
+                        className="bg-gray-800 text-white px-2 py-1 text-sm rounded hover:bg-gray-700"
+                      >
+                        • List
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const videoUrl = prompt("Enter a YouTube or Vimeo URL:");
+                          if (videoUrl) {
+                            const text = currentTask.contentText || '';
+                            const newText = text + (text ? '\n\n' : '') + `[VIDEO](${videoUrl})`;
+                            setCurrentTask({...currentTask, contentText: newText});
+                          }
+                        }}
+                        className="bg-gray-800 text-white px-2 py-1 text-sm rounded hover:bg-gray-700"
+                      >
+                        + Video
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const externalUrl = prompt("Enter resource URL (website, document, etc.):");
+                          if (externalUrl) {
+                            const linkTitle = prompt("Enter a title for this link:", "External Resource");
+                            const text = currentTask.contentText || '';
+                            const newText = text + (text ? '\n\n' : '') + `[LINK:${linkTitle}](${externalUrl})`;
+                            setCurrentTask({...currentTask, contentText: newText});
+                          }
+                        }}
+                        className="bg-gray-800 text-white px-2 py-1 text-sm rounded hover:bg-gray-700"
+                      >
+                        + Link
+                      </button>
+                    </div>
+                    <textarea
+                      name="contentText"
+                      value={currentTask.contentText}
+                      onChange={handleTaskChange}
+                      placeholder="Enter educational content. You can use markdown formatting: **bold**, *italic*, • lists, etc."
+                      className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white h-32 font-mono"
+                    ></textarea>
+                    <p className="text-xs text-gray-400 mt-1">
+                      This content supports basic formatting. Use the formatting buttons above or markdown syntax.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <label className="block text-gray-300 mb-2">Resource Type</label>
+                        <select
+                          name="resourceType"
+                          value={currentTask.resourceType || 'website'}
+                          onChange={(e) => setCurrentTask({...currentTask, resourceType: e.target.value as 'website' | 'video' | 'document' | 'article'})}
+                          className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+                        >
+                          <option value="website">Website</option>
+                          <option value="video">Video (YouTube, Vimeo, etc.)</option>
+                          <option value="document">Document (PDF, etc.)</option>
+                          <option value="article">Article</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 mb-2">Resource URL</label>
+                        <input
+                          type="url"
+                          name="externalUrl"
+                          value={currentTask.externalUrl || ''}
+                          onChange={(e) => setCurrentTask({...currentTask, externalUrl: e.target.value})}
+                          placeholder="https://example.com"
+                          className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 mb-2">Display Text</label>
+                        <input
+                          type="text"
+                          name="linkTitle"
+                          value={currentTask.linkTitle || ''}
+                          onChange={(e) => setCurrentTask({...currentTask, linkTitle: e.target.value})}
+                          placeholder="Click here to view this resource"
+                          className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">
+                          This text will be shown as a clickable link to your external resource
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 mb-2">Short Instructions (Optional)</label>
+                        <textarea
+                          name="linkDescription"
+                          value={currentTask.linkDescription || ''}
+                          onChange={(e) => setCurrentTask({...currentTask, linkDescription: e.target.value})}
+                          placeholder="Please read the article and pay attention to the key concepts."
+                          className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white h-16"
+                        ></textarea>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <>
@@ -917,8 +1096,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                     placeholder="Enter your quiz question"
                     className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
                   />
-                </div>
-                <div className="mb-6">
+                </div>                <div className="mb-6">
                   <label className="block text-gray-300 mb-2">Options</label>
                   {currentQuestionOptions.map((option, index) => (
                     <div key={index} className="flex items-center mb-2">
@@ -941,11 +1119,133 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                         placeholder={`Option ${index + 1}`}
                         className="flex-1 bg-black/50 border border-gray-700 rounded p-2 text-white"
                       />
+                      {currentQuestionOptions.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newOptions = [...currentQuestionOptions];
+                            newOptions.splice(index, 1);
+                            setCurrentQuestionOptions(newOptions);
+                            if (correctOptionIndex === index) {
+                              setCorrectOptionIndex(0);
+                            } else if (correctOptionIndex > index) {
+                              setCorrectOptionIndex(correctOptionIndex - 1);
+                            }
+                          }}
+                          className="ml-2 text-red-500 hover:text-red-400 px-2"
+                        >
+                          ✕
+                        </button>
+                      )}
                     </div>
                   ))}
+                  
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentQuestionOptions([...currentQuestionOptions, '']);
+                      }}
+                      className="text-sm bg-gray-700 text-white py-1 px-3 rounded hover:bg-gray-600 transition-colors"
+                    >
+                      + Add Option
+                    </button>
+                  </div>
+                </div></>
+            )}            {/* Preview Section */}
+            {currentTask.title && currentTask.description && (
+              <div className="mb-6 p-4 bg-black/30 border border-gray-700 rounded-md">
+                <h5 className="font-medium text-orange-400 mb-2">Task Preview</h5>
+                <div className="mb-2">
+                  <span className="text-gray-400 text-sm">Title:</span>
+                  <p className="text-white">{currentTask.title}</p>
                 </div>
-              </>
-            )}
+                <div className="mb-2">
+                  <span className="text-gray-400 text-sm">Description:</span>
+                  <p className="text-white">{currentTask.description}</p>
+                </div>                {currentTask.type === 'content' ? (
+                  <>
+                    {currentTask.contentType === 'link' ? (
+                      <>
+                        <span className="text-gray-400 text-sm">External Resource:</span>
+                        <div className="p-2 bg-black/40 rounded mt-1 mb-2 text-white">
+                          <div className="flex flex-col">
+                            <span className="text-sm">
+                              <strong>Type:</strong> {currentTask.resourceType || 'Website'}
+                            </span>
+                            <span className="text-sm">
+                              <strong>URL:</strong> {currentTask.externalUrl || <em className="text-gray-500">No URL added yet</em>}
+                            </span>
+                            <span className="text-sm">
+                              <strong>Display Text:</strong> {currentTask.linkTitle || <em className="text-gray-500">No display text added yet</em>}
+                            </span>
+                            {currentTask.linkDescription && (
+                              <span className="text-sm">
+                                <strong>Instructions:</strong> {currentTask.linkDescription}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-gray-400 text-sm">Content:</span>
+                        <div className="p-2 bg-black/40 rounded mt-1 mb-2 text-white">
+                          {currentTask.contentText || <em className="text-gray-500">No content added yet</em>}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span className="text-gray-400 text-sm">Question:</span>
+                    <p className="text-white mb-2">{currentTask.question}</p>
+                    <span className="text-gray-400 text-sm">Options:</span>
+                    <ul className="mt-1 mb-2">
+                      {currentQuestionOptions.map((option, index) => (
+                        <li key={index} className={`text-white ${correctOptionIndex === index ? 'font-bold text-green-400' : ''}`}>
+                          {index + 1}. {option || <em className="text-gray-500">Empty option</em>}
+                          {correctOptionIndex === index && <span className="ml-2 text-xs">(Correct)</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}            <div className="mt-4 mb-6 flex space-x-2 justify-start">
+              <button
+                onClick={addTask}
+                className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors"
+              >
+                Add Task
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentTask({
+                    type: 'content',
+                    description: "",
+                    contentText: "",
+                    title: ""
+                  });
+                  setCurrentQuestionOptions(['', '', '', '']);
+                  setCorrectOptionIndex(0);
+                }}
+                className="bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-colors"
+              >
+                Clear Form
+              </button>
+            </div>
+            
+            {/* Task Creation Completion */}
+            <div className="mb-6 p-4 bg-black/30 border border-green-500/30 rounded-md">
+              <h5 className="font-medium text-green-400 mb-2">Task Creation Summary</h5>
+              <p className="text-white mb-2">You have created <span className="font-bold">{learn2earnData.tasks.length}</span> tasks for this Learn2Earn campaign.</p>
+              {learn2earnData.tasks.length === 0 ? (
+                <p className="text-yellow-400">Add at least one task above before proceeding to the next step.</p>
+              ) : (
+                <p className="text-gray-300">You can add more tasks or proceed to the next step to confirm your Learn2Earn campaign.</p>
+              )}
+            </div>
 
             {/* Deposit Information */}
             <div className="mb-4 bg-black/30 border border-orange-500/30 p-3 rounded-lg">
@@ -981,21 +1281,40 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                     {learn2earnData.endDate ? new Date(learn2earnData.endDate as any).toLocaleDateString() : 'Not set'}
                   </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              </div>              <div className="grid grid-cols-2 gap-3 mb-3">
                 <div className="bg-black/50 p-2 rounded-md">
-                  <div className="text-xs text-gray-400">Fee ({feePercent}%)</div>
+                  <div className="text-xs text-gray-400">Total Amount to Send</div>
                   <div className="text-sm font-medium text-white">
-                    {(learn2earnData.tokenAmount * feePercent / 100).toFixed(6)}
+                    {(learn2earnData.tokenAmount / (1 - (feePercent / 100))).toFixed(6)} {learn2earnData.tokenSymbol}
                   </div>
-                </div>
-                <div className="bg-black/50 p-2 rounded-md">
-                  <div className="text-xs text-gray-400 font-bold">Total Deposit</div>
+                </div>                <div className="bg-black/50 p-2 rounded-md">
+                  <div className="text-xs text-gray-400 font-bold">Fee ({feePercent}%)</div>
                   <div className="text-sm font-medium text-orange-400">
-                    {(learn2earnData.tokenAmount + (learn2earnData.tokenAmount * feePercent / 100)).toFixed(6)}
+                    {(learn2earnData.tokenAmount / (1 - (feePercent / 100)) * feePercent / 100).toFixed(6)} {learn2earnData.tokenSymbol}
                   </div>
                 </div>
               </div>
+                <div className="bg-black/50 p-2 rounded-md mt-3">
+                <div className="text-xs text-gray-400">Fee Calculation Explanation</div>
+                <div className="text-xs text-gray-300">
+                  The fee is subtracted from the total amount you send. This means that if you want to distribute {learn2earnData.tokenAmount} {learn2earnData.tokenSymbol} to participants, 
+                  you need to send a higher amount that includes the fee.
+                </div>
+              </div>
+              
+              <div className="bg-black/50 p-2 rounded-md mt-3">
+                <div className="text-xs text-gray-400">Example Calculation</div>
+                <div className="text-xs text-gray-300">
+                  <strong>For example:</strong> If you want to distribute 100 {learn2earnData.tokenSymbol} with a fee of {feePercent}%:
+                  <ul className="list-disc pl-4 mt-1">
+                    <li>Total amount to send = 100 ÷ (1 - {feePercent}/100) = 100 ÷ {(1 - (feePercent/100)).toFixed(2)} = {(100 / (1 - (feePercent / 100))).toFixed(2)} {learn2earnData.tokenSymbol}</li>
+                    <li>Fee amount = {(100 / (1 - (feePercent / 100)) * feePercent / 100).toFixed(2)} {learn2earnData.tokenSymbol}</li>
+                    <li>Amount available for rewards = 100 {learn2earnData.tokenSymbol}</li>
+                  </ul>
+                  <p className="mt-1">The contract subtracts the fee from the total amount you send, so we adjust the total to ensure participants receive the full amount you specified.</p>
+                </div>
+              </div>
+              
               <div className="flex items-center mt-2">
                 <input
                   type="checkbox"
@@ -1008,15 +1327,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                   I confirm the deposit information and understand that tokens will be transferred from my wallet
                 </label>
               </div>
-            </div>
-
-            <div className="mt-4 flex justify-between">
-              <button
-                onClick={addTask}
-                className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors"
-              >
-                Add Task
-              </button>
+            </div>            <div className="mt-4 flex justify-end">
               <div>
                 <button
                   onClick={() => setLearn2EarnStep('info')}

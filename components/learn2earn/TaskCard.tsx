@@ -43,18 +43,53 @@ const TaskCard = ({ task, isReadOnly = false }: TaskCardProps) => {
           ></iframe>
         </div>
       )}
-      
-      {task.type === 'content' && task.contentText && (
-        <div className="bg-black/30 p-4 rounded-lg text-gray-300 mb-4 overflow-hidden">
-          <div 
-            className="prose prose-sm prose-invert max-w-none overflow-auto break-words whitespace-normal"
-            dangerouslySetInnerHTML={{ 
-              __html: task.contentText
-                .replace(/\n/g, '<br>')
-                .replace(/<img(.+?)>/g, '<img$1 style="max-width:100%; height:auto;">')
-            }}
-          />
-        </div>
+        {task.type === 'content' && (
+        <>
+          {task.contentType === 'link' ? (
+            <div className="bg-black/30 p-4 rounded-lg mb-4 overflow-hidden">
+              <div className="flex flex-col items-center">
+                {task.resourceType && (
+                  <div className="mb-2">
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                      task.resourceType === 'video' ? 'bg-red-500/20 text-red-400' :
+                      task.resourceType === 'document' ? 'bg-blue-500/20 text-blue-400' :
+                      task.resourceType === 'article' ? 'bg-green-500/20 text-green-400' :
+                      'bg-purple-500/20 text-purple-400'
+                    }`}>
+                      {task.resourceType.charAt(0).toUpperCase() + task.resourceType.slice(1)}
+                    </span>
+                  </div>
+                )}
+                
+                {task.linkDescription && (
+                  <div className="mb-3 text-gray-300 text-center">
+                    {task.linkDescription}
+                  </div>
+                )}
+                
+                <a 
+                  href={task.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-6 rounded-lg text-center transition-colors"
+                >
+                  {task.linkTitle || "Visit Resource"}
+                </a>
+              </div>
+            </div>
+          ) : task.contentText && (
+            <div className="bg-black/30 p-4 rounded-lg text-gray-300 mb-4 overflow-hidden">
+              <div 
+                className="prose prose-sm prose-invert max-w-none overflow-auto break-words whitespace-normal"
+                dangerouslySetInnerHTML={{ 
+                  __html: task.contentText
+                    .replace(/\n/g, '<br>')
+                    .replace(/<img(.+?)>/g, '<img$1 style="max-width:100%; height:auto;">')
+                }}
+              />
+            </div>
+          )}
+        </>
       )}
       
       {task.type === 'question' && task.options && !isReadOnly && (
