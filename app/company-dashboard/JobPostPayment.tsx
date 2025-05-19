@@ -33,7 +33,7 @@ interface JobPostPaymentProps {
   reloadData: () => void;
 }
 
-// Extend the interface to include dynamic questions and new fields for the AI Job Assistant
+ // Extend the interface to include dynamic questions and new fields for the AI Job Assistant
 interface JobDataType {
   title: string;
   description: string;
