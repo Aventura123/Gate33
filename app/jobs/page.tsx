@@ -504,14 +504,16 @@ export default function JobsPage() {
                     </div>
                   )}
                   {/* Time Badge */}
-                  <div className="absolute top-6 right-6 bg-black/60 text-orange-200 text-xs px-2 py-1 rounded-md border border-orange-500/30">
+                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-black/60 text-orange-200 text-xs px-2 py-1 rounded-md border border-orange-500/30 z-20">
                     {getTimeAgo(job.insertedDate)}
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center mb-2 gap-2 sm:gap-0">
-                    <h2 className="text-lg sm:text-xl font-bold text-orange-400 mb-1 sm:mb-0 drop-shadow break-words">
+                  
+                  <div className="pt-1 pb-1">
+                    <h2 className="text-lg sm:text-xl font-bold text-orange-400 drop-shadow break-words pr-16">
                       {job.jobTitle}
                     </h2>
-                    <div className="flex flex-wrap items-center space-x-2">
+                    
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
                       <div className="flex items-center bg-black/40 px-3 py-1 rounded-full border border-orange-500/30">
                         <svg className="h-4 w-4 text-orange-300 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -524,7 +526,8 @@ export default function JobsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 mb-2 sm:mb-3">
+                  
+                  <div className="flex flex-wrap items-center gap-2 mb-2 mt-1">
                     <p className="text-orange-200 flex items-center">
                       <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
