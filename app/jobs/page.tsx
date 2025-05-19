@@ -24,6 +24,9 @@ interface Job {
   acceptsCryptoPay: boolean;
   experienceLevel: string; // Junior, Mid, Senior
   techTags?: string[]; // Array of specific technology tags
+  responsibilities?: string; // Responsabilidades da vaga
+  idealCandidate?: string; // Perfil do candidato ideal
+  screeningQuestions?: string[]; // Perguntas de triagem
 }
 
 // Array of categories for the filter
@@ -161,22 +164,47 @@ export default function JobsPage() {
           // Automatically extract technology tags from skills
           const techTags = extractTechTags(skillsString);
           
+          const data = doc.data();
+          console.log(`Dados da vaga ${doc.id}:`, data);
+          
+          // Extrair perguntas de triagem - tanto do campo screeningQuestions (array)
+          // quanto dos campos individuais question1, question2, etc.
+          let screeningQuestions = [];
+          
+          // Verificar se temos o campo screeningQuestions como array
+          if (Array.isArray(data.screeningQuestions)) {
+            screeningQuestions = data.screeningQuestions;
+          } else {
+            // Caso contrário, buscar de fields question1, question2, etc.
+            for (let i = 1; i <= 5; i++) {
+              const questionKey = `question${i}`;
+              if (data[questionKey] && typeof data[questionKey] === 'string' && data[questionKey].trim() !== '') {
+                screeningQuestions.push(data[questionKey]);
+              }
+            }
+          }
+          
           return {
             id: doc.id,
-            jobTitle: doc.data().title || "",
-            companyName: doc.data().company || "",
+            jobTitle: data.title || "",
+            companyName: data.company || "",
             requiredSkills: skillsString,
-            jobDescription: doc.data().description || "",
-            applyLink: doc.data().applicationLink || "",
-            category: doc.data().category || "Other",
-            insertedDate: doc.data().insertedDate || new Date().toISOString(),
-            location: doc.data().location || "Remote",
-            jobType: doc.data().jobType || "Full-Time",
-            salaryRange: doc.data().salaryRange || "",
-            isFeatured: doc.data().isFeatured || false,
-            acceptsCryptoPay: doc.data().acceptsCryptoPay || false,
-            experienceLevel: doc.data().experienceLevel || "Mid-Level",
+            jobDescription: data.description || "",
+            applyLink: data.applicationLink || "",
+            category: data.category || "Other",
+            insertedDate: data.insertedDate || data.createdAt || new Date().toISOString(),
+            location: data.location || "Remote",
+            jobType: data.jobType || "Full-Time",
+            salaryRange: data.salaryRange || "",
+            isFeatured: data.isFeatured || data.featured || false,
+            acceptsCryptoPay: data.acceptsCryptoPay || false,
+            experienceLevel: data.experienceLevel || "Mid-Level",
             techTags: techTags, // Add the extracted tags
+            
+            // Adicionando os novos campos com verificação
+            responsibilities: data.responsibilities || "",
+            idealCandidate: data.idealCandidate || "",
+            screeningQuestions: screeningQuestions
           };
         });
         setJobs(fetchedJobs);
@@ -452,8 +480,10 @@ export default function JobsPage() {
               filteredJobs.map((job) => (
                 <div
                   key={job.id}
-                  className={`bg-gray-900 rounded-lg border border-gray-800 shadow-lg p-6 transition-all duration-300 hover:border-orange-400 relative ${
-                    expandedJobId === job.id ? "max-h-screen" : "max-h-48 overflow-hidden cursor-pointer"
+                  className={`bg-gray-900 rounded-lg border border-gray-800 shadow-lg p-6 transition-all duration-300 relative ${
+                    expandedJobId === job.id 
+                      ? "max-h-none border-orange-400" 
+                      : "max-h-48 overflow-hidden cursor-pointer hover:border-orange-400"
                   }`}
                   onClick={() => setExpandedJobId(expandedJobId === job.id ? null : job.id)}
                 >
@@ -520,8 +550,24 @@ export default function JobsPage() {
                     <div className="mt-6 border-t border-gray-800 pt-4">
                       <div className="mb-4">
                         <h3 className="text-lg font-medium text-white mb-2">Description</h3>
-                        <p className="text-gray-300 whitespace-pre-line">{job.jobDescription}</p>
+                        <p className="text-gray-300 whitespace-pre-line">{job.jobDescription || "No description provided."}</p>
                       </div>
+
+                      {/* Responsibilities Section */}
+                      {job.responsibilities && job.responsibilities.trim() !== "" && (
+                        <div className="mb-4">
+                          <h3 className="text-lg font-medium text-white mb-2">Responsibilities</h3>
+                          <p className="text-gray-300 whitespace-pre-line">{job.responsibilities}</p>
+                        </div>
+                      )}
+
+                      {/* Ideal Candidate Section */}
+                      {job.idealCandidate && job.idealCandidate.trim() !== "" && (
+                        <div className="mb-4">
+                          <h3 className="text-lg font-medium text-white mb-2">Ideal Candidate</h3>
+                          <p className="text-gray-300 whitespace-pre-line">{job.idealCandidate}</p>
+                        </div>
+                      )}
                       
                       <div className="mb-4">
                         <h3 className="text-lg font-medium text-white mb-2">Required Skills</h3>
@@ -550,7 +596,7 @@ export default function JobsPage() {
                           </div>
                         </div>
                       )}
-                      
+
                       <div className="flex items-center mb-4">
                         <div className="mr-6">
                           <span className="text-sm text-gray-400 block">Category</span>
