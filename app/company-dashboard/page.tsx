@@ -1168,33 +1168,36 @@ const InstantJobDetailCard: React.FC<{
               industry={companyProfile.industry}
               country={companyProfile.country}
               responsiblePerson={companyProfile.responsiblePerson}
+              isMobile={isMobile} // Passando a propriedade isMobile
             />
-            {/* Quick summary of job offers and counts */}
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 my-8">
-              <div className="bg-black/60 rounded-lg p-5 flex flex-col items-center border border-orange-900/30">
-                <span className="text-sm text-gray-400 mb-1">Active Jobs</span>
-                <span className="text-2xl font-bold text-orange-400">{jobs.filter(j => !j.expiresAt || (j.expiresAt && j.expiresAt.toDate() > new Date())).length}</span>
+            {/* Quick summary of job offers and counts - optimized for mobile (2x2) */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 my-2 sm:my-6 w-full">
+              <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
+                <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Active Jobs</span>
+                <span className="text-lg sm:text-2xl font-bold text-orange-400">{jobs.filter(j => j.paymentStatus === 'completed').length}</span>
               </div>
-              <div className="bg-black/60 rounded-lg p-5 flex flex-col items-center border border-orange-900/30">
-                <span className="text-sm text-gray-400 mb-1">Expired Jobs</span>
-                <span className="text-2xl font-bold text-orange-400">{jobs.filter(j => j.expiresAt && j.expiresAt.toDate() <= new Date()).length}</span>
+              <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
+                <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Expired Jobs</span>
+                <span className="text-lg sm:text-2xl font-bold text-orange-400">{jobs.filter(j => j.expiresAt && getDate(j.expiresAt)! < new Date()).length}</span>
               </div>
-              <div className="bg-black/60 rounded-lg p-5 flex flex-col items-center border border-orange-900/30">
-                <span className="text-sm text-gray-400 mb-1">Total Applications</span>
-                <span className="text-2xl font-bold text-orange-400">{totalApplications}</span>
+              <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
+                <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Applications</span>
+                <span className="text-lg sm:text-2xl font-bold text-orange-400">{totalApplications}</span>
               </div>
-              <div className="bg-black/60 rounded-lg p-5 flex flex-col items-center border border-orange-900/30">
-                <span className="text-sm text-gray-400 mb-1">Instant Jobs</span>
-                <span className="text-2xl font-bold text-orange-400">{instantJobs.length}</span>
+              <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
+                <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Instant Jobs</span>
+                <span className="text-lg sm:text-2xl font-bold text-orange-400">{instantJobs.length}</span>
               </div>
-              <div className="bg-black/60 rounded-lg p-5 flex flex-col items-center border border-orange-900/30">
-                <span className="text-sm text-gray-400 mb-1">Learn2Earn</span>
-                <span className="text-2xl font-bold text-orange-400">{learn2earn.length}</span>
+              <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
+                <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Learn2Earn</span>
+                <span className="text-lg sm:text-2xl font-bold text-orange-400">{learn2earn.length}</span>
               </div>
             </div>
             {/* Evolution chart section - translated title */}
-            <div className="mt-2">
-              <EvolutionChart data={evolutionData} />
+            <div className="mt-2 sm:mt-4 w-full overflow-x-auto">
+              <div className="min-w-[320px] sm:min-w-0">
+                <EvolutionChart data={evolutionData} />
+              </div>
             </div>
           </>
         );
@@ -1207,8 +1210,8 @@ const InstantJobDetailCard: React.FC<{
         );
       case "newJob":
         return (
-          <div className="bg-black/70 p-10 rounded-lg shadow-lg">
-            <h2 className="text-3xl font-semibold text-orange-500 mb-6">Post a New Job</h2>
+          <div className="bg-black/70 p-4 sm:p-8 rounded-lg shadow-lg max-w-full">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6">Post a New Job</h2>
             <JobPostPayment companyId={companyId} companyProfile={companyProfile} reloadData={reloadData} />
           </div>
         );
@@ -1656,8 +1659,7 @@ const InstantJobDetailCard: React.FC<{
                   >
                     Submit Ticket
                   </button>
-                </div>
-              </form>
+                </div>              </form>
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-gray-300 text-lg min-h-200px">
@@ -1903,13 +1905,13 @@ const InstantJobDetailCard: React.FC<{
         </aside>
         
         {/* Main Content Area - Updated for mobile responsiveness */}
-        <section className={`w-full ${isMobile ? 'p-6' : 'md:w-3/4 p-6'} overflow-y-auto ${isMobile && mobileMenuOpen ? 'opacity-30' : 'opacity-100'} transition-opacity duration-300`}>
+        <section className={`w-full ${isMobile ? 'p-2' : 'md:w-3/4 p-6'} overflow-y-auto transition-opacity duration-300 ${isMobile && mobileMenuOpen ? 'opacity-30' : 'opacity-100'}`}>
           {/* Render content based on subtab selection */}
           {activeTab === 'myJobOffers' ? (
             jobOffersSubTab === 'list' ? renderMyJobs() :
             jobOffersSubTab === 'new' ? (
-              <div className="bg-black/70 p-10 rounded-lg shadow-lg">
-                <h2 className="text-3xl font-semibold text-orange-500 mb-6">Post a New Job</h2>
+              <div className="bg-black/70 p-4 sm:p-8 rounded-lg shadow-lg max-w-full">
+                <h2 className="text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6">Post a New Job</h2>
                 <JobPostPayment companyId={companyId} companyProfile={companyProfile} reloadData={reloadData} />
               </div>
             ) : jobOffersSubTab === 'instant' ? renderInstantJobsTab() : null

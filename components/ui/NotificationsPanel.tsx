@@ -1,3 +1,5 @@
+"use client";
+
 import { BellIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
