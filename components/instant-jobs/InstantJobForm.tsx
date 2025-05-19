@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import instantJobsService, { InstantJobFormData, defaultInstantJobFormData } from "../../services/instantJobsService";
 
 interface InstantJobFormProps {
@@ -22,6 +22,24 @@ const InstantJobForm: React.FC<InstantJobFormProps> = ({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkIfMobile = () => {
+      const userAgent = typeof window.navigator === "undefined" ? "" : navigator.userAgent;
+      const mobileByAgent = Boolean(
+        userAgent.match(/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i)
+      );
+      const mobileByWidth = window.innerWidth <= 768;
+      setIsMobile(mobileByAgent || mobileByWidth);
+    };
+    
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+    
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
 
   // Generic input change handler
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -34,6 +52,7 @@ const InstantJobForm: React.FC<InstantJobFormProps> = ({
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value ? Number(value) : 0 }));
   };
+
   // Handle comma-separated lists (tags)
   const handleArrayInput = (e: React.ChangeEvent<HTMLInputElement>, field: 'tags') => {
     const { value } = e.target;
@@ -78,10 +97,9 @@ const InstantJobForm: React.FC<InstantJobFormProps> = ({
       setIsSubmitting(false);
     }
   };
-
   return (
-    <div className="bg-black/70 p-8 rounded-lg shadow-lg">
-      <h2 className="text-3xl font-semibold text-orange-500 mb-6">Create New Instant Job</h2>
+    <div className={`bg-black/70 ${isMobile ? 'p-4' : 'p-8'} rounded-lg shadow-lg`}>
+      <h2 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobile ? 'text-center' : ''}`}>Create Instant Job</h2>
       
       {errors.length > 0 && (
         <div className="bg-red-900/50 border border-red-500 p-4 mb-6 rounded-lg">
@@ -94,39 +112,42 @@ const InstantJobForm: React.FC<InstantJobFormProps> = ({
         </div>
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Job Title */}
-        <div>
-          <label htmlFor="title" className="block text-white mb-2">
-            Job Title<span className="text-orange-400">*</span>
-          </label>
-          <input
-            id="title"
-            name="title"
-            type="text"
-            value={formData.title}
-            onChange={handleInputChange}
-            placeholder="e.g., Solidity Engineer"
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-            required
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+        {/* Grid layout for form fields on larger screens */}
+        <div className={`${isMobile ? '' : 'grid grid-cols-1 md:grid-cols-2 gap-6'}`}>
+          {/* Job Title */}
+          <div className={isMobile ? 'mb-4' : ''}>
+            <label htmlFor="title" className="block text-white mb-2">
+              Job Title<span className="text-orange-400">*</span>
+            </label>
+            <input
+              id="title"
+              name="title"
+              type="text"
+              value={formData.title}
+              onChange={handleInputChange}
+              placeholder="e.g., Solidity Engineer"
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
+              required
+            />
+          </div>
 
-        {/* Company Name */}
-        <div>
-          <label htmlFor="companyName" className="block text-white mb-2">
-            Company Name<span className="text-orange-400">*</span>
-          </label>
-          <input
-            id="companyName"
-            name="companyName"
-            type="text"
-            value={formData.companyName}
-            onChange={handleInputChange}
-            placeholder="e.g., CryptoCoin — Keep it short. Dont write Inc. Ltd."
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-            required
-          />
+          {/* Company Name */}
+          <div className={isMobile ? 'mb-4' : ''}>
+            <label htmlFor="companyName" className="block text-white mb-2">
+              Company Name<span className="text-orange-400">*</span>
+            </label>
+            <input
+              id="companyName"
+              name="companyName"
+              type="text"
+              value={formData.companyName}
+              onChange={handleInputChange}
+              placeholder="e.g., CryptoCoin — Keep it short. Dont write Inc. Ltd."
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
+              required
+            />
+          </div>
         </div>
 
         {/* Job Description */}
@@ -143,8 +164,9 @@ const InstantJobForm: React.FC<InstantJobFormProps> = ({
             className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white h-32"
             required
           />
-        </div>        {/* Omitindo os campos de localização e faixa salarial que não são necessários para instant jobs */}
-          {/* Budget and Currency */}
+        </div>        
+
+        {/* Budget and Currency - Responsive layout */}
         <div>
           <label className="block text-white mb-2">
             Budget<span className="text-orange-400">*</span>
@@ -176,47 +198,50 @@ const InstantJobForm: React.FC<InstantJobFormProps> = ({
           </div>
         </div>
 
-        {/* Category */}
-        <div>
-          <label htmlFor="category" className="block text-white mb-2">
-            Category<span className="text-orange-400">*</span>
-          </label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleInputChange}
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-            required
-          >
-            <option value="">Select a category</option>
-            <option value="Development">Development</option>
-            <option value="Design">Design</option>
-            <option value="Marketing">Marketing</option>
-            <option value="Content">Content</option>
-            <option value="Research">Research</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
+        {/* Category and Deadline in a grid for larger screens */}
+        <div className={`${isMobile ? '' : 'grid grid-cols-1 md:grid-cols-2 gap-6'}`}>
+          {/* Category */}
+          <div className={isMobile ? 'mb-4' : ''}>
+            <label htmlFor="category" className="block text-white mb-2">
+              Category<span className="text-orange-400">*</span>
+            </label>
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
+              required
+            >
+              <option value="">Select a category</option>
+              <option value="Development">Development</option>
+              <option value="Design">Design</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Content">Content</option>
+              <option value="Research">Research</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
 
-        {/* Deadline */}
-        <div>
-          <label htmlFor="deadline" className="block text-white mb-2">
-            Deadline<span className="text-orange-400">*</span>
-          </label>
-          <input
-            id="deadline"
-            name="deadline"
-            type="date"
-            value={formData.deadline instanceof Date ? formData.deadline.toISOString().split('T')[0] : ''}
-            onChange={(e) => {
-              const date = e.target.value ? new Date(e.target.value) : new Date();
-              setFormData(prev => ({ ...prev, deadline: date }));
-            }}
-            className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
-            required
-          />
-        </div>        {/* Omitindo o filtro de países que não é necessário para instant jobs */}
+          {/* Deadline */}
+          <div className={isMobile ? 'mb-4' : ''}>
+            <label htmlFor="deadline" className="block text-white mb-2">
+              Deadline<span className="text-orange-400">*</span>
+            </label>
+            <input
+              id="deadline"
+              name="deadline"
+              type="date"
+              value={formData.deadline instanceof Date ? formData.deadline.toISOString().split('T')[0] : ''}
+              onChange={(e) => {
+                const date = e.target.value ? new Date(e.target.value) : new Date();
+                setFormData(prev => ({ ...prev, deadline: date }));
+              }}
+              className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white"
+              required
+            />
+          </div>
+        </div>
 
         {/* Tags */}
         <div>
@@ -230,18 +255,18 @@ const InstantJobForm: React.FC<InstantJobFormProps> = ({
           />
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end mt-6 gap-2">
+        {/* Actions - Optimized for mobile with more touch area and flex layout */}
+        <div className={`flex ${isMobile ? 'flex-col' : 'justify-end'} mt-6 gap-2`}>
           <button 
             type="button" 
-            className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded"
+            className={`${isMobile ? 'w-full mb-2 py-3' : 'py-2 px-4'} bg-gray-600 hover:bg-gray-700 text-white rounded text-center`}
             onClick={onCancel}
           >
             Cancel
           </button>
           <button 
             type="submit" 
-            className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
+            className={`${isMobile ? 'w-full py-3' : 'py-2 px-4'} bg-orange-500 hover:bg-orange-600 text-white rounded`}
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Creating...' : 'Create Micro-task'}

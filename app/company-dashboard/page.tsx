@@ -632,7 +632,7 @@ const PostJobPage = (): JSX.Element => {
       <div className="w-full">
         <div className="bg-black/70 rounded-lg shadow-lg p-6">
           {/* Main section title */}
-          <h2 className="text-3xl font-bold text-orange-500 mb-2">All Offers</h2>
+          <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">All Offers</h2>
           <div className="flex gap-6 mb-6 items-end border-b border-orange-900/60">
             <button
               className={`relative text-base font-semibold mr-2 transition-colors pb-1 ${jobsTab === 'offers' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
@@ -1211,7 +1211,7 @@ const InstantJobDetailCard: React.FC<{
       case "newJob":
         return (
           <div className="bg-black/70 p-4 sm:p-8 rounded-lg shadow-lg max-w-full">
-            <h2 className="text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6">Post a New Job</h2>
+            <h2 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobile ? 'text-center' : ''}`}>Post a New Job</h2>
             <JobPostPayment companyId={companyId} companyProfile={companyProfile} reloadData={reloadData} />
           </div>
         );
@@ -1654,6 +1654,7 @@ const InstantJobDetailCard: React.FC<{
                     Cancel
                   </button>
                   <button
+
                     type="submit"
                     className="bg-orange-500 text-white px-6 py-2 rounded hover:bg-orange-600"
                   >
@@ -1911,7 +1912,7 @@ const InstantJobDetailCard: React.FC<{
             jobOffersSubTab === 'list' ? renderMyJobs() :
             jobOffersSubTab === 'new' ? (
               <div className="bg-black/70 p-4 sm:p-8 rounded-lg shadow-lg max-w-full">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6">Post a New Job</h2>
+                <h2 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobile ? 'text-center' : ''}`}>Post a New Job</h2>
                 <JobPostPayment companyId={companyId} companyProfile={companyProfile} reloadData={reloadData} />
               </div>
             ) : jobOffersSubTab === 'instant' ? renderInstantJobsTab() : null

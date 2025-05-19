@@ -27,6 +27,15 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   companyId,
   companyProfile,
 }) => {
+  // Mobile detection logic for responsive titles
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // --- Main states ---
   const [learn2earn, setLearn2Earn] = useState<Learn2Earn[]>([]);
   const [isLoadingLearn2Earn, setIsLoadingLearn2Earn] = useState(false);
@@ -605,7 +614,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
           <p className="text-gray-300 py-4">Loading...</p>
         ) : learn2EarnStep === 'info' ? (
           <div className="bg-black/50 p-6 rounded-lg">
-            <h3 className="text-2xl font-semibold text-orange-500 mb-4">Create New Learn2Earn</h3>
+            <h3 className={`text-3xl md:text-2xl font-extrabold text-orange-500 mb-4 ${isMobile ? 'text-center' : 'text-left'}`}>Create New Learn2Earn</h3>
             <form onSubmit={(e) => {
               e.preventDefault();
               setLearn2EarnStep('tasks');

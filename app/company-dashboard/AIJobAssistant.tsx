@@ -33,9 +33,10 @@ interface AIJobAssistantProps {
     [key: string]: any;
   };
   setScreeningQuestions?: (questions: string[]) => void; // NEW PROP
+  isMobile?: boolean; // Adicionado para detectar mobile
 }
 
-const AIJobAssistant: React.FC<AIJobAssistantProps> = ({ jobData, updateJobData, companyProfile, setScreeningQuestions }) => {
+const AIJobAssistant: React.FC<AIJobAssistantProps> = ({ jobData, updateJobData, companyProfile, setScreeningQuestions, isMobile = false }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<JobSuggestionResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +136,7 @@ const AIJobAssistant: React.FC<AIJobAssistantProps> = ({ jobData, updateJobData,
 
   return (
     <div className="bg-black/70 rounded-lg border border-orange-500/30 p-6 mb-6">
-      <h3 className="text-xl font-bold text-orange-500 mb-4">AI Job Assistant</h3>
+      <h3 className={`${isMobile ? 'text-xl text-center mt-6 mb-2' : 'text-xl mb-4'} font-bold text-orange-500`}>AI Job Assistant</h3>
         <p className="text-gray-300 mb-4">
         {hasExistingDescription 
           ? "Enhance your job description with our AI assistant. It can improve your existing text or create a completely new one."
