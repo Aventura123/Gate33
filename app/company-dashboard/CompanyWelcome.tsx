@@ -5,7 +5,7 @@ interface CompanyWelcomeProps {
   industry?: string;
   country?: string;
   responsiblePerson?: string;
-  isMobile?: boolean; // Adicionado para detectar mobile
+  isMobile?: boolean; // Added to detect mobile
 }
 
 const CompanyWelcome: React.FC<CompanyWelcomeProps> = ({ name = '', industry = '', country = '', responsiblePerson = '', isMobile = false }) => {
