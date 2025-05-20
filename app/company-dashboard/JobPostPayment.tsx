@@ -381,7 +381,9 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
               />
               <p className="text-xs text-gray-400 mt-1">Describe the ideal candidate profile, including soft skills and cultural fit. Use bullet points • or - for better readability.</p>
             </div>
-              <div>
+            
+            {/* Unified Skills Input Section */}
+            <div>
               <label className="block text-orange-400 font-semibold mb-1">Required Skills</label>
               <div className="mb-2">
                 <input 
@@ -390,14 +392,14 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                   value={jobData.requiredSkills} 
                   onChange={handleChange} 
                   className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
-                  placeholder="Enter skills separated by commas or use the tags below"
+                  placeholder="Enter skills separated by commas or select from below"
                 />
-                <p className="text-xs text-gray-400 mt-1">Skills will appear as tags on the job post. Select from common tags below or add your own above.</p>
+                <p className="text-xs text-gray-400 mt-1">Click on tags below to add or remove skills, or type custom skills above.</p>
               </div>
               
               {/* Display selected skills as tags */}
               {jobData.requiredSkills && (
-                <div className="mt-3">
+                <div className="mt-3 mb-4">
                   <label className="block text-sm text-gray-300 mb-1">Selected Skills:</label>
                   <div className="flex flex-wrap gap-2">
                     {jobData.requiredSkills.split(',').map((skill, index) => {
@@ -426,6 +428,33 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                   </div>
                 </div>
               )}
+
+              {/* Common Skill Tags */}
+              <div className="flex flex-wrap gap-2">
+                {['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Anti Money Laundering','Human Resources','C++','Memes','Site Reliability Engineering','ReFi','Stablecoin','Full-stack Developer','Developer Relations','iOS','Android Developer','GameFi','Talent Acquisition','Node.js','Search Engine Optimization','AI','DePIN','CEX','Berachain','Real World Assets'].map(tag => (
+                  <button 
+                    type="button" 
+                    key={tag} 
+                    onClick={() => {
+                      const skills = jobData.requiredSkills;
+                      const skillsArray = skills ? skills.split(',').map(s => s.trim()) : [];
+                      const exists = skillsArray.includes(tag);
+                      
+                      let newSkills;
+                      if (exists) {
+                        newSkills = skillsArray.filter(s => s !== tag).join(', ');
+                      } else {
+                        newSkills = skills ? `${skills}, ${tag}` : tag;
+                      }
+                      
+                      setJobData(prev => ({ ...prev, requiredSkills: newSkills }));
+                    }} 
+                    className={`px-3 py-1 rounded-full border text-sm ${jobData.requiredSkills.includes(tag) ? 'bg-orange-500 text-white border-orange-500' : 'bg-black/50 text-gray-300 border-gray-700'}`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
             </div>
             
             <div>
@@ -461,35 +490,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
             </div>
             {/* Replace with a country/region selection component if needed */}
             <input name="countries" placeholder="Select countries..." className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" />
-          </div>          <div>
-            <label className="block text-orange-400 font-semibold mb-1">Common Skill Tags</label>
-            <div className="flex flex-wrap gap-2">
-              {['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Anti Money Laundering','Human Resources','C++','Memes','Site Reliability Engineering','ReFi','Stablecoin','Full-stack Developer','Developer Relations','iOS','Android Developer','GameFi','Talent Acquisition','Node.js','Search Engine Optimization','AI','DePIN','CEX','Berachain','Real World Assets'].map(tag => (
-                <button 
-                  type="button" 
-                  key={tag} 
-                  onClick={() => {
-                    const skills = jobData.requiredSkills;
-                    const skillsArray = skills ? skills.split(',').map(s => s.trim()) : [];
-                    const exists = skillsArray.includes(tag);
-                    
-                    let newSkills;
-                    if (exists) {
-                      newSkills = skillsArray.filter(s => s !== tag).join(', ');
-                    } else {
-                      newSkills = skills ? `${skills}, ${tag}` : tag;
-                    }
-                    
-                    setJobData(prev => ({ ...prev, requiredSkills: newSkills }));
-                  }} 
-                  className={`px-3 py-1 rounded-full border text-sm ${jobData.requiredSkills.includes(tag) ? 'bg-orange-500 text-white border-orange-500' : 'bg-black/50 text-gray-300 border-gray-700'}`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-gray-400 mt-2">Click on tags to add or remove them from the required skills.</p>
-          </div>
+          </div>          
           {/* APPLICATION METHOD */}
           <div>
             <label className="block text-orange-400 font-semibold mb-1">Application Method</label>
