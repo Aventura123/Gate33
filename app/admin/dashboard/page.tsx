@@ -11,6 +11,8 @@ import { getAuth } from "firebase/auth";
 import bcrypt from "bcryptjs";
 import { AdminRole, useAdminPermissions } from "../../../hooks/useAdminPermissions";
 import { ethers } from "ethers";
+import NotificationsPanel, { NotificationBell } from '../../../components/ui/NotificationsPanel';
+import { createAdminNotification } from '../../../lib/notifications';
 
 import AdminPermissionsManager from "../../../app/components/AdminPermissionsManager";
 import Learn2EarnTestButton from "../../../components/ui/Learn2EarnTestButton";
@@ -85,10 +87,51 @@ const AdminDashboard: React.FC = () => {
   // Define a consistent initial state to avoid SSR vs CSR hydration problems
   const [isClient, setIsClient] = useState(false);
   
+  // Notification related states
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [adminId, setAdminId] = useState<string | null>(null);
+  
   // Ensure client-side rendering is consistent with the server
   useEffect(() => {
     setIsClient(true);
   }, []);
+  // Effect to set up admin ID for notifications
+  useEffect(() => {
+    const fetchAdminId = async () => {
+      try {
+        // Get the admin ID from local storage
+        const storedId = localStorage.getItem("userId");
+        
+        if (storedId) {
+          // For super_admins, we'll use a special identifier for shared notifications
+          if (role === 'super_admin') {
+            console.log('Super admin detected, setting up for shared notifications');
+            // We still store the actual admin ID for personal notifications
+            setAdminId(storedId);
+          } else {
+            // For regular admins, we use their specific ID
+            setAdminId(storedId);
+          }
+        } else {
+          console.warn("No admin ID found in localStorage");
+          const auth = getAuth();
+          const user = auth.currentUser;
+          
+          if (user) {
+            console.log("Using Firebase auth user ID as fallback");
+            setAdminId(user.uid);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching admin ID:", err);
+      }
+    };
+    
+    if (!permissionsLoading) {
+      fetchAdminId();
+    }
+  }, [permissionsLoading, role]);
 
   const [nfts, setNFTs] = useState<NFT[]>([]);
   const [newNFT, setNewNFT] = useState({ title: "", description: "", value: "", link: "", image: null as File | null });
@@ -96,7 +139,7 @@ const AdminDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState("User");
-
+  
   // --- Admins State and Handlers ---
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
@@ -1787,12 +1830,12 @@ const fetchEmployersList = async () => {
       fetchJobs();
       alert("Job deleted successfully!");
     } catch (error) {
-      console.error("Error deleting job:", error);
-      alert("Failed to delete job.");
-    } finally {
-      setDeletingJobId(null);
-    }
-  };
+    console.error("Error deleting job:", error);
+    alert("Failed to delete job.");
+  } finally {
+    setDeletingJobId(null);
+  }
+};
 
   // --- Airdrops State and Handlers ---
   const [learn2earns, setLearn2Earns] = useState<any[]>([]);
@@ -2094,10 +2137,9 @@ const fetchEmployersList = async () => {
       }
     }
   }, [activeTab, activeSubTab]);
-
   // Helper function for formatting timestamps
   const formatFirestoreTimestamp = (timestamp: any) => {
-    if (!timestamp) return 'N/A';
+    if (! timestamp) return 'N/A';
     
     try {
       // Handle both Firestore timestamp and ISO string formats
@@ -2114,6 +2156,60 @@ const fetchEmployersList = async () => {
       return 'Invalid date';
     }
   };
+  
+  // Function to create a shared notification for all super_admins
+  const createSharedAdminNotification = async (title: string, body: string, type: string = "general", data: any = {}) => {
+    try {
+      await createAdminNotification(
+        {
+          title,
+          body,
+          type,
+          data
+        },
+        true // This makes it a shared notification
+      );
+      console.log("Shared admin notification created successfully");
+    } catch (error) {
+      console.error("Error creating shared admin notification:", error);
+    }
+  };
+  // Fetch unread admin notifications - combines personal and shared notifications for super_admin
+  useEffect(() => {
+    if (!db || !adminId) return;
+    
+    let interval: NodeJS.Timeout;
+      const fetchUnreadAdminNotifications = async () => {
+      try {
+        let totalUnreadCount = 0;
+        
+        // Only super_admins can see notifications
+        if (role === "super_admin") {
+          // Get shared notifications for super_admins only
+          const sharedQuery = query(
+            collection(db, "adminNotifications"),
+            where("isShared", "==", true),
+            where("read", "==", false)
+          );
+          const sharedSnapshot = await getDocs(sharedQuery);
+          totalUnreadCount = sharedSnapshot.size;
+        } else {
+          // Non-super_admins don't see any notifications
+          totalUnreadCount = 0;
+        }
+        
+        setUnreadCount(totalUnreadCount);
+      } catch (error) {
+        console.error("Error fetching unread admin notifications:", error);
+        setUnreadCount(0);
+      }
+    };
+    
+    fetchUnreadAdminNotifications();
+    interval = setInterval(fetchUnreadAdminNotifications, 10000); // Check every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [role, db, adminId]);
 
   return (
     <Layout>
@@ -2150,21 +2246,28 @@ const fetchEmployersList = async () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-          )}
-          <div className={`flex flex-col items-center w-full ${isMobile ? 'pt-16 pb-8' : 'mb-6'}`}>
-            {/* User Photo */}
-            <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
-              <img
-                src={userPhoto}
-                alt="User Photo"
-                className="w-full h-full object-cover rounded-full"
-              />
-              <input
-                type="file"
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                accept="image/*"
-                onChange={handleUserPhotoChange}
-              />
+          )}          <div className={`flex flex-col items-center w-full ${isMobile ? 'pt-16 pb-8' : 'mb-6'}`}>
+            {/* User Photo with notification bell to the right */}
+            <div className="relative w-full flex justify-center">
+              <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
+                <img
+                  src={userPhoto}
+                  alt="User Photo"
+                  className="w-full h-full object-cover rounded-full"
+                />
+                <input
+                  type="file"
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  accept="image/*"
+                  onChange={handleUserPhotoChange}
+                />
+              </div>
+              {/* Notification bell positioned to the right of the photo */}
+              {role === "super_admin" && (
+                <div className="absolute left-[90%] top-0 z-20">
+                  <NotificationBell unreadCount={unreadCount} onClick={() => setShowNotifications(true)} />
+                </div>
+              )}
             </div>
             {/* Admin Dashboard Title */}
             <h2 className="text-orange-400 text-xl font-bold mb-2">Admin Dashboard</h2>
@@ -2449,7 +2552,7 @@ const fetchEmployersList = async () => {
                 >
                   Settings
                 </div>
-                {activeTab === "settings" && (
+                {isClient && activeTab === "settings" && (
                   <ul className="ml-4 mt-2 space-y-2">
                     <li
                       className={`cursor-pointer p-2 rounded-lg text-center ${
@@ -2460,21 +2563,19 @@ const fetchEmployersList = async () => {
                         if (isMobile) setMobileMenuOpen(false);
                       }}
                     >
-                      My Profile
+                      Profile
                     </li>
-                    {hasPermission('canManageUsers') && (
-                      <li
-                        className={`cursor-pointer p-2 rounded-lg text-center ${
-                          activeSubTab === "permissions" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                        }`}
-                        onClick={() => {
-                          setActiveSubTab("permissions");
-                          if (isMobile) setMobileMenuOpen(false);
-                        }}
-                      >
-                        Manage Admins & Permissions
-                      </li>
-                    )}
+                    <li
+                      className={`cursor-pointer p-2 rounded-lg text-center ${
+                        activeSubTab === "adminTest" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("adminTest");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Notification Test
+                    </li>
                   </ul>
                 )}
               </li>
@@ -2544,33 +2645,6 @@ const fetchEmployersList = async () => {
                               type="text"
                               name="name"
                               value={newEmployer.name}
-                              onChange={handleInputEmployer}
-                              placeholder="Name"
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                              required
-                            />
-                            <input
-                              type="text"
-                              name="username"
-                              value={newEmployer.username}
-                              onChange={handleInputEmployer}
-                              placeholder="Username"
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                              required
-                            />
-                            <input
-                              type="password"
-                              name="password"
-                              value={newEmployer.password}
-                              onChange={handleInputEmployer}
-                              placeholder="Password"
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                              required
-                            />
-                            <input
-                              type="email"
-                              name="email"
-                              value={newEmployer.email}
                               onChange={handleInputEmployer}
                               placeholder="Email"
                               className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
@@ -2848,8 +2922,110 @@ const fetchEmployersList = async () => {
                           )}
                         </div>
                       )}
+                      {activeSubTab === "adminTest" && (
+                        <div>
+                          <h3 className="text-xl text-orange-400 mb-4 text-left">Admin Notifications Test</h3>
+                          
+                          {role === "super_admin" ? (
+                            <div className="space-y-6">
+                              {/* Instructions for super_admin users */}
+                              <div className="bg-black/30 border border-gray-700 p-4 rounded-lg">
+                                <h4 className="font-semibold text-orange-300 mb-3">Super Admin Notifications</h4>
+                                <p className="text-gray-300 mb-4">
+                                  Como super_admin, você pode enviar e visualizar notificações compartilhadas por todos os super_admins. 
+                                  Essas notificações são visíveis apenas para usuários com a função super_admin.
+                                </p>
+                              </div>
+                              
+                              {/* Test for shared notifications */}
+                              <div className="bg-black/40 border border-gray-700 p-4 rounded-lg">
+                                <h4 className="font-semibold text-orange-300 mb-3">Enviar Notificação para Super Admins</h4>
+                                <p className="text-gray-300 mb-4">
+                                  Isso enviará uma notificação de teste para todos os super_admins.
+                                  A notificação aparecerá no painel de notificações deles.
+                                </p>
+                                
+                                <button
+                                  onClick={() => {
+                                    createSharedAdminNotification(
+                                      "Notificação de Teste para Super Admins", 
+                                      "Esta é uma notificação de teste compartilhada com todos os super_admins.", 
+                                      "test"
+                                    );
+                                    // Show a success message
+                                    alert("Notificação compartilhada enviada com sucesso!");
+                                  }}
+                                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+                                >
+                                  Enviar Notificação de Teste
+                                </button>
+                              </div>
+                              
+                              {/* Example notifications */}
+                              <div className="bg-black/40 border border-gray-700 p-4 rounded-lg">
+                                <h4 className="font-semibold text-orange-300 mb-3">Exemplos de Notificações</h4>
+                                <p className="text-gray-300 mb-4">
+                                  Aqui estão alguns exemplos de notificações que podem ser úteis para comunicação entre super_admins:
+                                </p>
+                                
+                                <div className="space-y-2">
+                                  <button
+                                    onClick={() => {
+                                      createSharedAdminNotification(
+                                        "Manutenção do Sistema", 
+                                        "O sistema entrará em manutenção hoje às 23:00. Por favor, informe os usuários.", 
+                                        "system"
+                                      );
+                                      alert("Notificação de manutenção enviada!");
+                                    }}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full text-left"
+                                  >
+                                    Enviar Alerta de Manutenção
+                                  </button>
+                                  
+                                  <button
+                                    onClick={() => {
+                                      createSharedAdminNotification(
+                                        "Novo Admin Registrado", 
+                                        "Um novo administrador foi adicionado ao sistema. Por favor, verifique as permissões.", 
+                                        "admin"
+                                      );
+                                      alert("Notificação de novo admin enviada!");
+                                    }}
+                                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg w-full text-left"
+                                  >
+                                    Simular Notificação de Novo Admin
+                                  </button>
+                                  
+                                  <button
+                                    onClick={() => {
+                                      createSharedAdminNotification(
+                                        "Alerta de Segurança", 
+                                        "Detectamos atividades suspeitas no sistema. Por favor, verifique os logs de acesso.", 
+                                        "security"
+                                      );
+                                      alert("Alerta de segurança enviado!");
+                                    }}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg w-full text-left"
+                                  >
+                                    Simular Alerta de Segurança
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="bg-black/40 border border-red-900 p-4 rounded-lg">
+                              <h4 className="font-semibold text-red-400 mb-3">Acesso Restrito</h4>
+                              <p className="text-gray-300">
+                                As notificações de administrador estão disponíveis apenas para usuários Super Admin.
+                                Seu papel atual é: <span className="font-bold text-white">{role}</span>
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                      {/* Render Combined Admin Management */}
+                      {/* Existing permissions panel */}
                       {activeSubTab === "permissions" && hasPermission('canManageUsers') && (
                         <div className="space-y-8">
                           {/* Admin Creation Form */}
@@ -2948,8 +3124,10 @@ const fetchEmployersList = async () => {
                         </div>
                       )}
                       {/* Optional: Add a message if settings tab is active but no sub-tab is available/selected */}
-                      {!hasPermission('canManageUsers') && !activeSubTab && (
-                        <p className="text-gray-400 text-left">No settings available for your role.</p>
+                      {!activeSubTab && (
+                        <div className="text-gray-400 text-center py-4">
+                          <p>Select a category to manage settings.</p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -3066,24 +3244,25 @@ const fetchEmployersList = async () => {
                         <h3 className="text-xl text-orange-400 mb-4">Jobs List</h3>
                         {jobsLoading && <p className="text-gray-400">Loading jobs...</p>}
                         {jobsError && <p className="text-red-400">{jobsError}</p>}
-                        {!jobsLoading && !jobsError && jobs.length === 0 && <p className="text-gray-400">No jobs available.</p>}
-                        <ul className="space-y-4">
-                          {jobs.map((job) => (
-                            <li key={job.id} className="flex justify-between items-center p-4 bg-black/30 rounded-lg">
-                              <div>
-                                <p className="text-orange-500 font-bold">{job.title}</p>
-                                <p className="text-gray-300 text-sm">{job.companyName}</p>
-                              </div>
-                              <button
-                                onClick={() => handleDeleteJob(job.id)}
-                                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                                disabled={deletingJobId === job.id}
-                              >
-                                {deletingJobId === job.id ? "Deleting..." : "Delete"}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
+                        <div className="max-h-80 overflow-y-auto">
+                          <ul className="space-y-4">
+                            {jobs.map((job) => (
+                              <li key={job.id} className="flex justify-between items-center p-4 bg-black/30 rounded-lg">
+                                <div>
+                                  <p className="text-orange-500 font-bold">{job.title}</p>
+                                  <p className="text-gray-300 text-sm">{job.companyName}</p>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteJob(job.id)}
+                                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                                  disabled={deletingJobId === job.id}
+                                >
+                                  {deletingJobId === job.id ? "Deleting..." : "Delete"}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
                     )}
                     {activeSubTab === "create" && (
@@ -3567,7 +3746,7 @@ const fetchEmployersList = async () => {
                             <div className="text-xs text-gray-500">ID: {l2e.id}</div>
                           </div>
                           <div className="flex flex-col gap-2 mt-4 md:mt-0 md:ml-6 min-w-[160px]">
-                            <button
+                            <button 
                               className={`px-3 py-1 rounded ${l2e.status === 'active' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white`}
                               disabled={pausingLearn2EarnId === l2e.id}
                               onClick={() => handleToggleLearn2EarnStatus(l2e.id, l2e.status)}
@@ -3587,12 +3766,22 @@ const fetchEmployersList = async () => {
                         </li>
                       ))}
                     </ul>
-                  </div>
-                )}
+                  </div>                )}
               </>
             )}
           </div>
         </div>
+          {/* Notification panel (right side overlay) - Only for super_admins */}
+        {role === "super_admin" && (
+          <NotificationsPanel
+            adminId={adminId ?? undefined}
+            open={showNotifications}
+            onClose={() => setShowNotifications(false)}
+           
+            overlay
+          />
+
+               )}
       </main>
     </Layout>
   );

@@ -20,11 +20,12 @@ interface CompanyNotificationData {
 }
 
 interface AdminNotificationData {
-  adminId: string;
+  adminId?: string; // Made optional to support shared notifications
   title: string;
   body: string;
   type: string;
   read?: boolean;
+  isShared?: boolean; // Added to indicate shared notifications
   data?: any;
 }
 
@@ -89,6 +90,42 @@ export const createCompanyNotification = async (notification: CompanyNotificatio
     return docRef;
   } catch (error) {
     console.error("Error creating company notification:", error);
+    throw error;
+  }
+};
+
+/**
+ * Creates a generic notification for admins in Firestore.
+ * For super_admin users, notifications are shared across all super_admins.
+ * @param notification Notification data for admin.
+ * @param isShared Whether this notification is shared among all super_admins.
+ * @returns Reference to the created document.
+ */
+export const createAdminNotification = async (notification: AdminNotificationData, isShared: boolean = true) => {
+  try {
+    if (!db) throw new Error("Firestore not initialized");
+    
+    // All admin notifications are now shared by default for super_admins only
+    // We keep the old parameter for backward compatibility
+    // But we always create shared notifications
+    
+    const notificationData = {
+      // Always set isShared to true
+      isShared: true,
+      title: notification.title,
+      body: notification.body,
+      type: notification.type || "general",
+      read: notification.read || false,
+      createdAt: serverTimestamp(),
+      data: notification.data || {}
+    };
+    
+    const notificationsRef = collection(db, "adminNotifications");
+    const docRef = await addDoc(notificationsRef, notificationData);
+    console.log(`Admin notification created successfully: ${docRef.id}`);
+    return docRef;
+  } catch (error) {
+    console.error("Error creating admin notification:", error);
     throw error;
   }
 };

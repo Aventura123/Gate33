@@ -49,19 +49,20 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
   
   // Determinar o tipo de usuário para personalizar o título
   const userType = userId ? 'user' : (companyId ? 'company' : (adminId ? 'admin' : ''));
-
+  
   const fetchNotifications = async () => {
     if (!userId && !companyId && !adminId) {
       setLoading(false);
       return;
     }
-    setLoading(true);    try {
+    setLoading(true);
+    try {
       // Determinar qual coleção de notificações usar
       const collectionName = adminId ? "adminNotifications" : "notifications";
       const notificationsRef = collection(db, collectionName);
       
-    const allNotificationsSnapshot = await getDocs(collection(db, collectionName));
-      const allNotifications = allNotificationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Initialize allNotifications as an array that we'll populate
+      let allNotifications: Array<any> = [];
       
       let q: Query<DocumentData> | undefined = undefined;
       if (userId) {
@@ -75,45 +76,54 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
           notificationsRef,
           where("companyId", "==", companyId),
           orderBy("createdAt", "desc")
-        );
-      } else if (adminId) {
+        );      } else if (adminId) {
+        // Para super_admins, buscar todas as notificações de adminNotifications
         q = query(
           notificationsRef,
-          where("adminId", "==", adminId),
           orderBy("createdAt", "desc")
         );
       }
       if (!q) {
         setLoading(false);
         return;
-      }      
-      const snapshot = await getDocs(q);
-      const allDocs = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
-      if (allDocs.length === 0) {
+      }        if (q) {
+        const snapshot = await getDocs(q);
+        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
+        allNotifications.push(...docs);
       }
 
       // Map the notifications to ensure proper formatting
-      const mappedNotifications = allDocs.map((n: any) => {
-        
-        // Get the title from the right place
-        let title = '';
-        if (n.title) title = n.title;
-        else if (n.data?.title) title = n.data.title;
-        
-        // Get the body from the right place
-        let body = '';
-        if (n.body) body = n.body;
-        else if (n.data?.body) body = n.data.body;
-        
-        // Get the type
+      const mappedNotifications = allNotifications.map((n: any) => {
+        // Fallbacks para campos obrigatórios
+        let title = n.title || n.data?.title || '';
+        let body = n.body || n.data?.body || '';
         let type = n.type || n.data?.type || 'general';
-        
-        // Handle read status
-        let read = false;
-        if (typeof n.read === 'boolean') read = n.read;
-        else if (typeof n.data?.read === 'boolean') read = n.data.read;
-        
-        // Handle the timestamp (most critical part)
+        // Se não houver title/body, tentar montar algo útil
+        if (!title) {
+          if (type === 'payment') {
+            title = 'Novo pagamento recebido';
+            if (n.companyId) title += ` de ${n.companyId}`;
+          } else if (type === 'job') {
+            title = n.data?.jobTitle || 'Novo job criado';
+          } else if (type === 'microtask') {
+            title = 'New micro-task created';
+          } else {
+            title = 'Notificação';
+          }
+        }
+        if (!body) {
+          if (type === 'payment' && n.amount) {
+            body = `Valor: ${n.amount}`;
+            if (n.transactionHash) body += `\nTx: ${n.transactionHash}`;
+          } else if (type === 'job' && n.data?.jobTitle) {
+            body = n.data.jobTitle;
+          } else if (type === 'microtask' && n.data?.description) {
+            body = n.data.description;
+          } else if (n.message) {
+            body = n.message;
+          }
+        }
+        let read = typeof n.read === 'boolean' ? n.read : (typeof n.data?.read === 'boolean' ? n.data.read : false);
         let createdAt: any = '';
         if (n.createdAt) {
           if (typeof n.createdAt.toDate === 'function') {
@@ -128,8 +138,7 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
             createdAt = new Date(n.data.createdAt);
           }
         }
-        
-        const result = {
+        return {
           id: n.id,
           title,
           body,
@@ -138,8 +147,6 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
           createdAt,
           data: n.data || {}
         };
-        
-        return result;
       });
       
       setNotifications(mappedNotifications);
@@ -164,10 +171,10 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
     } catch (error) {
     }
   };
-
   const clearAllNotifications = async () => {
     setLoading(true);
-    try {      // Determinar qual coleção usar
+    try {
+      // Determinar qual coleção usar
       const collectionName = adminId ? "adminNotifications" : "notifications";
       const notificationsRef = collection(db, collectionName);
       const q = query(notificationsRef, orderBy("createdAt", "desc"));
@@ -182,10 +189,14 @@ export default function NotificationsPanel({ userId, companyId, adminId, open, o
           docsToDelete.push({ id: docSnap.id });
         } else if (companyId && data.companyId === companyId) {
           docsToDelete.push({ id: docSnap.id });
-        } else if (adminId && data.adminId === adminId) {
+        } else if (adminId) {
+          // Para super_admins, excluir todas as notificações de admin
+          // Sabemos que todas as notificações de admin são compartilhadas (shared)
           docsToDelete.push({ id: docSnap.id });
         }
-      });      const batchDeletes = docsToDelete.map(docToDelete => deleteDoc(doc(db, collectionName, docToDelete.id)));
+      });
+      
+      const batchDeletes = docsToDelete.map(docToDelete => deleteDoc(doc(db, collectionName, docToDelete.id)));
       await Promise.all(batchDeletes);
       setNotifications([]);
     } catch (err) {

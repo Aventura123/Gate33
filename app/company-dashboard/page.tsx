@@ -1232,7 +1232,7 @@ const InstantJobDetailCard: React.FC<{
         );
       case "support":
         return (
-          <div className={`bg-black/70 p-10 rounded-lg shadow-lg ${isMobile ? 'pb-20' : ''}`}>
+          <div className="bg-black/70 p-10 rounded-lg shadow-lg">
             <h2 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobile ? 'text-center' : ''}`}>Support Tickets</h2>
             {renderSupportTickets()}
           </div>
