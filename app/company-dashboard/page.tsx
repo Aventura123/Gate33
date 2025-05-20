@@ -860,7 +860,7 @@ const PostJobPage = (): JSX.Element => {
   const renderSettings = () => {
     return (
       <div className="bg-black/70 p-10 rounded-lg shadow-lg">
-        <h2 className="text-3xl font-semibold text-orange-500 mb-8">Company Settings</h2>
+           <h2 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobile ? 'text-center' : ''}`}>Company Settings</h2>
         <form className="space-y-8" onSubmit={handleProfileSubmit}>
           {/* Main two-column grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -1222,7 +1222,7 @@ const InstantJobDetailCard: React.FC<{
       case "learn2earn":
         return (
           <div className="bg-black/70 p-10 rounded-lg shadow-lg">
-            <h2 className="text-3xl font-semibold text-orange-500 mb-6">Learn2Earn Opportunities</h2>
+            <h2 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobile ? 'text-center' : ''}`}>Learn2Earn Opportunities</h2>
             <Learn2EarnManager
               companyId={companyId}
               companyProfile={companyProfile}
@@ -1233,7 +1233,7 @@ const InstantJobDetailCard: React.FC<{
       case "support":
         return (
           <div className="bg-black/70 p-10 rounded-lg shadow-lg">
-            <h2 className="text-3xl font-semibold text-orange-500 mb-6">Support Tickets</h2>
+            <h2 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobile ? 'text-center' : ''}`}>Support Tickets</h2>
             {renderSupportTickets()}
           </div>
         );

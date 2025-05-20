@@ -22,20 +22,33 @@ interface Learn2EarnManagerProps {
   companyProfile: any;
 }
 
+// Custom hook for detecting mobile devices
+function useIsMobileL2E() {
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  
+  useEffect(() => {
+    const checkIfMobile = () => {
+      const userAgent = typeof window.navigator === "undefined" ? "" : navigator.userAgent;
+      const mobileByAgent = Boolean(
+        userAgent.match(/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i)
+      );
+      const mobileByWidth = window.innerWidth <= 768;
+      setIsMobileDevice(mobileByAgent || mobileByWidth);
+    };
+    
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
+  
+  return isMobileDevice;
+}
+
 const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   db,
   companyId,
   companyProfile,
 }) => {
-  // Mobile detection logic for responsive titles
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
   // --- Main states ---
   const [learn2earn, setLearn2Earn] = useState<Learn2Earn[]>([]);
   const [isLoadingLearn2Earn, setIsLoadingLearn2Earn] = useState(false);
@@ -579,16 +592,15 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
       if (d instanceof Date && !isNaN(d.getTime())) return d.toLocaleDateString();
     }
     return 'N/A';
-  };
-
-  // --- Main rendering ---
+  };  // --- Main rendering ---
+  const isMobileDevice = useIsMobileL2E();
   return (
-    <div>
+    <div className={isMobileDevice ? 'px-2 pt-2' : ''}>
       {/* Tabs to switch between "My L2L" and "New L2L" */}
-      <div className="flex mb-6">
+      <div className={isMobileDevice ? 'flex mb-4 space-x-2' : 'flex mb-6'}>
         <button
           onClick={() => setLearn2EarnSubTab('my')}
-          className={`py-2 px-6 font-medium ${
+          className={`py-2 ${isMobileDevice ? 'px-2 text-base' : 'px-6'} font-medium ${
             learn2EarnSubTab === 'my'
               ? 'text-orange-500 border-b-2 border-orange-500'
               : 'text-gray-400 hover:text-orange-300'
@@ -598,7 +610,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         </button>
         <button
           onClick={() => setLearn2EarnSubTab('new')}
-          className={`py-2 px-6 font-medium ${
+          className={`py-2 ${isMobileDevice ? 'px-2 text-base' : 'px-6'} font-medium ${
             learn2EarnSubTab === 'new'
               ? 'text-orange-500 border-b-2 border-orange-500'
               : 'text-gray-400 hover:text-orange-300'
@@ -614,7 +626,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
           <p className="text-gray-300 py-4">Loading...</p>
         ) : learn2EarnStep === 'info' ? (
           <div className="bg-black/50 p-6 rounded-lg">
-            <h3 className={`text-3xl md:text-2xl font-extrabold text-orange-500 mb-4 ${isMobile ? 'text-center' : 'text-left'}`}>Create New Learn2Earn</h3>
+            <h3 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobileDevice ? 'text-center' : ''}`}>Create New Learn2Earn</h3>
             <form onSubmit={(e) => {
               e.preventDefault();
               setLearn2EarnStep('tasks');
@@ -861,7 +873,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
           </div>
         ) : learn2EarnStep === 'tasks' ? (
           <div className="bg-black/50 p-6 rounded-lg">
-            <h3 className="text-2xl font-semibold text-orange-500 mb-4">Add Learning Tasks</h3>
+            <h3 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobileDevice ? 'text-center' : ''}`}>Add Learning Tasks</h3>
             {learn2earnData.tasks.length > 0 && (
               <div className="mb-6">
                 <h4 className="text-xl font-medium text-white mb-2">Current Tasks</h4>
@@ -1392,18 +1404,6 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
           <p className="text-gray-300 py-4">Loading & synchronizing Learn2Earn opportunities...</p>
         ) : (          <div>
             <div>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-semibold text-orange-500">Your Learn2Earn Opportunities</h3>
-                <button
-                  onClick={() => {
-                    setLearn2EarnSubTab('new');
-                    setLearn2EarnStep('info');
-                  }}
-                  className="bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600"
-                >
-                  Create New Learn2Earn
-                </button>
-              </div>
               {learn2earn.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-300">You haven't created any Learn2Earn opportunities yet.</p>
