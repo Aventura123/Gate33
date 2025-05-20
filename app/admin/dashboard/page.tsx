@@ -2211,6 +2211,13 @@ const fetchEmployersList = async () => {
     return () => clearInterval(interval);
   }, [role, db, adminId]);
 
+  // Estados para controlar dropdowns da barra lateral
+  const [nftsDropdownOpen, setNftsDropdownOpen] = useState(false);
+  const [usersDropdownOpen, setUsersDropdownOpen] = useState(false);
+  const [jobsDropdownOpen, setJobsDropdownOpen] = useState(false);
+  const [learn2earnDropdownOpen, setLearn2earnDropdownOpen] = useState(false);
+  const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
+
   return (
     <Layout>
       <main className="min-h-screen flex bg-gradient-to-br from-orange-900 to-black text-white min-h-screen">
@@ -2278,53 +2285,63 @@ const fetchEmployersList = async () => {
             </div>
           </div>
           {/* Navigation - reduce button size and spacing on mobile */}
-          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>
-            {hasPermission('canEditContent') && (
+          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>            {hasPermission('canEditContent') && (
               <li>
-                <div
-                  className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "nfts" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "nfts" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                   onClick={() => {
-                    setActiveTab("nfts");
-                    setActiveSubTab("add");
+                    if (activeTab === "nfts") setNftsDropdownOpen((open) => !open);
+                    else {
+                      setActiveTab("nfts");
+                      setActiveSubTab("add");
+                      setNftsDropdownOpen(true);
+                    }
                     if (isMobile) setMobileMenuOpen(false);
                   }}
                 >
-                  Manage NFTs
-                </div>
-                {isClient && activeTab === "nfts" && (
-                  <ul className="ml-4 mt-2 space-y-2">
-                    <li
-                      className={`cursor-pointer p-2 rounded-lg text-center ${
-                        activeSubTab === "add" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("add");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Add NFT
+                  <span>Manage NFTs</span>
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "nfts" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+                {activeTab === "nfts" && nftsDropdownOpen && (
+                  <ul className="ml-6 mt-2 space-y-1">
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                          activeSubTab === "add" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                        }`}
+                        onClick={() => {
+                          setActiveSubTab("add");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Add NFT
+                      </button>
                     </li>
-                    <li
-                      className={`cursor-pointer p-2 rounded-lg text-center ${
-                        activeSubTab === "delete" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("delete");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Delete NFT
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                          activeSubTab === "delete" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                        }`}
+                        onClick={() => {
+                          setActiveSubTab("delete");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Delete NFT
+                      </button>
                     </li>
-                    <li
-                      className={`cursor-pointer p-2 rounded-lg text-center ${
-                        activeSubTab === "deleteAll" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("deleteAll");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Delete All NFTs
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                          activeSubTab === "deleteAll" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                        }`}
+                        onClick={() => {
+                          setActiveSubTab("deleteAll");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Delete All NFTs
+                      </button>
                     </li>
                   </ul>
                 )}
@@ -2333,124 +2350,145 @@ const fetchEmployersList = async () => {
 
             {(hasPermission('canManageUsers') || hasPermission('canApproveCompanies') || hasPermission('canEditContent')) && (
               <li>
-                <div
-                  className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "users" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "users" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                   onClick={() => {
-                    setActiveTab("users");
-                    setActiveSubTab("employers-list");
+                    if (activeTab === "users") setUsersDropdownOpen((open) => !open);
+                    else {
+                      setActiveTab("users");
+                      setActiveSubTab("employers-list");
+                      setUsersDropdownOpen(true);
+                    }
                     if (isMobile) setMobileMenuOpen(false);
                   }}
                 >
-                  Manage Users
-                </div>
-                {activeTab === "users" && (
-                  <ul className="ml-4 mt-2 space-y-2">
-                    <li
-                      className={`cursor-pointer p-2 rounded-lg text-center ${
-                        activeSubTab === "employers-list" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("employers-list");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Employers - List
-                    </li>
-                    {hasPermission('canApproveCompanies') && (
-                      <li
-                        className={`cursor-pointer p-2 rounded-lg text-center ${
-                          activeSubTab === "employers-approve" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
+                  <span>Manage Users</span>
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "users" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+                {activeTab === "users" && usersDropdownOpen && (
+                  <ul className="ml-6 mt-2 space-y-1">
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                          activeSubTab === "employers-list" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
                         }`}
                         onClick={() => {
-                          setActiveSubTab("employers-approve");
+                          setActiveSubTab("employers-list");
                           if (isMobile) setMobileMenuOpen(false);
                         }}
                       >
-                        Approve Companies
+                        Employers - List
+                      </button>
+                    </li>
+                    {hasPermission('canApproveCompanies') && (
+                      <li>
+                        <button
+                          className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                            activeSubTab === "employers-approve" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                          }`}
+                          onClick={() => {
+                            setActiveSubTab("employers-approve");
+                            if (isMobile) setMobileMenuOpen(false);
+                          }}
+                        >
+                          Approve Companies
+                        </button>
                       </li>
                     )}
                     {hasPermission('canEditContent') && (
-                      <li
-                        className={`cursor-pointer p-2 rounded-lg text-center ${
-                          activeSubTab === "seekers" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                        }`}
-                        onClick={() => {
-                          setActiveSubTab("seekers");
-                          if (isMobile) setMobileMenuOpen(false);
-                        }}
-                      >
-                        Seekers
+                      <li>
+                        <button
+                          className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                            activeSubTab === "seekers" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                          }`}
+                          onClick={() => {
+                            setActiveSubTab("seekers");
+                            if (isMobile) setMobileMenuOpen(false);
+                          }}
+                        >
+                          Seekers
+                        </button>
                       </li>
                     )}
                   </ul>
                 )}
               </li>
-            )}
-
-            <li>
-              <div
-                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "jobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
+            )}            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "jobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
-                  setActiveTab("jobs");
-                  setActiveSubTab("list");
+                  if (activeTab === "jobs") setJobsDropdownOpen((open) => !open);
+                  else {
+                    setActiveTab("jobs");
+                    setActiveSubTab("list");
+                    setJobsDropdownOpen(true);
+                  }
                   if (isMobile) setMobileMenuOpen(false);
                 }}
               >
-                Manage Jobs
-              </div>
-              {activeTab === "jobs" && (
-                <ul className="ml-4 mt-2 space-y-2">
-                  <li
-                    className={`cursor-pointer p-2 rounded-lg text-center ${
-                      activeSubTab === "list" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                    }`}
-                    onClick={() => {
-                      setActiveSubTab("list");
-                      if (isMobile) setMobileMenuOpen(false);
-                    }}
-                  >
-                    Jobs List
+                <span>Manage Jobs</span>
+                <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "jobs" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+              {activeTab === "jobs" && jobsDropdownOpen && (
+                <ul className="ml-6 mt-2 space-y-1">
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "list" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("list");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Jobs List
+                    </button>
                   </li>
-                  <li
-                    className={`cursor-pointer p-2 rounded-lg text-center ${
-                      activeSubTab === "create" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                    }`}
-                    onClick={() => {
-                      setActiveSubTab("create");
-                      if (isMobile) setMobileMenuOpen(false);
-                    }}
-                  >
-                    Create Job
-                  </li>                  <li
-                    className={`cursor-pointer p-2 rounded-lg text-center ${
-                      activeSubTab === "prices" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                    }`}
-                    onClick={() => {
-                      setActiveSubTab("prices");
-                      if (isMobile) setMobileMenuOpen(false);
-                    }}
-                  >
-                    Job Pricing
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "create" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("create");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Create Job
+                    </button>
                   </li>
-                  <li
-                    className={`cursor-pointer p-2 rounded-lg text-center ${
-                      activeSubTab === "test-notification" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                    }`}
-                    onClick={() => {
-                      // Navigate to the test notification page
-                      router.push("/admin/job-notification-test");
-                    }}
-                  >
-                    Test Job Notification
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "prices" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("prices");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Job Pricing
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "test-notification" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        // Navigate to the test notification page
+                        router.push("/admin/job-notification-test");
+                      }}
+                    >
+                      Test Job Notification
+                    </button>
                   </li>
                 </ul>
               )}
-            </li>
-
-            {/* Instant Jobs tab */}
+            </li>            {/* Instant Jobs tab */}
             <li>
-              <div
-                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${isClient && activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   setActiveTab("instantJobs");
                   if (isMobile) setMobileMenuOpen(false);
@@ -2458,52 +2496,57 @@ const fetchEmployersList = async () => {
                 }}
               >
                 Manage Instant Jobs
-              </div>
-            </li>
-
-            {/* Learn2Earn tab */}
+              </button>
+            </li>            {/* Learn2Earn tab */}
             <li>
-              <div
-                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
-                  setActiveTab("learn2earn");
-                  setActiveSubTab("list");
+                  if (activeTab === "learn2earn") setLearn2earnDropdownOpen((open) => !open);
+                  else {
+                    setActiveTab("learn2earn");
+                    setActiveSubTab("list");
+                    setLearn2earnDropdownOpen(true);
+                  }
                   if (isMobile) setMobileMenuOpen(false);
                 }}
               >
-                Learn2Earn
-              </div>
-              {activeTab === "learn2earn" && (
-                <ul className="ml-4 mt-2 space-y-2">
-                  <li
-                    className={`cursor-pointer p-2 rounded-lg text-center ${
-                      activeSubTab === "list" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                    }`}
-                    onClick={() => {
-                      setActiveSubTab("list");
-                      if (isMobile) setMobileMenuOpen(false);
-                    }}
-                  >
-                    Learn2Earn List
+                <span>Learn2Earn</span>
+                <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "learn2earn" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+              {activeTab === "learn2earn" && learn2earnDropdownOpen && (
+                <ul className="ml-6 mt-2 space-y-1">
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "list" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("list");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Learn2Earn List
+                    </button>
                   </li>
-                  <li
-                    className={`cursor-pointer p-2 rounded-lg text-center ${
-                      activeSubTab === "contracts" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                    }`}
-                    onClick={() => {
-                      setActiveSubTab("contracts");
-                      if (isMobile) setMobileMenuOpen(false);
-                    }}
-                  >
-                    Smart Contracts
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "contracts" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("contracts");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Smart Contracts
+                    </button>
                   </li>
                 </ul>
               )}
-            </li>
-
-            <li>
-              <div
-                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
+            </li>            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${isClient && activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   setActiveTab("accounting");
                   setActiveSubTab(null);
@@ -2511,12 +2554,12 @@ const fetchEmployersList = async () => {
                 }}
               >
                 Accounting Dashboard
-              </div>
+              </button>
             </li>
 
             <li>
-              <div
-                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "ads" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${isClient && activeTab === "ads" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   setActiveTab("ads");
                   setActiveSubTab(null);
@@ -2524,12 +2567,12 @@ const fetchEmployersList = async () => {
                 }}
               >
                 Ads Manager
-              </div>
+              </button>
             </li>
 
             <li>
-              <div
-                className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "payments" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${isClient && activeTab === "payments" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   setActiveTab("payments");
                   setActiveSubTab("config");
@@ -2537,44 +2580,51 @@ const fetchEmployersList = async () => {
                 }}
               >
                 Payments Management
-              </div>
-            </li>
-
-            {hasPermission('canAccessSettings') && (
+              </button>
+            </li>            {hasPermission('canAccessSettings') && (
               <li>
-                <div
-                  className={`cursor-pointer rounded-lg text-center transition-all ${isMobile ? 'py-2 px-2 text-sm font-medium' : 'p-3'} ${isClient && activeTab === "settings" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"}`}
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "settings" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                   onClick={() => {
-                    setActiveTab("settings");
-                    setActiveSubTab("profile");
+                    if (activeTab === "settings") setSettingsDropdownOpen((open) => !open);
+                    else {
+                      setActiveTab("settings");
+                      setActiveSubTab("profile");
+                      setSettingsDropdownOpen(true);
+                    }
                     if (isMobile) setMobileMenuOpen(false);
                   }}
                 >
-                  Settings
-                </div>
-                {isClient && activeTab === "settings" && (
-                  <ul className="ml-4 mt-2 space-y-2">
-                    <li
-                      className={`cursor-pointer p-2 rounded-lg text-center ${
-                        activeSubTab === "profile" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("profile");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Profile
+                  <span>Settings</span>
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "settings" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+                {activeTab === "settings" && settingsDropdownOpen && (
+                  <ul className="ml-6 mt-2 space-y-1">
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                          activeSubTab === "profile" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                        }`}
+                        onClick={() => {
+                          setActiveSubTab("profile");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Profile
+                      </button>
                     </li>
-                    <li
-                      className={`cursor-pointer p-2 rounded-lg text-center ${
-                        activeSubTab === "adminTest" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("adminTest");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Notification Test
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                          activeSubTab === "adminTest" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                        }`}
+                        onClick={() => {
+                          setActiveSubTab("adminTest");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Notification Test
+                      </button>
                     </li>
                   </ul>
                 )}
