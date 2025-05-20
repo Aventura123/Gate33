@@ -2237,7 +2237,7 @@ const fetchEmployersList = async () => {
         <aside
           className={
             isMobile
-              ? `fixed top-0 left-0 h-full w-64 bg-black/90 z-50 transform transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`
+              ? `fixed top-0 left-0 h-full w-64 bg-black/90 z-50 transform transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} overflow-y-auto`
               : 'w-1/4 bg-black/70 p-6 flex flex-col items-start min-h-screen'
           }
           id="admin-dashboard-sidebar"
@@ -2624,6 +2624,19 @@ const fetchEmployersList = async () => {
                         }}
                       >
                         Notification Test
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                          activeSubTab === "permissions" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                        }`}
+                        onClick={() => {
+                          setActiveSubTab("permissions");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Manage Admins & Permissions
                       </button>
                     </li>
                   </ul>
@@ -3761,6 +3774,7 @@ const fetchEmployersList = async () => {
 
                 {/* Payment Settings Section */}
                 {activeTab === "payments" && activeSubTab === "config" && (
+
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Payment Configuration</h2>
                     <div className="mt-6 bg-black/50 p-6 rounded-lg">
