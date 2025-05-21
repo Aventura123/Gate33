@@ -1,0 +1,151 @@
+[1mdiff --git a/app/admin-login/page.tsx b/app/admin-login/page.tsx[m
+[1mindex e006c97..c7760fc 100644[m
+[1m--- a/app/admin-login/page.tsx[m
+[1m+++ b/app/admin-login/page.tsx[m
+[36m@@ -89,9 +89,15 @@[m [mconst AdminLoginPage: React.FC = () => {[m
+         // Save admin data in localStorage[m
+         if (data.admin) {[m
+           console.log("Admin data:", data.admin);[m
+[32m+[m[41m          [m
+[32m+[m[32m          // Ensure we have proper values for all fields[m
+           localStorage.setItem("userId", data.admin.id);[m
+[31m-          localStorage.setItem("userName", data.admin.name || data.admin.username);[m
+[31m-          localStorage.setItem("userRole", data.admin.role || "viewer");[m
+[32m+[m[32m          localStorage.setItem("userName", data.admin.name || data.admin.username || username);[m
+[32m+[m[41m          [m
+[32m+[m[32m          // Ensure the role is correctly set[m
+[32m+[m[32m          const adminRole = data.admin.role || "viewer";[m
+[32m+[m[32m          console.log("Setting admin role in localStorage:", adminRole);[m
+[32m+[m[32m          localStorage.setItem("userRole", adminRole);[m
+           [m
+           if (data.admin.photoURL) {[m
+             localStorage.setItem("userPhoto", data.admin.photoURL);[m
+[1mdiff --git a/components/UserProfileButton.tsx b/components/UserProfileButton.tsx[m
+[1mindex ba6c047..60c7304 100644[m
+[1m--- a/components/UserProfileButton.tsx[m
+[1m+++ b/components/UserProfileButton.tsx[m
+[36m@@ -53,11 +53,14 @@[m [mconst UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })[m
+           break;[m
+         case 'admin':[m
+           collection = 'admins';[m
+[32m+[m[32m          console.log(`Attempting to fetch admin data from 'admins' collection with ID: ${id}`);[m
+           break;[m
+         case 'support':[m
+           collection = 'support';[m
+[32m+[m[32m          console.log(`Attempting to fetch support data from 'support' collection with ID: ${id}`);[m
+           break;[m
+         default:[m
+[32m+[m[32m          console.warn(`Unknown user type: ${type}`);[m
+           return null;[m
+       }[m
+       [m
+[36m@@ -65,6 +68,7 @@[m [mconst UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })[m
+       const docSnap = await getDoc(docRef);[m
+       [m
+       if (docSnap.exists()) {[m
+[32m+[m[32m        console.log(`${type} document found:`, docSnap.data());[m
+         return docSnap.data();[m
+       } else {[m
+         console.log(`No ${type} document found for ID: ${id}`);[m
+[36m@@ -94,52 +98,61 @@[m [mconst UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })[m
+       console.log("- token:", localStorage.getItem("token"));[m
+       [m
+       try {[m
+[31m-        // Check seeker[m
+[31m-        if (localStorage.getItem("seekerToken")) {[m
+[31m-          const seekerId = localStorage.getItem("seekerToken") [m
+[31m-            ? atob(localStorage.getItem("seekerToken") || "")[m
+[31m-            : null;[m
+[31m-            [m
+[31m-          if (seekerId) {[m
+[31m-            const seekerData = await fetchUserDataFromFirebase('seeker', seekerId);[m
+[31m-            [m
+[31m-            if (seekerData) {[m
+[31m-              return {[m
+[31m-                name: seekerData.name || "User",[m
+[31m-                photo: seekerData.photoURL || "/logo.png",[m
+[31m-                role: "Job Seeker",[m
+[31m-                type: 'seeker' as const[m
+[31m-              };[m
+[31m-            }[m
+[31m-          }[m
+[31m-        }[m
+[31m-        [m
+[31m-        // Check admin or support[m
+[32m+[m[32m        // First priority: Check if we have admin/superadmin credentials[m
+         if (localStorage.getItem("userId") && localStorage.getItem("userRole")) {[m
+           const userId = localStorage.getItem("userId");[m
+           const userRole = localStorage.getItem("userRole") || "";[m
+[32m+[m[32m          const userName = localStorage.getItem("userName");[m
+[32m+[m[41m          [m
+[32m+[m[32m          console.log("Found user credentials:", { userId, userRole, userName });[m
+           [m
+[31m-          // Ensure super_admin is never treated as support[m
+[32m+[m[32m          // Handle admin users with highest priority[m
+           if (userRole === "super_admin" || userRole === "admin") {[m
+[32m+[m[32m            console.log("Processing as admin account");[m
+             const adminData = await fetchUserDataFromFirebase('admin', userId || "");[m
+             const formattedRole = userRole === "super_admin" ? "Super Admin" : [m
+[31m-                               userRole.charAt(0).toUpperCase() + userRole.slice(1);[m
+[32m+[m[32m                             userRole.charAt(0).toUpperCase() + userRole.slice(1);[m
+[32m+[m
+[32m+[m[32m            // Always use localStorage name as backup for admins[m
+[32m+[m[32m            const adminName = adminData?.name || userName || "Admin";[m
+[32m+[m[32m            console.log("Final admin name:", adminName);[m
+[32m+[m[41m                             [m
+             return {[m
+[31m-              name: adminData?.name || localStorage.getItem("userName") || "Admin",[m
+[32m+[m[32m              name: adminName,[m
+               photo: adminData?.photoURL || localStorage.getItem("userPhoto") || "/logo.png",[m
+               role: formattedRole,[m
+               type: 'admin' as const[m
+             };[m
+           }[m
+[31m-          // Only enter here if really support[m
+[31m-          if (userRole === "support" && userId) {[m
+[32m+[m[41m          [m
+[32m+[m[32m          // Handle support users only if clearly identified as support[m
+[32m+[m[32m          else if (userRole === "support" && userId) {[m
+[32m+[m[32m            console.log("Processing as support account");[m
+             const supportData = await fetchUserDataFromFirebase('support', userId);[m
+[31m-            if (supportData) {[m
+[32m+[m[32m            return {[m
+[32m+[m[32m              name: supportData?.name || userName || "Support",[m
+[32m+[m[32m              photo: supportData?.photoURL || localStorage.getItem("userPhoto") || "/logo.png",[m
+[32m+[m[32m              role: "Support",[m
+[32m+[m[32m              type: 'support' as const[m
+[32m+[m[32m            };[m
+[32m+[m[32m          }[m
+[32m+[m[32m        }[m
+[32m+[m[41m        [m
+[32m+[m[32m        // Check seeker[m
+[32m+[m[32m        if (localStorage.getItem("seekerToken")) {[m
+[32m+[m[32m          const seekerId = localStorage.getItem("seekerToken")[m[41m [m
+[32m+[m[32m            ? atob(localStorage.getItem("seekerToken") || "")[m
+[32m+[m[32m            : null;[m
+[32m+[m[41m            [m
+[32m+[m[32m          if (seekerId) {[m
+[32m+[m[32m            const seekerData = await fetchUserDataFromFirebase('seeker', seekerId);[m
+[32m+[m[41m            [m
+[32m+[m[32m            if (seekerData) {[m
+               return {[m
+[31m-                name: supportData.name || "Support",[m
+[31m-                photo: supportData.photoURL || "/logo.png",[m
+[31m-                role: "Support",[m
+[31m-                type: 'support' as const[m
+[32m+[m[32m                name: seekerData.name || "User",[m
+[32m+[m[32m                photo: seekerData.photoURL || "/logo.png",[m
+[32m+[m[32m                role: "Job Seeker",[m
+[32m+[m[32m                type: 'seeker' as const[m
+               };[m
+             }[m
+           }[m
+[36m@@ -320,7 +333,11 @@[m [mconst UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })[m
+           />[m
+         </div>[m
+         <span className={`text-sm font-medium text-white ${isMobile ? 'inline' : 'hidden md:inline'}`}>[m
+[31m-          {userInfo.name.length > 12 ? `${userInfo.name.substring(0, 12)}...` : userInfo.name}[m
+[32m+[m[32m          {/* Log the name being displayed for debugging */}[m
+[32m+[m[32m          {(() => {[m
+[32m+[m[32m            console.log("Displaying user name:", userInfo.name);[m
+[3

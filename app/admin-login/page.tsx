@@ -89,9 +89,15 @@ const AdminLoginPage: React.FC = () => {
         // Save admin data in localStorage
         if (data.admin) {
           console.log("Admin data:", data.admin);
+          
+          // Ensure we have proper values for all fields
           localStorage.setItem("userId", data.admin.id);
-          localStorage.setItem("userName", data.admin.name || data.admin.username);
-          localStorage.setItem("userRole", data.admin.role || "viewer");
+          localStorage.setItem("userName", data.admin.name || data.admin.username || username);
+          
+          // Ensure the role is correctly set
+          const adminRole = data.admin.role || "viewer";
+          console.log("Setting admin role in localStorage:", adminRole);
+          localStorage.setItem("userRole", adminRole);
           
           if (data.admin.photoURL) {
             localStorage.setItem("userPhoto", data.admin.photoURL);

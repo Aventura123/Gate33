@@ -53,11 +53,14 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
           break;
         case 'admin':
           collection = 'admins';
+          console.log(`Attempting to fetch admin data from 'admins' collection with ID: ${id}`);
           break;
         case 'support':
           collection = 'support';
+          console.log(`Attempting to fetch support data from 'support' collection with ID: ${id}`);
           break;
         default:
+          console.warn(`Unknown user type: ${type}`);
           return null;
       }
       
@@ -65,6 +68,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
+        console.log(`${type} document found:`, docSnap.data());
         return docSnap.data();
       } else {
         console.log(`No ${type} document found for ID: ${id}`);
@@ -94,6 +98,46 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
       console.log("- token:", localStorage.getItem("token"));
       
       try {
+        // First priority: Check if we have admin/superadmin credentials
+        if (localStorage.getItem("userId") && localStorage.getItem("userRole")) {
+          const userId = localStorage.getItem("userId");
+          const userRole = localStorage.getItem("userRole") || "";
+          const userName = localStorage.getItem("userName");
+          
+          console.log("Found user credentials:", { userId, userRole, userName });
+          
+          // Handle admin users with highest priority
+          if (userRole === "super_admin" || userRole === "admin") {
+            console.log("Processing as admin account");
+            const adminData = await fetchUserDataFromFirebase('admin', userId || "");
+            const formattedRole = userRole === "super_admin" ? "Super Admin" : 
+                             userRole.charAt(0).toUpperCase() + userRole.slice(1);
+
+            // Always use localStorage name as backup for admins
+            const adminName = adminData?.name || userName || "Admin";
+            console.log("Final admin name:", adminName);
+                             
+            return {
+              name: adminName,
+              photo: adminData?.photoURL || localStorage.getItem("userPhoto") || "/logo.png",
+              role: formattedRole,
+              type: 'admin' as const
+            };
+          }
+          
+          // Handle support users only if clearly identified as support
+          else if (userRole === "support" && userId) {
+            console.log("Processing as support account");
+            const supportData = await fetchUserDataFromFirebase('support', userId);
+            return {
+              name: supportData?.name || userName || "Support",
+              photo: supportData?.photoURL || localStorage.getItem("userPhoto") || "/logo.png",
+              role: "Support",
+              type: 'support' as const
+            };
+          }
+        }
+        
         // Check seeker
         if (localStorage.getItem("seekerToken")) {
           const seekerId = localStorage.getItem("seekerToken") 
@@ -109,37 +153,6 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
                 photo: seekerData.photoURL || "/logo.png",
                 role: "Job Seeker",
                 type: 'seeker' as const
-              };
-            }
-          }
-        }
-        
-        // Check admin or support
-        if (localStorage.getItem("userId") && localStorage.getItem("userRole")) {
-          const userId = localStorage.getItem("userId");
-          const userRole = localStorage.getItem("userRole") || "";
-          
-          // Ensure super_admin is never treated as support
-          if (userRole === "super_admin" || userRole === "admin") {
-            const adminData = await fetchUserDataFromFirebase('admin', userId || "");
-            const formattedRole = userRole === "super_admin" ? "Super Admin" : 
-                               userRole.charAt(0).toUpperCase() + userRole.slice(1);
-            return {
-              name: adminData?.name || localStorage.getItem("userName") || "Admin",
-              photo: adminData?.photoURL || localStorage.getItem("userPhoto") || "/logo.png",
-              role: formattedRole,
-              type: 'admin' as const
-            };
-          }
-          // Only enter here if really support
-          if (userRole === "support" && userId) {
-            const supportData = await fetchUserDataFromFirebase('support', userId);
-            if (supportData) {
-              return {
-                name: supportData.name || "Support",
-                photo: supportData.photoURL || "/logo.png",
-                role: "Support",
-                type: 'support' as const
               };
             }
           }
@@ -320,7 +333,11 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
           />
         </div>
         <span className={`text-sm font-medium text-white ${isMobile ? 'inline' : 'hidden md:inline'}`}>
-          {userInfo.name.length > 12 ? `${userInfo.name.substring(0, 12)}...` : userInfo.name}
+          {/* Log the name being displayed for debugging */}
+          {(() => {
+            console.log("Displaying user name:", userInfo.name);
+            return userInfo.name.length > 12 ? `${userInfo.name.substring(0, 12)}...` : userInfo.name;
+          })()}
         </span>
       </div>
       
