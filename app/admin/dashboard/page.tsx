@@ -21,6 +21,7 @@ import PaymentSettings from "../../../components/admin/PaymentSettings";
 import Learn2EarnFeePanel from "../../../components/ui/Learn2EarnFeePanel";
 import FinancialDashboard from "../../../components/admin/FinancialDashboard";
 import AdManager from "../../../components/admin/AdManager";
+import WalletButton from '../../../components/WalletButton';
 
 interface NFT {
   id: string;
@@ -54,15 +55,17 @@ interface JobPlan {
 interface Employer {
   id: string;
   name: string;
-  username: string;
   email: string;
   companyName: string;
-  companySize?: string;
-  industry?: string;
-  dashboardAccess?: boolean; // Added property
-  password?: string; // Added password property
+  companySize: string;
+  industry: string;
+  responsibleName: string;
+  responsiblePerson?: string;  // Make this optional since it might not exist
+  employees?: string;          // Make this optional since it might not exist
+  blocked?: boolean;           // Add this for the block functionality
 }
 
+// --- Seekers State and Handlers ---
 interface Seeker {
   id: string;
   name: string;
@@ -163,6 +166,7 @@ const AdminDashboard: React.FC = () => {
   });
   const [creatingEmployer, setCreatingEmployer] = useState(false);
   const [deletingEmployerId, setDeletingEmployerId] = useState<string|null>(null);
+  const [blockingEmployerId, setBlockingEmployerId] = useState<string|null>(null);
 
   // --- Seekers State and Handlers ---
   const [seekers, setSeekers] = useState<Seeker[]>([]);
@@ -1247,25 +1251,30 @@ const AdminDashboard: React.FC = () => {
 
 const fetchEmployersList = async () => {
   try {
-    if (!db) {
-      throw new Error("Firestore is not initialized.");
-    }
-
-    const querySnapshot = await getDocs(collection(db, "companies")); // Fetch from the companies collection
-    const employersList = querySnapshot.docs.map((doc) => ({
+    if (!db) throw new Error("Firestore is not initialized");
+    
+    const companiesCollection = collection(db, "companies");
+    const querySnapshot = await getDocs(companiesCollection);
+    
+    const employersList = querySnapshot.docs.map(doc => ({
       id: doc.id,
-      name: doc.data().name || "Unknown",
-      username: doc.data().username || "Unknown",
-      email: doc.data().email || "Unknown",
-      companyName: doc.data().companyName || "Unknown",
-      companySize: doc.data().companySize || "",
-      industry: doc.data().industry || "",
+      ...doc.data(),
+      // Ensure these fields exist, with name taking priority for display
+      name: doc.data().name || doc.data().companyName || '',
+      email: doc.data().email || '',
+      companyName: doc.data().companyName || doc.data().name || '',
+      responsiblePerson: doc.data().responsiblePerson || '',
+      responsibleName: doc.data().responsibleName || doc.data().responsiblePerson || '',
+      companySize: doc.data().companySize || doc.data().employees || '',
+      industry: doc.data().industry || '',
+      blocked: doc.data().blocked || false
     }));
 
+    console.log("Employers list:", employersList);
     setEmployers(employersList);
   } catch (error) {
-    console.error("Error fetching employers list:", error);
-    setEmployersError("Failed to fetch employers list.");
+    console.error("Error fetching employers:", error);
+    setEmployersError("Failed to fetch employers list");
   } finally {
     setEmployersLoading(false);
   }
@@ -1281,6 +1290,28 @@ const fetchEmployersList = async () => {
 
   const toggleEmployerDetails = (id: string) => {
     setExpandedEmployerId((prevId) => (prevId === id ? null : id));
+  };
+
+  // Handle blocking/unblocking an employer
+  const handleToggleBlockEmployer = async (employerId: string, currentlyBlocked: boolean) => {
+    setBlockingEmployerId(employerId);
+    try {
+      if (!db) throw new Error("Firestore is not initialized");
+      const employerRef = doc(db, "companies", employerId);
+      await updateDoc(employerRef, { blocked: !currentlyBlocked });
+      // Update local state
+      setEmployers((prev) =>
+        prev.map((emp) =>
+          emp.id === employerId ? { ...emp, blocked: !currentlyBlocked } : emp
+        )
+      );
+      alert(`Employer has been ${!currentlyBlocked ? "blocked" : "unblocked"} successfully!`);
+    } catch (error: any) {
+      console.error("Error blocking/unblocking employer:", error);
+      alert(error.message || "Failed to update employer block status.");
+    } finally {
+      setBlockingEmployerId(null);
+    }
   };
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -1318,7 +1349,6 @@ const fetchEmployersList = async () => {
         return hasPermission('canEditContent');
       case 'add':
       case 'delete':
-      case 'deleteAll':
         return hasPermission('canEditContent');
       default:
         return true;
@@ -2062,6 +2092,7 @@ const fetchEmployersList = async () => {
       console.log(`Learn2Earn status updated to: ${newStatus}`);
       
       // Update local state to reflect the change
+      // Update local state to reflect the change
       setLearn2Earns(learn2earns.map(item => 
         item.id === learn2earnId ? {...item, status: newStatus} : item
       ));
@@ -2133,11 +2164,12 @@ const fetchEmployersList = async () => {
       if (activeSubTab === "list") {
         fetchLearn2Earns();
       } else if (activeSubTab === "contracts") {
+
         fetchNetworkContracts();
       }
     }
   }, [activeTab, activeSubTab]);
-  // Helper function for formatting timestamps
+         // Helper function for formatting timestamps
   const formatFirestoreTimestamp = (timestamp: any) => {
     if (! timestamp) return 'N/A';
     
@@ -2282,6 +2314,15 @@ const fetchEmployersList = async () => {
             <div className="text-center mb-6">
               <p className="text-lg font-semibold text-white">{`Welcome ${userName}!`}</p>
               <p className="text-sm text-orange-400">Role: {role}</p>
+              
+              {/* Wallet Button */}
+              <div className="mt-4">
+                <WalletButton 
+                  title="Connect to Web3" 
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm py-1.5"
+                  showNetworkSelector={true}
+                />
+              </div>
             </div>
           </div>
           {/* Navigation - reduce button size and spacing on mobile */}
@@ -2329,21 +2370,7 @@ const fetchEmployersList = async () => {
                       >
                         Delete NFT
                       </button>
-                    </li>
-                    <li>
-                      <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                          activeSubTab === "deleteAll" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
-                        }`}
-                        onClick={() => {
-                          setActiveSubTab("deleteAll");
-                          if (isMobile) setMobileMenuOpen(false);
-                        }}
-                      >
-                        Delete All NFTs
-                      </button>
-                    </li>
-                  </ul>
+                    </li>                  </ul>
                 )}
               </li>
             )}
@@ -2693,10 +2720,10 @@ const fetchEmployersList = async () => {
                       {activeSubTab === "employers-list" && (
                         <div>
                           <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl text-orange-400">Employers List</h3>
+                            <h3 className="text-xl text-orange-400">Companies List</h3>
                             <input
                               type="text"
-                              placeholder="Search employers..."
+                              placeholder="Search companies..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
                               className="border border-gray-300 rounded-lg px-3 py-1 text-black w-1/3"
@@ -2743,17 +2770,56 @@ const fetchEmployersList = async () => {
                               className="bg-orange-500 text-white px-4 py-1 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
                               disabled={creatingEmployer}
                             >
-                              {creatingEmployer ? 'Creating...' : 'Create Employer'}
+                              {creatingEmployer ? 'Creating...' : 'Create Company'}
                             </button>
                           </form>
                           {filteredEmployers.length === 0 ? (
-                            <p>No employers found.</p>
+                            <p>No companies found.</p>
                           ) : (
                             <ul>
                               {filteredEmployers.map((employer) => (
-                                <li key={employer.id}>
-                                  {/* Render employer details here */}
-                                  {employer.name} - {employer.email}
+                                <li key={employer.id} className="mb-4 p-4 border border-gray-700 rounded">
+                                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                                    {/* Column 1: Company Name */}
+                                    <div className="md:col-span-1">
+                                      <p><strong>Company Name:</strong></p>
+                                      <p>{employer.name || employer.companyName}</p>
+                                    </div>
+
+                                    {/* Column 2: Responsible Person */}
+                                    <div className="md:col-span-1">
+                                      <p><strong>Responsible Person:</strong></p>
+                                      <p>{employer.responsiblePerson || employer.responsibleName || "N/A"}</p>
+                                    </div>
+
+                                    {/* Column 3: Industry */}
+                                    <div className="md:col-span-1">
+                                      <p><strong>Industry:</strong></p>
+                                      <p>{employer.industry || "N/A"}</p>
+                                    </div>
+
+                                    {/* Column 4: Company Size */}
+                                    <div className="md:col-span-1">
+                                      <p><strong>Company Size:</strong></p>
+                                      <p>{employer.companySize || employer.employees || "25"}</p>
+                                    </div>
+
+                                    {/* Column 5: Email */}
+                                    <div className="md:col-span-1">
+                                      <p><strong>Email:</strong></p>
+                                      <p>{employer.email || "N/A"}</p>
+                                    </div>
+
+                                    {/* Column 6: Action Buttons */}
+                                    <div className="md:col-span-1 flex items-center justify-center">
+                                      <div className="flex space-x-2">
+                                        <button onClick={() => handleDeleteEmployer(employer.id)} className="bg-red-600 px-3 py-1 rounded text-white">Delete</button>
+                                        <button onClick={() => handleToggleBlockEmployer(employer.id, employer.blocked || false)} className={`${employer.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} px-3 py-1 rounded text-white`} disabled={blockingEmployerId === employer.id}>
+                                          {blockingEmployerId === employer.id ? 'Processing...' : employer.blocked ? 'Unblock' : 'Block'}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </li>
                               ))}
                             </ul>
@@ -3265,7 +3331,7 @@ const fetchEmployersList = async () => {
                               console.log(`Rendering NFT item with key: ${nft.id}, Title: ${nft.title}`);
                               return (
                                 <li key={nft.id} className="flex items-center justify-between p-3 bg-black/30 rounded-lg">
-                                  <div className="text-left">
+                                  <div className="flex-1">
                                     <p className="text-orange-500 font-bold">{nft.title}</p>
                                     <p className="text-gray-300 text-sm">{nft.description}</p>
                                     <p className="text-gray-300 text-sm">Value: {nft.value}</p>
@@ -3280,20 +3346,19 @@ const fetchEmployersList = async () => {
                                 </li>
                               );
                             })}
-                          </ul>
-                        ) : (
+                          </ul>                        ) : (
                           !isLoading && !error && <p className="text-gray-400 text-center">No NFTs available yet.</p>
                         )}
-                      </div>
-                    )}
-                    {activeSubTab === "deleteAll" && (
-                      <div className="mt-6">
-                        <button
-                          onClick={handleDeleteAllNFTs}
-                          className="p-2 bg-red-500 rounded text-white hover:bg-red-600 w-auto"
-                        >
-                          Delete All NFTs
-                        </button>
+                        
+                        {/* Delete All NFTs button moved here */}
+                        <div className="mt-6">
+                          <button
+                            onClick={handleDeleteAllNFTs}
+                            className="p-2 bg-red-500 rounded text-white hover:bg-red-600 w-auto"
+                          >
+                            Delete All NFTs
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -3708,8 +3773,7 @@ const fetchEmployersList = async () => {
                             />
                           </div>
                           {contractActionError && (
-                            <p className="text-red-500 text-sm">{contractActionError}</p>
-                          )}
+                            <p className="text-red-500 text-sm">{contractActionError}</p>                          )}
                           <button
                             type="submit"
                             className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60"
@@ -3728,7 +3792,7 @@ const fetchEmployersList = async () => {
                         ) : (
                           <div className="space-y-4">
                             {networkContracts.map((contract) => (
-                              <div key={contract.id} className="bg-black/30 p-4 rounded-lg border border-gray-700">
+                              <div key={contract.id} className="bg-black/30 p-4 rounded-lg border border-gray-700 hover:border-orange-500 transition-all">
                                 <div className="flex flex-col md:flex-row justify-between">
                                   <div>
                                     <h4 className="text-lg font-medium text-orange-300">
@@ -3746,11 +3810,12 @@ const fetchEmployersList = async () => {
                                     </p>
                                   </div>
                                   <div className="flex mt-3 md:mt-0">
-                                    {/* Removed the "Edit" button as we have the Add/Update form above */}
-                                    <Learn2EarnTestButton 
+                                                                       {/* Removed the "Edit" button as we have the Add/Update form above */}
+                                                                                                         <Learn2EarnTestButton 
+ 
                                       network={contract.network}
                                       contractAddress={contract.contractAddress}
-                                    />
+                                   />
                                   </div>
                                 </div>
                               </div>
