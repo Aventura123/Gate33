@@ -20,7 +20,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   
-  // Detectar se está em versão mobile para ajustar o comportamento do dropdown
+  // Detect if it's a mobile version to adjust the dropdown behavior
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -113,8 +113,25 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
             const formattedRole = userRole === "super_admin" ? "Super Admin" : 
                              userRole.charAt(0).toUpperCase() + userRole.slice(1);
 
-            // Always use localStorage name as backup for admins
-            const adminName = adminData?.name || userName || "Admin";
+            // For admins, we need to be careful about the name
+            // Check if userName is "suporte" and avoid using it for admin accounts
+            let adminName;
+            
+            if (userName && userName.toLowerCase() !== "suporte") {
+              adminName = userName;
+              console.log("Using userName from localStorage:", adminName);
+            } else if (adminData?.name) {
+              adminName = adminData.name;
+              console.log("Using name from adminData:", adminName);
+              
+              // Update localStorage with correct name from Firebase
+              console.log("Updating localStorage userName with correct admin name from Firebase");
+              localStorage.setItem("userName", adminData.name);
+            } else {
+              adminName = "Admin";
+              console.log("Using fallback admin name");
+            }
+            
             console.log("Final admin name:", adminName);
                              
             return {

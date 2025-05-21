@@ -2128,6 +2128,8 @@ const fetchEmployersList = async () => {
       const learn2earnRef = doc(db, "learn2earn", learn2earnId); // Changed from airdropRef
       const learn2earnDoc = await getDoc(learn2earnRef); // Changed from airdropDoc
       
+
+      
       if (!learn2earnDoc.exists()) {
         throw new Error("Learn2Earn document not found"); // Changed from Airdrop
       }
@@ -2169,7 +2171,15 @@ const fetchEmployersList = async () => {
       }
     }
   }, [activeTab, activeSubTab]);
-         // Helper function for formatting timestamps
+
+  // Add these lines near the other useState hooks at the top of AdminDashboard (after other useState calls)
+  const [expandedPendingCompanyId, setExpandedPendingCompanyId] = useState<string | null>(null);
+
+  const togglePendingCompanyDetails = (id: string) => {
+    setExpandedPendingCompanyId(prevId => prevId === id ? null : id);
+  };
+
+  // Helper function for formatting timestamps
   const formatFirestoreTimestamp = (timestamp: any) => {
     if (! timestamp) return 'N/A';
     
@@ -2778,7 +2788,7 @@ const fetchEmployersList = async () => {
                           ) : (
                             <ul>
                               {filteredEmployers.map((employer) => (
-                                <li key={employer.id} className="mb-4 p-4 border border-gray-700 rounded">
+                                <li key={employer.id} className="mb-4 p-4 border border-gray-700 rounded-lg">
                                   <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                                     {/* Column 1: Company Name */}
                                     <div className="md:col-span-1">
@@ -2801,7 +2811,7 @@ const fetchEmployersList = async () => {
                                     {/* Column 4: Company Size */}
                                     <div className="md:col-span-1">
                                       <p><strong>Company Size:</strong></p>
-                                      <p>{employer.companySize || employer.employees || "25"}</p>
+                                      <p>{employer.companySize || employer.employees || "N/A"}</p>
                                     </div>
 
                                     {/* Column 5: Email */}
@@ -2833,30 +2843,82 @@ const fetchEmployersList = async () => {
                           {pendingCompanies.length === 0 ? (
                             <p>No pending companies found.</p>
                           ) : (
-                            <ul className="space-y-4">
+                            <ul>
                               {pendingCompanies.map((company) => (
-                                <li key={company.id} className="bg-black/30 p-4 rounded-lg border border-gray-700 flex flex-col md:flex-row md:items-center md:justify-between">
-                                  <div>
-                                    <p className="text-lg font-semibold text-orange-300">{company.companyName}</p>
-                                    <p className="text-gray-300 text-sm">Email: {company.email}</p>
-                                    <p className="text-gray-300 text-sm">Industry: {company.industry}</p>
-                                    <p className="text-gray-300 text-sm">Employees: {company.employees}</p>
-                                    <p className="text-gray-300 text-sm">Submitted: {company.createdAt ? new Date(company.createdAt).toLocaleString() : ''}</p>
+                                <li
+                                  key={company.id}
+                                  className={`mb-4 p-4 border border-gray-700 rounded-lg cursor-pointer transition-colors outline-none ${expandedPendingCompanyId === company.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
+                                  onClick={() => togglePendingCompanyDetails(company.id)}
+                                  tabIndex={0}
+                                >
+                                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                                    <div className="md:col-span-1">
+                                      <p><strong>Company Name:</strong><br />{company.companyName}</p>
+                                    </div>
+                                    <div className="md:col-span-1">
+                                      <p><strong>Responsible Person:</strong><br />{company.responsibleName || 'N/A'}</p>
+                                    </div>
+                                    <div className="md:col-span-1">
+                                      <p><strong>Industry:</strong><br />{company.industry}</p>
+                                    </div>
+                                    <div className="md:col-span-1">
+                                      <p><strong>Company Size:</strong><br />{company.employees}</p>
+                                    </div>
+                                    <div className="md:col-span-1">
+                                      <p><strong>Email:</strong><br />{company.email}</p>
+                                    </div>
+                                    <div className="md:col-span-1 flex items-center justify-center">
+                                      <div className="flex space-x-2">
+                                        <button
+                                          onClick={e => { e.stopPropagation(); handleApproveCompany(company.id); }}
+                                          className="bg-green-600 px-3 py-1 rounded text-white"
+                                        >
+                                          Approve
+                                        </button>
+                                        <button
+                                          onClick={e => { e.stopPropagation(); handleApproval(company.id, false); }}
+                                          className="bg-red-600 px-3 py-1 rounded text-white"
+                                        >
+                                          Reject
+                                        </button>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="flex gap-2 mt-2 md:mt-0">
-                                    <button
-                                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                                      onClick={() => handleApproveCompany(company.id)}
-                                    >
-                                      Approve
-                                    </button>
-                                    <button
-                                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                                      onClick={() => handleApproval(company.id, false)}
-                                    >
-                                      Reject
-                                    </button>
-                                  </div>
+                                  {expandedPendingCompanyId === company.id && (
+                                    <div className="mt-4 bg-black/40 p-4 rounded text-sm text-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                      {/* Column 1 */}
+                                      <div>
+                                        <p className="mb-1"><span className="font-semibold text-orange-300">Company Name:</span> {company.companyName}</p>
+                                        <p className="mb-1"><span className="font-semibold text-orange-300">Responsible:</span> {company.responsibleName || 'N/A'}</p>
+                                        <p className="mb-1"><span className="font-semibold text-orange-300">Industry:</span> {company.industry || 'N/A'}</p>
+                                        <p className="mb-1"><span className="font-semibold text-orange-300">Company Size:</span> {company.employees || company.companySize || 'N/A'}</p>
+                                      </div>
+                                      {/* Column 2 */}
+                                      <div>
+                                        <p className="mb-1"><span className="font-semibold text-orange-300">Email:</span> {company.email}</p>
+                                        <p className="mb-1"><span className="font-semibold text-orange-300">Username:</span> {company.username || company.email}</p>
+                                        <p className="mb-1"><span className="font-semibold text-orange-300">Status:</span> {company.status || 'pending'}</p>
+                                        <p className="mb-1"><span className="font-semibold text-orange-300">Submitted:</span> {company.createdAt ? formatFirestoreTimestamp(company.createdAt) : 'N/A'}</p>
+                                      </div>
+                                      {/* Column 3 */}
+                                      <div>
+                                        <p className="mb-1"><span className="font-semibold text-orange-300">ID:</span> <span className="break-all">{company.id}</span></p>
+                                        {company.notes && (
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Notes:</span> {company.notes}</p>
+                                        )}
+                                        {/* Show all other fields in a collapsible details */}
+                                        <details className="mt-2">
+                                          <summary
+                                            className="cursor-pointer text-orange-400 underline"
+                                            onClick={e => e.stopPropagation()}
+                                          >
+                                            Show all data (JSON)
+                                          </summary>
+                                          <pre className="whitespace-pre-wrap text-xs text-gray-300 mt-2">{JSON.stringify(company, null, 2)}</pre>
+                                        </details>
+                                      </div>
+                                    </div>
+                                  )}
                                 </li>
                               ))}
                             </ul>
@@ -3048,7 +3110,7 @@ const fetchEmployersList = async () => {
                                 {profileUpdating ? 'Updating...' : 'Update Profile'}
                               </button>
                             </form>
-                          )}
+                        )}
                         </div>
                       )}
                       {activeSubTab === "adminTest" && (
@@ -3313,7 +3375,7 @@ const fetchEmployersList = async () => {
                             />
                             <button
                               type="submit"
-                              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 w-auto"
+                              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
                             >
                               Add NFT
                             </button>
@@ -3623,7 +3685,7 @@ const fetchEmployersList = async () => {
                                   ))}
                                 </ul>
                               </div>
-                              <div className="flex space-x-4 mb-2">
+                              <div className="flex gap-2 mb-2">
                                 <div className="flex items-center">
                                   <input
                                     type="checkbox"
@@ -3678,7 +3740,6 @@ const fetchEmployersList = async () => {
                               <li>Set different pricing tiers based on features and duration</li>
                               <li>Mark premium plans to highlight them to users</li>
                               <li>Use "Top Listed" for plans that place jobs at the top of search results</li>
-                              <li>All prices are charged in cryptocurrency via your web3 integration</li>
                             </ul>
                           </div>
                         )}
@@ -3732,6 +3793,9 @@ const fetchEmployersList = async () => {
                             <label className="block text-sm font-medium text-gray-300 mb-1">Network</label>
                             <select
                               name="network"
+                             
+                             
+
                               value={networkContract.network}
                               onChange={handleNetworkContractChange}
                               className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
@@ -3743,7 +3807,7 @@ const fetchEmployersList = async () => {
                               <option value="ethereum">Ethereum Mainnet</option>
                               <option value="polygon">Polygon Mainnet</option>
                               <option value="bsc">Binance Smart Chain</option>
-                              <option value="arbitrum">Arbitrum</option>
+                                                           <option value="arbitrum">Arbitrum</option>
                               <option value="optimism">Optimism</option>
                               <option value="avalanche">Avalanche</option>
                             </select>
