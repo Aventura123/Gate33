@@ -21,6 +21,7 @@ interface Job {
   jobType: string; // Full-time, Part-time, etc.
   salaryRange: string;
   isFeatured: boolean;
+  priorityListing?: boolean; // Top Listed jobs
   acceptsCryptoPay: boolean;
   experienceLevel: string; // Junior, Mid, Senior
   techTags?: string[]; // Array of specific technology tags
@@ -210,6 +211,7 @@ export default function JobsPage() {
             jobType: data.jobType || "Full-Time",
             salaryRange: data.salaryRange || "",
             isFeatured: data.isFeatured || data.featured || false, // Support both property names for backwards compatibility
+            priorityListing: data.priorityListing || false, // Top Listed jobs appear at the top of the list
             acceptsCryptoPay: data.acceptsCryptoPay || false,
             experienceLevel: data.experienceLevel || "Mid-Level",
             techTags: techTags, // Add the extracted tags
@@ -229,6 +231,7 @@ export default function JobsPage() {
     fetchJobs();
   }, []);
 
+  // Filtrar os jobs de acordo com os critérios selecionados
   const filteredJobs = jobs.filter(
     (job) => {
       const matchesSearch = job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase());
@@ -246,7 +249,14 @@ export default function JobsPage() {
       return matchesSearch && matchesLocation && matchesCategory && matchesJobType && 
              matchesExperience && matchesCryptoPay && matchesFeatured && matchesTechTags;
     }
-  );
+  ).sort((a, b) => {
+    // Primeiro ordena por priorityListing (Top Listed)
+    if (a.priorityListing && !b.priorityListing) return -1;
+    if (!a.priorityListing && b.priorityListing) return 1;
+    
+    // Se ambos têm o mesmo status de priorityListing, ordenar por data (mais recentes primeiro)
+    return new Date(b.insertedDate).getTime() - new Date(a.insertedDate).getTime();
+  });
 
   return (
     <Layout>
@@ -501,6 +511,12 @@ export default function JobsPage() {
                       <div className="bg-orange-500 text-white text-xs font-bold shadow border-2 border-white w-24 text-center py-1 px-0 animate-pulse rotate-[-25deg] -translate-x-6 translate-y-2 rounded-md">
                         <span className="mr-1 align-middle">★</span> Featured
                       </div>
+                    </div>
+                  )}
+                  {/* Top Listed Badge */}
+                  {job.priorityListing && (
+                    <div className="absolute right-14 top-2 sm:top-4 bg-green-900/70 text-green-300 text-xs px-3 py-1 rounded-full border border-green-500/50 z-30 shadow-lg">
+                      <span className="mr-1 align-middle">↑</span> Top Listed
                     </div>
                   )}
                   {/* Time Badge */}
