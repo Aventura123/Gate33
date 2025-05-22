@@ -707,7 +707,10 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
           </div>
         </div>
         
-        {/* Coluna de vagas relacionadas (à direita do formulário) */}        {/* Similar Jobs section removed */}
+        {/* Coluna de vagas relacionadas (à direita do formulário) */}
+        <div className="hidden lg:block lg:col-span-3 xl:col-span-2 order-2 lg:order-3">
+          <AdsSidebar currentJobId={jobId} />
+        </div>
       </div>
       </div>
     </Layout>

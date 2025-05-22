@@ -30,6 +30,16 @@ interface JobsManagerProps {
 }
 
 const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab }) => {
+  // Predefined feature options
+  const predefinedFeatures = [
+    "Featured in Job Listing",
+    "1x Social Media Promotion",
+    "2x Social Media Promotion",
+    "4x Social Media Promotion",
+    "Top Listed",
+    "Highlighted in Newsletter"
+  ];
+
   // Jobs state
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
@@ -61,7 +71,6 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
     isPremium: false,
     isTopListed: false
   });
-  const [newFeature, setNewFeature] = useState("");
 
   // Fetch jobs when component mounts
   useEffect(() => {
@@ -198,42 +207,38 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
       setDeletingJobId(null);
     }
   };
-
-  // Handle adding feature to job plan
-  const handleAddFeature = () => {
-    if (!newFeature.trim()) return;
-    
+  // Handle toggling a feature
+  const handleToggleFeature = (feature: string) => {
     if (isEditingPlan && selectedPlanForEdit) {
-      setSelectedPlanForEdit({
-        ...selectedPlanForEdit,
-        features: [...selectedPlanForEdit.features, newFeature]
-      });
+      const currentFeatures = selectedPlanForEdit.features;
+      if (currentFeatures.includes(feature)) {
+        // Remove feature if already selected
+        setSelectedPlanForEdit({
+          ...selectedPlanForEdit,
+          features: currentFeatures.filter(f => f !== feature)
+        });
+      } else {
+        // Add feature if not already selected
+        setSelectedPlanForEdit({
+          ...selectedPlanForEdit,
+          features: [...currentFeatures, feature]
+        });
+      }
     } else {
-      setNewJobPlan({
-        ...newJobPlan,
-        features: [...newJobPlan.features, newFeature]
-      });
-    }
-    
-    setNewFeature("");
-  };
-
-  // Handle removing feature from job plan
-  const handleRemoveFeature = (index: number) => {
-    if (isEditingPlan && selectedPlanForEdit) {
-      const updatedFeatures = [...selectedPlanForEdit.features];
-      updatedFeatures.splice(index, 1);
-      setSelectedPlanForEdit({
-        ...selectedPlanForEdit,
-        features: updatedFeatures
-      });
-    } else {
-      const updatedFeatures = [...newJobPlan.features];
-      updatedFeatures.splice(index, 1);
-      setNewJobPlan({
-        ...newJobPlan,
-        features: updatedFeatures
-      });
+      const currentFeatures = newJobPlan.features;
+      if (currentFeatures.includes(feature)) {
+        // Remove feature if already selected
+        setNewJobPlan({
+          ...newJobPlan,
+          features: currentFeatures.filter(f => f !== feature)
+        });
+      } else {
+        // Add feature if not already selected
+        setNewJobPlan({
+          ...newJobPlan,
+          features: [...currentFeatures, feature]
+        });
+      }
     }
   };
 
@@ -583,52 +588,40 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                     required
                     min="1"
                   />
-                </div>
-                <div>
+                </div>                <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">Features</label>
-                  <div className="flex items-center mb-2">
-                    <input
-                      type="text"
-                      value={newFeature}
-                      onChange={(e) => setNewFeature(e.target.value)}
-                      placeholder="Add feature..."
-                      className="flex-grow border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddFeature}
-                      className="ml-2 bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600"
-                    >
-                      Add
-                    </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    {predefinedFeatures.map((feature) => (
+                      <div key={feature} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`feature-${feature.replace(/\s+/g, '-').toLowerCase()}`}
+                          checked={
+                            isEditingPlan && selectedPlanForEdit
+                              ? selectedPlanForEdit.features.includes(feature)
+                              : newJobPlan.features.includes(feature)
+                          }
+                          onChange={() => handleToggleFeature(feature)}
+                          className="mr-2 h-4 w-4"
+                        />
+                        <label htmlFor={`feature-${feature.replace(/\s+/g, '-').toLowerCase()}`} className="text-gray-300">
+                          {feature}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                  <ul className="list-disc pl-5 text-sm text-gray-400 space-y-1">
-                    {selectedPlanForEdit
-                      ? selectedPlanForEdit.features.map((feature, index) => (
-                          <li key={index} className="flex items-center justify-between">
-                            <span>{feature}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveFeature(index)}
-                              className="text-red-400 hover:text-red-500"
-                            >
-                              Remove
-                            </button>
-                          </li>
-                        ))
-                      : newJobPlan.features.map((feature, index) => (
-                          <li key={index} className="flex items-center justify-between">
-                            <span>{feature}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveFeature(index)}
-                              className="text-red-400 hover:text-red-500"
-                            >
-                              Remove
-                            </button>
-                          </li>
+                  {(isEditingPlan && selectedPlanForEdit && selectedPlanForEdit.features.length > 0) || (!isEditingPlan && newJobPlan.features.length > 0) ? (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-gray-300 mb-1">Selected Features:</p>
+                      <ul className="list-disc pl-5 text-sm text-orange-400">
+                        {(isEditingPlan && selectedPlanForEdit 
+                          ? selectedPlanForEdit.features 
+                          : newJobPlan.features).map((feature, index) => (
+                          <li key={index}>{feature}</li>
                         ))}
-                  </ul>
+                      </ul>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex gap-2 mb-2">
                   <div className="flex items-center">

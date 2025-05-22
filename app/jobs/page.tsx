@@ -209,7 +209,7 @@ export default function JobsPage() {
             location: data.location || "Remote",
             jobType: data.jobType || "Full-Time",
             salaryRange: data.salaryRange || "",
-            isFeatured: data.isFeatured || data.featured || false,
+            isFeatured: data.isFeatured || data.featured || false, // Support both property names for backwards compatibility
             acceptsCryptoPay: data.acceptsCryptoPay || false,
             experienceLevel: data.experienceLevel || "Mid-Level",
             techTags: techTags, // Add the extracted tags

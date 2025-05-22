@@ -273,8 +273,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
         pricingPlanId: selectedPlan.id,
         planName: selectedPlan.name,
         planDuration: selectedPlan.duration,
-        planCurrency: planCurrency || 'NATIVE',
-        featured: selectedPlan.name.toLowerCase().includes('premium') || selectedPlan.name.toLowerCase().includes('featured'),
+        planCurrency: planCurrency || 'NATIVE',        featured: selectedPlan.features?.includes('Featured in Job Listing') || selectedPlan.name.toLowerCase().includes('premium') || selectedPlan.name.toLowerCase().includes('featured'),
         priorityListing: selectedPlan.name.toLowerCase().includes('premium'),
         // Company info
         companyName: companyProfile.name || jobData.company,
