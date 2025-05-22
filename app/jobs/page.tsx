@@ -258,6 +258,46 @@ export default function JobsPage() {
     return new Date(b.insertedDate).getTime() - new Date(a.insertedDate).getTime();
   });
 
+  // Email Signup Section
+  const [alertEmail, setAlertEmail] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribeSuccess, setSubscribeSuccess] = useState(false);
+  const [subscribeError, setSubscribeError] = useState("");
+
+  const handleJobAlertSubscribe = async () => {
+    setSubscribing(true);
+    setSubscribeError("");
+    setSubscribeSuccess(false);
+    try {
+      if (!alertEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(alertEmail)) {
+        setSubscribeError("Please enter a valid email address.");
+        setSubscribing(false);
+        return;
+      }
+      // Check for duplicates (optional, can be removed for performance)
+      const snapshot = await getDocs(collection(db, "jobAlertSubscribers"));
+      const exists = snapshot.docs.some(doc => doc.data().email === alertEmail);
+      if (exists) {
+        setSubscribeError("This email is already subscribed.");
+        setSubscribing(false);
+        return;
+      }
+      await import("firebase/firestore").then(async ({ addDoc, serverTimestamp }) => {
+        await addDoc(collection(db, "jobAlertSubscribers"), {
+          email: alertEmail,
+          createdAt: serverTimestamp(),
+          active: true
+        });
+      });
+      setSubscribeSuccess(true);
+      setAlertEmail("");
+    } catch (err) {
+      setSubscribeError("Failed to subscribe. Please try again later.");
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="bg-gradient-to-b from-black via-[#18181b] to-black min-h-screen text-white">
@@ -660,13 +700,22 @@ export default function JobsPage() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-xl mx-auto">
               <input
                 type="email"
+                value={alertEmail}
+                onChange={e => setAlertEmail(e.target.value)}
                 placeholder="Enter your email"
                 className="flex-grow px-4 sm:px-5 py-2 sm:py-3 border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-black/40 text-orange-100 text-sm sm:text-base"
+                disabled={subscribing || subscribeSuccess}
               />
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white transition-colors font-semibold text-sm sm:text-base">
-                Subscribe
+              <Button
+                className="bg-orange-500 hover:bg-orange-600 text-white transition-colors font-semibold text-sm sm:text-base"
+                onClick={handleJobAlertSubscribe}
+                disabled={subscribing || subscribeSuccess}
+              >
+                {subscribing ? "Subscribing..." : subscribeSuccess ? "Subscribed!" : "Subscribe"}
               </Button>
             </div>
+            {subscribeError && <div className="text-red-400 text-center mt-2">{subscribeError}</div>}
+            {subscribeSuccess && <div className="text-green-400 text-center mt-2">You have been subscribed to job alerts!</div>}
           </div>
         </div>
       </div>
