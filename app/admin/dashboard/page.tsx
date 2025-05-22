@@ -52,31 +52,100 @@ interface JobPlan {
   isTopListed: boolean;
 }
 
-interface Employer {
-  id: string;
-  name: string;
-  email: string;
-  companyName: string;
-  companySize: string;
-  industry: string;
-  responsibleName: string;
-  responsiblePerson?: string;  // Make this optional since it might not exist
-  employees?: string;          // Make this optional since it might not exist
-  blocked?: boolean;           // Add this for the block functionality
+// --- Seekers State and Handlers ---
+interface SeekerExperience {
+  title: string;
+  company: string;
+  period: string;
+  description?: string;
 }
 
-// --- Seekers State and Handlers ---
+interface SeekerEducation {
+  degree: string;
+  institution: string;
+  period: string;
+  description?: string;
+}
+
 interface Seeker {
   id: string;
   name: string;
+  surname?: string;
   username: string;
   email: string;
-  experience?: any[];
-  education?: any[];
+  createdAt?: string | any;  // Can be a string or a Firestore timestamp
+  updatedAt?: string | any;  // Can be a string or a Firestore timestamp
+  location?: string;
+  address?: string;
+  zipCode?: string;
+  phone?: string;
+  phoneCountryCode?: string;
+  altContact?: string;
+  altContactCountryCode?: string;
+  nationality?: string;
+  gender?: string;
+  resumeUrl?: string;
+  
+  // Professional information
+  title?: string;
+  skills?: string;
+  bio?: string;
+  workPreference?: string;
+  contractType?: string;
+  availability?: string;
+  salaryExpectation?: string;
+    // Social networks
+  linkedinUrl?: string;
+  twitterUrl?: string;
+  facebookUrl?: string;
+  
+  // Account status
+  blocked?: boolean;
+  instagramUrl?: string;
+  telegramUrl?: string;
+  websiteUrl?: string;
+  
+  // Keep these properties in the interface but they won't be displayed in the UI
+  experience?: SeekerExperience[];
+  education?: SeekerEducation[];
 }
 
 // Define the available roles explicitly for the dropdown
 const availableAdminRoles: AdminRole[] = ['super_admin', 'admin', 'support'];
+
+// 1. Employer type definition (if not already present)
+type Employer = {
+  id: string;
+  name?: string;
+  email: string;
+  companyName?: string;
+  responsiblePerson?: string;
+  responsibleName?: string;
+  companySize?: string;
+  employees?: string;
+  industry?: string;
+  blocked?: boolean;
+  createdAt?: string | any;
+  updatedAt?: string | any;
+  taxId?: string;
+  registrationNumber?: string;
+  description?: string;
+  yearsActive?: string;
+  website?: string;
+  responsibleEmail?: string;
+  responsiblePhone?: string;
+  responsiblePosition?: string;
+  linkedin?: string;
+  twitter?: string;
+  facebook?: string;
+  instagram?: string;
+  telegram?: string;
+  notes?: string;
+  comments?: string;
+  username?: string;
+  country?: string;
+  address?: string;
+};
 
 const AdminDashboard: React.FC = () => {
   const router = useRouter();
@@ -150,36 +219,17 @@ const AdminDashboard: React.FC = () => {
   const [newAdmin, setNewAdmin] = useState({ name: '', username: '', password: '', email: '', role: '' });
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string|null>(null);
-
   // --- Employers State and Handlers ---
   const [employers, setEmployers] = useState<Employer[]>([]);
   const [employersLoading, setEmployersLoading] = useState(false);
   const [employersError, setEmployersError] = useState<string|null>(null);
-  const [newEmployer, setNewEmployer] = useState({ 
-    name: '', 
-    username: '', 
-    password: '', 
-    email: '', 
-    companyName: '',
-    companySize: '',
-    industry: ''
-  });
-  const [creatingEmployer, setCreatingEmployer] = useState(false);
   const [deletingEmployerId, setDeletingEmployerId] = useState<string|null>(null);
   const [blockingEmployerId, setBlockingEmployerId] = useState<string|null>(null);
-
   // --- Seekers State and Handlers ---
   const [seekers, setSeekers] = useState<Seeker[]>([]);
-  const [seekersLoading, setSeekersLoading] = useState(false);
-  const [seekersError, setSeekersError] = useState<string|null>(null);
-  const [newSeeker, setNewSeeker] = useState({ 
-    name: '', 
-    username: '', 
-    password: '', 
-    email: ''
-  });
-  const [creatingSeeker, setCreatingSeeker] = useState(false);
+  const [seekersLoading, setSeekersLoading] = useState(false);  const [seekersError, setSeekersError] = useState<string|null>(null);
   const [deletingSeekerId, setDeletingSeekerId] = useState<string|null>(null);
+  const [blockingSeekerId, setBlockingSeekerId] = useState<string|null>(null);
 
   const [pendingCompanies, setPendingCompanies] = useState<any[]>([]);
 
@@ -224,41 +274,6 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   const auth = getAuth();
-
-  const handleApproval = async (id: string, approve: boolean) => {
-    if (approve) {
-      try {
-        if (!db) {
-          console.error("Firestore is not initialized");
-          return;
-        }
-
-        // Check if the company exists in the pendingCompanies collection
-        const pendingCompanyDoc = await getDoc(doc(db, "pendingCompanies", id));
-        if (!pendingCompanyDoc.exists()) {
-          console.error("Company not found in pendingCompanies");
-          return;
-        }
-
-        const pendingCompanyData = pendingCompanyDoc.data();
-
-        // Move the company to the companies collection
-        await setDoc(doc(db, "companies", id), {
-          ...pendingCompanyData,
-          approved: true,
-        });
-
-        // Delete the company from the pendingCompanies collection
-        await deleteDoc(doc(db, "pendingCompanies", id));
-
-        console.log("Company moved to companies collection and approved.");
-      } catch (error) {
-        console.error("Error approving company:", error);
-      }
-    } else {
-      console.log("Company approval denied.");
-    }
-  };
 
   const handleApproveCompany = async (companyId: string) => {
     try {
@@ -404,16 +419,6 @@ const AdminDashboard: React.FC = () => {
     const { name, value } = e.target;
     setNewAdmin((prev) => ({ ...prev, [name]: value }));
   };
- 
-  const handleInputEmployer = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewEmployer((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleInputSeeker = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewSeeker((prev) => ({ ...prev, [name]: value }));
-  };
 
   // Use the global reload function instead of just updating the local state
   const reloadData = useCallback(() => {
@@ -506,97 +511,6 @@ const AdminDashboard: React.FC = () => {
       alert(err.message || 'Unknown error creating admin');
     } finally {
       setCreating(false);
-    }
-  };
-
-  const handleCreateEmployer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newEmployer.name || !newEmployer.username || !newEmployer.password || !newEmployer.email || !newEmployer.companyName) {
-      alert('Please fill in all required fields!');
-      return;
-    }
-    setCreatingEmployer(true);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Error: Authentication token not found. Please log in again.');
-        setCreatingEmployer(false);
-        router.replace('/admin/login'); // Fix redirect path here
-        return;
-      }
-      const res = await fetch('/api/admin/employers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newEmployer),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || `Error ${res.status}: Failed to create employer`);
-      }
-      setNewEmployer({ 
-        name: '', 
-        username: '', 
-        password: '', 
-        email: '', 
-        companyName: '',
-        companySize: '',
-        industry: ''
-      });
-      // Reload all data after successful creation
-      reloadData();
-      alert('Employer created successfully!');
-    } catch (err: any) {
-      console.error("Error creating employer:", err);
-      alert(err.message || 'Unknown error creating employer');
-    } finally {
-      setCreatingEmployer(false);
-    }
-  };
-
-  const handleCreateSeeker = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSeeker.name || !newSeeker.username || !newSeeker.password || !newSeeker.email) {
-      alert('Please fill in all required fields!');
-      return;
-    }
-    setCreatingSeeker(true);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Error: Authentication token not found. Please log in again.');
-        setCreatingSeeker(false);
-        router.replace('/admin/login'); // Fix redirect path here
-        return;
-      }
-      const res = await fetch('/api/admin/seekers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newSeeker),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || `Error ${res.status}: Failed to create seeker`);
-      }
-      setNewSeeker({ 
-        name: '', 
-        username: '', 
-        password: '', 
-        email: ''
-      });
-      // Use the global reload function to make sure all data is updated
-      reloadData();
-      alert('Seeker created successfully!');
-    } catch (err: any) {
-      console.error("Error creating seeker:", err);
-      alert(err.message || 'Unknown error creating seeker');
-    } finally {
-      setCreatingSeeker(false);
     }
   };
 
@@ -1313,15 +1227,62 @@ const fetchEmployersList = async () => {
       setBlockingEmployerId(null);
     }
   };
+  // Handle blocking/unblocking a seeker
+  const handleToggleBlockSeeker = async (seekerId: string, currentlyBlocked: boolean) => {
+    setBlockingSeekerId(seekerId);
+    try {
+      const response = await fetch('/api/admin/seekers/update', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: seekerId,
+          blocked: !currentlyBlocked
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update seeker block status');
+      }
+      
+      // Update local state
+      setSeekers((prev) =>
+        prev.map((skr) =>
+          skr.id === seekerId ? { ...skr, blocked: !currentlyBlocked } : skr
+        )
+      );
+      alert(`Seeker has been ${!currentlyBlocked ? "blocked" : "unblocked"} successfully!`);
+    } catch (error: any) {
+      console.error("Error blocking/unblocking seeker:", error);
+      alert(error.message || "Failed to update seeker block status.");
+    } finally {
+      setBlockingSeekerId(null);
+    }
+  };
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchSeekersQuery, setSearchSeekersQuery] = useState("");
 
+  // Filter seekers based on search query
+  const filteredSeekers = seekers.filter((seeker) => {
+    const query = searchSeekersQuery.toLowerCase();
+    return (
+      seeker.name?.toLowerCase().includes(query) ||
+      seeker.email?.toLowerCase().includes(query) ||
+      seeker.username?.toLowerCase().includes(query) ||
+      (seeker.surname && seeker.surname.toLowerCase().includes(query))
+    );
+  });
+
+  // Filter employers based on search query (already defined)
   const filteredEmployers = employers.filter((employer) => {
     const query = searchQuery.toLowerCase();
     return (
-      employer.name.toLowerCase().includes(query) ||
+      employer.name?.toLowerCase().includes(query) ||
       employer.email.toLowerCase().includes(query) ||
-      employer.companyName.toLowerCase().includes(query)
+      (employer.companyName || "").toLowerCase().includes(query)
     );
   });
 
@@ -1717,8 +1678,8 @@ const fetchEmployersList = async () => {
       await refreshJobPlans();
       alert("Job plan deleted successfully!");
     } catch (error) {
-      console.error("Error deleting job plan:", error);
-      alert("Failed to delete job plan.");
+    console.error("Error deleting job plan:", error);
+    alert("Failed to delete job plan.");
     }
   };
 
@@ -2105,8 +2066,7 @@ const fetchEmployersList = async () => {
       setPausingLearn2EarnId(null);
     }
   };
-  
-  const handleDeleteLearn2Earn = async (learn2earnId: string) => { // Changed from handleDeleteAirdrop
+    const handleDeleteLearn2Earn = async (learn2earnId: string) => { // Changed from handleDeleteAirdrop
     if (!learn2earnId) {
       alert("Invalid learn2earn ID"); // Changed from airdrop
       return;
@@ -2174,9 +2134,14 @@ const fetchEmployersList = async () => {
 
   // Add these lines near the other useState hooks at the top of AdminDashboard (after other useState calls)
   const [expandedPendingCompanyId, setExpandedPendingCompanyId] = useState<string | null>(null);
+  const [expandedSeekerId, setExpandedSeekerId] = useState<string | null>(null);
 
   const togglePendingCompanyDetails = (id: string) => {
     setExpandedPendingCompanyId(prevId => prevId === id ? null : id);
+  };
+
+  const toggleSeekerDetails = (id: string) => {
+    setExpandedSeekerId(prevId => prevId === id ? null : id);
   };
 
   // Helper function for formatting timestamps
@@ -2223,7 +2188,7 @@ const fetchEmployersList = async () => {
     let interval: NodeJS.Timeout;
       const fetchUnreadAdminNotifications = async () => {
       try {
-        let totalUnreadCount = 0;
+               let totalUnreadCount = 0;
         
         // Only super_admins can see notifications
         if (role === "super_admin") {
@@ -2528,8 +2493,8 @@ const fetchEmployersList = async () => {
                 className={`w-full text-left py-2 px-4 rounded-lg ${isClient && activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   setActiveTab("instantJobs");
+                  setActiveSubTab(null);
                   if (isMobile) setMobileMenuOpen(false);
-                  // Don't set a specific subtab, leave as null to show everything
                 }}
               >
                 Manage Instant Jobs
@@ -2728,68 +2693,26 @@ const fetchEmployersList = async () => {
                     <div className="mt-6 bg-black/50 p-6 rounded-lg">
                       {/* Employer list is visible for all levels */}
                       {activeSubTab === "employers-list" && (
-                        <div>
-                          <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl text-orange-400">Companies List</h3>
+                        <div>                          <div className="flex justify-between items-center mb-4">
+                            <div>
+                              <h3 className="text-xl text-orange-400">Companies List</h3>
+                            </div>
                             <input
                               type="text"
                               placeholder="Search companies..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
                               className="border border-gray-300 rounded-lg px-3 py-1 text-black w-1/3"
-                            />
-                          </div>
-                          {/* Form to create new employer */}
-                          <form onSubmit={handleCreateEmployer} className="mb-6 flex gap-2 items-end flex-wrap">
-                            <input
-                              type="text"
-                              name="name"
-                              value={newEmployer.name}
-                              onChange={handleInputEmployer}
-                              placeholder="Email"
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                              required
-                            />
-                            <input
-                              type="text"
-                              name="companyName"
-                              value={newEmployer.companyName}
-                              onChange={handleInputEmployer}
-                              placeholder="Company Name"
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                              required
-                            />
-                            <input
-                              type="text"
-                              name="companySize"
-                              value={newEmployer.companySize}
-                              onChange={handleInputEmployer}
-                              placeholder="Company Size"
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                            />
-                            <input
-                              type="text"
-                              name="industry"
-                              value={newEmployer.industry}
-                              onChange={handleInputEmployer}
-                              placeholder="Industry"
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                            />
-                            <button
-                              type="submit"
-                              className="bg-orange-500 text-white px-4 py-1 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
-                              disabled={creatingEmployer}
-                            >
-                              {creatingEmployer ? 'Creating...' : 'Create Company'}
-                            </button>
-                          </form>
+                            />                          </div>
                           {filteredEmployers.length === 0 ? (
                             <p>No companies found.</p>
                           ) : (
-                            <ul>
-                              {filteredEmployers.map((employer) => (
-                                <li key={employer.id} className="mb-4 p-4 border border-gray-700 rounded-lg">
-                                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                            <ul>                              {filteredEmployers.map((employer) => (                                <li 
+                                  key={employer.id} 
+                                  className={`mb-4 p-4 border ${expandedEmployerId === employer.id ? 'border-orange-500' : 'border-gray-700'} rounded-lg cursor-pointer transition-all hover:shadow-md ${expandedEmployerId === employer.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
+                                  onClick={() => toggleEmployerDetails(employer.id)}
+                                >                                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4 relative">                                    {/* Expand/Collapse icon removed as requested */}
+                                    
                                     {/* Column 1: Company Name */}
                                     <div className="md:col-span-1">
                                       <p><strong>Company Name:</strong></p>
@@ -2823,13 +2746,170 @@ const fetchEmployersList = async () => {
                                     {/* Column 6: Action Buttons */}
                                     <div className="md:col-span-1 flex items-center justify-center">
                                       <div className="flex space-x-2">
-                                        <button onClick={() => handleDeleteEmployer(employer.id)} className="bg-red-600 px-3 py-1 rounded text-white">Delete</button>
-                                        <button onClick={() => handleToggleBlockEmployer(employer.id, employer.blocked || false)} className={`${employer.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} px-3 py-1 rounded text-white`} disabled={blockingEmployerId === employer.id}>
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation(); 
+                                            handleDeleteEmployer(employer.id);
+                                          }} 
+                                          className="bg-red-600 px-3 py-1 rounded text-white"
+                                        >
+                                          Delete
+                                        </button>
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation(); 
+                                            handleToggleBlockEmployer(employer.id, employer.blocked || false);
+                                          }} 
+                                          className={`${employer.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} px-3 py-1 rounded text-white`} 
+                                          disabled={blockingEmployerId === employer.id}
+                                        >
                                           {blockingEmployerId === employer.id ? 'Processing...' : employer.blocked ? 'Unblock' : 'Block'}
                                         </button>
                                       </div>
                                     </div>
                                   </div>
+                                  
+                                  {/* Expanded Details Section */}
+                                  {expandedEmployerId === employer.id && (
+                                    <div className="mt-4 bg-black/40 p-4 rounded text-sm text-gray-100">
+                                      <h4 className="text-lg font-bold text-orange-300 mb-3">Complete Company Information</h4>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        {/* Company Basic Information */}
+                                        <div>
+                                          <h5 className="font-bold text-white mb-2">Company Details</h5>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Company Name:</span> {employer.companyName || employer.name || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Industry:</span> {employer.industry || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Company Size:</span> {employer.employees || employer.companySize || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Years Active:</span> {employer.yearsActive || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Tax ID:</span> {employer.taxId || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Registration Number:</span> {employer.registrationNumber || 'N/A'}</p>                                          <p className="mb-1"><span className="font-semibold text-orange-300">Description:</span></p>
+                                  <div className="relative">
+                                    <div className="break-words whitespace-pre-wrap text-xs mt-1 bg-black/30 p-2 rounded max-h-32 overflow-y-auto">
+                                      {employer.description ? 
+                                        employer.description.split('\n').map((line: string, i: number, arr: string[]) => (
+                                          <React.Fragment key={i}>
+                                            {line}
+                                            {i < arr.length - 1 && <br />}
+                                          </React.Fragment>
+                                        )) 
+                                        : 'N/A'}
+                                    </div>
+                                    {employer.description && employer.description.length > 100 && (
+                                      <div className="absolute bottom-0 right-0 bg-gradient-to-l from-black/60 to-transparent px-2 text-xs text-orange-300">
+                                        Scroll para ver mais
+                                      </div>
+                                    )}
+                                  </div>
+                                        </div>
+                                        
+                                        {/* Contact Information */}
+                                        <div>
+                                          <h5 className="font-bold text-white mb-2">Contact Information</h5>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Email:</span> {employer.email || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Username:</span> {employer.username || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Country:</span> {employer.country || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Address:</span> <span className="break-words">{employer.address || 'N/A'}</span></p>
+                                          <p className="mb-1">
+                                            <span className="font-semibold text-orange-300">Website:</span>{' '}
+                                            {employer.website ? (
+                                              <a 
+                                                href={employer.website.startsWith('http') ? employer.website : `https://${employer.website}`} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="text-blue-400 hover:underline"
+                                                onClick={e => e.stopPropagation()}
+                                              >
+                                                {employer.website}
+                                              </a>
+                                            ) : 'N/A'}
+                                          </p>
+                                        </div>
+                                        
+                                        {/* Responsible Person & Social Media */}                                        <div>
+                                          <h5 className="font-bold text-white mb-2">Responsible Person</h5>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Name:</span> {employer.responsibleName || employer.responsiblePerson || 'N/A'}</p>
+                                          <p className="mb-1">
+                                            <span className="font-semibold text-orange-300">Email:</span>{' '}
+                                            {employer.responsibleEmail ? (
+                                              <a 
+                                                href={`mailto:${employer.responsibleEmail}`} 
+                                                className="text-blue-400 hover:underline"
+                                                onClick={e => e.stopPropagation()}
+                                              >
+                                                {employer.responsibleEmail}
+                                              </a>
+                                            ) : 'N/A'}
+                                          </p>
+                                          <p className="mb-1">
+                                            <span className="font-semibold text-orange-300">Phone:</span>{' '}
+                                            {employer.responsiblePhone ? (
+                                              <a 
+                                                href={`tel:${employer.responsiblePhone}`} 
+                                                className="text-blue-400 hover:underline"
+                                                onClick={e => e.stopPropagation()}
+                                              >
+                                                {employer.responsiblePhone}
+                                              </a>
+                                            ) : 'N/A'}
+                                          </p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Position:</span> {employer.responsiblePosition || 'N/A'}</p>
+                                          
+                                          <h5 className="font-bold text-white mt-4 mb-2">Social Media</h5>                                          {[
+                                            { name: 'LinkedIn', url: employer.linkedin, prefix: 'https://linkedin.com/' },
+                                            { name: 'Twitter', url: employer.twitter, prefix: 'https://twitter.com/' },
+                                            { name: 'Facebook', url: employer.facebook, prefix: 'https://facebook.com/' },
+                                            { name: 'Instagram', url: employer.instagram, prefix: 'https://instagram.com/' },
+                                            { name: 'Telegram', url: employer.telegram, prefix: 'https://t.me/' }
+                                          ].map(social => {
+                                            // Normalize the social media URL
+                                            const getSocialUrl = (url: string | undefined): string => {
+                                              if (!url) return '';
+                                              if (url.startsWith('http')) return url;
+                                              if (url.includes('.com/') || url.includes('.org/') || url.includes('.net/')) {
+                                                return `https://${url}`;
+                                              }
+                                              return `${social.prefix}${url.replace('@', '')}`;
+                                            };
+                                          
+                                            return (
+                                              <p className="mb-1" key={social.name}>
+                                                <span className="font-semibold text-orange-300">{social.name}:</span>{' '}
+                                                {social.url ? (
+                                                  <a 
+                                                    href={getSocialUrl(social.url)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-400 hover:underline"
+                                                    onClick={e => e.stopPropagation()}
+                                                  >
+                                                    {social.url}
+                                                  </a>
+                                                ) : 'N/A'}
+                                              </p>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                        {/* System Information */}
+                                      <div className="mt-4 pt-3 border-t border-gray-700">
+                                        <h5 className="font-bold text-white mb-2">System Information</h5>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">                                          <div>
+                                            <p className="mb-1"><span className="font-semibold text-orange-300">Status:</span> {employer.blocked ? 'Blocked' : 'Active'}</p>
+                                            <p className="mb-1"><span className="font-semibold text-orange-300">Created:</span> {formatFirestoreTimestamp(employer.createdAt)}</p>
+                                          </div>
+                                          <div>
+                                            <p className="mb-1"><span className="font-semibold text-orange-300">Updated:</span> {formatFirestoreTimestamp(employer.updatedAt)}</p>
+                                            <p className="mb-1"><span className="font-semibold text-orange-300">ID:</span> {employer.id || 'N/A'}</p>
+                                          </div>
+                                          <div>
+                                            {employer.comments && (
+                                              <p className="mb-1"><span className="font-semibold text-orange-300">Comments:</span> {employer.comments}</p>
+                                            )}                                            {/* JSON details removed as requested */}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </li>
                               ))}
                             </ul>
@@ -2847,7 +2927,7 @@ const fetchEmployersList = async () => {
                               {pendingCompanies.map((company) => (
                                 <li
                                   key={company.id}
-                                  className={`mb-4 p-4 border border-gray-700 rounded-lg cursor-pointer transition-colors outline-none ${expandedPendingCompanyId === company.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
+                                  className={`mb-4 p-4 border ${expandedPendingCompanyId === company.id ? 'border-orange-500' : 'border-gray-700'} rounded-lg cursor-pointer transition-all hover:shadow-md ${expandedPendingCompanyId === company.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
                                   onClick={() => togglePendingCompanyDetails(company.id)}
                                   tabIndex={0}
                                 >
@@ -2863,9 +2943,17 @@ const fetchEmployersList = async () => {
                                     </div>
                                     <div className="md:col-span-1">
                                       <p><strong>Company Size:</strong><br />{company.employees}</p>
-                                    </div>
-                                    <div className="md:col-span-1">
-                                      <p><strong>Email:</strong><br />{company.email}</p>
+                                    </div>                                    <div className="md:col-span-1">
+                                      <p>
+                                        <strong>Email:</strong><br />
+                                        <a 
+                                          href={`mailto:${company.email}`} 
+                                          className="text-blue-400 hover:underline"
+                                          onClick={e => e.stopPropagation()}
+                                        >
+                                          {company.email}
+                                        </a>
+                                      </p>
                                     </div>
                                     <div className="md:col-span-1 flex items-center justify-center">
                                       <div className="flex space-x-2">
@@ -2875,47 +2963,147 @@ const fetchEmployersList = async () => {
                                         >
                                           Approve
                                         </button>
+                                        {/* Block/Unblock button for company */}
                                         <button
-                                          onClick={e => { e.stopPropagation(); handleApproval(company.id, false); }}
-                                          className="bg-red-600 px-3 py-1 rounded text-white"
+                                          onClick={e => { e.stopPropagation(); handleToggleBlockEmployer(company.id, company.blocked || false); }}
+                                          className={`${company.blocked ? 'bg-gray-600 hover:bg-gray-700' : 'bg-orange-600 hover:bg-orange-700'} px-3 py-1 rounded text-white`}
+                                          disabled={blockingEmployerId === company.id}
                                         >
-                                          Reject
+                                          {blockingEmployerId === company.id ? 'Processing...' : company.blocked ? 'Unblock' : 'Block'}
                                         </button>
                                       </div>
                                     </div>
                                   </div>
                                   {expandedPendingCompanyId === company.id && (
                                     <div className="mt-4 bg-black/40 p-4 rounded text-sm text-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                      {/* Column 1 */}
-                                      <div>
+                                      {/* Column 1 */}                                      <div>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Company Name:</span> {company.companyName}</p>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Responsible:</span> {company.responsibleName || 'N/A'}</p>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Industry:</span> {company.industry || 'N/A'}</p>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Company Size:</span> {company.employees || company.companySize || 'N/A'}</p>
+                                        {company.description && (
+                                          <>
+                                            <p className="mb-1"><span className="font-semibold text-orange-300">Description:</span></p>
+                                            <div className="relative">                                              <div className="break-words whitespace-pre-wrap text-xs mt-1 bg-black/30 p-2 rounded max-h-32 overflow-y-auto">
+                                                {company.description ? 
+                                                  company.description.split('\n').map((line: string, i: number, arr: string[]) => (
+                                                    <React.Fragment key={i}>
+                                                      {line}
+                                                      {i < arr.length - 1 && <br />}
+                                                    </React.Fragment>
+                                                  )) 
+                                                  : 'N/A'}
+                                              </div>
+                                              {company.description && company.description.length > 100 && (
+                                                <div className="absolute bottom-0 right-0 bg-gradient-to-l from-black/60 to-transparent px-2 text-xs text-orange-300">
+                                                  Scroll para ver mais
+                                                </div>
+                                              )}
+                                            </div>
+                                          </>
+                                        )}
                                       </div>
-                                      {/* Column 2 */}
-                                      <div>
-                                        <p className="mb-1"><span className="font-semibold text-orange-300">Email:</span> {company.email}</p>
+                                      {/* Column 2 */}                                      <div>
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Email:</span> {company.email}
+                                        </p>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Username:</span> {company.username || company.email}</p>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Status:</span> {company.status || 'pending'}</p>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Submitted:</span> {company.createdAt ? formatFirestoreTimestamp(company.createdAt) : 'N/A'}</p>
                                       </div>
-                                      {/* Column 3 */}
-                                      <div>
+                                      {/* Column 3 */}                                      <div>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">ID:</span> <span className="break-all">{company.id}</span></p>
+                                        
+                                        {company.website && (
+                                          <p className="mb-1">
+                                            <span className="font-semibold text-orange-300">Website:</span>{' '}
+                                            <a 
+                                              href={company.website.startsWith('http') ? company.website : `https://${company.website}`} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              className="text-blue-400 hover:underline"
+                                              onClick={e => e.stopPropagation()}
+                                            >
+                                              {company.website}
+                                            </a>
+                                          </p>
+                                        )}
+                                        
+                                        {/* Social Media Links */}
+                                        {(company.linkedin || company.twitter || company.facebook || company.instagram || company.telegram) && (
+                                          <div className="mt-2">
+                                            <p className="font-semibold text-orange-300 mb-1">Social Media:</p>
+                                            
+                                            {[
+                                              { name: 'LinkedIn', url: company.linkedin, prefix: 'https://linkedin.com/' },
+                                              { name: 'Twitter', url: company.twitter, prefix: 'https://twitter.com/' },
+                                              { name: 'Facebook', url: company.facebook, prefix: 'https://facebook.com/' },
+                                              { name: 'Instagram', url: company.instagram, prefix: 'https://instagram.com/' },
+                                              { name: 'Telegram', url: company.telegram, prefix: 'https://t.me/' }
+                                            ].map(social => {
+                                              if (!social.url) return null;
+                                              
+                                              // Normalize the social media URL
+                                              const getSocialUrl = (url: string | undefined): string => {
+                                                if (!url) return '';
+                                                if (url.startsWith('http')) return url;
+                                                if (url.includes('.com/') || url.includes('.org/') || url.includes('.net/')) {
+                                                  return `https://${url}`;
+                                                }
+                                                return `${social.prefix}${url.replace('@', '')}`;
+                                              };
+                                            
+                                              return (
+                                                <p className="mb-1" key={social.name}>
+                                                  <span className="font-semibold text-orange-300">{social.name}:</span>{' '}
+                                                  {social.url ? (
+                                                    <a 
+                                                      href={getSocialUrl(social.url)}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="text-blue-400 hover:underline"
+                                                      onClick={e => e.stopPropagation()}
+                                                    >
+                                                      {social.url}
+                                                    </a>
+                                                  ) : 'N/A'}
+                                                </p>
+                                              );
+                                            }).filter(Boolean)}
+                                          </div>
+                                        )}
+                                        
                                         {company.notes && (
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Notes:</span> {company.notes}</p>
                                         )}
-                                        {/* Show all other fields in a collapsible details */}
-                                        <details className="mt-2">
-                                          <summary
-                                            className="cursor-pointer text-orange-400 underline"
-                                            onClick={e => e.stopPropagation()}
-                                          >
-                                            Show all data (JSON)
-                                          </summary>
-                                          <pre className="whitespace-pre-wrap text-xs text-gray-300 mt-2">{JSON.stringify(company, null, 2)}</pre>
-                                        </details>
+                                        
+                                        {company.responsiblePhone && (
+                                          <p className="mb-1">
+                                            <span className="font-semibold text-orange-300">Phone:</span>{' '}
+                                            <a 
+                                              href={`tel:${company.responsablePhone}`} 
+                                              className="text-blue-400 hover:underline"
+                                              onClick={e => e.stopPropagation()}
+                                            >
+                                              {company.responsablePhone}
+                                            </a>
+                                          </p>
+                                        )}
+                                        
+                                        {company.responsableEmail && (
+                                          <p className="mb-1">
+                                            <span className="font-semibold text-orange-300">Responsible Email:</span>{' '}
+                                            <a 
+                                              href={`mailto:${company.responsableEmail}`} 
+                                              className="text-blue-400 hover:underline"
+                                              onClick={e => e.stopPropagation()}
+                                            >
+                                              {company.responsableEmail}
+                                            </a>
+                                          </p>
+                                        )}
+                                        
+                                        {/* JSON details removed as requested */}
                                       </div>
                                     </div>
                                   )}
@@ -2924,71 +3112,305 @@ const fetchEmployersList = async () => {
                             </ul>
                           )}
                         </div>
-                      )}
-                      {/* Show "seekers" subtab only if you have permission */}
+                      )}                      {/* Show "seekers" subtab only if you have permission */}
                       {activeSubTab === "seekers" && hasPermission('canEditContent') && (
                         <div>
-                          <form onSubmit={handleCreateSeeker} className="mb-6 flex gap-2 items-end flex-wrap">
+                          <div className="flex justify-between items-center mb-4">
+                            <div>
+                              <h3 className="text-xl text-orange-400">Seekers List</h3>
+                            </div>
                             <input
                               type="text"
-                              name="name"
-                              value={newSeeker.name}
-                              onChange={handleInputSeeker}
-                              placeholder="Name"
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                              required
+                              placeholder="Search seekers..."
+                              value={searchSeekersQuery}
+                              onChange={(e) => setSearchSeekersQuery(e.target.value)}
+                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-1/3"
                             />
-                            <input
-                              type="text"
-                              name="username"
-                              value={newSeeker.username}
-                              onChange={handleInputSeeker}
-                              placeholder="Username"
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                              required
-                            />
-                            <input
-                              type="password"
-                              name="password"
-                              value={newSeeker.password}
-                              onChange={handleInputSeeker}
-                              placeholder="Password"
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                              required
-                            />
-                            <input
-                              type="email"
-                              name="email"
-                              value={newSeeker.email}
-                              onChange={handleInputSeeker}
-                              placeholder="Email"
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
-                              required
-                            />
-                            <button
-                              type="submit"
-                              className="bg-orange-500 text-white px-4 py-1 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
-                              disabled={creatingSeeker}
-                            >
-                              {creatingSeeker ? 'Creating...' : 'Add'}
-                            </button>
-                          </form>
-                          <h3 className="text-xl text-orange-400 mb-2 text-left">Existing Seekers</h3>
-                          {seekersLoading && <p className="text-gray-400 text-left">Loading seekers...</p>}
-                          {seekersError && <p className="text-red-400 text-left">{seekersError}</p>}
-                          <ul className="mb-4">
+                          </div>
+                          {seekersLoading && <p className="text-gray-400">Loading seekers...</p>}
+                          {seekersError && <p className="text-red-400">{seekersError}</p>}<ul className="mb-4">
                             {seekers.map((seeker) => (
-                              <li key={seeker.id} className="flex items-center justify-between text-white mb-1">
-                                <span className="text-left">
-                                  {seeker.name} <span className="text-gray-400">({seeker.email})</span>
-                                </span>
-                                <button
-                                  onClick={() => handleDeleteSeeker(seeker.id)}
-                                  className="ml-2 px-2 py-1 bg-red-600 rounded hover:bg-red-700 text-xs disabled:opacity-60"
-                                  disabled={deletingSeekerId === seeker.id}
-                                >
-                                  {deletingSeekerId === seeker.id ? 'Deleting...' : 'Delete'}
-                                </button>
+                              <li 
+                                key={seeker.id} 
+                                className={`mb-4 p-4 border ${expandedSeekerId === seeker.id ? 'border-orange-500' : 'border-gray-700'} rounded-lg cursor-pointer transition-all hover:shadow-md ${expandedSeekerId === seeker.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
+                                onClick={() => toggleSeekerDetails(seeker.id)}
+                              >
+                                <div className="flex items-center justify-between">                                  <span className="text-left">
+                                    <strong>{(seeker.name || '') + ' ' + (seeker.surname || '')}</strong> <span className="text-gray-400">
+                                      (<a 
+                                        href={`mailto:${seeker.email}`} 
+                                        className="text-blue-400 hover:underline" 
+                                        onClick={e => e.stopPropagation()}
+                                      >
+                                        {seeker.email}
+                                      </a>)
+                                    </span>
+                                  </span>                                  <div className="flex space-x-2">
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); handleDeleteSeeker(seeker.id); }}
+                                      className="bg-red-600 px-3 py-1 rounded text-white"
+                                      disabled={deletingSeekerId === seeker.id}
+                                    >
+                                      {deletingSeekerId === seeker.id ? 'Deleting...' : 'Delete'}
+                                    </button>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation(); 
+                                        handleToggleBlockSeeker(seeker.id, seeker.blocked || false);
+                                      }} 
+                                      className={`${seeker.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} px-3 py-1 rounded text-white`} 
+                                      disabled={blockingSeekerId === seeker.id}
+                                    >
+                                      {blockingSeekerId === seeker.id ? 'Processing...' : seeker.blocked ? 'Unblock' : 'Block'}
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Expanded Seeker Details */}
+                                {expandedSeekerId === seeker.id && (
+                                  <div className="mt-4 bg-black/40 p-4 rounded text-sm text-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Professional Information */}
+                                    <div className="col-span-1 md:col-span-2 border-b border-gray-700 mb-4 pb-2">
+                                      <h4 className="font-semibold text-orange-400 mb-2">Professional Information</h4>
+                                      {seeker.title && (
+                                        <p className="mb-1"><span className="font-semibold text-orange-300">Title:</span> {seeker.title}</p>
+                                      )}
+                                      {seeker.skills && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Skills:</span>{' '}
+                                          {seeker.skills}
+                                        </p>
+                                      )}
+                                      {seeker.bio && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Bio:</span>{' '}
+                                          {seeker.bio}
+                                        </p>
+                                      )}
+                                      {seeker.workPreference && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Work Preference:</span>{' '}
+                                          {seeker.workPreference}
+                                        </p>
+                                      )}
+                                      {seeker.contractType && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Contract Type:</span>{' '}
+                                          {seeker.contractType}
+                                        </p>
+                                      )}
+                                      {seeker.availability && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Availability:</span>{' '}
+                                          {seeker.availability}
+                                        </p>
+                                      )}
+                                      {seeker.salaryExpectation && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Salary Expectation:</span>{' '}
+                                          {seeker.salaryExpectation}
+                                        </p>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Personal Information */}                                    <div>
+                                      <h4 className="font-semibold text-orange-400 mb-2">Personal Information</h4>
+                                      <p className="mb-1"><span className="font-semibold text-orange-300">Full Name:</span> {(seeker.name || '') + ' ' + (seeker.surname || '')}</p>
+                                      <p className="mb-1"><span className="font-semibold text-orange-300">Username:</span> {seeker.username}</p>
+                                      <p className="mb-1">
+                                        <span className="font-semibold text-orange-300">Email:</span>{' '}
+                                        <a 
+                                          href={`mailto:${seeker.email}`} 
+                                          className="text-blue-400 hover:underline" 
+                                          onClick={e => e.stopPropagation()}
+                                        >
+                                          {seeker.email}
+                                        </a>
+                                      </p>
+                                      {seeker.location && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Location:</span>{' '}
+                                          {seeker.location}
+                                        </p>
+                                      )}
+                                      {seeker.address && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Address:</span>{' '}
+                                          {seeker.address}
+                                        </p>
+                                      )}
+                                      {seeker.zipCode && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">ZIP Code:</span>{' '}
+                                          {seeker.zipCode}
+                                        </p>
+                                      )}
+                                      {(seeker.phoneCountryCode || seeker.phone) && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Phone:</span>{' '}
+                                          <a 
+                                            href={`tel:${seeker.phoneCountryCode || ''}${seeker.phone || ''}`}
+                                            className="text-blue-400 hover:underline"
+                                            onClick={e => e.stopPropagation()}
+                                          >
+                                            {seeker.phoneCountryCode || ''} {seeker.phone || ''}
+                                          </a>
+                                        </p>
+                                      )}
+                                      {(seeker.altContactCountryCode || seeker.altContact) && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Alternative Contact:</span>{' '}
+                                          <a 
+                                            href={`tel:${seeker.altContactCountryCode || ''}${seeker.altContact || ''}`}
+                                            className="text-blue-400 hover:underline"
+                                            onClick={e => e.stopPropagation()}
+                                          >
+                                            {seeker.altContactCountryCode || ''} {seeker.altContact || ''}
+                                          </a>
+                                        </p>
+                                      )}
+                                      {seeker.nationality && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Nationality:</span>{' '}
+                                          {seeker.nationality}
+                                        </p>
+                                      )}
+                                      {seeker.gender && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Gender:</span>{' '}
+                                          {seeker.gender}
+                                        </p>
+                                      )}
+                                    </div>                                      {/* Social Networks */}
+                                    <div>
+                                      <h4 className="font-semibold text-orange-400 mb-2">Social Networks</h4>
+                                      {seeker.linkedinUrl && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">LinkedIn:</span>{' '}
+                                          <a 
+                                            href={seeker.linkedinUrl} 
+                                            className="text-blue-400 hover:underline"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={e => e.stopPropagation()}
+                                          >
+                                            {seeker.linkedinUrl}
+                                          </a>
+                                        </p>
+                                      )}
+                                      {seeker.twitterUrl && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Twitter:</span>{' '}
+                                          <a 
+                                            href={seeker.twitterUrl} 
+                                            className="text-blue-400 hover:underline"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={e => e.stopPropagation()}
+                                          >
+                                            {seeker.twitterUrl}
+                                          </a>
+                                        </p>
+                                      )}
+                                      {seeker.facebookUrl && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Facebook:</span>{' '}
+                                          <a 
+                                            href={seeker.facebookUrl} 
+                                            className="text-blue-400 hover:underline"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={e => e.stopPropagation()}
+                                          >
+                                            {seeker.facebookUrl}
+                                          </a>
+                                        </p>
+                                      )}
+                                      {seeker.instagramUrl && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Instagram:</span>{' '}
+                                          <a 
+                                            href={seeker.instagramUrl} 
+                                            className="text-blue-400 hover:underline"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={e => e.stopPropagation()}
+                                          >
+                                            {seeker.instagramUrl}
+                                          </a>
+                                        </p>
+                                      )}
+                                      {seeker.telegramUrl && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Telegram:</span>{' '}
+                                          <a 
+                                            href={seeker.telegramUrl} 
+                                            className="text-blue-400 hover:underline"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={e => e.stopPropagation()}
+                                          >
+                                            {seeker.telegramUrl}
+                                          </a>
+                                        </p>
+                                      )}
+                                      {seeker.websiteUrl && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Website:</span>{' '}
+                                          <a 
+                                            href={seeker.websiteUrl} 
+                                            className="text-blue-400 hover:underline"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={e => e.stopPropagation()}
+                                          >
+                                            {seeker.websiteUrl}
+                                          </a>
+                                        </p>
+                                      )}
+                                    </div>
+                                    
+                                      {/* System Information */}
+                                    <div>
+                                      <h4 className="font-semibold text-orange-400 mb-2">System Information</h4>                                      <p className="mb-1"><span className="font-semibold text-orange-300">ID:</span> <span className="break-all text-xs">{seeker.id}</span></p>
+                                      
+                                      {seeker.createdAt ? (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Created:</span>{' '}
+                                          {typeof seeker.createdAt === 'string' 
+                                            ? new Date(seeker.createdAt).toLocaleString() 
+                                            : seeker.createdAt.toDate?.() 
+                                              ? seeker.createdAt.toDate().toLocaleString() 
+                                              : 'Unknown'}
+                                        </p>
+                                      ) : null}
+                                      {seeker.updatedAt ? (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Updated:</span>{' '}
+                                          {typeof seeker.updatedAt === 'string' 
+                                            ? new Date(seeker.updatedAt).toLocaleString() 
+                                            : seeker.updatedAt.toDate?.() 
+                                              ? seeker.updatedAt.toDate().toLocaleString() 
+                                              : 'Unknown'}
+                                        </p>
+                                      ) : null}
+                                      {seeker.resumeUrl && (
+                                        <p className="mb-1">
+                                          <span className="font-semibold text-orange-300">Resume:</span>{' '}
+                                          <a 
+                                            href={seeker.resumeUrl} 
+                                            className="text-blue-400 hover:underline"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={e => e.stopPropagation()}
+                                          >
+                                            View CV
+                                          </a>
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </li>
                             ))}
                           </ul>
@@ -3531,7 +3953,7 @@ const fetchEmployersList = async () => {
                                 <h4 className="text-lg font-semibold text-orange-400">{plan.name}</h4>
                                 <span className="text-xl font-bold text-white">{plan.price} USDT</span>
                               </div>
-                              <p className="text-gray-300 mb-3 text-sm break-words overflow-hidden">{plan.description}</p>
+                              <p className="text-gray-300 mb-3 text-sm break-words">{plan.description}</p>
                               {plan.features.length > 0 && (
                                 <div className="mb-4">
                                   <p className="text-sm font-medium text-gray-300 mb-1">Features:</p>
