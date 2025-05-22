@@ -175,12 +175,6 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             >
               Job Plans
             </li>
-            <li
-              className={`cursor-pointer p-1 rounded-lg text-center md:text-left text-sm w-3/4 bg-blue-600 text-white`}
-              onClick={() => window.location.href = '/admin/job-notification-test'}
-            >
-              Test Job Notification
-            </li>
           </ul>
         )}
       </li>
