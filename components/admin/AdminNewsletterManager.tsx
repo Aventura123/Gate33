@@ -15,48 +15,42 @@ const AdminNewsletterManager: React.FC = () => {
     // Fetch jobs highlighted for newsletter
     const fetchJobs = async () => {
       setLoading(true);
-      try {        const jobsSnapshot = await getDocs(collection(db, "jobs"));
-        
-        // Diagnóstico de todos os jobs
-        console.log("Total jobs found:", jobsSnapshot.docs.length);
-        
-        // Converter para objetos mais fáceis de trabalhar
-        const allJobs = jobsSnapshot.docs.map(doc => ({ 
-          id: doc.id, 
-          ...(doc.data() as any) 
-        }));
-        
-        // Diagnóstico dos jobs
+      try {
+        const jobsSnapshot = await getDocs(collection(db, "jobs"));
+        const allJobs = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
         const highlightedJobs = allJobs.filter(job => job.highlightedInNewsletter === true);
-        console.log("Jobs com highlightedInNewsletter===true:", highlightedJobs.length);
-        highlightedJobs.forEach(job => console.log("Job destacado:", job.id, job.title, "expira em:", job.expiresAt));
-        
+        // Buscar o logo real da empresa para cada job (igual ao backend)
+        const jobsWithLogo = await Promise.all(highlightedJobs.map(async job => {
+          if (job.companyId) {
+            try {
+              const companySnap = await getDocs(collection(db, "companies"));
+              const company = companySnap.docs.find(doc => doc.id === job.companyId);
+              if (company) {
+                const data = company.data();
+                return { ...job, companyPhotoURL: data.photoURL || '' };
+              }
+            } catch {}
+          }
+          return { ...job };
+        }));
         // Filtragem por não expirados (corrigido para aceitar Timestamp, string ou Date)
-        const notExpiredJobs = highlightedJobs.filter(job => {
+        const notExpiredJobs = jobsWithLogo.filter(job => {
           if (!job.expiresAt) return true;
           let expiresDate;
           if (typeof job.expiresAt.toDate === 'function') {
-            expiresDate = job.expiresAt.toDate(); // Firestore Timestamp
+            expiresDate = job.expiresAt.toDate();
           } else {
-            expiresDate = new Date(job.expiresAt); // string ou Date
+            expiresDate = new Date(job.expiresAt);
           }
           return expiresDate > new Date();
         });
-        console.log("Jobs destacados não expirados:", notExpiredJobs.length);
-          // Filtragem final incluindo sentInNewsletter !== true
-        const highlighted = notExpiredJobs.filter(job => {
-          console.log("Verificando job:", job.id, "sentInNewsletter =", job.sentInNewsletter);
-          // Aceitar explicitamente false ou undefined/null
-          return job.sentInNewsletter === false || job.sentInNewsletter == null;
-        });
-        
-        console.log("Found jobs for newsletter:", highlighted.length);
-        highlighted.forEach(job => console.log("Job Final:", job.id, job.title, "sentInNewsletter:", job.sentInNewsletter));
+        const highlighted = notExpiredJobs.filter(job => job.sentInNewsletter === false || job.sentInNewsletter == null);
         setJobs(highlighted);
       } finally {
         setLoading(false);
       }
-    };    fetchJobs();
+    };
+    fetchJobs();
   }, []);
 
   useEffect(() => {

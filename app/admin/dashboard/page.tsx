@@ -3697,7 +3697,6 @@ const fetchEmployersList = async () => {
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Newsletter Manager</h2>
                     <div className="mt-6 bg-black/50 p-6 rounded-lg">
                       <p className="text-gray-300 mb-4">
-                        Create, preview, and send newsletters to your subscribers.
                       </p>
                       <AdminNewsletterManager />
                     </div>

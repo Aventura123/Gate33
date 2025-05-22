@@ -21,11 +21,11 @@ export function jobAlertNewsletterHtml({ jobs, email, intro }:{ jobs: any[], ema
             const jobUrl = `https://gate33.net/jobs/${job.id}`;
             return `
               <li style="margin-bottom: 12px; padding: 0;">
-                <a href="${jobUrl}" target="_blank" style="display: flex; align-items: center; text-decoration: none; background: #23232a; border-radius: 6px; padding: 12px 16px; color: #fff; max-width: 520px; margin: 0 auto;">
+                <a href="${jobUrl}" target="_blank" style="display: flex; align-items: center; text-decoration: none; background: #23232a; border-radius: 6px; padding: 12px 16px; color: #fff; max-width: 520px; margin: 0 auto; min-width:0;">
                   <img src='${logo}' alt='Logo' style='width:32px;height:32px;margin-right:14px;border-radius:4px;background:#18181b;flex-shrink:0;'>
-                  <div style="display: flex; flex-direction: column;">
-                    <span style="font-size: 1.08rem; font-weight: bold; color: #FF6B00;">${job.title}</span>
-                    <span style="font-size: 0.98rem; color: #ffb97a;">${job.company}</span>
+                  <div style="display: flex; flex-direction: column; min-width:0; overflow-wrap:break-word; word-break:break-word;">
+                    <span style="font-size: 1.08rem; font-weight: bold; color: #FF6B00; min-width:0; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${job.title}</span>
+                    <span style="font-size: 0.98rem; color: #ffb97a; min-width:0; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${job.company}</span>
                   </div>
                 </a>
               </li>
