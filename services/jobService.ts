@@ -111,7 +111,7 @@ class JobService {
       }
       
       // 6. Update job status
-      await updateDoc(jobRef, {
+      const updateFields: any = {
         status: 'active',
         paid: true,
         planId: planId,
@@ -124,7 +124,12 @@ class JobService {
         paidAt: Timestamp.fromDate(now),
         expiresAt: Timestamp.fromDate(expirationDate),
         lastUpdated: Timestamp.fromDate(now)
-      });
+      };
+      // Se o plano inclui destaque na newsletter, marca o job
+      if (planData.highlightedInNewsletter) {
+        updateFields.highlightedInNewsletter = true;
+      }
+      await updateDoc(jobRef, updateFields);
       
       // 7. Record payment in history (with distribution)
       const paymentInfo: any = {
