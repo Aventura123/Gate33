@@ -24,6 +24,7 @@ import FinancialDashboard from "../../../components/admin/FinancialDashboard";
 import AdManager from "../../../components/admin/AdManager";
 import WalletButton from '../../../components/WalletButton';
 import AdminNewsletterManager from "../../../components/admin/AdminNewsletterManager";
+import AdminSocialMediaManager from "../../../components/admin/AdminSocialMediaManager";
 
 interface NFT {
   id: string;
@@ -152,7 +153,7 @@ type Employer = {
 const AdminDashboard: React.FC = () => {
   const router = useRouter();
   // Update the type declaration to include "learn2earn" and "instantJobs"
-  const [activeTab, setActiveTab] = useState<"nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "instantJobs" | "accounting" | "ads" | "newsletter">("nfts");
+  const [activeTab, setActiveTab] = useState<"nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "instantJobs" | "accounting" | "ads" | "newsletter" | "marketing">("nfts");
   const [activeSubTab, setActiveSubTab] = useState<string | null>("add");
   
   // Use the permissions hook
@@ -1916,6 +1917,7 @@ const fetchEmployersList = async () => {
   const [usersDropdownOpen, setUsersDropdownOpen] = useState(false);
   const [learn2earnDropdownOpen, setLearn2earnDropdownOpen] = useState(false);
   const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
+  const [marketingDropdownOpen, setMarketingDropdownOpen] = useState(false); // NOVO
 
   return (
     <Layout>
@@ -1993,7 +1995,8 @@ const fetchEmployersList = async () => {
             </div>
           </div>
           {/* Navigation - reduce button size and spacing on mobile */}
-          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>            {hasPermission('canEditContent') && (
+          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>
+            {hasPermission('canEditContent') && (
               <li>
                 <button
                   className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "nfts" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
@@ -2262,19 +2265,51 @@ const fetchEmployersList = async () => {
               >
                 Payments Management
               </button>
-            </li>            <li>
+            </li>            {/* --- MARKETING MENU --- */}
+            <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${isClient && activeTab === "newsletter" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "marketing" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
-                  setActiveTab("newsletter");
-                  setActiveSubTab(null);
+                  if (activeTab === "marketing") setMarketingDropdownOpen((open) => !open);
+                  else {
+                    setActiveTab("marketing");
+                    setActiveSubTab("newsletter");
+                    setMarketingDropdownOpen(true);
+                  }
                   if (isMobile) setMobileMenuOpen(false);
                 }}
               >
-                Newsletter
+                <span>Marketing</span>
+                <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "marketing" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
+              {activeTab === "marketing" && marketingDropdownOpen && (
+                <ul className="ml-6 mt-2 space-y-1">
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "newsletter" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                      onClick={() => {
+                        setActiveSubTab("newsletter");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Newsletter
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "socialmedia" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                      onClick={() => {
+                        setActiveSubTab("socialmedia");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Social Media
+                    </button>
+                  </li>
+                </ul>
+              )}
             </li>
-
+            {/* --- END MARKETING MENU --- */}
             {hasPermission('canAccessSettings') && (
               <li>
                 <button
@@ -2296,43 +2331,39 @@ const fetchEmployersList = async () => {
                   <ul className="ml-6 mt-2 space-y-1">
                     <li>
                       <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                          activeSubTab === "profile" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
-                        }`}
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "profile" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
                         onClick={() => {
                           setActiveSubTab("profile");
                           if (isMobile) setMobileMenuOpen(false);
                         }}
                       >
-                        Profile
+                        My Profile
                       </button>
                     </li>
                     <li>
                       <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                          activeSubTab === "adminTest" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
-                        }`}
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "adminTest" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
                         onClick={() => {
                           setActiveSubTab("adminTest");
                           if (isMobile) setMobileMenuOpen(false);
                         }}
                       >
-                        Notification Test
+                        Admin Notifications Test
                       </button>
                     </li>
-                    <li>
-                      <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                          activeSubTab === "permissions" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
-                        }`}
-                        onClick={() => {
-                          setActiveSubTab("permissions");
-                          if (isMobile) setMobileMenuOpen(false);
-                        }}
-                      >
-                        Manage Admins & Permissions
-                      </button>
-                    </li>
+                    {hasPermission('canManageUsers') && (
+                      <li>
+                        <button
+                          className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "permissions" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                          onClick={() => {
+                            setActiveSubTab("permissions");
+                            if (isMobile) setMobileMenuOpen(false);
+                          }}
+                        >
+                          Manage Admins & Permissions
+                        </button>
+                      </li>
+                    )}
                   </ul>
                 )}
               </li>
@@ -2822,7 +2853,8 @@ const fetchEmployersList = async () => {
                               <li 
                                 key={seeker.id} 
                                 className={`mb-4 p-4 border ${expandedSeekerId === seeker.id ? 'border-orange-500' : 'border-gray-700'} rounded-lg cursor-pointer transition-all hover:shadow-md ${expandedSeekerId === seeker.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
-                                onClick={() => toggleSeekerDetails(seeker.id)}
+                                onClick={() => toggleSeekerDetails(seeker.id)
+                                }
                               >
                                 <div className="flex items-center justify-between">                                  <span className="text-left">
                                     <strong>{(seeker.name || '') + ' ' + (seeker.surname || '')}</strong> <span className="text-gray-400">
@@ -3112,7 +3144,7 @@ const fetchEmployersList = async () => {
                 )}
 
                 {/* Show "settings" tab only if you have permission */}
-                {activeTab === "settings" && hasPermission('canAccessSettings') && (
+                {activeTab === "settings" && settingsDropdownOpen && hasPermission('canAccessSettings') && (
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Settings</h2>
                     <div className="mt-6 bg-black/50 p-6 rounded-lg">
@@ -3692,13 +3724,21 @@ const fetchEmployersList = async () => {
                 )}
 
                 {/* Newsletter Section */}
-                {activeTab === "newsletter" && (
+                {activeTab === "marketing" && activeSubTab === "newsletter" && (
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Newsletter Manager</h2>
                     <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                      <p className="text-gray-300 mb-4">
-                      </p>
                       <AdminNewsletterManager />
+                    </div>
+                  </div>
+                )}
+
+                {/* Social Media Section */}
+                {activeTab === "marketing" && activeSubTab === "socialmedia" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Social Media Promotion</h2>
+                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                      <AdminSocialMediaManager />
                     </div>
                   </div>
                 )}
