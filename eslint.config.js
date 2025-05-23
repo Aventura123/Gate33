@@ -1,9 +1,10 @@
 const tsPlugin = require('@typescript-eslint/eslint-plugin');
 const tsParser = require('@typescript-eslint/parser');
 
-module.exports = [  {
-    ignores: [
+module.exports = [  {    ignores: [
       'functions/lib/**',
+      '**/lib/**',
+      '**/gate33 newage/**',
       'functions/run-sync-learn2earn.js'
     ],
     files: ['functions/**/*.ts', 'functions/**/*.js'],
@@ -20,9 +21,8 @@ module.exports = [  {
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-    },
-    rules: {
-      'linebreak-style': ['error', 'unix'],
+    },    rules: {
+      'linebreak-style': 'off', // Desativado para permitir tanto CRLF (Windows) quanto LF (Unix)
       'max-len': ['error', { code: 120 }],
     },
   },

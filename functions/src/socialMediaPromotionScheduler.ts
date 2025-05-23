@@ -1,5 +1,4 @@
-import { db } from '../../lib/firebase.js';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { getFirestore } from "firebase-admin/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
 // Mocked social media posting functions (replace with real integrations)
@@ -56,8 +55,9 @@ function canSendAgainByPlan(job: SocialMediaJob): boolean {
 }
 
 export async function runSocialMediaPromotionScheduler() {
-  const jobsRef = collection(db, 'jobs');
-  const jobsSnapshot = await getDocs(jobsRef);
+  const db = getFirestore();
+  const jobsRef = db.collection('jobs');
+  const jobsSnapshot = await jobsRef.get();
   const jobs = jobsSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as SocialMediaJob[];
 
   for (const job of jobs) {
@@ -70,8 +70,7 @@ export async function runSocialMediaPromotionScheduler() {
       await postToLinkedIn(job);
       await postToTelegram(job);
       // Update job document
-      const jobDoc = doc(db, 'jobs', job.id);
-      await updateDoc(jobDoc, {
+      await jobsRef.doc(job.id).update({
         socialMediaPromotionCount: (job.socialMediaPromotionCount ?? 0) + 1,
         socialMediaPromotionLastSent: new Date().toISOString(),
       });
