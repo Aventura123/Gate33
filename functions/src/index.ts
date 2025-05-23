@@ -17,6 +17,7 @@ if (!admin.apps.length) {
 // Import functions from syncLearn2EarnStatus
 import { syncLearn2EarnStatusJob, syncLearn2EarnStatusV2 } from "../syncLearn2EarnStatus";
 import { scheduledSocialMediaPromotion } from "./socialMediaPromotionScheduler";
+import { manualSocialMediaPromotion } from "./manualSocialMediaPromotion";
 
 // Re-export for external use
-export { syncLearn2EarnStatusJob, syncLearn2EarnStatusV2, scheduledSocialMediaPromotion };
+export { syncLearn2EarnStatusJob, syncLearn2EarnStatusV2, scheduledSocialMediaPromotion, manualSocialMediaPromotion };

@@ -1,0 +1,32 @@
+🔥 NOVA OPORTUNIDADE: {{title}} 🔥
+
+🏢 Empresa: {{companyName}}
+📍 Veja todos os detalhes e candidate-se: {{jobUrl}}
+
+#vaga #emprego #{{companyName}} #oportunidade #gate33
+
+---
+
+Este é um exemplo de modelo otimizado para redes sociais. Você pode personalizar conforme sua necessidade.
+
+Placeholders disponíveis:
+- {{title}} - Título da vaga
+- {{companyName}} - Nome da empresa 
+- {{id}} - ID da vaga
+- {{jobUrl}} - URL completa da vaga (https://gate33.io/jobs/ID)
+- {{mediaUrl}} - URL da imagem do post
+
+Dicas para um bom post:
+1. Use emojis para destacar informações importantes
+2. Inclua sempre a URL da vaga {{jobUrl}}
+3. Use hashtags relevantes
+4. Mantenha o texto conciso
+5. Use uma imagem de qualidade para aumentar o engajamento
+
+Exemplo de formato para Telegram (com HTML):
+<b>🔥 NOVA OPORTUNIDADE: {{title}} 🔥</b>
+
+<b>🏢 Empresa:</b> {{companyName}}
+👉 <a href="{{jobUrl}}">Veja todos os detalhes e candidate-se aqui</a>
+
+#vaga #emprego #oportunidade #gate33

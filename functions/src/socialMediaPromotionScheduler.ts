@@ -2,6 +2,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import axios from 'axios';
 import { defineString } from "firebase-functions/params";
+import { logSystemActivity } from "../../utils/logSystem";
 
 // Configurações do Telegram - Usando variáveis de ambiente seguras com Firebase Functions
 const TELEGRAM_BOT_TOKEN = defineString('TELEGRAM_BOT_TOKEN', {
@@ -12,11 +13,76 @@ const TELEGRAM_CHANNEL_ID = defineString('TELEGRAM_CHANNEL_ID', {
   description: 'ID do canal do Telegram para postagem de vagas'
 });
 
-// Mocked social media posting functions (replace with real integrations)
-async function postToLinkedIn(job: any) {
-  console.log(`[SocialMedia] Posting job ${job.title} to LinkedIn...`);
-  // TODO: Integrate with LinkedIn API
-  return true;
+// LinkedIn Access Token seguro via Firebase Functions config
+const LINKEDIN_ACCESS_TOKEN = defineString('LINKEDIN_ACCESS_TOKEN', { description: 'LinkedIn access token' });
+
+/**
+ * Posta uma vaga no LinkedIn usando a API oficial
+ * @param job Vaga a ser postada
+ */
+async function postToLinkedIn(job: SocialMediaJob): Promise<boolean> {
+  try {
+    if (!job.title || !job.companyName) {
+      console.error(`[SocialMedia] Cannot post job ${job.id} to LinkedIn: Missing title or companyName`);
+      return false;
+    }
+
+    // Use custom message if present, else build default
+    const postText = job.shortDescription ||
+      `🚀 Nova vaga: ${job.title}\nEmpresa: ${job.companyName}` +
+      (job.location ? `\nLocal: ${job.location}` : '') +
+      (job.salary ? `\nSalário: ${job.salary}` : '') +
+      `\n\nVeja detalhes: https://gate33.io/jobs/${job.id}`;
+    const hasMedia = !!job.mediaUrl;
+
+    // Monta o payload para o LinkedIn (perfil pessoal)
+    const payload: any = {
+      author: 'urn:li:person:me', // Para páginas: 'urn:li:organization:ORG_ID'
+      lifecycleState: 'PUBLISHED',
+      specificContent: {
+        'com.linkedin.ugc.ShareContent': {
+          shareCommentary: {
+            text: postText
+          },
+          shareMediaCategory: hasMedia ? 'IMAGE' : 'NONE',
+          ...(hasMedia ? {
+            media: [{ status: 'READY', originalUrl: job.mediaUrl }]
+          } : {})
+        }
+      },
+      visibility: {
+        'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC'
+      }
+    };
+
+    // Faz o POST para a API do LinkedIn
+    const response = await axios.post(
+      'https://api.linkedin.com/v2/ugcPosts',
+      payload,
+      {
+        headers: {
+          'Authorization': `Bearer ${LINKEDIN_ACCESS_TOKEN.value()}`,
+          'X-Restli-Protocol-Version': '2.0.0',
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (response.status === 201) {
+      console.log(`[SocialMedia] Job "${job.title}" successfully posted to LinkedIn`);
+      return true;
+    } else {
+      console.error(`[SocialMedia] Failed to post job to LinkedIn:`, response.data);
+      return false;
+    }
+  } catch (error: any) {
+    if (error && error.response && error.response.data) {
+      console.error(`[SocialMedia] Error posting to LinkedIn:`, error.response.data);
+    } else {
+      console.error(`[SocialMedia] Error posting to LinkedIn:`, error);
+    }
+    return false;
+  }
 }
 
 /**
@@ -31,19 +97,29 @@ async function postToTelegram(job: SocialMediaJob): Promise<boolean> {
       return false;
     }
 
-    // Formato da mensagem para o Telegram
     const message = formatTelegramMessage(job);
-    
+    const hasMedia = !!job.mediaUrl;
+
     // Endpoint da API do Telegram para enviar mensagens
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    const url = hasMedia
+      ? `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`
+      : `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
     
     // Parâmetros da requisição
-    const data = {
-      chat_id: TELEGRAM_CHANNEL_ID,
-      text: message,
-      parse_mode: 'HTML', // Permite formatação HTML
-      disable_web_page_preview: false
-    };
+    const data = hasMedia
+      ? {
+          chat_id: TELEGRAM_CHANNEL_ID,
+          photo: job.mediaUrl,
+          caption: message,
+          parse_mode: 'HTML', // Permite formatação HTML
+          disable_web_page_preview: false
+        }
+      : {
+          chat_id: TELEGRAM_CHANNEL_ID,
+          text: message,
+          parse_mode: 'HTML', // Permite formatação HTML
+          disable_web_page_preview: false
+        };
     
     // Faz a requisição POST para a API do Telegram
     const response = await axios.post(url, data);
@@ -94,8 +170,21 @@ function formatTelegramMessage(job: SocialMediaJob): string {
   return message;
 }
 
+// Exportar funções utilitárias para uso externo
+export { postToLinkedIn, postToTelegram };
+
+// Função para renderizar template customizado
+export function renderTemplateFromJob(template: string, job: SocialMediaJob): string {
+  return template
+    .replace(/{{\s*title\s*}}/gi, job.title || "")
+    .replace(/{{\s*companyName\s*}}/gi, job.companyName || "")
+    .replace(/{{\s*mediaUrl\s*}}/gi, job.mediaUrl || "")
+    .replace(/{{\s*id\s*}}/gi, job.id || "")
+    .replace(/{{\s*jobUrl\s*}}/gi, `https://gate33.io/jobs/${job.id}`);
+}
+
 // Interface SocialMediaJob com campos adicionais
-interface SocialMediaJob {
+export interface SocialMediaJob {
   id: string;
   title?: string;
   companyName?: string;
@@ -109,6 +198,7 @@ interface SocialMediaJob {
   salary?: string;
   shortDescription?: string;
   jobType?: string;
+  mediaUrl?: string; // NEW: media/image URL for social post
   // outros campos relevantes
 }
 
@@ -152,10 +242,10 @@ export async function runSocialMediaPromotionScheduler() {
       canSendAgainByPlan(job)
     ) {
       // Post to social media
-      await postToLinkedIn(job);
+      const linkedInSuccess = await postToLinkedIn(job);
       const telegramSuccess = await postToTelegram(job);
-      
-      if (telegramSuccess) {
+
+      if (linkedInSuccess && telegramSuccess) {
         // Update job document
         await jobsRef.doc(job.id).update({
           socialMediaPromotionCount: (job.socialMediaPromotionCount ?? 0) + 1,
@@ -164,6 +254,20 @@ export async function runSocialMediaPromotionScheduler() {
         console.log(
           `[SocialMedia] Job ${job.title} promoted (` +
           `${(job.socialMediaPromotionCount ?? 0) + 1}/${job.socialMediaPromotion})`
+        );
+        // Log system activity for auditing
+        await logSystemActivity(
+          "system",
+          "SocialMediaScheduler",
+          {
+            jobId: job.id,
+            jobTitle: job.title,
+            companyName: job.companyName,
+            promotedPlatforms: ["LinkedIn", "Telegram"],
+            timestamp: new Date().toISOString(),
+            promotionCount: (job.socialMediaPromotionCount ?? 0) + 1,
+            planLimit: job.socialMediaPromotion ?? 0
+          }
         );
       }
     }
