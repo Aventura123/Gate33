@@ -1,6 +1,6 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { getFirestore } from "firebase-admin/firestore";
-import { logSystemActivity } from "../../utils/logSystem";
+import { logSystemActivity } from "./logSystem";
 
 // Importar funções reutilizáveis do scheduler
 import {
@@ -32,7 +32,9 @@ export const manualSocialMediaPromotion = onRequest(async (req, res) => {
     const job: SocialMediaJob = { ...jobData, id: jobSnap.id };
     // Buscar template centralizado
     const templateSnap = await db.collection("config").doc("socialMediaTemplate").get();
-    const template = templateSnap.exists ? templateSnap.data()?.template : "🚀 Nova vaga: {{title}} na {{companyName}}!\nConfira e candidate-se agora!";
+    const template = templateSnap.exists
+      ? templateSnap.data()?.template
+      : "🚀 Nova vaga: {{title}} na {{companyName}}!\nConfira e candidate-se agora!";
     // Renderizar mensagem
     const message = renderTemplateFromJob(template, job);
     // Preparar objeto de job para envio (shortDescription para LinkedIn, mediaUrl para ambos)
