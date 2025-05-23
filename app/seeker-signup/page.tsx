@@ -90,6 +90,7 @@ const SeekerSignupPage: React.FC = () => {
         surname: lastName,
         phoneNumber,
         createdAt: new Date(),
+        notificationPreferences: { marketing: true },
       });      // Create a token and store it or redirect to login page
       router.replace("/login");
     } catch (err) {

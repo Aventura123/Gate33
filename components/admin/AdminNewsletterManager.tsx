@@ -8,8 +8,11 @@ const DEFAULT_INTRO = "Here are the top blockchain jobs highlighted for this wee
 const AdminNewsletterManager: React.FC = () => {
   const [jobs, setJobs] = useState<any[]>([]);
   const [intro, setIntro] = useState<string>(DEFAULT_INTRO);
-  const [previewHtml, setPreviewHtml] = useState<string>("");  const [loading, setLoading] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string>("");
+  const [loading, setLoading] = useState(false);
   const [sendStatus, setSendStatus] = useState<string | null>(null);
+  // New: Track which jobs are selected for the newsletter
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
 
   useEffect(() => {
     // Fetch jobs highlighted for newsletter
@@ -19,7 +22,7 @@ const AdminNewsletterManager: React.FC = () => {
         const jobsSnapshot = await getDocs(collection(db, "jobs"));
         const allJobs = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
         const highlightedJobs = allJobs.filter(job => job.highlightedInNewsletter === true);
-        // Buscar o logo real da empresa para cada job (igual ao backend)
+        // Fetch the real company logo for each job (same as backend)
         const jobsWithLogo = await Promise.all(highlightedJobs.map(async job => {
           if (job.companyId) {
             try {
@@ -33,7 +36,7 @@ const AdminNewsletterManager: React.FC = () => {
           }
           return { ...job };
         }));
-        // Filtragem por não expirados (corrigido para aceitar Timestamp, string ou Date)
+        // Filter out expired jobs (fixed to accept Timestamp, string, or Date)
         const notExpiredJobs = jobsWithLogo.filter(job => {
           if (!job.expiresAt) return true;
           let expiresDate;
@@ -46,6 +49,8 @@ const AdminNewsletterManager: React.FC = () => {
         });
         const highlighted = notExpiredJobs.filter(job => job.sentInNewsletter === false || job.sentInNewsletter == null);
         setJobs(highlighted);
+        // By default, select all jobs
+        setSelectedJobIds(highlighted.map(job => job.id));
       } finally {
         setLoading(false);
       }
@@ -54,21 +59,34 @@ const AdminNewsletterManager: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Generate preview HTML
+    // Only include selected jobs in the preview
+    const selectedJobs = jobs.filter(job => selectedJobIds.includes(job.id));
     setPreviewHtml(
-      jobAlertNewsletterHtml({ jobs, email: "preview@gate33.net" })
+      jobAlertNewsletterHtml({ jobs: selectedJobs, email: "preview@gate33.net" })
         .replace(
-          /<div style="padding: 24px;">/, 
+          /<div style="padding: 24px;">/,
           `<div style="padding: 24px;"><p style='font-size:1.1rem;color:#ffb97a;'>${intro}</p>`
         )
     );
-  }, [jobs, intro]);
+  }, [jobs, intro, selectedJobIds]);
+
+  const handleToggleJob = (jobId: string) => {
+    setSelectedJobIds(ids =>
+      ids.includes(jobId) ? ids.filter(id => id !== jobId) : [...ids, jobId]
+    );
+  };
 
   const handleSendNewsletter = async () => {
-    if (!window.confirm("Are you sure you want to send the newsletter to all subscribers?")) return;
+    if (!window.confirm("Are you sure you want to send the newsletter to all selected jobs subscribers?")) return;
     setSendStatus("Sending...");
     try {
-      const res = await fetch("/api/job-alerts/send-newsletter", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ intro }) });
+      // Only send selected jobs
+      const selectedJobs = jobs.filter(job => selectedJobIds.includes(job.id));
+      const res = await fetch("/api/job-alerts/send-newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intro, jobs: selectedJobs })
+      });
       if (res.ok) setSendStatus("Newsletter sent successfully!");
       else setSendStatus("Failed to send newsletter.");
     } catch {
@@ -96,7 +114,7 @@ const AdminNewsletterManager: React.FC = () => {
         <ul className="space-y-2">
           {jobs.length === 0 && <li className="text-gray-400">No highlighted jobs available for the newsletter.</li>}
           {jobs.map(job => {
-            // Corrigir conversão de expiresAt para Date
+            // Fix expiresAt conversion to Date
             let expiresAt: Date | null = null;
             if (job.expiresAt) {
               if (typeof job.expiresAt.toDate === 'function') {
@@ -107,9 +125,28 @@ const AdminNewsletterManager: React.FC = () => {
             }
             const expired = expiresAt && expiresAt < new Date();
             const daysLeft = expiresAt ? Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+            const isSelected = selectedJobIds.includes(job.id);
             return (
               <li key={job.id} className="bg-gray-800 rounded p-3 flex flex-col md:flex-row md:items-center md:justify-between">
-                <div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleJob(job.id)}
+                    className={`rounded-full border w-6 h-6 flex items-center justify-center text-xs font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400 ${isSelected ? 'border-green-400 bg-green-900/40 text-green-300 hover:bg-green-700/40' : 'border-gray-500 bg-gray-800 text-gray-400 hover:bg-red-900/40'}`}
+                    title={isSelected ? 'Remove from newsletter' : 'Include in newsletter'}
+                    aria-label={isSelected ? 'Remove from newsletter' : 'Include in newsletter'}
+                    style={{ minWidth: 24, minHeight: 24 }}
+                  >
+                    {isSelected ? (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 8.5L7 11.5L12 5.5" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="8" cy="8" r="6.5" stroke="#888" strokeWidth="1.5"/>
+                      </svg>
+                    )}
+                  </button>
                   <span className="font-bold text-orange-200">{job.title}</span>
                   <span className="ml-2 text-gray-400">({job.company})</span>
                   {job.planName && <span className="ml-2 text-xs text-orange-400 bg-orange-900/30 px-2 py-1 rounded">{job.planName}</span>}
