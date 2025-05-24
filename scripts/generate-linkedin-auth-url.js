@@ -4,7 +4,7 @@
  */
 
 const CLIENT_ID = "77u9qtiet3nmdh";
-const REDIRECT_URI = "https://gate33.net/auth/linkedin/callback";
+const REDIRECT_URI = "https://gate33.net/api/linkedin/callback";
 const SCOPE = "w_member_social"; // Permissão para compartilhar posts
 
 // Gera a URL de autenticação

@@ -4,7 +4,7 @@ import axios from 'axios';
 // Configurações do LinkedIn OAuth
 const CLIENT_ID = "77u9qtiet3nmdh"; // Seu client_id do LinkedIn
 const CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET || "WPL_AP1.9FS2BXA5qW2rc7pI.76Uj3A=="; // Pode ser fixo ou via env
-const REDIRECT_URI = "https://gate33.net/auth/linkedin/callback"; // Exatamente como registrado no LinkedIn
+const REDIRECT_URI = "https://gate33.net/api/linkedin/callback"; // Corrigido para a rota da API
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
