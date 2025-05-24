@@ -48,7 +48,7 @@ async function postToLinkedIn(job: SocialMediaJob): Promise<boolean> {
       `\n\nSee details: https://gate33.io/jobs/${job.id}`;
     const hasMedia = !!job.mediaUrl;
 
-    // Buscar o personId dinamicamente
+    // Fetch personId dynamically
     const personId = await getLinkedInPersonId(LINKEDIN_ACCESS_TOKEN!);
     if (!personId) {
       console.error('[SocialMedia] Could not fetch LinkedIn person ID.');
@@ -123,7 +123,8 @@ async function postToTelegram(job: SocialMediaJob): Promise<boolean> {
     }
 
     const message = formatTelegramMessage(job);
-    const hasMedia = !!job.mediaUrl;    // Log token and channel ID status (not the actual token)
+    const hasMedia = !!job.mediaUrl;
+    // Log token and channel ID status (not the actual token)
     console.log(`[SocialMedia] Telegram bot token exists: ${!!TELEGRAM_BOT_TOKEN}`);
     console.log(`[SocialMedia] Telegram bot token length: ${TELEGRAM_BOT_TOKEN ? TELEGRAM_BOT_TOKEN.length : 0}`);
     console.log(`[SocialMedia] Telegram channel ID: ${TELEGRAM_CHANNEL_ID}`);
@@ -178,12 +179,10 @@ async function postToTelegram(job: SocialMediaJob): Promise<boolean> {
   }
 }
 
-/**
- * Formats the message for Telegram with HTML
- */
+// Function to format the message for Telegram with HTML
 function formatTelegramMessage(job: SocialMediaJob): string {
-  // Base URL of your site
-  const baseUrl = 'https://gate33.io'; // Replace with your real domain
+  // Always use the correct domain for job links
+  const baseUrl = 'https://gate33.net';
   const jobUrl = `${baseUrl}/jobs/${job.id}`;
   
   // Build the message with HTML formatting
@@ -221,7 +220,7 @@ export function renderTemplateFromJob(template: string, job: SocialMediaJob): st
     .replace(/{{\s*companyName\s*}}/gi, job.companyName || "")
     .replace(/{{\s*mediaUrl\s*}}/gi, job.mediaUrl || "")
     .replace(/{{\s*id\s*}}/gi, job.id || "")
-    .replace(/{{\s*jobUrl\s*}}/gi, `https://gate33.net/jobs/${job.id}`); // Corrigido para .net
+    .replace(/{{\s*jobUrl\s*}}/gi, `https://gate33.net/jobs/${job.id}`); // Fixed to .net
 }
 
 // SocialMediaJob interface with additional fields
@@ -239,7 +238,7 @@ export interface SocialMediaJob {
   salary?: string;
   shortDescription?: string;
   jobType?: string;
-  mediaUrl?: string; // NEW: media/image URL for social post
+  mediaUrl?: string; // media/image URL for social post
   // other relevant fields
 }
 
@@ -276,7 +275,7 @@ export async function runSocialMediaPromotionScheduler() {
   const jobsSnapshot = await jobsRef.get();
   const jobs = jobsSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as SocialMediaJob[];
 
-  // Buscar template centralizado e mediaUrl
+  // Fetch centralized template and mediaUrl
   const templateSnap = await db.collection("config").doc("socialMediaTemplate").get();
   const templateData = (templateSnap && templateSnap.exists && typeof templateSnap.data === 'function') ? templateSnap.data() ?? {} : {};
   const template = templateData.template || "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!\n{{jobUrl}}";
@@ -288,7 +287,7 @@ export async function runSocialMediaPromotionScheduler() {
       (job.socialMediaPromotionCount ?? 0) < (job.socialMediaPromotion ?? 0) &&
       canSendAgainByPlan(job)
     ) {
-      // Renderizar mensagem e preparar objeto padronizado
+      // Render message and prepare standardized object
       const message = renderTemplateFromJob(template, job);
       const jobForSend = { ...job, shortDescription: message, mediaUrl: job.mediaUrl || templateMediaUrl };
       // Post to social media

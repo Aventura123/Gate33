@@ -62,7 +62,7 @@ export const manualSocialMediaPromotion = onRequest(async (req, res) => {
     // Fetch centralized template
     const templateSnap = await db.collection("config").doc("socialMediaTemplate").get();
     const templateData = (templateSnap && templateSnap.exists && typeof templateSnap.data === 'function') ? templateSnap.data() ?? {} : {};
-    const template = templateData.template || "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!";
+    const template = templateData.template || "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!\n{{jobUrl}}";
     const templateMediaUrl = templateData.mediaUrl || "";
     // Render message
     const message = renderTemplateFromJob(template, job);
@@ -118,5 +118,5 @@ export const manualSocialMediaPromotion = onRequest(async (req, res) => {
   });
 });
 
-// Certifique-se de que o postToTelegram está usando variáveis de ambiente seguras
-// Não inclua tokens sensíveis diretamente neste arquivo, apenas use a função importada
+// Ensure postToTelegram uses secure environment variables
+// Do not include sensitive tokens directly in this file, only use the imported function

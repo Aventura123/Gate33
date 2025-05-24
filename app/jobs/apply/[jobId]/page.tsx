@@ -76,15 +76,15 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
         console.log('Seeker data:', data); // Log para verificar a estrutura dos dados do seeker
         setSeeker(data);
 
-        // Dados básicos de contato
+        // Basic contact data
         setName(data.fullName || (data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : data.name || ""));
         setEmail(data.email || "");
         setPhone(data.phone || data.phoneNumber || "");        if (data.phoneCountry) {
-          // Verifica se o formato já contém o prefixo
+          // Check if the format already contains the prefix
           if (data.phoneCountry.startsWith('+')) {
             setPhoneCountry(data.phoneCountry);
           } else {
-            // Mapeia códigos de país antigos para o novo formato
+            // Map old country codes to the new format
             const countryCodeMap: {[key: string]: string} = {
               "US": "+1-US",
               "GB": "+44-GB",
@@ -104,17 +104,15 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
           }
         }
 
-        // Perfis sociais e profissionais
+        // Social and professional profiles
         setLinkedinProfile(data.linkedinProfile || data.linkedin || "");
         setGithubProfile(data.githubProfile || data.github || "");
         setTelegramHandle(data.telegramHandle || data.telegram || "");
         setPortfolioUrl(data.portfolioUrl || data.website || data.portfolio || "");
-        
-        // Dados profissionais
+        // Professional data
         setWeb3Experience(data.web3Experience || "");
         setCurrentSalary(data.currentSalary || data.salary || "");
         setYearsOfExperience(data.yearsOfExperience || data.experience || "");
-        
         if (data.resumeUrl) {
           // If seeker has a resume, show its name for reference
           const resumeFileName = data.resumeUrl.split('/').pop() || "Current resume";
@@ -298,16 +296,16 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
   };
   const renderContent = () => {
     if (loading) return <div className="text-center text-gray-300 py-12">Loading...</div>;
-    
     if (error) return <div className="text-center text-red-400 py-12">{error}</div>;
-      if (success) return (
+    if (success) return (
       <div className="bg-black/70 rounded-lg p-8 text-center max-w-xl mx-auto">
         <h2 className="text-2xl font-bold text-orange-400 mb-4">Application Submitted!</h2>
         <p className="text-gray-200 mb-4">Your application was sent successfully.</p>
         <Button onClick={() => router.push("/seeker-dashboard")}>Go to Dashboard</Button>
       </div>
-    );return (
-      <div className="bg-black/70 rounded-lg p-5 lg:p-8 shadow-lg border border-orange-500/30 w-full">{/* Cabeçalho do trabalho */}
+    );
+    return (
+      <div className="bg-black/70 rounded-lg p-5 lg:p-8 shadow-lg border border-orange-500/30 w-full">{/* Job header */}
         <div className="border-b border-orange-500/20 pb-5 mb-6">
           <h1 className="text-3xl font-bold text-orange-400 mb-3">Apply for: {job?.title || "Job"}</h1>
           <div className="flex flex-wrap gap-3 mb-4">
@@ -353,7 +351,6 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
           </div>          <div className="text-gray-300 mt-4 mb-4 bg-black/30 p-4 rounded-md border border-orange-500/10">
             {job?.description}
           </div>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {job?.requirements && (
               <div className="bg-black/30 p-4 rounded-md border border-orange-500/10">
@@ -376,7 +373,6 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
                 </div>
               </div>
             )}
-            
             {job?.responsibilities && (
               <div className="bg-black/30 p-4 rounded-md border border-orange-500/10">
                 <h3 className="text-orange-300 text-lg font-semibold mb-2 flex items-center">
@@ -399,7 +395,6 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
               </div>
             )}
           </div>
-
           {/* Ideal Candidate Section */}
           {job?.idealCandidate && (
             <div className="bg-black/30 p-4 rounded-md border border-orange-500/10 mb-4">
@@ -440,7 +435,7 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
               />
             </div>
           </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">            <div>
               <label className="block text-orange-300 mb-1 font-semibold">Phone Number</label>
               <div className="flex">                <select
                   value={phoneCountry}
@@ -508,7 +503,6 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
               />
             </div>
           </div>
-          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">            <div>
               <label className="block text-orange-300 mb-1 font-semibold">Years of Experience</label>
               <input
@@ -546,7 +540,6 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
               />
             </div>
           </div>
-          
           <div>
             <label className="block text-orange-300 mb-1 font-semibold">Portfolio/Website</label>
             <input
@@ -557,7 +550,6 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
               placeholder="https://your-portfolio.com"
             />
           </div>
-          
           <div>
             <label className="block text-orange-300 mb-1 font-semibold">
               {job?.requireCV ? "Upload CV/Resume * (PDF, DOC, DOCX)" : "Upload CV/Resume (PDF, DOC, DOCX)"}
@@ -581,7 +573,7 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
               </div>
             )}
           </div>
-            <div>
+          <div>
             <label className="block text-orange-300 mb-1 font-semibold">Cover Letter *</label>
             <textarea
               required
@@ -594,7 +586,6 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
               Introduce yourself, highlight your relevant experience, and explain your interest in this role
             </p>
           </div>
-          
           {job?.requireVideo && (
             <div>
               <label className="block text-orange-300 mb-1 font-semibold">Video Application (URL) *</label>
@@ -611,7 +602,6 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
               </p>
             </div>
           )}
-          
           {Array.isArray(job?.screeningQuestions) && job.screeningQuestions.length > 0 && false && (
             <div>
               <label className="block text-orange-300 mb-2 font-semibold">Screening Questions</label>
@@ -629,7 +619,7 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
               ))}
             </div>
           )}
-            <div className="mt-8">
+          <div className="mt-8">
             <Button 
               type="submit" 
               className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-lg shadow-md" 
@@ -645,7 +635,6 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
                 </span>
               ) : "Submit Application"}
             </Button>
-            
             <div className="mt-4 flex justify-center">
               <button 
                 type="button" 
@@ -659,7 +648,6 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
               </button>
             </div>
           </div>
-          
           {error && <div className="text-red-400 mt-3 text-center p-2 bg-red-900/20 rounded border border-red-500/20">{error}</div>}
         </form>
       </div>
