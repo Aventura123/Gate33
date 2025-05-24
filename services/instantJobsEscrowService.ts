@@ -291,7 +291,7 @@ class InstantJobsEscrowService {
   async loadContractAddresses() {
     try {
       // Reference to the document that stores contract addresses
-      const contractsDocRef = doc(db, 'contractInstantJobs', 'addresses');
+      const contractsDocRef = doc(db, 'settings', 'contractInstantJobs_addresses');
       const contractsDoc = await getDoc(contractsDocRef);
 
       if (contractsDoc.exists()) {
@@ -335,7 +335,7 @@ class InstantJobsEscrowService {
       INSTANT_JOBS_ESCROW_ADDRESS[networkKey] = address;
       
       // Reference to the document that stores contract addresses
-      const contractsDocRef = doc(db, 'contractInstantJobs', 'addresses');
+      const contractsDocRef = doc(db, 'settings', 'contractInstantJobs_addresses');
       
       // Check if the document exists
       const docSnap = await getDoc(contractsDocRef);

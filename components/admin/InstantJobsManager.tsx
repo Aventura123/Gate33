@@ -3,6 +3,7 @@ import { web3Service } from '../../services/web3Service';
 import instantJobsEscrowService from '../../services/instantJobsEscrowService';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { useWallet } from '../WalletProvider';
 
 // Interface for Instant Jobs
 interface InstantJob {
@@ -24,9 +25,10 @@ interface InstantJob {
 }
 
 const InstantJobsManager = () => {
-  // Contract management states
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('');
+  // Use global wallet state
+  const { walletAddress, currentNetwork, connectWallet: globalConnectWallet } = useWallet();
+  
+  // Contract management states (remove local wallet states)
   const [contractOwner, setContractOwner] = useState('');
   const [feeCollector, setFeeCollector] = useState('');
   const [platformFeePercentage, setPlatformFeePercentage] = useState(0);
@@ -38,65 +40,20 @@ const InstantJobsManager = () => {
   const [contractAddress, setContractAddress] = useState('');
   const [newContractAddress, setNewContractAddress] = useState('');
   const [settingContractAddress, setSettingContractAddress] = useState(false);
-  
-  // UI states
-  const [isConnecting, setIsConnecting] = useState(false);
+    // UI states (removed local connection states)
   const [isUpdatingFee, setIsUpdatingFee] = useState(false);
   const [isUpdatingCollector, setIsUpdatingCollector] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
-  // Jobs listing states
+    // Jobs listing states
   const [instantJobs, setInstantJobs] = useState<InstantJob[]>([]);
   const [isLoadingJobs, setIsLoadingJobs] = useState(false);
 
-  // Connect wallet
-  const connectWallet = async () => {
-    try {
-      setIsConnecting(true);
-      setError(null);
-      
-      await web3Service.connectWallet();
-      const walletInfo = web3Service.getWalletInfo();
-      
-      if (walletInfo) {
-        setWalletConnected(true);
-        setWalletAddress(walletInfo.address);
-        
-        // Get network information
-        const network = await web3Service.getNetworkInfo();
-        if (network) {
-          setNetworkInfo(network);
-          console.log('Connected network:', network.name, network.chainId);
-        }
-        
-        // Initialize contract and load data
-        try {
-          await instantJobsEscrowService.init();
-          await loadContractData();
-        } catch (contractError: any) {
-          console.warn("Warning when loading contract:", contractError.message);
-          
-          // Even with contract error, allow access to settings
-          setIsLoading(false);
-          
-          // If the error is that the contract is not configured, show appropriate message
-          if (contractError.message && contractError.message.includes("not configured for the network")) {
-            setError(`Instant Jobs contract not configured for the current network (${network?.name}). Configure the contract address below.`);
-          } else {
-            setError(contractError.message);
-          }
-        }
-      } else {
-        throw new Error("Failed to get wallet information");
-      }
-    } catch (err: any) {
-      console.error("Error connecting wallet:", err);
-      setError(err.message || "Error connecting wallet");
-    } finally {
-      setIsConnecting(false);
-    }
+  // Non-functional connect wallet (just for display)
+  const handleConnectWallet = () => {
+    // This button does nothing - connection is handled in the dashboard
+    console.log('Connect wallet button clicked - connection should be handled in dashboard');
   };
   
   // Configure contract address for current network
@@ -167,10 +124,10 @@ const InstantJobsManager = () => {
         // Try to load contract addresses from Firebase
         await instantJobsEscrowService.loadContractAddresses();
         
-        // Get address for current network from contractInstantJobs collection
+        // Get address for current network from settings/contractInstantJobs_addresses
         const networkKey = networkInfo.name.toLowerCase();
         try {
-          const contractsDocRef = doc(db, 'contractInstantJobs', 'addresses');
+          const contractsDocRef = doc(db, 'settings', 'contractInstantJobs_addresses');
           const contractsDoc = await getDoc(contractsDocRef);
           if (contractsDoc.exists() && contractsDoc.data()[networkKey]) {
             setContractAddress(contractsDoc.data()[networkKey]);
@@ -362,29 +319,20 @@ const InstantJobsManager = () => {
       setIsUpdatingCollector(false);
     }
   };
-  
-  // Check wallet connection when component loads
+    // Check wallet connection and load data when wallet state changes
   useEffect(() => {
-    const checkWalletConnection = async () => {
-      if (web3Service.isWalletConnected()) {
-        const walletInfo = web3Service.getWalletInfo();
-        if (walletInfo) {
-          setWalletConnected(true);
-          setWalletAddress(walletInfo.address);
-          
-          // Get network information
-          const network = await web3Service.getNetworkInfo();
-          if (network) {
-            setNetworkInfo(network);
-          }
-          
-          try {
-            await loadContractData();
-          } catch (err) {
-            console.warn("Error loading contract data:", err);
-            setIsLoading(false);
-          }
-        } else {
+    const loadWalletData = async () => {
+      if (walletAddress) {
+        // Get network information
+        const network = await web3Service.getNetworkInfo();
+        if (network) {
+          setNetworkInfo(network);
+        }
+        
+        try {
+          await loadContractData();
+        } catch (err) {
+          console.warn("Error loading contract data:", err);
           setIsLoading(false);
         }
       } else {
@@ -392,15 +340,15 @@ const InstantJobsManager = () => {
       }
     };
     
-    checkWalletConnection();
-  }, []);
+    loadWalletData();
+  }, [walletAddress]);
   
-  // Load jobs when wallet connects
+  // Load jobs when wallet connects and network is available
   useEffect(() => {
-    if (walletConnected && networkInfo) {
+    if (walletAddress && networkInfo) {
       loadJobs();
     }
-  }, [walletConnected, networkInfo]);
+  }, [walletAddress, networkInfo]);
 
   // Render component
   return (
@@ -420,18 +368,17 @@ const InstantJobsManager = () => {
           <span>{success}</span>
         </div>
       )}
-      
-      {!walletConnected ? (
+        {!walletAddress ? (
         <div className="mb-6">
           <button
-            onClick={connectWallet}
-            disabled={isConnecting}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition"
+            onClick={handleConnectWallet}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition cursor-not-allowed opacity-70"
+            title="Wallet connection is handled in the dashboard"
           >
-            {isConnecting ? "Connecting..." : "Connect Wallet to Manage Instant Jobs"}
+            Connect Wallet to Manage Instant Jobs
           </button>
           <p className="text-gray-400 text-sm mt-2">
-            You need to connect your wallet to manage Instant Jobs settings and view contract details.
+            Please connect your wallet in the dashboard to manage Instant Jobs settings and view contract details.
           </p>
         </div>
       ) : (
