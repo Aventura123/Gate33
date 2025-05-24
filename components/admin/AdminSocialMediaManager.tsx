@@ -43,7 +43,8 @@ const AdminSocialMediaManager: React.FC = () => {
       const jobsRef = collection(db, 'jobs');
       const jobsSnapshot = await getDocs(jobsRef);
       const jobsList = jobsSnapshot.docs
-        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as SocialMediaJob[];      setJobs(jobsList.filter(j => (j.socialMediaPromotion ?? 0) > 0 && (j.socialMediaPromotionCount ?? 0) < (j.socialMediaPromotion ?? 0)));
+        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as SocialMediaJob[];
+      setJobs(jobsList.filter(j => (j.socialMediaPromotion ?? 0) > 0 && (j.socialMediaPromotionCount ?? 0) < (j.socialMediaPromotion ?? 0)));
       setLoading(false);
     };
     fetchJobs();
@@ -74,7 +75,8 @@ const AdminSocialMediaManager: React.FC = () => {
     try {
       const storage = getStorage();
       const storageRef = ref(storage, `socialMediaTemplates/${file.name}-${Date.now()}`);
-      await uploadBytes(storageRef, file);      const url = await getDownloadURL(storageRef);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
       setMediaUrl(url);
       setMessage('Image uploaded!');
     } catch (err) {
@@ -84,14 +86,16 @@ const AdminSocialMediaManager: React.FC = () => {
   };
   // Save template and mediaUrl to Firestore
   const saveTemplate = async () => {
-    setSaving(true);    await setDoc(firestoreDoc(db, TEMPLATE_DOC_PATH.collection, TEMPLATE_DOC_PATH.doc), { template, mediaUrl });
+    setSaving(true);
+    await setDoc(firestoreDoc(db, TEMPLATE_DOC_PATH.collection, TEMPLATE_DOC_PATH.doc), { template, mediaUrl });
     setSaving(false);
     setMessage('Template saved!');
     setTimeout(() => setMessage(null), 2000);
   };
 
-  // Função mock para envio manual
-  const sendManualPost = async (job: SocialMediaJob) => {    setMessage('Sending...');
+  // Manual send function
+  const sendManualPost = async (job: SocialMediaJob) => {
+    setMessage('Sending...');
     try {
       // Call the actual endpoint (example: /api/socialMediaManualPost)
       const res = await fetch('/api/socialMediaManualPost', {
@@ -100,14 +104,13 @@ const AdminSocialMediaManager: React.FC = () => {
         body: JSON.stringify({ jobId: job.id })
       });
       if (!res.ok) throw new Error('Error sending post');
-      // Update the job in Firestore (optional, as backend already does this)
       setMessage('Post sent!');
     } catch (err) {
       setMessage('Error sending post!');
     }
     setTimeout(() => setMessage(null), 2000);
   };
-  // Função utilitária para renderizar o template com os dados do job
+  // Utility function to render the template with job data
   function renderTemplate(template: string, job: SocialMediaJob): string {
     return template
       .replace(/{{\s*title\s*}}/gi, job.title || "")
@@ -121,8 +124,10 @@ const AdminSocialMediaManager: React.FC = () => {
   }
 
   return (
-    <div className="p-6 bg-black/80 rounded-lg">      <h2 className="text-2xl font-bold text-orange-400 mb-4">Social Media Promotion Manager</h2>
-      <div className="mb-6">        <label className="block text-orange-300 font-semibold mb-1">Post Template:</label>
+    <div className="p-6 bg-black/80 rounded-lg">
+      <h2 className="text-2xl font-bold text-orange-400 mb-4">Social Media Promotion Manager</h2>
+      <div className="mb-6">
+        <label className="block text-orange-300 font-semibold mb-1">Post Template:</label>
         <div className="mb-2 bg-black/40 rounded-lg p-2 border border-gray-700">
           <div className="text-xs text-gray-300 mb-1 font-medium">Available placeholders:</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-400">
@@ -141,7 +146,8 @@ const AdminSocialMediaManager: React.FC = () => {
           rows={4}
           value={template}
           onChange={e => setTemplate(e.target.value)}
-        />        <label className="block text-orange-300 font-semibold mb-1 mt-2">Media (image for all posts):</label>
+        />
+        <label className="block text-orange-300 font-semibold mb-1 mt-2">Media (image for all posts):</label>
         <input
           className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white mb-2"
           type="file"
@@ -153,7 +159,8 @@ const AdminSocialMediaManager: React.FC = () => {
             }
           }}
           disabled={uploading}
-        />        {mediaUrl && (
+        />
+        {mediaUrl && (
           <div className="mt-2"><img src={mediaUrl} alt="media preview" className="rounded max-w-[200px]" /></div>
         )}
         <button onClick={saveTemplate} className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 mt-2" disabled={saving || uploading}>
@@ -179,7 +186,8 @@ const AdminSocialMediaManager: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>      <h3 className="text-xl text-orange-300 mb-3 mt-6 flex items-center">
+      </div>
+      <h3 className="text-xl text-orange-300 mb-3 mt-6 flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clipRule="evenodd" />
         </svg>
@@ -231,13 +239,6 @@ const AdminSocialMediaManager: React.FC = () => {
                         </svg>
                         Send
                       </button>
-                      <div className="mt-3 text-xs text-gray-400 whitespace-pre-line border-t border-gray-700 pt-2">
-                        <div className="font-medium text-orange-300 mb-1">Preview:</div>
-                        <div className="bg-black/20 p-2 rounded-lg">{renderTemplate(template, job)}</div>
-                        {mediaUrl && (
-                          <div className="mt-2"><img src={mediaUrl} alt="media preview" className="rounded-lg max-w-[200px]" /></div>
-                        )}
-                      </div>
                     </td>
                   </tr>
                 ))

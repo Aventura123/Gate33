@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import axios from 'axios';
+
+// Configurações do LinkedIn OAuth
+const CLIENT_ID = "77u9qtiet3nmdh"; // Seu client_id do LinkedIn
+const CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET || "WPL_AP1.9FS2BXA5qW2rc7pI.76Uj3A=="; // Pode ser fixo ou via env
+const REDIRECT_URI = "https://gate33.net/auth/linkedin/callback"; // Exatamente como registrado no LinkedIn
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -13,12 +19,33 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'No code received from LinkedIn.' }, { status: 400 });
   }
 
-  // Exibe o code na tela para fácil cópia
-  return new Response(
-    `<html><body style="font-family:sans-serif;padding:2em"><h2>LinkedIn OAuth Callback</h2><p><b>Authorization code:</b></p><pre style="background:#eee;padding:1em">${code}</pre><p>Copie este código e use no comando curl para obter o access token.</p></body></html>`,
-    {
-      status: 200,
-      headers: { 'Content-Type': 'text/html' }
-    }
-  );
+  try {
+    // Troca o código de autorização por um access token
+    const tokenResponse = await axios.post('https://www.linkedin.com/oauth/v2/accessToken',
+      new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: REDIRECT_URI,
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET
+      }).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );    const { access_token, expires_in } = tokenResponse.data;
+    
+    // Exibe o token na tela para uso
+    return NextResponse.json({
+      message: 'Token gerado com sucesso!',
+      access_token,
+      expires_in,
+      token_type: tokenResponse.data.token_type || 'Bearer'
+    });
+  } catch (err: any) {
+    return NextResponse.json({
+      error: err.response?.data || err.message || err.toString()
+    }, { status: 500 });
+  }
 }

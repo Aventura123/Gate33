@@ -3,8 +3,8 @@ console.log("--- firebase.ts loaded ---");
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithEmailAndPassword, UserCredential } from 'firebase/auth';
-import { getFirestore, doc, getDoc, DocumentData, collection, getDocs, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
-import { getStorage, FirebaseStorage, ref, uploadBytes, getDownloadURL, deleteObject, listAll, StorageReference } from 'firebase/storage';
+import { getFirestore, doc, getDoc, DocumentData, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, listAll, StorageReference } from 'firebase/storage';
 
 // Firebase configuration with sensitive information in environment variables
 const firebaseConfig = {
@@ -198,7 +198,7 @@ const firebase = {
   uploadFile: async (path: string, file: File | Blob): Promise<string> => {
     try {
       const storageRef = ref(storage, path);
-      const snapshot = await uploadBytes(storageRef, file);
+      await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(storageRef);
       return downloadURL;
     } catch (error) {

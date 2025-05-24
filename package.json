@@ -29,6 +29,7 @@
     "@reown/appkit-adapter-wagmi": "1.7.3",
     "@solana/web3.js": "1.98.2",
     "@tanstack/react-query": "5.74.4",
+    "@types/cors": "2.8.18",
     "@types/dotenv": "6.1.1",
     "@types/formidable": "^3.4.5",
     "@wagmi/connectors": "5.7.13",
@@ -42,6 +43,7 @@
     "bcrypt": "5.1.1",
     "bcryptjs": "^3.0.2",
     "chart.js": "4.4.9",
+    "cors": "2.8.5",
     "dotenv": "16.5.0",
     "ethers": "5.8.0",
     "file-saver": "2.0.5",
@@ -85,6 +87,7 @@
     "pino-pretty": "13.0.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
+    "ts-node": "10.9.2",
     "typescript": "5.8.3"
   }
 }
