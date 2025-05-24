@@ -623,31 +623,6 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                     </div>
                   ) : null}
                 </div>
-                <div className="flex gap-2 mb-2">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="isPremium"
-                      name="isPremium"
-                      checked={selectedPlanForEdit ? selectedPlanForEdit.isPremium : newJobPlan.isPremium}
-                      onChange={handleJobPlanInputChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label htmlFor="isPremium" className="text-gray-300">Premium Plan</label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="isTopListed"
-                      name="isTopListed"
-                      checked={selectedPlanForEdit ? selectedPlanForEdit.isTopListed : newJobPlan.isTopListed}
-                      onChange={handleJobPlanInputChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label htmlFor="isTopListed" className="text-gray-300">Top Listed</label>
-                  </div>
-                </div>
-
                 <div className="flex justify-end gap-2 pt-2">
                   <button
                     type="button"
