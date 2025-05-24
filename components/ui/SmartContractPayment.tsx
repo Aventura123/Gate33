@@ -122,11 +122,10 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
       setIsLoading(false);
     }
   };
-
   const buttonLabel = () => {
-    if (isSwitchingNetwork) return "Trocando rede...";
-    if (isLoading) return "Processando...";
-    if (txHash) return "Pagamento Concluído";
+    if (isSwitchingNetwork) return "Switching Network...";
+    if (isLoading) return "Processing...";
+    if (txHash) return "Payment Complete";
     return `${label} ${amount} ETH`;
   };
 

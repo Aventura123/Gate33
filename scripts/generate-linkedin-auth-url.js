@@ -3,8 +3,8 @@
  * IMPORTANTE: Sua aplicação deve ter os produtos habilitados primeiro!
  */
 
-const CLIENT_ID = "77leq1rmdnmdiy";
-const CLIENT_SECRET = "WPL_AP1.tl39ylFqPbFBIjxZ.yXwhmA==";
+const CLIENT_ID = "77u9qtiet3nmdh";
+const CLIENT_SECRET = "WPL_AP1.9FS2BXA5qW2rc7pI.76Uj3A==";
 const REDIRECT_URI = "https://gate33.net/api/linkedin/callback";
 
 // Função para gerar URL
@@ -29,7 +29,7 @@ function generateAuthUrl(scope, description) {
 console.log("🔧 PASSO 1: HABILITAR PRODUTOS NA APLICAÇÃO LINKEDIN");
 console.log("================================================================");
 console.log("1. Acesse: https://www.linkedin.com/developers/apps/");
-console.log("2. Clique na sua aplicação (ID: 77leq1rmdnmdiy)");
+console.log("2. Clique na sua aplicação (ID: 77u9qtiet3nmdh)");
 console.log("3. Vá na aba 'Products'");
 console.log("4. Adicione estes produtos:");
 console.log("   ✅ Marketing Developer Platform (para postagem em página de empresa)");

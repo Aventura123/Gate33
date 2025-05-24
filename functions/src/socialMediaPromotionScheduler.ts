@@ -276,15 +276,24 @@ export async function runSocialMediaPromotionScheduler() {
   const jobsSnapshot = await jobsRef.get();
   const jobs = jobsSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as SocialMediaJob[];
 
+  // Buscar template centralizado e mediaUrl
+  const templateSnap = await db.collection("config").doc("socialMediaTemplate").get();
+  const templateData = (templateSnap && templateSnap.exists && typeof templateSnap.data === 'function') ? templateSnap.data() ?? {} : {};
+  const template = templateData.template || "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!";
+  const templateMediaUrl = templateData.mediaUrl || "";
+
   for (const job of jobs) {
     if (
       (job.socialMediaPromotion ?? 0) > 0 &&
       (job.socialMediaPromotionCount ?? 0) < (job.socialMediaPromotion ?? 0) &&
       canSendAgainByPlan(job)
     ) {
+      // Renderizar mensagem e preparar objeto padronizado
+      const message = renderTemplateFromJob(template, job);
+      const jobForSend = { ...job, shortDescription: message, mediaUrl: job.mediaUrl || templateMediaUrl };
       // Post to social media
-      const linkedInSuccess = await postToLinkedIn(job);
-      const telegramSuccess = await postToTelegram(job);
+      const linkedInSuccess = await postToLinkedIn(jobForSend);
+      const telegramSuccess = await postToTelegram(jobForSend);
 
       if (linkedInSuccess && telegramSuccess) {
         // Update job document

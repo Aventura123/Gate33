@@ -61,14 +61,14 @@ export const manualSocialMediaPromotion = onRequest(async (req, res) => {
     console.log("[ManualSocialMedia] Loaded job:", job);
     // Fetch centralized template
     const templateSnap = await db.collection("config").doc("socialMediaTemplate").get();
-    const template = templateSnap.exists
-      ? templateSnap.data()?.template
-      : "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!";
+    const templateData = (templateSnap && templateSnap.exists && typeof templateSnap.data === 'function') ? templateSnap.data() ?? {} : {};
+    const template = templateData.template || "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!";
+    const templateMediaUrl = templateData.mediaUrl || "";
     // Render message
     const message = renderTemplateFromJob(template, job);
     console.log("[ManualSocialMedia] Rendered message:", message);
     // Prepare job object for sending (shortDescription for LinkedIn, mediaUrl for both)
-    const jobForSend = { ...job, shortDescription: message, mediaUrl: job.mediaUrl };
+    const jobForSend = { ...job, shortDescription: message, mediaUrl: job.mediaUrl || templateMediaUrl };
     console.log("[ManualSocialMedia] jobForSend:", jobForSend);
       let linkedInSuccess = false;
     let telegramSuccess = false;

@@ -166,7 +166,7 @@ export default function JobsPage() {
   const selectedJob = jobs.find(job => job.id === selectedJobId);
 
   // Component for job details panel
-  const JobDetailsPanel = ({ job }: { job: Job }) => (
+  const JobDetailsPanel = ({ job, hideCloseButton }: { job: Job, hideCloseButton?: boolean }) => (
     <div className="bg-black/70 rounded-lg border border-orange-500/30 shadow-lg p-6 h-fit sticky top-4">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
@@ -193,12 +193,15 @@ export default function JobsPage() {
             )}
           </div>
         </div>
-        <button
-          onClick={() => setSelectedJobId(null)}
-          className="text-orange-400 hover:text-orange-300 text-xl font-bold ml-4"
-        >
-          ×
-        </button>
+        {/* Só mostra o botão de fechar se não for mobile/modal */}
+        {!hideCloseButton && (
+          <button
+            onClick={() => setSelectedJobId(null)}
+            className="text-orange-400 hover:text-orange-300 text-xl font-bold ml-4"
+          >
+            ×
+          </button>
+        )}
       </div>
 
       {/* Job Description */}
@@ -689,24 +692,26 @@ export default function JobsPage() {
               )}
             </div>
 
-            {/* Column 2: Job Details (2/3 width) */}
+            {/* Column 2: Job Details (2/3 width) - Desktop only */}
             {!isMobile && filteredJobs.length > 0 && (
               <div className="col-span-2">
                 <JobDetailsPanel job={filteredJobs.find(j => j.id === selectedJobId) || filteredJobs[0]} />
               </div>
             )}
 
-            {/* Mobile View: Show job details as modal */}
-            {selectedJobId && isMobile && (
+            {/* Mobile View: Show job details as modal only when a job is selected */}
+            {isMobile && selectedJobId && (
               <div className="fixed inset-0 bg-black/80 z-40 overflow-y-auto p-4">
                 <div className="relative max-w-2xl mx-auto">
+                  {/* Botão de fechar apenas aqui, não dentro do JobDetailsPanel */}
                   <button
-                    onClick={() => setSelectedJobId(null)} 
+                    onClick={() => setSelectedJobId(null)}
                     className="absolute -top-2 right-0 bg-black/60 text-orange-400 hover:text-orange-300 text-xl p-2 w-10 h-10 rounded-full flex items-center justify-center border border-orange-500/30 z-50"
                   >
                     ×
                   </button>
-                  <JobDetailsPanel job={filteredJobs.find(j => j.id === selectedJobId) || filteredJobs[0]} />
+                  {/* Renderiza o painel de detalhes sem botão de fechar interno */}
+                  <JobDetailsPanel job={filteredJobs.find(j => j.id === selectedJobId) || filteredJobs[0]} hideCloseButton />
                 </div>
               </div>
             )}

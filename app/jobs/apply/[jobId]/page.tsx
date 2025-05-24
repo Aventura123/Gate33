@@ -43,14 +43,9 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
       try {
         const jobRef = doc(db, "jobs", jobId);
         const jobSnap = await getDoc(jobRef);
-        if (jobSnap.exists()) {
-          const jobData = jobSnap.data();
+        if (jobSnap.exists()) {          const jobData = jobSnap.data();
           console.log('Job data:', jobData); // Log para verificar a estrutura do objeto job
           setJob(jobData);
-          // Se houver applicationLink, redireciona
-          if (jobData.applicationLink && jobData.applicationLink.length > 0) {
-            window.location.href = jobData.applicationLink;
-          }
           
           // Initialize screening answers array with empty strings based on questions
           if (Array.isArray(jobData.screeningQuestions)) {
@@ -306,13 +301,13 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
     
     if (error) return <div className="text-center text-red-400 py-12">{error}</div>;
       if (success) return (
-      <div className="bg-black/80 rounded-lg p-8 text-center max-w-xl mx-auto">
+      <div className="bg-black/70 rounded-lg p-8 text-center max-w-xl mx-auto">
         <h2 className="text-2xl font-bold text-orange-400 mb-4">Application Submitted!</h2>
         <p className="text-gray-200 mb-4">Your application was sent successfully.</p>
         <Button onClick={() => router.push("/seeker-dashboard")}>Go to Dashboard</Button>
       </div>
     );return (
-      <div className="bg-black/80 rounded-lg p-5 lg:p-8 shadow-lg border border-orange-500/10 w-full">{/* Cabeçalho do trabalho */}
+      <div className="bg-black/70 rounded-lg p-5 lg:p-8 shadow-lg border border-orange-500/30 w-full">{/* Cabeçalho do trabalho */}
         <div className="border-b border-orange-500/20 pb-5 mb-6">
           <h1 className="text-3xl font-bold text-orange-400 mb-3">Apply for: {job?.title || "Job"}</h1>
           <div className="flex flex-wrap gap-3 mb-4">
@@ -617,7 +612,7 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
             </div>
           )}
           
-          {Array.isArray(job?.screeningQuestions) && job.screeningQuestions.length > 0 && (
+          {Array.isArray(job?.screeningQuestions) && job.screeningQuestions.length > 0 && false && (
             <div>
               <label className="block text-orange-300 mb-2 font-semibold">Screening Questions</label>
               {job.screeningQuestions.map((q: string, idx: number) => (
@@ -672,46 +667,21 @@ export default function ApplyJobPage({ params }: { params: Promise<{ jobId: stri
   };
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-black to-orange-900 py-12 px-3 sm:px-5 lg:px-8 xl:px-12">        {/* Botão de voltar */}
-        <div className="max-w-7xl mx-auto mb-4">
-          <button 
-            onClick={() => router.push('/jobs')}
-            className="inline-flex items-center text-orange-400 hover:text-orange-300 transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Back to Jobs
-          </button>
-        </div>          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-14 gap-4 lg:gap-6">
-        {/* Coluna de anúncios (à esquerda) */}
-        <div className="lg:col-span-2 xl:col-span-2 order-2 lg:order-1">
-          <AdsSidebar />
-        </div>
-        
-        {/* Coluna do formulário principal (centro-esquerda) */}
-        <div className="lg:col-span-7 xl:col-span-9 order-1 lg:order-2">
-          <div className="w-full">
+      <div className="min-h-screen bg-gradient-to-b from-black via-[#18181b] to-black py-12 px-3 sm:px-5 lg:px-8 xl:px-12">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-14 gap-4 lg:gap-6">
+          {/* Ads column (left) */}
+          <div className="lg:col-span-2 xl:col-span-2 order-2 lg:order-1">
+            <AdsSidebar />
+          </div>
+          {/* Main Content */}
+          <div className="lg:col-span-7 xl:col-span-9 order-1 lg:order-2">
             {renderContent()}
           </div>
+          {/* Coluna de vagas relacionadas (à direita do formulário) */}
+          <div className="hidden lg:block lg:col-span-3 xl:col-span-2 order-2 lg:order-3">
+            <AdsSidebar currentJobId={jobId} />
+          </div>
         </div>
-        
-        {/* Coluna de vagas relacionadas (à direita do formulário) */}
-        <div className="hidden lg:block lg:col-span-3 xl:col-span-2 order-2 lg:order-3">
-          <AdsSidebar currentJobId={jobId} />
-        </div>
-      </div>
       </div>
     </Layout>
   );

@@ -88,11 +88,10 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   };
 
   const buttonLabel = isConnecting 
-    ? "Conectando..." 
+    ? "Connecting..." 
     : isLoading 
-      ? "Processando..." 
-      : txHash 
-        ? "Pagamento Concluído" 
+      ? "Processing..." : txHash 
+        ? "Payment Complete" 
         : `${label} ${amount} ${currency}`;
 
   const buttonClass = `
