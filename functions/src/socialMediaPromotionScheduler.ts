@@ -221,7 +221,7 @@ export function renderTemplateFromJob(template: string, job: SocialMediaJob): st
     .replace(/{{\s*companyName\s*}}/gi, job.companyName || "")
     .replace(/{{\s*mediaUrl\s*}}/gi, job.mediaUrl || "")
     .replace(/{{\s*id\s*}}/gi, job.id || "")
-    .replace(/{{\s*jobUrl\s*}}/gi, `https://gate33.io/jobs/${job.id}`);
+    .replace(/{{\s*jobUrl\s*}}/gi, `https://gate33.net/jobs/${job.id}`); // Corrigido para .net
 }
 
 // SocialMediaJob interface with additional fields
@@ -279,7 +279,7 @@ export async function runSocialMediaPromotionScheduler() {
   // Buscar template centralizado e mediaUrl
   const templateSnap = await db.collection("config").doc("socialMediaTemplate").get();
   const templateData = (templateSnap && templateSnap.exists && typeof templateSnap.data === 'function') ? templateSnap.data() ?? {} : {};
-  const template = templateData.template || "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!";
+  const template = templateData.template || "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!\n{{jobUrl}}";
   const templateMediaUrl = templateData.mediaUrl || "";
 
   for (const job of jobs) {
