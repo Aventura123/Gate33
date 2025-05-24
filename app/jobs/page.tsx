@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase";
-import { useRouter } from "next/navigation";
 
 // Defining the types
 interface Job {
@@ -124,10 +123,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
-  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
-  const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const router = useRouter();
   const isMobile = useIsMobile();
   
   // New states for additional filters
@@ -165,6 +161,127 @@ export default function JobsPage() {
     if (diffDays === 1) return "1d";
     return `${diffDays}d`;
   };
+
+  // Get the selected job details
+  const selectedJob = jobs.find(job => job.id === selectedJobId);
+
+  // Component for job details panel
+  const JobDetailsPanel = ({ job }: { job: Job }) => (
+    <div className="bg-black/70 rounded-lg border border-orange-500/30 shadow-lg p-6 h-fit sticky top-4">
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex-1">
+          <h2 className="text-2xl font-bold text-orange-400 mb-2">{job.jobTitle}</h2>
+          <p className="text-orange-200 text-lg mb-1">{job.companyName}</p>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div className="flex items-center bg-black/40 px-3 py-1 rounded-full border border-orange-500/30">
+              <svg className="h-4 w-4 text-orange-300 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-orange-200 text-sm">{job.location}</span>
+            </div>
+            <div className="bg-black/40 px-3 py-1 rounded-full text-xs text-orange-200 border border-orange-500/30">
+              {job.jobType}
+            </div>
+            <div className="bg-black/40 px-3 py-1 rounded-full text-xs text-orange-200 border border-orange-500/30">
+              {job.experienceLevel}
+            </div>
+            {job.acceptsCryptoPay && (
+              <div className="px-3 py-1 bg-orange-500/20 rounded-full text-xs text-orange-400 font-semibold border border-orange-500/50">
+                Crypto Pay
+              </div>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={() => setSelectedJobId(null)}
+          className="text-orange-400 hover:text-orange-300 text-xl font-bold ml-4"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Job Description */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-orange-300 mb-3">Job Description</h3>
+        <div className="text-orange-100 leading-relaxed whitespace-pre-wrap">
+          {job.jobDescription}
+        </div>
+      </div>
+
+      {/* Required Skills */}
+      {job.requiredSkills && (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-orange-300 mb-3">Required Skills</h3>
+          <div className="flex flex-wrap gap-2">
+            {job.requiredSkills.split(',').map((skill, index) => (
+              <span
+                key={index}
+                className="bg-black/40 px-3 py-1 rounded-full text-sm text-orange-200 border border-orange-500/30"
+              >
+                {skill.trim()}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Technology Tags */}
+      {job.techTags && job.techTags.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-orange-300 mb-3">Technologies</h3>
+          <div className="flex flex-wrap gap-2">
+            {job.techTags.map((tag, index) => (
+              <span
+                key={index}
+                className="bg-orange-500/20 px-3 py-1 rounded-full text-sm text-orange-400 border border-orange-500/50"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Responsibilities */}
+      {job.responsibilities && (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-orange-300 mb-3">Responsibilities</h3>
+          <div className="text-orange-100 leading-relaxed whitespace-pre-wrap">
+            {job.responsibilities}
+          </div>
+        </div>
+      )}
+
+      {/* Ideal Candidate */}
+      {job.idealCandidate && (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-orange-300 mb-3">Ideal Candidate</h3>
+          <div className="text-orange-100 leading-relaxed whitespace-pre-wrap">
+            {job.idealCandidate}
+          </div>
+        </div>
+      )}
+
+      {/* Salary Range */}
+      {job.salaryRange && (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-orange-300 mb-3">Salary Range</h3>
+          <p className="text-orange-100">{job.salaryRange}</p>
+        </div>
+      )}
+
+      {/* Apply Button */}
+      <div className="pt-4 border-t border-orange-500/30">
+        <Button 
+          onClick={() => window.open(job.applyLink, '_blank')}
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 transition-colors"
+        >
+          Apply Now
+        </Button>
+      </div>
+    </div>
+  );
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -512,185 +629,89 @@ export default function JobsPage() {
             Found {filteredJobs.length} job listings
           </div>
 
-          {/* Job Listings */}
-          <div className="grid grid-cols-1 gap-4 sm:gap-6">
-            {filteredJobs.length === 0 ? (
-              <div className="bg-black/60 rounded-lg p-6 sm:p-8 text-center border border-orange-500/30">
-                <p className="text-orange-200 mb-4">No job listings match your search criteria.</p>
-                <Button 
-                  onClick={() => {
-                    setSearchQuery("");
-                    setLocationQuery("");
-                    setSelectedCategory("All");
-                    setSelectedJobType("All Types");
-                    setSelectedExperienceLevel("All Levels");
-                    setShowCryptoPayOnly(false);
-                    setShowFeaturedOnly(false);
-                  }}
-                  className="bg-orange-500 hover:bg-orange-600 text-white transition-colors"
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            ) : (
-              filteredJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className={`bg-black/70 rounded-lg border border-orange-500/30 shadow-lg p-4 sm:p-6 transition-all duration-300 relative w-full ${
-                    expandedJobId === job.id 
-                      ? "max-h-none border-orange-500" 
-                      : isMobile
-                        ? "max-h-56 overflow-hidden cursor-pointer hover:border-orange-400"
-                        : "max-h-48 overflow-hidden cursor-pointer hover:border-orange-400"
-                  }`}
-                  onClick={() => setExpandedJobId(expandedJobId === job.id ? null : job.id)}
-                >
-                  {/* Featured Badge */}
-                  {job.isFeatured && (
-                    <div className="absolute left-0 top-0 w-20 h-8 z-30 pointer-events-none select-none overflow-visible">
-                      <div className="bg-orange-500 text-white text-xs font-bold shadow border-2 border-white w-24 text-center py-1 px-0 animate-pulse rotate-[-25deg] -translate-x-6 translate-y-2 rounded-md">
-                        <span className="mr-1 align-middle">★</span> Featured
-                      </div>
-                    </div>
-                  )}
-                  {/* Top Listed Badge */}
-                  {job.priorityListing && (
-                    <div className="absolute right-14 top-2 sm:top-4 bg-green-900/70 text-green-300 text-xs px-3 py-1 rounded-full border border-green-500/50 z-30 shadow-lg">
-                      <span className="mr-1 align-middle">↑</span> Top Listed
-                    </div>
-                  )}
-                  {/* Time Badge */}
-                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-black/60 text-orange-200 text-xs px-2 py-1 rounded-md border border-orange-500/30 z-20">
-                    {getTimeAgo(job.insertedDate)}
-                  </div>
-                  
-                  <div className="pt-1 pb-1">
-                    <h2 className="text-lg sm:text-xl font-bold text-orange-400 drop-shadow break-words pr-16">
-                      {job.jobTitle}
-                    </h2>
-                    
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <div className="flex items-center bg-black/40 px-3 py-1 rounded-full border border-orange-500/30">
-                        <svg className="h-4 w-4 text-orange-300 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <p className="text-orange-200 text-sm">{job.location}</p>
-                      </div>
-                      <div className="bg-black/40 px-3 py-1 rounded-full text-xs text-orange-200 border border-orange-500/30">
-                        {job.jobType}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-2 mb-2 mt-1">
-                    <p className="text-orange-200 flex items-center">
-                      <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                      {job.companyName}
-                    </p>
-                    <div className="px-2 py-1 rounded-full text-xs text-orange-200 border border-orange-500/30">
-                      {job.category}
-                    </div>
-                    <div className="px-2 py-1 rounded-full text-xs text-orange-200 border border-orange-500/30">
-                      {job.experienceLevel}
-                    </div>
-                    {job.acceptsCryptoPay && (
-                      <div className="px-2 py-1 bg-black/40 rounded-full text-xs text-orange-400 font-semibold border border-orange-500/30">
-                        Crypto Pay
-                      </div>
-                    )}
-                    {job.salaryRange && (
-                      <div className="px-2 py-1 bg-black/40 rounded-full text-xs text-orange-200 border border-orange-500/30">
-                        {job.salaryRange}
-                      </div>
-                    )}
-                  </div>
-                  {expandedJobId === job.id && (
-                    <div className="mt-6 border-t border-orange-500/30 pt-4">
-                      <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-orange-300 mb-2">Description</h3>
-                        <p className="text-orange-100 whitespace-pre-line">{job.jobDescription || "No description provided."}</p>
-                      </div>
-                      {/* Responsibilities Section */}
-                      {job.responsibilities && job.responsibilities.trim() !== "" && (
-                        <div className="mb-4">
-                          <h3 className="text-lg font-semibold text-orange-300 mb-2">Responsibilities</h3>
-                          <p className="text-orange-100 whitespace-pre-line">{job.responsibilities}</p>
-                        </div>
-                      )}
-                      {/* Ideal Candidate Section */}
-                      {job.idealCandidate && job.idealCandidate.trim() !== "" && (
-                        <div className="mb-4">
-                          <h3 className="text-lg font-semibold text-orange-300 mb-2">Ideal Candidate</h3>
-                          <p className="text-orange-100 whitespace-pre-line">{job.idealCandidate}</p>
-                        </div>
-                      )}
-                      <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-orange-300 mb-2">Required Skills</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {job.requiredSkills.split(',').map((skill, index) => (
-                            <span key={index} className="bg-black/40 text-orange-400 px-3 py-1 rounded-full text-sm border border-orange-500/30">
-                              {skill.trim()}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      {/* Tech Tags Section */}
-                      {job.techTags && job.techTags.length > 0 && (
-                        <div className="mb-4">
-                          <h3 className="text-lg font-semibold text-orange-300 mb-2">Technologies</h3>
-                          <div className="flex flex-wrap gap-2">
-                            {job.techTags.map((tag, index) => (
-                              <span key={index} className="bg-black/40 text-orange-400 border border-orange-500 px-3 py-1 rounded-full text-sm flex items-center">
-                                <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                  <path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                                {tag}
-                              </span>
-                            ))}
+          {/* Job Listings with two column layout */}
+          <div className={`grid ${filteredJobs.length > 0 && !isMobile ? 'grid-cols-1 lg:grid-cols-3 gap-6' : 'grid-cols-1'}`}>
+            {/* Column 1: Job List (1/3 width) */}
+            <div className={`${filteredJobs.length > 0 && !isMobile ? 'col-span-1' : 'col-span-1'}`}>
+              {filteredJobs.length === 0 ? (
+                <div className="bg-black/60 rounded-lg p-6 sm:p-8 text-center border border-orange-500/30">
+                  <p className="text-orange-200 mb-4">No job listings match your search criteria.</p>
+                  <Button 
+                    onClick={() => {
+                      setSearchQuery("");
+                      setLocationQuery("");
+                      setSelectedCategory("All");
+                      setSelectedJobType("All Types");
+                      setSelectedExperienceLevel("All Levels");
+                      setShowCryptoPayOnly(false);
+                      setShowFeaturedOnly(false);
+                    }}
+                    className="bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {filteredJobs.map((job) => (
+                    <div
+                      key={job.id}
+                      className={`bg-black/70 rounded-lg border border-orange-500/30 shadow-lg px-3 py-2 flex flex-col transition-all duration-300 relative cursor-pointer hover:border-orange-400 ${selectedJobId === job.id ? 'border-orange-400 ring-2 ring-orange-400/50' : ''}`}
+                      onClick={() => setSelectedJobId(job.id)}
+                    >
+                      {/* Featured Badge */}
+                      {job.isFeatured && (
+                        <div className="absolute left-0 -top-3 w-20 h-8 z-30 pointer-events-none select-none overflow-visible">
+                          <div className="bg-orange-500 text-white text-xs font-bold shadow border-2 border-white w-24 text-center py-1 px-0 animate-pulse rotate-[-25deg] -translate-x-6 translate-y-2 rounded-md">
+                            <span className="mr-1 align-middle">★</span> Featured
                           </div>
                         </div>
                       )}
-                      <div className="flex items-center mb-4">
-                        <div className="mr-6">
-                          <span className="text-sm text-orange-200 block">Category</span>
-                          <span className="text-orange-100">{job.category}</span>
-                        </div>
-                        <div className="mr-6">
-                          <span className="text-sm text-orange-200 block">Job Type</span>
-                          <span className="text-orange-100">{job.jobType}</span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-orange-200 block">Posted On</span>
-                          <span className="text-orange-100">{new Date(job.insertedDate).toLocaleDateString()}</span>
-                        </div>
+                      <span className="font-bold text-orange-400 text-base truncate max-w-full mb-1">{job.jobTitle}</span>
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="text-orange-200 flex items-center gap-1">
+                          <svg className="h-4 w-4 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                          {job.location}
+                        </span>
+                        <span className="bg-black/40 px-2 py-1 rounded-full text-orange-200 border border-orange-500/30">{job.jobType}</span>
+                        <span className="bg-black/40 px-2 py-1 rounded-full text-orange-200 border border-orange-500/30">{job.experienceLevel}</span>
+                        {job.salaryRange && (
+                          <span className="bg-black/40 px-2 py-1 rounded-full text-orange-200 border border-orange-500/30">{job.salaryRange}</span>
+                        )}
+                        {job.acceptsCryptoPay && (
+                          <span className="px-2 py-1 bg-black/40 rounded-full text-orange-400 font-semibold border border-orange-500/30">Crypto Pay</span>
+                        )}
+                        <span className="ml-auto text-orange-300 bg-black/40 px-2 py-1 rounded border border-orange-500/30">{getTimeAgo(job.insertedDate)}</span>
                       </div>
-                      <Button
-                        className="mt-2 bg-orange-500 hover:bg-orange-600 text-white transition-colors font-semibold"
-                        onClick={e => {
-                          e.stopPropagation();
-                          if (job.applyLink && job.applyLink.length > 0) {
-                            window.open(job.applyLink, "_blank");
-                          } else {
-                            router.push(`/jobs/apply/${job.id}`);
-                          }
-                        }}
-                      >
-                        Apply Now
-                      </Button>
                     </div>
-                  )}
-                  {expandedJobId !== job.id && (
-                    <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 text-orange-400">
-                      <span className="text-xs sm:text-sm">Click to expand</span>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ))
+              )}
+            </div>
+
+            {/* Column 2: Job Details (2/3 width) */}
+            {!isMobile && filteredJobs.length > 0 && (
+              <div className="col-span-2">
+                <JobDetailsPanel job={filteredJobs.find(j => j.id === selectedJobId) || filteredJobs[0]} />
+              </div>
+            )}
+
+            {/* Mobile View: Show job details as modal */}
+            {selectedJobId && isMobile && (
+              <div className="fixed inset-0 bg-black/80 z-40 overflow-y-auto p-4">
+                <div className="relative max-w-2xl mx-auto">
+                  <button
+                    onClick={() => setSelectedJobId(null)} 
+                    className="absolute -top-2 right-0 bg-black/60 text-orange-400 hover:text-orange-300 text-xl p-2 w-10 h-10 rounded-full flex items-center justify-center border border-orange-500/30 z-50"
+                  >
+                    ×
+                  </button>
+                  <JobDetailsPanel job={filteredJobs.find(j => j.id === selectedJobId) || filteredJobs[0]} />
+                </div>
+              </div>
             )}
           </div>
+          
           {/* Email Signup Section */}
           <div className="mt-10 sm:mt-16 bg-black/60 rounded-lg p-6 sm:p-8 border border-orange-500/30">
             <div className="text-center mb-4 sm:mb-6">
