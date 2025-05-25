@@ -28,6 +28,13 @@ const InstantJobsManager = () => {
   // Use global wallet state
   const { walletAddress, currentNetwork, connectWallet: globalConnectWallet } = useWallet();
   
+  // Log when currentNetwork changes
+  useEffect(() => {
+    if (currentNetwork) {
+      console.log("Current network from provider changed:", currentNetwork);
+    }
+  }, [currentNetwork]);
+  
   // Contract management states (remove local wallet states)
   const [contractOwner, setContractOwner] = useState('');
   const [feeCollector, setFeeCollector] = useState('');
@@ -319,16 +326,17 @@ const InstantJobsManager = () => {
       setIsUpdatingCollector(false);
     }
   };
-    // Check wallet connection and load data when wallet state changes
+  // Check wallet connection and load data when wallet state or network changes
   useEffect(() => {
+    console.log("[InstantJobsManager] useEffect disparado. walletAddress:", walletAddress, "currentNetwork:", currentNetwork);
     const loadWalletData = async () => {
       if (walletAddress) {
         // Get network information
         const network = await web3Service.getNetworkInfo();
         if (network) {
+          console.log("Network changed in InstantJobsManager:", network.name, network.chainId);
           setNetworkInfo(network);
         }
-        
         try {
           await loadContractData();
         } catch (err) {
@@ -339,20 +347,17 @@ const InstantJobsManager = () => {
         setIsLoading(false);
       }
     };
-    
     loadWalletData();
-  }, [walletAddress]);
+  }, [walletAddress, currentNetwork]); // Added currentNetwork dependency
   
   // Load jobs when wallet connects and network is available
   useEffect(() => {
     if (walletAddress && networkInfo) {
       loadJobs();
     }
-  }, [walletAddress, networkInfo]);
-
-  // Render component
+  }, [walletAddress, networkInfo]);  // Render component
   return (
-    <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
+    <div className="bg-amber-950 p-6 rounded-lg shadow-lg">
       <h2 className="text-2xl font-semibold text-orange-500 mb-6">Instant Jobs Management</h2>
       
       {error && (
@@ -369,22 +374,20 @@ const InstantJobsManager = () => {
         </div>
       )}
         {!walletAddress ? (
-        <div className="mb-6">
-          <button
-            onClick={handleConnectWallet}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition cursor-not-allowed opacity-70"
-            title="Wallet connection is handled in the dashboard"
-          >
-            Connect Wallet to Manage Instant Jobs
-          </button>
+        <div className="mb-6">              <button
+                onClick={handleConnectWallet}
+                className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition cursor-not-allowed opacity-70"
+                title="Wallet connection is handled in the dashboard"
+              >
+                Connect Wallet to Manage Instant Jobs
+              </button>
           <p className="text-gray-400 text-sm mt-2">
             Please connect your wallet in the dashboard to manage Instant Jobs settings and view contract details.
           </p>
         </div>
       ) : (
-        <>
-          {/* Network Information */}
-          <div className="bg-gray-800 p-4 rounded-lg mb-6">
+        <>          {/* Network Information */}
+          <div className="bg-neutral-900/40 p-4 rounded-lg mb-6 backdrop-blur-sm border border-gray-700">
             <h3 className="text-lg font-semibold text-orange-400 mb-2">Current Blockchain Network</h3>
             <div className="flex items-center">
               <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
@@ -396,10 +399,9 @@ const InstantJobsManager = () => {
               Your wallet: <span className="text-gray-300 font-mono text-xs">{walletAddress}</span>
             </p>
           </div>
-          
-          {/* Contract Configuration (if not configured yet) */}
+            {/* Contract Configuration (if not configured yet) */}
           {(!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') && (
-            <div className="bg-yellow-900/30 border border-yellow-600 p-4 rounded-lg mb-6">
+            <div className="bg-neutral-900/40 border border-yellow-600/50 p-4 rounded-lg mb-6 backdrop-blur-sm">
               <h3 className="text-lg font-semibold text-yellow-500 mb-2">Configure Contract</h3>
               <p className="text-gray-300 mb-4">
                 There's no contract configured for the {networkInfo?.name} network yet. Configure the contract address below:
@@ -424,9 +426,8 @@ const InstantJobsManager = () => {
             </div>
           )}
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {/* Contract Information */}
-            <div className="bg-gray-800 p-4 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">            {/* Contract Information */}
+            <div className="bg-neutral-950/80 p-4 rounded-lg border border-amber-800/30 backdrop-blur-sm">
               <h3 className="text-lg font-semibold text-orange-400 mb-4">Contract Information</h3>
               
               {isLoading ? (
@@ -462,9 +463,8 @@ const InstantJobsManager = () => {
                 </div>
               )}
             </div>
-            
-            {/* Settings */}
-            <div className="bg-gray-800 p-4 rounded-lg">
+              {/* Settings */}
+            <div className="bg-neutral-900/40 p-4 rounded-lg border border-gray-700 backdrop-blur-sm">
               <h3 className="text-lg font-semibold text-orange-400 mb-4">Settings</h3>
               
               {isLoading ? (
@@ -497,7 +497,7 @@ const InstantJobsManager = () => {
                       className={`mt-2 py-1 px-3 rounded text-sm ${
                         isUpdatingFee || newFeePercentage === platformFeePercentage || !instantJobsEscrowService.isContractInitialized()
                           ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                          : "bg-blue-600 hover:bg-blue-700 text-white"
+                          : "bg-orange-500 hover:bg-orange-600 text-white"
                       }`}
                     >
                       {isUpdatingFee ? "Updating..." : "Update Fee"}
@@ -524,7 +524,7 @@ const InstantJobsManager = () => {
                       className={`mt-2 py-1 px-3 rounded text-sm ${
                         isUpdatingCollector || newFeeCollector === feeCollector || !instantJobsEscrowService.isContractInitialized()
                           ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                          : "bg-blue-600 hover:bg-blue-700 text-white"
+                          : "bg-orange-500 hover:bg-orange-600 text-white"
                       }`}
                     >
                       {isUpdatingCollector ? "Updating..." : "Update Collector"}
@@ -534,9 +534,8 @@ const InstantJobsManager = () => {
               )}
             </div>
           </div>
-          
-          {/* Jobs List */}
-          <div className="bg-gray-800 p-4 rounded-lg">
+            {/* Jobs List */}
+          <div className="bg-neutral-900/40 p-4 rounded-lg border border-gray-700 backdrop-blur-sm">
             <h3 className="text-lg font-semibold text-orange-400 mb-4">Instant Jobs</h3>
             
             {isLoadingJobs ? (
@@ -575,11 +574,11 @@ const InstantJobsManager = () => {
                           </td>
                           <td className="py-2">
                             <span className={`inline-block px-2 py-1 text-xs rounded ${
-                              job.status === 'completed' ? 'bg-green-800 text-green-200' :
-                              job.status === 'approved' ? 'bg-blue-800 text-blue-200' :
-                              job.status === 'delivered' ? 'bg-yellow-800 text-yellow-200' :
-                              job.status === 'in-progress' ? 'bg-purple-800 text-purple-200' :
-                              'bg-gray-800 text-gray-200'
+                              job.status === 'completed' ? 'bg-green-800/70 text-green-200 border border-green-700' :
+                              job.status === 'approved' ? 'bg-amber-800/70 text-amber-200 border border-amber-700' : 
+                              job.status === 'delivered' ? 'bg-yellow-800/70 text-yellow-200 border border-yellow-700' :
+                              job.status === 'in-progress' ? 'bg-orange-700/50 text-orange-100 border border-orange-600' :
+                              'bg-gray-800/70 text-gray-200 border border-gray-700'
                             }`}>
                               {job.status}
                             </span>
