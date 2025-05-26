@@ -79,7 +79,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             
             {/* Ferramentas e recursos */}
             <a href="/crypto-tools" className="hover:text-orange-500">Crypto Tools</a>
-            <a href="/bitcoin-analysis" className="hover:text-orange-500">Bitcoin Analysis</a>
             <a href="/nft" className="hover:text-orange-500">NFT</a>
             
             {/* Páginas adicionais */}
@@ -132,7 +131,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           
           <a href="/nft" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>NFT</a>
           <a href="/crypto-tools" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Crypto Tools</a>
-          <a href="/bitcoin-analysis" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Bitcoin Analysis</a>
           <a href="/donate" className="block py-1.5 text-base hover:text-orange-500 font-medium" onClick={() => setMenuOpen(false)}>Donate</a>
           <a href="/#faq" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>FAQ</a>
           <a href="/#contact" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Contact</a>
@@ -192,7 +190,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <a href="/learn2earn" className="block hover:text-orange-500 mb-1 sm:mb-2">Learn2Earn</a>
               <a href="/nft" className="block hover:text-orange-500 mb-1 sm:mb-2">NFT</a>
               <a href="/crypto-tools" className="block hover:text-orange-500 mb-1 sm:mb-2">Crypto Tools</a>
-              <a href="/bitcoin-analysis" className="block hover:text-orange-500 mb-1 sm:mb-2">Bitcoin Analysis</a>
               <a href="/donate" className="block hover:text-orange-500 mb-1 sm:mb-2 font-medium">Donate</a>
             </nav>
           </div>

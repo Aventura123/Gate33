@@ -13,11 +13,11 @@ import ComparisonSection from './components/ComparisonSection';
 import CryptoTable from './components/CryptoTable';
 import CryptoDetails from './components/CryptoDetails';
 import MarketCapComparison from './components/MarketCapComparison';
+import BitcoinAnalysis from './BitcoinAnalysis';
 import { useCryptocurrencies } from './lib/hooks';
 import { useWallet } from '../../components/WalletProvider';
 import ProposalList from '../../components/GovernanceCopilot/ProposalList';
 import HistoryPanel from '../../components/GovernanceCopilot/HistoryPanel';
-import BitcoinAnalysis from '../../components/BitcoinAnalysis';
 import './styles/crypto-tools.css';
 
 // Adicionar estilos customizados para as animações da sidebar
@@ -1330,12 +1330,16 @@ export default function CryptoToolsPage() {
                 </nav>
               </div>
               
-              {/* Social Links or Additional Info */}
-              <div className="bg-black/60 p-4 rounded-lg border border-orange-500/30">
+              {/* Social Links or Additional Info */}              <div className="bg-black/60 p-4 rounded-lg border border-orange-500/30">
                 <h3 className="text-orange-400 font-bold mb-3">Resources</h3>
                 <div className="text-sm text-gray-300">
                   <a href="/learn2earn" className="block py-1 hover:text-orange-400">Learn & Earn</a>
-                  <a href="/bitcoin-analysis" className="block py-1 hover:text-orange-400">Bitcoin Cycles</a>
+                  <button 
+                    onClick={() => setActiveMenuOption("bitcoin")}
+                    className="block py-1 hover:text-orange-400 text-left w-full text-gray-300"
+                  >
+                    Bitcoin Analysis
+                  </button>
                   <a href="/nft" className="block py-1 hover:text-orange-400">NFT Explorer</a>
                 </div>
               </div>
