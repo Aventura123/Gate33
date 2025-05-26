@@ -17,6 +17,7 @@ import { useCryptocurrencies } from './lib/hooks';
 import { useWallet } from '../../components/WalletProvider';
 import ProposalList from '../../components/GovernanceCopilot/ProposalList';
 import HistoryPanel from '../../components/GovernanceCopilot/HistoryPanel';
+import BitcoinAnalysis from '../../components/BitcoinAnalysis';
 import './styles/crypto-tools.css';
 
 // Adicionar estilos customizados para as animações da sidebar
@@ -1504,34 +1505,7 @@ export default function CryptoToolsPage() {
               </div>
             )}{activeMenuOption === "bitcoin" && (
               <div className="max-w-7xl mx-auto content-section">
-                <h2 className="text-2xl font-bold text-orange-400 mb-6">Bitcoin Analysis Tools</h2>
-                <div className="bg-black/40 p-6 rounded-lg border border-orange-500/20">
-                  <p className="text-gray-300 mb-6">
-                    Advanced tools for Bitcoin technical analysis, market cycles, and on-chain metrics.
-                  </p>
-                  <div className="text-center mb-6">
-                    <a 
-                      href="/bitcoin-analysis"
-                      className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
-                    >
-                      Go to Bitcoin Analysis
-                    </a>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                    <div className="bg-gray-900/40 p-4 rounded-lg">
-                      <h3 className="text-orange-400 font-semibold mb-2">Price Cycles</h3>
-                      <p className="text-sm text-gray-400">Analyze Bitcoin's historical price cycles and projections.</p>
-                    </div>
-                    <div className="bg-gray-900/40 p-4 rounded-lg">
-                      <h3 className="text-orange-400 font-semibold mb-2">On-Chain Analytics</h3>
-                      <p className="text-sm text-gray-400">Review HODL waves, MVRV ratio, NUPL and other on-chain metrics.</p>
-                    </div>
-                    <div className="bg-gray-900/40 p-4 rounded-lg">
-                      <h3 className="text-orange-400 font-semibold mb-2">ICT Methods</h3>
-                      <p className="text-sm text-gray-400">Apply Wyckoff, ICT concepts and order block analysis to Bitcoin.</p>
-                    </div>
-                  </div>
-                </div>
+                <BitcoinAnalysis />
               </div>
             )}
 
