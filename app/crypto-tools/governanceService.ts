@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import web3Service from './web3Service';
+import { web3Service } from '../../services/web3Service';
 
 // Types
 export interface Proposal {

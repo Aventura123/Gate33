@@ -16,8 +16,7 @@ import MarketCapComparison from './components/MarketCapComparison';
 import BitcoinAnalysis from './BitcoinAnalysis';
 import { useCryptocurrencies } from './lib/hooks';
 import { useWallet } from '../../components/WalletProvider';
-import ProposalList from '../../components/GovernanceCopilot/ProposalList';
-import HistoryPanel from '../../components/GovernanceCopilot/HistoryPanel';
+import GovernanceCopilot from './components/GovernanceCopilot';
 import './styles/crypto-tools.css';
 
 // Adicionar estilos customizados para as animações da sidebar
@@ -491,11 +490,11 @@ function LuckScoreCard({ address, isConnected }: { address: `0x${string}` | unde
       
       // Set luck level
       let level = '';
-      if (s < 20) level = 'Muito Baixa';
-      else if (s < 40) level = 'Baixa';
-      else if (s < 60) level = 'Média';
-      else if (s < 80) level = 'Alta';
-      else level = 'Extremamente Sortuda!';
+      if (s < 20) level = 'Very Low';
+      else if (s < 40) level = 'Low';
+      else if (s < 60) level = 'Medium';
+      else if (s < 80) level = 'High';
+      else level = 'Extremely Lucky!';
       
       setScore(s);
       setLuckLevel(level);
@@ -564,9 +563,9 @@ function LuckScoreCard({ address, isConnected }: { address: `0x${string}` | unde
           </div>
           
           <div className="flex justify-between text-xs text-gray-500">
-            <span>Baixa</span>
-            <span>Média</span>
-            <span>Alta</span>
+            <span>Low</span>
+            <span>Medium</span>
+            <span>High</span>
           </div>
           
           <div className="mt-3 text-center">
@@ -1251,12 +1250,12 @@ export default function CryptoToolsPage() {
       <div className="crypto-tools-main-container bg-gradient-to-br from-orange-900 to-black text-white min-h-screen">
         <div className="flex flex-col md:flex-row">
           {/* Left Sidebar with WalletButton and Menu */}
-          <div className="w-full md:w-64 bg-black/40 p-4 md:min-h-screen md:sticky md:top-0 border-r border-orange-900/30">
+          <div className="w-full md:w-[25rem] bg-black/40 p-4 md:min-h-screen md:sticky md:top-0 border-r border-orange-900/30">
             <div className="flex flex-col space-y-6">
               {/* Wallet Connection Section */}
               <div className="bg-black/60 p-4 rounded-lg border border-orange-500/30">
                 <h3 className="text-orange-400 font-bold mb-3">Wallet Connection</h3>
-                <WalletButton className="wallet-connect-btn w-full" />
+                <WalletButton className="wallet-connect-btn w-full overflow-hidden whitespace-nowrap" />
                 
                 {/* Connected Wallet Info */}
                 {isConnected && (
@@ -1398,7 +1397,9 @@ export default function CryptoToolsPage() {
           ) : (
             <>
               {cryptoData && cryptoData.length > 0 ? (
+               
                 <CryptoTable 
+ 
                   cryptoData={cryptoData.slice(0, visibleRows)}
                   onCheckboxToggle={handleToggleCrypto} 
                   onViewDetails={handleViewDetails} 
@@ -1497,12 +1498,7 @@ export default function CryptoToolsPage() {
                       >
                         ← Back to Overview
                       </button>
-                      <div className="governance-container">
-                        <ProposalList />
-                        <div className="mt-8">
-                          <HistoryPanel />
-                        </div>
-                      </div>
+                      <GovernanceCopilot />
                     </div>
                   </div>
                 )}
