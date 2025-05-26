@@ -15,7 +15,50 @@ import CryptoDetails from './components/CryptoDetails';
 import MarketCapComparison from './components/MarketCapComparison';
 import { useCryptocurrencies } from './lib/hooks';
 import { useWallet } from '../../components/WalletProvider';
+import ProposalList from '../../components/GovernanceCopilot/ProposalList';
+import HistoryPanel from '../../components/GovernanceCopilot/HistoryPanel';
 import './styles/crypto-tools.css';
+
+// Adicionar estilos customizados para as animações da sidebar
+const SidebarStyles = () => {
+  return (
+    <style jsx global>{`
+      @keyframes slideInLeft {
+        from { transform: translateX(-20px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      .sidebar-menu-item {
+        animation: slideInLeft 0.3s forwards;
+        opacity: 0;
+      }
+      
+      .sidebar-menu-item:nth-child(1) { animation-delay: 0.1s; }
+      .sidebar-menu-item:nth-child(2) { animation-delay: 0.2s; }
+      .sidebar-menu-item:nth-child(3) { animation-delay: 0.3s; }
+      .sidebar-menu-item:nth-child(4) { animation-delay: 0.4s; }
+      
+      .content-section {
+        animation: fadeIn 0.5s forwards;
+      }
+      
+      .luck-score-bar {
+        width: var(--score-percentage);
+        transition: width 1s ease-out;
+      }
+      
+      .wallet-age-bar {
+        width: var(--wallet-age-percentage);
+        transition: width 1s ease-out;
+      }
+    `}</style>
+  );
+};
 
 // Component to display network errors with instructions to resolve
 function NetworkErrorAlert({ error, retry }: { error: string | null, retry: () => void }) {
@@ -1142,9 +1185,14 @@ export default function CryptoToolsPage() {
   const address = walletAddress as `0x${string}` | undefined;
   const isConnected = !!walletAddress;
   const networkError = walletError;
-  
-  // Estado local para informações da rede
+    // Estado local para informações da rede
   const [networkInfo, setNetworkInfo] = useState<{name: string, chainId: number} | null>(null);
+  
+  // Novo estado para o menu lateral
+  const [activeMenuOption, setActiveMenuOption] = useState<string>("marketlist");
+  
+  // State to show/hide the Governance AI component
+  const [showGovernance, setShowGovernance] = useState(false);
   
   // Atualizar informações da rede quando a carteira for conectada
   useEffect(() => {
@@ -1161,6 +1209,7 @@ export default function CryptoToolsPage() {
     
     updateNetworkInfo();
   }, [isConnected, currentNetwork]);
+  
   const [selectedCoinId, setSelectedCoinId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<number>(0);
   const [visibleRows, setVisibleRows] = useState(10); // State to control visible rows
@@ -1188,215 +1237,352 @@ export default function CryptoToolsPage() {
   const selectedCryptosWithTypes = selectedCryptos.map((crypto: { id: string }) =>
     cryptoData.find((c: { id: string }) => c.id === crypto.id)!
   );
-
   return (
     <Layout>
-      <div className="bg-gradient-to-br from-orange-900 to-black text-white min-h-screen pt-8">
-        {/* Added pt-8 for padding-top */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Page header */}
-          <div className="text-center mb-10">
-            <h1 className="text-4xl font-bold text-orange-500 mb-4">Crypto Tools</h1>
-            <p className="text-gray-400 max-w-2xl mx-auto">
-              Useful tools for exploring wallet addresses, checking on-chain data and more.
-            </p>
-            
-            {/* Warning message about tools under development */}
-            <div className="mt-4 bg-orange-900/30 border border-orange-500/50 rounded-lg p-4 max-w-2xl mx-auto">
-              <p className="text-sm text-orange-200 flex items-center mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 8a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-                <span>Please note: These tools are still under development and may contain flaws. Some features may have limited or experimental functionality.</span>
-              </p>
-              <p className="text-sm text-orange-200 ml-7 mb-2">
-                Currently, we're using free API tiers which have limitations, so most wallet-related information is simulated for demonstration purposes.
-              </p>
-              <p className="text-sm text-orange-200 ml-7">
-                If you'd like to help this project grow and support the implementation of advanced features with premium APIs, please <a href="/donate" className="text-orange-400 font-medium hover:text-orange-300 underline">donate here</a>. Your contribution will help us provide more accurate and reliable blockchain data!
-              </p>
-            </div>
-          </div>
-            {/* Wallet connection bar */}
-          <div className="mb-8 p-4 bg-gradient-to-r from-orange-900/30 to-gray-900/50 rounded-lg border border-orange-500/30">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-orange-400">Crypto Tools</h2>
-                <p className="text-gray-400 text-sm">Connect your wallet to access additional features and functionalities</p>
+      <SidebarStyles />
+      <style jsx global>{`
+    .crypto-tools-main-container {
+      overflow: visible !important;
+      position: static !important;
+      z-index: auto !important;
+    }
+  `}</style>
+      <div className="crypto-tools-main-container bg-gradient-to-br from-orange-900 to-black text-white min-h-screen">
+        <div className="flex flex-col md:flex-row">
+          {/* Left Sidebar with WalletButton and Menu */}
+          <div className="w-full md:w-64 bg-black/40 p-4 md:min-h-screen md:sticky md:top-0 border-r border-orange-900/30">
+            <div className="flex flex-col space-y-6">
+              {/* Wallet Connection Section */}
+              <div className="bg-black/60 p-4 rounded-lg border border-orange-500/30">
+                <h3 className="text-orange-400 font-bold mb-3">Wallet Connection</h3>
+                <WalletButton className="wallet-connect-btn w-full" />
+                
+                {/* Connected Wallet Info */}
+                {isConnected && (
+                  <div className="mt-3 text-sm">
+                    <div className="bg-orange-900/20 p-2 rounded border border-orange-500/20">
+                      <p className="text-gray-300 break-all">{formatWalletAddress(address)}</p>
+                      {networkInfo && (
+                        <p className="text-xs text-orange-300 mt-1">
+                          <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                          {networkInfo.name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Display network error messages */}
+                {networkError && (
+                  <div className="mt-3 text-xs text-red-400 bg-red-900/30 p-2 rounded border border-red-500/20">
+                    <p>Connection Error: {networkError.split('.')[0]}</p>
+                  </div>
+                )}
               </div>
               
-              <div className="flex items-center gap-2">
-                <WalletButton
-                  className="wallet-connect-btn"
-                />
+              {/* Menu Options */}
+              <div className="bg-black/60 p-4 rounded-lg border border-orange-500/30">
+                <h3 className="text-orange-400 font-bold mb-3">Tools Menu</h3>
+                <nav>
+                  <ul className="space-y-2">
+                    <li className="sidebar-menu-item">
+                      <button
+                        onClick={() => setActiveMenuOption("marketlist")}
+                        className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "marketlist" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
+                      >
+                        Market List
+                      </button>
+                    </li>
+                    <li className="sidebar-menu-item">
+                      <button
+                        onClick={() => setActiveMenuOption("marketcap")}
+                        className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "marketcap" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
+                      >
+                        Market Cap Calculator
+                      </button>
+                    </li>
+                    <li className="sidebar-menu-item">
+                      <button
+                        onClick={() => setActiveMenuOption("governance")}
+                        className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "governance" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
+                      >
+                        Governance AI
+                      </button>
+                    </li>
+                    <li className="sidebar-menu-item">
+                      <button
+                        onClick={() => setActiveMenuOption("bitcoin")}
+                        className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "bitcoin" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
+                      >
+                        Bitcoin Analysis
+                      </button>
+                    </li>
+                    <li className="sidebar-menu-item">
+                      <button
+                        onClick={() => setActiveMenuOption("funny")}
+                        className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "funny" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
+                      >
+                        Funny Tools
+                      </button>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+              
+              {/* Social Links or Additional Info */}
+              <div className="bg-black/60 p-4 rounded-lg border border-orange-500/30">
+                <h3 className="text-orange-400 font-bold mb-3">Resources</h3>
+                <div className="text-sm text-gray-300">
+                  <a href="/learn2earn" className="block py-1 hover:text-orange-400">Learn & Earn</a>
+                  <a href="/bitcoin-analysis" className="block py-1 hover:text-orange-400">Bitcoin Cycles</a>
+                  <a href="/nft" className="block py-1 hover:text-orange-400">NFT Explorer</a>
+                </div>
               </div>
             </div>
-              {/* Display network error messages */}
-            {networkError && (
-              <NetworkErrorAlert 
-                error={networkError} 
-                retry={() => {
-                  window.location.reload();
-                }} 
-              />
-            )}
-          </div>
-
-          <div className="mb-12">
-            <FlexCard address={address} isConnected={isConnected} className="w-full" />
           </div>
           
-          {/* Grid de cartões menores */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <ENSCheckerCard address={address} isConnected={isConnected} />
-            <LuckScoreCard address={address} isConnected={isConnected} />
-            <WalletAgeCard address={address} isConnected={isConnected} />
-            <DustFinderCard address={address} isConnected={isConnected} />
-          </div>
-
-          {/* NFT Profile sozinho na última linha */}
-          <div className="mb-12">
-            <NFTProfilePicCard address={address} isConnected={isConnected} />
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-[#fb923c] mb-6">Cryptocurrency Analysis</h1>
-
-          <SearchFilterBar
-            selectedCryptos={selectedCryptos}
-            timeFilter={timeframe}
-            searchQuery={searchQuery}
-            showComparison={selectedCryptos.length > 0}
-            onSearchChange={handleSearchChange}
-            onRemoveTag={handleRemoveCrypto}
-            onClearAll={handleClearSelections}
-            onTimeFilterChange={handleTimeframeChange}
-            onToggleComparison={() => {}}
-          />
-
-          {error && (
-            <div className="bg-red-900/30 border border-red-500 text-white p-4 rounded-lg mb-6">
-              {error}
+          {/* Main Content Area */}
+          <div className="flex-1 p-4 md:p-8">
+            <div className="text-center mb-10">
+              <h1 className="text-4xl font-bold text-orange-500 mb-4">Crypto Tools</h1>
+              <p className="text-gray-400 max-w-2xl mx-auto">
+              </p>
             </div>
+
+            {/* Renderização condicional dos componentes principais */}
+            {activeMenuOption === "marketlist" && (
+              <div className="max-w-7xl mx-auto">
+                <SearchFilterBar
+                  selectedCryptos={selectedCryptos}
+                  timeFilter={timeframe}
+                  searchQuery={searchQuery}
+                  showComparison={selectedCryptos.length > 0}
+                  onSearchChange={handleSearchChange}
+                  onRemoveTag={handleRemoveCrypto}
+                  onClearAll={handleClearSelections}
+                  onTimeFilterChange={handleTimeframeChange}
+                  onToggleComparison={() => {}}
+                />
+                <Tab.Group selectedIndex={activeTab} onChange={setActiveTab}>
+      <Tab.List className="flex space-x-2 p-1 bg-black/30 rounded-xl mb-6 border border-[#333]">
+        <Tab className={({ selected }) => `
+          w-full py-3 text-sm font-medium leading-5 rounded-lg transition-all
+          ${selected 
+            ? 'bg-[#fb923c] text-white shadow'
+            : 'text-[#e5e5e5] hover:bg-[#fb923c]/20'}`
+        }>
+          Market List
+        </Tab>
+        <Tab className={({ selected }) => `
+          w-full py-3 text-sm font-medium leading-5 rounded-lg transition-all
+          ${selected 
+            ? 'bg-[#fb923c] text-white shadow'
+            : 'text-[#e5e5e5] hover:bg-[#fb923c]/20'}`
+        }>
+          Comparison
+        </Tab>
+      </Tab.List>
+      <Tab.Panels>
+        <Tab.Panel>
+          {loading ? (
+            <div className="text-center p-12">
+             
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#fb923c] border-r-transparent"></div>
+              <p className="mt-4 text-gray-300">Loading cryptocurrency data...</p>
+            </div>
+          ) : (
+            <>
+              {cryptoData && cryptoData.length > 0 ? (
+                <CryptoTable 
+                  cryptoData={cryptoData.slice(0, visibleRows)}
+                  onCheckboxToggle={handleToggleCrypto} 
+                  onViewDetails={handleViewDetails} 
+                />
+              ) : (
+                <div className="text-center p-12 bg-black/40 border border-[#fb923c]/20 rounded-xl">
+                  <p className="text-gray-300">No cryptocurrencies found. Try adjusting your search.</p>
+                  <button 
+                    onClick={() => refreshData()} 
+ 
+                    className="mt-4 px-4 py-2 bg-[#fb923c] text-white rounded hover:bg-[#f97316]"
+                  >
+                    Refresh Data
+                  </button>
+                </div>
+              )}
+            </>
           )}
-
-          <Tab.Group selectedIndex={activeTab} onChange={setActiveTab}>
-            <Tab.List className="flex space-x-2 p-1 bg-black/30 rounded-xl mb-6 border border-[#333]">
-              <Tab className={({ selected }) => `
-                w-full py-3 text-sm font-medium leading-5 rounded-lg transition-all
-                ${selected 
-                  ? 'bg-[#fb923c] text-white shadow'
-                  : 'text-[#e5e5e5] hover:bg-[#fb923c]/20'}
-              `}>
-                Market List
-              </Tab>
-              <Tab className={({ selected }) => `
-                w-full py-3 text-sm font-medium leading-5 rounded-lg transition-all
-                ${selected 
-                  ? 'bg-[#fb923c] text-white shadow'
-                  : 'text-[#e5e5e5] hover:bg-[#fb923c]/20'}
-              `}>
-                {selectedCoinId ? 'Details' : 'Comparison'}
-              </Tab>
-              <Tab className={({ selected }) => `
-                w-full py-3 text-sm font-medium leading-5 rounded-lg transition-all
-                ${selected 
-                  ? 'bg-[#fb923c] text-white shadow'
-                  : 'text-[#e5e5e5] hover:bg-[#fb923c]/20'}
-              `}>
-                Market Cap Calculator
-              </Tab>
-            </Tab.List>
-
-            <Tab.Panels>
-              <Tab.Panel>
-                {loading ? (
-                  <div className="text-center p-12">
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#fb923c] border-r-transparent"></div>
-                    <p className="mt-4 text-gray-300">Loading cryptocurrency data...</p>
-                  </div>
-                ) : (
-                  <>
-                    {cryptoData && cryptoData.length > 0 ? (
-                      <>
-                        <CryptoTable 
-                          cryptoData={cryptoData.slice(0, visibleRows)} // Show only visible rows
-                          onCheckboxToggle={handleToggleCrypto} 
-                          onViewDetails={handleViewDetails} 
-                        />
-
-                        {cryptoData.length > visibleRows && (
-                          <div className="text-center mt-4">
-                            <button 
-                              onClick={() => setVisibleRows(visibleRows + 10)} // Expand by 10 rows
-                              className="px-4 py-2 bg-[#fb923c] text-white rounded hover:bg-[#f97316]"
-                            >
-                              Show More
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-center p-12 bg-black/40 border border-[#fb923c]/20 rounded-xl">
-                        <p className="text-gray-300">No cryptocurrencies found. Try adjusting your search.</p>
-                        <button 
-                          onClick={() => refreshData()} 
-                          className="mt-4 px-4 py-2 bg-[#fb923c] text-white rounded hover:bg-[#f97316]"
-                        >
-                          Refresh Data
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </Tab.Panel>
-
-              <Tab.Panel>
-                {selectedCoinId ? (
-                  <CryptoDetails coinId={selectedCoinId} />
-                ) : (
-                  <div className="p-6 bg-black/40 border border-[#fb923c]/20 rounded-xl text-center">
-                    <p className="text-gray-300">
-                      Select a cryptocurrency from the list to view its details or use the "Market Cap Calculator" tab for comparisons.
-                    </p>
-                    <button 
-                      onClick={() => setActiveTab(0)} 
-                      className="mt-4 px-4 py-2 bg-[#fb923c] text-white rounded hover:bg-[#f97316]"
-                    >
-                      Go to List
-                    </button>
-                  </div>
-                )}
-              </Tab.Panel>
-
-              <Tab.Panel>
+        </Tab.Panel>
+        <Tab.Panel>
+          <ComparisonSection selectedCryptos={selectedCryptosWithTypes} />
+        </Tab.Panel>
+      </Tab.Panels>
+    </Tab.Group>
+  </div>
+)}
+            {activeMenuOption === "comparison" && (
+              <div className="max-w-7xl mx-auto">
+                <SearchFilterBar
+                  selectedCryptos={selectedCryptos}
+                  timeFilter={timeframe}
+                  searchQuery={searchQuery}
+                  showComparison={selectedCryptos.length > 0}
+                  onSearchChange={handleSearchChange}
+                  onRemoveTag={handleRemoveCrypto}
+                  onClearAll={handleClearSelections}
+                  onTimeFilterChange={handleTimeframeChange}
+                  onToggleComparison={() => {}}
+                />
+                <ComparisonSection selectedCryptos={selectedCryptosWithTypes} />
+              </div>
+            )}
+            {activeMenuOption === "marketcap" && (
+              <div className="max-w-7xl mx-auto">
                 <MarketCapComparison allCryptoData={cryptoData} loading={loading} />
-              </Tab.Panel>
-            </Tab.Panels>
-          </Tab.Group>
+              </div>
+            )}
+            {activeMenuOption === "filterbar" && (
+              <div className="max-w-7xl mx-auto">
+                <SearchFilterBar
+                  selectedCryptos={selectedCryptos}
+                  timeFilter={timeframe}
+                  searchQuery={searchQuery}
+                  showComparison={selectedCryptos.length > 0}
+                  onSearchChange={handleSearchChange}
+                  onRemoveTag={handleRemoveCrypto}
+                  onClearAll={handleClearSelections}
+                  onTimeFilterChange={handleTimeframeChange}
+                  onToggleComparison={() => {}}
+                />
+              </div>
+            )}            {activeMenuOption === "governance" && (
+              <div className="max-w-7xl mx-auto bg-black/40 p-6 rounded-lg border border-orange-500/20 content-section">
+                <h2 className="text-2xl font-bold text-orange-400 mb-4">Governance AI</h2>
+                <p className="text-gray-300 mb-4">
+                  Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
+                </p>
+                <div className="bg-orange-900/20 p-4 rounded-lg text-center">
+                  <p className="text-orange-300 mb-2">
+                    {isConnected 
+                      ? "Your wallet is connected! You can now use Governance AI features." 
+                      : "Please connect your wallet to access Governance AI features."}
+                  </p>
+                  <button 
+                    onClick={() => {
+                      if (!isConnected) {
+                        // If wallet is not connected, show connect prompt
+                        alert("Please connect your wallet first to use Governance AI");
+                      } else {
+                        // If wallet is connected, set state to show governance component
+                        setShowGovernance(true);
+                      }
+                    }}
+                    className="inline-block px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
+                  >
+                    {isConnected ? "Launch Governance AI" : "Connect Wallet to Continue"}
+                  </button>
+                </div>
+                  {/* Show governance component when wallet is connected and button is clicked */}
+                {isConnected && showGovernance && (
+                  <div className="mt-6">
+                    <div className="bg-black/60 rounded-lg border border-orange-500/30 p-6 relative z-10">
+                      <button 
+                        onClick={() => setShowGovernance(false)} 
+                        className="mb-4 text-sm text-orange-400 hover:text-orange-300"
+                      >
+                        ← Back to Overview
+                      </button>
+                      <div className="governance-container">
+                        <ProposalList />
+                        <div className="mt-8">
+                          <HistoryPanel />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}{activeMenuOption === "bitcoin" && (
+              <div className="max-w-7xl mx-auto content-section">
+                <h2 className="text-2xl font-bold text-orange-400 mb-6">Bitcoin Analysis Tools</h2>
+                <div className="bg-black/40 p-6 rounded-lg border border-orange-500/20">
+                  <p className="text-gray-300 mb-6">
+                    Advanced tools for Bitcoin technical analysis, market cycles, and on-chain metrics.
+                  </p>
+                  <div className="text-center mb-6">
+                    <a 
+                      href="/bitcoin-analysis"
+                      className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
+                    >
+                      Go to Bitcoin Analysis
+                    </a>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div className="bg-gray-900/40 p-4 rounded-lg">
+                      <h3 className="text-orange-400 font-semibold mb-2">Price Cycles</h3>
+                      <p className="text-sm text-gray-400">Analyze Bitcoin's historical price cycles and projections.</p>
+                    </div>
+                    <div className="bg-gray-900/40 p-4 rounded-lg">
+                      <h3 className="text-orange-400 font-semibold mb-2">On-Chain Analytics</h3>
+                      <p className="text-sm text-gray-400">Review HODL waves, MVRV ratio, NUPL and other on-chain metrics.</p>
+                    </div>
+                    <div className="bg-gray-900/40 p-4 rounded-lg">
+                      <h3 className="text-orange-400 font-semibold mb-2">ICT Methods</h3>
+                      <p className="text-sm text-gray-400">Apply Wyckoff, ICT concepts and order block analysis to Bitcoin.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-          <div className="mt-6 mb-12 bg-gradient-to-br from-orange-900/30 to-gray-900/50 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-orange-500 mb-4">About Crypto Tools</h2>
-            <p className="text-gray-400 mb-4">
-              This page provides useful tools to explore and analyze Ethereum wallets. You can check ENS names, calculate wallet age, find "dust" tokens, and more.
-            </p>
-            <p className="text-gray-400 mb-4">
-              All operations are performed directly in the browser using public APIs and your connection to the Ethereum provider. No private keys are shared during the use of these tools.
-            </p>
-            <div className="flex flex-wrap gap-3 mt-4">
-              <a 
-                href="/nft" 
-                className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
-              >
-                Explore NFTs
-              </a>
-              <a 
-                href="/learn2earn" 
-                className="px-4 py-2 border border-orange-500 text-orange-500 rounded hover:bg-orange-500 hover:text-white transition-colors"
-              >
-                Learn & Earn
-              </a>
+            {activeMenuOption === "funny" && (
+              <div className="max-w-7xl mx-auto">
+                <h2 className="text-2xl font-bold text-orange-400 mb-6">Funny Crypto Tools</h2>
+                <div className="bg-black/40 p-6 rounded-lg border border-orange-500/20">
+                  <p className="text-gray-300 mb-6">
+                    Just for fun! Explore these lighthearted crypto-related tools and games.
+                  </p>
+                  {/* Flex Card on top, full width */}
+                  <div className="mb-8">
+                    <FlexCard address={address} isConnected={isConnected} />
+                  </div>
+                  {/* Grid for the 4 cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <ENSCheckerCard address={address} isConnected={isConnected} />
+                    <LuckScoreCard address={address} isConnected={isConnected} />
+                    <WalletAgeCard address={address} isConnected={isConnected} />
+                    <DustFinderCard address={address} isConnected={isConnected} />
+                  </div>
+                  {/* NFT Profile Pic full width at the bottom */}
+                  <div>
+                    <NFTProfilePicCard address={address} isConnected={isConnected} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 mb-12 bg-gradient-to-br from-orange-900/30 to-gray-900/50 rounded-lg p-6">
+              <h2 className="text-2xl font-bold text-orange-500 mb-4">About Crypto Tools</h2>
+              <p className="text-gray-400 mb-4">
+                This page provides useful tools to explore and analyze Ethereum wallets. You can check ENS names, calculate wallet age, find "dust" tokens, and more.
+              </p>
+              <p className="text-gray-400 mb-4">
+                All operations are performed directly in the browser using public APIs and your connection to the Ethereum provider. No private keys are shared during the use of these tools.
+              </p>
+              <div className="flex flex-wrap gap-3 mt-4">
+                <a 
+                  href="/nft" 
+                  className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
+                >
+                  Explore NFTs
+                </a>
+                <a 
+                  href="/learn2earn" 
+                  className="px-4 py-2 border border-orange-500 text-orange-500 rounded hover:bg-orange-500 hover:text-white transition-colors"
+                >
+                  Learn & Earn
+                </a>
+              </div>
             </div>
           </div>
         </div>

@@ -17,7 +17,7 @@ interface WalletModalProps {
 export const ModalBackdrop: React.FC<{ open: boolean; onClose: () => void; children: React.ReactNode }> = ({ open, onClose, children }) => {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all">
       <div className="absolute inset-0" onClick={onClose} />
       <div className="relative z-10">{children}</div>
     </div>
