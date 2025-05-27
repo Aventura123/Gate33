@@ -61,8 +61,11 @@ export const manualSocialMediaPromotion = onRequest(async (req, res) => {
     console.log("[ManualSocialMedia] Loaded job:", job);
     // Fetch centralized template
     const templateSnap = await db.collection("config").doc("socialMediaTemplate").get();
-    const templateData = (templateSnap && templateSnap.exists && typeof templateSnap.data === 'function') ? templateSnap.data() ?? {} : {};
-    const template = templateData.template || "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!\n{{jobUrl}}";
+    const templateData = (templateSnap && templateSnap.exists && typeof templateSnap.data === 'function')
+      ? templateSnap.data() ?? {}
+      : {};
+    const template = templateData.template ||
+      "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!\n{{jobUrl}}";
     const templateMediaUrl = templateData.mediaUrl || "";
     // Render message
     const message = renderTemplateFromJob(template, job);
@@ -97,16 +100,23 @@ export const manualSocialMediaPromotion = onRequest(async (req, res) => {
         socialMediaPromotionCount: (job.socialMediaPromotionCount ?? 0) + 1,
         socialMediaPromotionLastSent: new Date().toISOString(),
       });
-      await logSystemActivity("system", "ManualSocialMedia", {
-        jobId: job.id,
-        jobTitle: job.title,
-        companyName: job.companyName,
-        promotedPlatforms: ["LinkedIn", "Telegram"],
-        timestamp: new Date().toISOString(),
-        promotionCount: (job.socialMediaPromotionCount ?? 0) + 1,
-        planLimit: job.socialMediaPromotion ?? 0,
-        manual: true,
-      });
+      await logSystemActivity(
+        "system",
+        "ManualSocialMedia",
+        {
+          jobId: job.id,
+          jobTitle: job.title,
+          companyName: job.companyName,
+          promotedPlatforms: [
+            linkedInSuccess ? "LinkedIn" : null,
+            telegramSuccess ? "Telegram" : null
+          ].filter(Boolean),
+          timestamp: new Date().toISOString(),
+          promotionCount: (job.socialMediaPromotionCount ?? 0) + 1,
+          planLimit: job.socialMediaPromotion ?? 0,
+          manual: true,
+        }
+      );
       res.status(200).json({ success: true });
     } else {
       res.status(500).json({ error: "Failed to send to all platforms" });

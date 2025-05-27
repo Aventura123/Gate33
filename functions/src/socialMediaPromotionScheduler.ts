@@ -277,8 +277,11 @@ export async function runSocialMediaPromotionScheduler() {
 
   // Fetch centralized template and mediaUrl
   const templateSnap = await db.collection("config").doc("socialMediaTemplate").get();
-  const templateData = (templateSnap && templateSnap.exists && typeof templateSnap.data === 'function') ? templateSnap.data() ?? {} : {};
-  const template = templateData.template || "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!\n{{jobUrl}}";
+  const templateData = (templateSnap && templateSnap.exists && typeof templateSnap.data === 'function')
+    ? templateSnap.data() ?? {}
+    : {};
+  const template = templateData.template ||
+    "🚀 New job: {{title}} at {{companyName}}!\nCheck it out and apply now!\n{{jobUrl}}";
   const templateMediaUrl = templateData.mediaUrl || "";
 
   for (const job of jobs) {
@@ -294,15 +297,16 @@ export async function runSocialMediaPromotionScheduler() {
       const linkedInSuccess = await postToLinkedIn(jobForSend);
       const telegramSuccess = await postToTelegram(jobForSend);
 
-      if (linkedInSuccess && telegramSuccess) {
-        // Update job document
+      // Atualiza o contador se pelo menos um envio for bem-sucedido
+      if (linkedInSuccess || telegramSuccess) {
         await jobsRef.doc(job.id).update({
           socialMediaPromotionCount: (job.socialMediaPromotionCount ?? 0) + 1,
           socialMediaPromotionLastSent: new Date().toISOString(),
         });
         console.log(
-          `[SocialMedia] Job ${job.title} promoted (` +
-          `${(job.socialMediaPromotionCount ?? 0) + 1}/${job.socialMediaPromotion})`
+          `[SocialMedia] Job ${job.title} promovido (` +
+          `${(job.socialMediaPromotionCount ?? 0) + 1}/` +
+          `${job.socialMediaPromotion})`
         );
         // Log system activity for auditing
         await logSystemActivity(
@@ -312,7 +316,10 @@ export async function runSocialMediaPromotionScheduler() {
             jobId: job.id,
             jobTitle: job.title,
             companyName: job.companyName,
-            promotedPlatforms: ["LinkedIn", "Telegram"],
+            promotedPlatforms: [
+              linkedInSuccess ? "LinkedIn" : null,
+              telegramSuccess ? "Telegram" : null
+            ].filter(Boolean),
             timestamp: new Date().toISOString(),
             promotionCount: (job.socialMediaPromotionCount ?? 0) + 1,
             planLimit: job.socialMediaPromotion ?? 0
