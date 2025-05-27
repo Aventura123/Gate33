@@ -1268,7 +1268,7 @@ export default function CryptoToolsPage() {
         {/* Botão hamburguer mobile */}
         {isMobile && (
           <button
-            className="fixed top-4 left-4 z-50 bg-orange-500 text-white p-2 rounded-full shadow-lg md:hidden"
+            className="fixed top-20 left-4 z-50 bg-orange-500 text-white p-2 rounded-full shadow-lg md:hidden"
             onClick={() => setSidebarOpen(true)}
             aria-label="Abrir menu"
           >
@@ -1379,12 +1379,6 @@ export default function CryptoToolsPage() {
                 <h3 className="text-orange-400 font-bold mb-3">Resources</h3>
                 <div className="text-sm text-gray-300">
                   <a href="/learn2earn" className="block py-1 hover:text-orange-400">Learn & Earn</a>
-                  <button 
-                    onClick={() => { setActiveMenuOption("bitcoin"); if(isMobile) setSidebarOpen(false); }}
-                    className="block py-1 hover:text-orange-400 text-left w-full text-gray-300"
-                  >
-                    Bitcoin Analysis
-                  </button>
                   <a href="/nft" className="block py-1 hover:text-orange-400">NFT Explorer</a>
                 </div>
               </div>
@@ -1398,8 +1392,19 @@ export default function CryptoToolsPage() {
           <div className="flex-1 p-4 md:p-8">
             <div className="text-center mb-10">
               <h1 className="text-4xl font-bold text-orange-500 mb-4">Crypto Tools</h1>
-              <p className="text-gray-400 max-w-2xl mx-auto">
-              </p>
+              <div className="text-center mb-6">
+  <div className="bg-orange-900/30 border border-orange-500/30 rounded-lg p-4 max-w-2xl mx-auto">
+    <p className="text-orange-300 font-semibold mb-2">
+      🚧 This page is under active development! 🚧
+    </p>
+    <p className="text-gray-200 text-sm mb-2">
+      Some features may not work as expected yet, as we are still relying on free APIs and limited resources. We appreciate your patience while we improve the platform.
+    </p>
+    <p className="text-gray-400 text-xs mb-2">
+      If you'd like to support the project and help us grow, please consider contributing via <a href="/donate" className="text-orange-400 underline hover:text-orange-300">Donate</a> 🙏
+    </p>
+  </div>
+</div>
             </div>
 
             {/* Renderização condicional dos componentes principais */}
@@ -1587,25 +1592,11 @@ export default function CryptoToolsPage() {
             <div className="mt-6 mb-12 bg-gradient-to-br from-orange-900/30 to-gray-900/50 rounded-lg p-6">
               <h2 className="text-2xl font-bold text-orange-500 mb-4">About Crypto Tools</h2>
               <p className="text-gray-400 mb-4">
-                This page provides useful tools to explore and analyze Ethereum wallets. You can check ENS names, calculate wallet age, find "dust" tokens, and more.
+                Crypto Tools provides a comprehensive set of solutions for the in-depth analysis and exploration of Ethereum wallets. Key functionalities include ENS name resolution, wallet age assessment, dust token detection, and additional advanced features tailored for blockchain users and professionals.
               </p>
-              <p className="text-gray-400 mb-4">
-                All operations are performed directly in the browser using public APIs and your connection to the Ethereum provider. No private keys are shared during the use of these tools.
+              <p className="text-gray-400 mb-0">
+                All operations are executed securely within your browser, leveraging public APIs and your Ethereum provider connection. Private keys are never transmitted or exposed at any stage, ensuring maximum user privacy and security.
               </p>
-              <div className="flex flex-wrap gap-3 mt-4">
-                <a 
-                  href="/nft" 
-                  className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
-                >
-                  Explore NFTs
-                </a>
-                <a 
-                  href="/learn2earn" 
-                  className="px-4 py-2 border border-orange-500 text-orange-500 rounded hover:bg-orange-500 hover:text-white transition-colors"
-                >
-                  Learn & Earn
-                </a>
-              </div>
             </div>
           </div>
         </div>
