@@ -24,15 +24,15 @@ type TrendAnalysisProps = {
 };
 
 const TrendAnalysis: React.FC<TrendAnalysisProps> = ({ trends }: TrendAnalysisProps) => (
-  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4 mb-4 sm:mb-6">
     {timeframes.map(({ id, label }) => {
       let gradientClass = 'from-gray-gradient';
       if (trends[id] === 'bullish') gradientClass = 'from-green-gradient';
       else if (trends[id] === 'bearish') gradientClass = 'from-red-gradient';
       return (
-        <div key={id} className={`rounded-lg p-4 text-center shadow-lg ${gradientClass}`}>
-          <h3 className="text-white text-lg font-semibold mb-2">{label}</h3>
-          <p className="text-white text-xl font-bold capitalize">{trends[id] || 'Neutral'}</p>
+        <div key={id} className={`rounded-lg p-3 sm:p-4 text-center shadow-lg ${gradientClass}`}>
+          <h3 className="text-white text-xs sm:text-sm md:text-lg font-semibold mb-1 sm:mb-2">{label}</h3>
+          <p className="text-white text-base sm:text-lg md:text-xl lg:text-2xl font-bold capitalize">{trends[id] || 'Neutral'}</p>
         </div>
       );
     })}
@@ -40,33 +40,32 @@ const TrendAnalysis: React.FC<TrendAnalysisProps> = ({ trends }: TrendAnalysisPr
 );
 
 const ICTExplanation = () => (
-  <div className="mt-6 bitcoin-price-card">
-    <h3 className="text-xl font-bold text-[#fb923c] mb-3">ICT Key Levels</h3>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="p-3 bg-green-900/20 border border-green-600/30 rounded-lg">
-        <div className="flex items-center mb-2">
-          <div className="w-4 h-4 bg-green-500 mr-2"></div>
-          <h4 className="font-bold text-green-400">Support Levels</h4>
+  <div className="mt-4 sm:mt-6 bitcoin-price-card">
+    <h3 className="text-lg sm:text-xl font-bold text-[#fb923c] mb-2 sm:mb-3">ICT Key Levels</h3>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
+      <div className="p-2 sm:p-3 bg-green-900/20 border border-green-600/30 rounded-lg">
+        <div className="flex items-center mb-1 sm:mb-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 mr-1 sm:mr-2"></div>
+          <h4 className="text-xs sm:text-sm lg:text-base font-bold text-green-400">Support Levels</h4>
         </div>
-        <p className="text-sm text-gray-300">
+        <p className="text-[10px] sm:text-xs lg:text-sm text-gray-300">
           Points of historical buying pressure where price has previously reversed from downtrends. These areas may provide support during future price declines.
         </p>
-      </div>
-      <div className="p-3 bg-red-900/20 border border-red-600/30 rounded-lg">
-        <div className="flex items-center mb-2">
-          <div className="w-4 h-4 bg-red-500 mr-2"></div>
-          <h4 className="font-bold text-red-400">Resistance Levels</h4>
+      </div>      <div className="p-2 sm:p-3 bg-red-900/20 border border-red-600/30 rounded-lg">
+        <div className="flex items-center mb-1 sm:mb-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 mr-1 sm:mr-2"></div>
+          <h4 className="text-xs sm:text-sm lg:text-base font-bold text-red-400">Resistance Levels</h4>
         </div>
-        <p className="text-sm text-gray-300">
+        <p className="text-[10px] sm:text-xs lg:text-sm text-gray-300">
           Points of historical selling pressure where price has previously reversed from uptrends. These areas may act as resistance when price rises.
         </p>
       </div>
-      <div className="p-3 bg-orange-900/20 border border-orange-600/30 rounded-lg">
-        <div className="flex items-center mb-2">
-          <div className="w-4 h-4 border-2 border-dashed border-orange-500 mr-2"></div>
-          <h4 className="font-bold text-orange-400">Order Blocks</h4>
+      <div className="p-2 sm:p-3 bg-orange-900/20 border border-orange-600/30 rounded-lg">
+        <div className="flex items-center mb-1 sm:mb-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-dashed border-orange-500 mr-1 sm:mr-2"></div>
+          <h4 className="text-xs sm:text-sm lg:text-base font-bold text-orange-400">Order Blocks</h4>
         </div>
-        <p className="text-sm text-gray-300">
+        <p className="text-[10px] sm:text-xs lg:text-sm text-gray-300">
           Key areas where smart money has entered the market, creating imbalances that often lead to strong directional moves. These are high-probability reversal zones.
         </p>
       </div>
@@ -235,10 +234,9 @@ const BitcoinAnalysis = () => {
   return (
     <div className="bitcoin-analysis-container">
       {preloadAllTimeframes}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#fb923c] mb-2">Bitcoin Analysis with ICT Key Levels</h1>
-          <p className="text-gray-400">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">        <div className="mb-4 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#fb923c] mb-2">Bitcoin Analysis</h1>
+          <p className="text-xs sm:text-sm lg:text-base text-gray-400">
             Professional Bitcoin technical analysis based on ICT (Inner Circle Trader) methodology and multi-timeframe trend alignment.
           </p>
           <div className="flex justify-between items-center mt-4">
@@ -255,26 +253,24 @@ const BitcoinAnalysis = () => {
               Refresh
             </button>
           </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        </div>        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6 mb-6 sm:mb-8">
           <div className="bitcoin-price-card">
-            <h3 className="text-gray-400 text-sm mb-1">Current BTC Price</h3>
-            <div className="text-2xl font-bold text-white">{btcPrice}</div>
+            <h3 className="text-gray-400 text-xs sm:text-sm mb-1">Current BTC Price</h3>
+            <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{btcPrice}</div>
             <div className="flex items-center mt-1">
-              <span className="text-gray-400 text-sm">24h change:</span>
-              <span className={priceChangeClass}>{priceChange}</span>
+              <span className="text-gray-400 text-xs sm:text-sm">24h change:</span>
+              <span className={priceChangeClass.replace('text-sm', 'text-xs sm:text-sm')}>{priceChange}</span>
             </div>
             {fetchError && (
               <div className="mt-2 text-xs text-amber-500">
                 Unable to fetch price data. Retrying...
               </div>
             )}
-          </div>
-          <div className={`${fearGreedClass} rounded-xl p-5 relative overflow-hidden`}>
-            <h3 className="text-gray-200 text-sm mb-1">Fear & Greed Index</h3>
+          </div>          <div className={`${fearGreedClass} rounded-xl p-2 sm:p-3 lg:p-5 relative overflow-hidden`}>
+            <h3 className="text-gray-200 text-xs sm:text-sm mb-1">Fear & Greed</h3>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-white">{fearGreedText}</div>
-              <div className="fear-greed-number">
+              <div className="text-base sm:text-xl lg:text-2xl font-bold text-white truncate mr-1">{fearGreedText}</div>
+              <div className="fear-greed-number text-base sm:text-lg lg:text-xl flex-shrink-0">
                 {fearGreedValue}
               </div>
             </div>
@@ -288,10 +284,9 @@ const BitcoinAnalysis = () => {
                 className={`fear-greed-value width-${Math.min(Math.floor(fearGreedValue / 10) * 10, 100)}`}
               ></div>
             </div>
-          </div>
-          <div className="bitcoin-price-card">
-            <h3 className="text-gray-400 text-sm mb-1">Trend Strength</h3>
-            <div className="text-2xl font-bold text-white">
+          </div>          <div className="bitcoin-price-card">
+            <h3 className="text-gray-400 text-xs sm:text-sm mb-1">Trend Strength</h3>
+            <div className="text-base sm:text-xl lg:text-2xl font-bold text-white">
               {calculateTrendStrength('bullish').count > calculateTrendStrength('bearish').count
                 ? `Bullish (${calculateTrendStrength('bullish').percentage.toFixed(0)}%)`
                 : calculateTrendStrength('bearish').count > calculateTrendStrength('bullish').count
@@ -311,17 +306,16 @@ const BitcoinAnalysis = () => {
                   ) / 10 * 10)}`}
               ></div>
             </div>
-          </div>
-          <div className="bitcoin-price-card">
-            <h3 className="text-gray-400 text-sm mb-1">Trading Recommendation</h3>
-            <div className="text-2xl font-bold text-white">
+          </div>          <div className="bitcoin-price-card">
+            <h3 className="text-gray-400 text-xs sm:text-sm mb-1">Recommendation</h3>
+            <div className="text-base sm:text-xl lg:text-2xl font-bold text-white">
               {calculateTrendStrength('bullish').count > 3
                 ? 'Buy'
                 : calculateTrendStrength('bearish').count > 3
                   ? 'Sell'
                   : 'Neutral'}
             </div>
-            <div className="text-sm text-gray-400 mt-1">
+            <div className="text-[10px] sm:text-xs lg:text-sm text-gray-400 mt-1 line-clamp-2 sm:line-clamp-none">
               {calculateTrendStrength('bullish').count > 3
                 ? `Strong bullish alignment across ${calculateTrendStrength('bullish').count} timeframes`
                 : calculateTrendStrength('bearish').count > 3
@@ -329,40 +323,37 @@ const BitcoinAnalysis = () => {
                   : 'Mixed signals - consider waiting for clearer trend'}
             </div>
           </div>
-        </div>
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-[#fb923c] mb-4">Multi-Timeframe Trend Analysis</h2>
+        </div>        <div className="mb-4 sm:mb-8">
+          <h2 className="text-base sm:text-lg lg:text-xl font-bold text-[#fb923c] mb-2 sm:mb-4">Multi-Timeframe Trend Analysis</h2>
           <TrendAnalysis trends={trends} />
-        </div>
-        {signal && (
-          <div className={`mb-8 p-4 rounded-lg ${signal.type === 'buy' ? 'signal-buy' : 'signal-sell'}`}>
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-full ${signal.type === 'buy' ? 'signal-icon-bg-buy' : 'signal-icon-bg-sell'}`}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        </div>        {signal && (
+          <div className={`mb-4 sm:mb-8 p-2 sm:p-4 rounded-lg ${signal.type === 'buy' ? 'signal-buy' : 'signal-sell'}`}>
+            <div className="flex items-center gap-1 sm:gap-3">
+              <div className={`p-1.5 sm:p-3 rounded-full ${signal.type === 'buy' ? 'signal-icon-bg-buy' : 'signal-icon-bg-sell'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   {signal.type === 'buy'
                     ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                     : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                   }
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white">
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white">
                 {signal.type.toUpperCase()} Signal Detected
               </h3>
             </div>
-            <p className="text-gray-300">
+            <p className="text-xs sm:text-sm lg:text-base text-gray-300 mt-1 sm:mt-2">
               All timeframes are aligned in a {signal.direction} trend.
               Place your stop at the {signal.stopLevel}.
             </p>
           </div>
-        )}
-        <div className="mb-6">
+        )}        <div className="mb-4 sm:mb-6">
           <Tab.Group selectedIndex={timeframes.findIndex(t => t.id === activeTimeframe)} onChange={(index) => setActiveTimeframe(timeframes[index].id)}>
-            <Tab.List className="flex space-x-2 p-1 bg-black/30 rounded-xl mb-6 border border-[#333]">
+            <Tab.List className="flex space-x-1 sm:space-x-2 p-1 bg-black/30 rounded-xl mb-4 sm:mb-6 border border-[#333] overflow-x-auto">
               {timeframes.map(({ id, label }) => (
                 <Tab
                   key={id}
                   className={({ selected }) => `
-                    w-full py-3 text-sm font-medium leading-5 rounded-lg transition-all
+                    w-full py-2 sm:py-3 text-xs sm:text-sm font-medium leading-5 rounded-lg transition-all whitespace-nowrap
                     ${selected
                       ? 'bg-[#fb923c] text-white shadow'
                       : 'text-[#e5e5e5] hover:bg-[#fb923c]/20'}
@@ -389,10 +380,9 @@ const BitcoinAnalysis = () => {
             </Tab.Panels>
           </Tab.Group>
         </div>
-        <ICTExplanation />
-        <div className="methodology-section">
-          <h2 className="text-xl font-bold text-[#fb923c] mb-4">About Our Analysis Methodology</h2>
-          <div className="text-gray-300 space-y-4">
+        <ICTExplanation />        <div className="methodology-section mt-4 sm:mt-8">
+          <h2 className="text-lg sm:text-xl font-bold text-[#fb923c] mb-3 sm:mb-4">About Our Analysis Methodology</h2>
+          <div className="text-gray-300 space-y-3 sm:space-y-4 text-sm sm:text-base">
             <p>
               Our Bitcoin analysis approach uses a proprietary combination of advanced technical indicators and the respected ICT (Inner Circle Trader) methodology to identify key price levels and market direction.
             </p>
@@ -403,15 +393,14 @@ const BitcoinAnalysis = () => {
               <strong className="text-[#fb923c]">Smart Money Concepts:</strong> Our analysis incorporates institutional order flow concepts, market structure, and liquidity zones to help understand where large market participants are positioned.
             </p>
           </div>
-        </div>
-        <div className="disclaimer-card">
-          <h3 className="text-xl font-bold text-red-400 mb-3 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        </div>        <div className="disclaimer-card mt-4 sm:mt-6">
+          <h3 className="text-lg sm:text-xl font-bold text-red-400 mb-2 sm:mb-3 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             Important Disclaimer
           </h3>
-          <div className="text-gray-300 space-y-2">
+          <div className="text-gray-300 space-y-2 text-xs sm:text-sm md:text-base">
             <p>
               This analysis is provided for educational and informational purposes only and should not be considered as financial advice.
             </p>

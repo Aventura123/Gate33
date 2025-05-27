@@ -1194,6 +1194,17 @@ export default function CryptoToolsPage() {
   // State to show/hide the Governance AI component
   const [showGovernance, setShowGovernance] = useState(false);
   
+  // Estado para o controle da sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Detecta se é mobile
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Atualizar informações da rede quando a carteira for conectada
   useEffect(() => {
     const updateNetworkInfo = async () => {
@@ -1241,17 +1252,52 @@ export default function CryptoToolsPage() {
     <Layout>
       <SidebarStyles />
       <style jsx global>{`
-    .crypto-tools-main-container {
-      overflow: visible !important;
-      position: static !important;
-      z-index: auto !important;
-    }
-  `}</style>
+        .crypto-tools-main-container {
+          overflow: visible !important;
+          position: static !important;
+          z-index: auto !important;
+        }
+        .sidebar-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.6);
+          z-index: 40;
+        }
+      `}</style>
       <div className="crypto-tools-main-container bg-gradient-to-br from-orange-900 to-black text-white min-h-screen">
+        {/* Botão hamburguer mobile */}
+        {isMobile && (
+          <button
+            className="fixed top-4 left-4 z-50 bg-orange-500 text-white p-2 rounded-full shadow-lg md:hidden"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Abrir menu"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
         <div className="flex flex-col md:flex-row">
-          {/* Left Sidebar with WalletButton and Menu */}
-          <div className="w-full md:w-[25rem] bg-black/40 p-4 md:min-h-screen md:sticky md:top-0 border-r border-orange-900/30">
-            <div className="flex flex-col space-y-6">
+          {/* Sidebar responsiva */}
+          <aside
+            className={
+              isMobile
+                ? `fixed top-0 left-0 h-full w-72 max-w-full bg-black/95 z-50 transition-transform duration-300 md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+                : 'w-full md:w-[22rem] bg-black/40 p-4 md:min-h-screen md:sticky md:top-0 border-r border-orange-900/30'
+            }
+            style={isMobile ? {padding: 0} : {}}
+          >
+            {/* Botão fechar mobile */}
+            {isMobile && (
+              <button
+                className="absolute top-4 right-4 text-orange-500 focus:outline-none text-2xl"
+                onClick={() => setSidebarOpen(false)}
+                aria-label="Fechar menu"
+              >
+                &times;
+              </button>
+            )}
+            <div className="flex flex-col space-y-6 p-4">
               {/* Wallet Connection Section */}
               <div className="bg-black/60 p-4 rounded-lg border border-orange-500/30">
                 <h3 className="text-orange-400 font-bold mb-3">Wallet Connection</h3>
@@ -1287,7 +1333,7 @@ export default function CryptoToolsPage() {
                   <ul className="space-y-2">
                     <li className="sidebar-menu-item">
                       <button
-                        onClick={() => setActiveMenuOption("marketlist")}
+                        onClick={() => { setActiveMenuOption("marketlist"); if(isMobile) setSidebarOpen(false); }}
                         className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "marketlist" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
                       >
                         Market List
@@ -1295,7 +1341,7 @@ export default function CryptoToolsPage() {
                     </li>
                     <li className="sidebar-menu-item">
                       <button
-                        onClick={() => setActiveMenuOption("marketcap")}
+                        onClick={() => { setActiveMenuOption("marketcap"); if(isMobile) setSidebarOpen(false); }}
                         className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "marketcap" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
                       >
                         Market Cap Calculator
@@ -1303,7 +1349,7 @@ export default function CryptoToolsPage() {
                     </li>
                     <li className="sidebar-menu-item">
                       <button
-                        onClick={() => setActiveMenuOption("governance")}
+                        onClick={() => { setActiveMenuOption("governance"); if(isMobile) setSidebarOpen(false); }}
                         className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "governance" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
                       >
                         Governance AI
@@ -1311,7 +1357,7 @@ export default function CryptoToolsPage() {
                     </li>
                     <li className="sidebar-menu-item">
                       <button
-                        onClick={() => setActiveMenuOption("bitcoin")}
+                        onClick={() => { setActiveMenuOption("bitcoin"); if(isMobile) setSidebarOpen(false); }}
                         className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "bitcoin" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
                       >
                         Bitcoin Analysis
@@ -1319,7 +1365,7 @@ export default function CryptoToolsPage() {
                     </li>
                     <li className="sidebar-menu-item">
                       <button
-                        onClick={() => setActiveMenuOption("funny")}
+                        onClick={() => { setActiveMenuOption("funny"); if(isMobile) setSidebarOpen(false); }}
                         className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "funny" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
                       >
                         Funny Tools
@@ -1334,7 +1380,7 @@ export default function CryptoToolsPage() {
                 <div className="text-sm text-gray-300">
                   <a href="/learn2earn" className="block py-1 hover:text-orange-400">Learn & Earn</a>
                   <button 
-                    onClick={() => setActiveMenuOption("bitcoin")}
+                    onClick={() => { setActiveMenuOption("bitcoin"); if(isMobile) setSidebarOpen(false); }}
                     className="block py-1 hover:text-orange-400 text-left w-full text-gray-300"
                   >
                     Bitcoin Analysis
@@ -1343,8 +1389,11 @@ export default function CryptoToolsPage() {
                 </div>
               </div>
             </div>
-          </div>
-          
+          </aside>
+          {/* Overlay escuro mobile */}
+          {isMobile && sidebarOpen && (
+            <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+          )}
           {/* Main Content Area */}
           <div className="flex-1 p-4 md:p-8">
             <div className="text-center mb-10">

@@ -50,7 +50,7 @@ export default function CryptoDetails({ coinId }: CryptoDetailsProps) {
       <div className="p-6 bg-black/40 border border-[#fb923c]/20 rounded-xl mt-8 flex items-center justify-center">
         <div className="flex flex-col items-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#fb923c] border-r-transparent"></div>
-          <p className="mt-4 text-gray-300">Carregando detalhes da criptomoeda...</p>
+          <p className="mt-4 text-gray-300">Loading cryptocurrency details...</p>
         </div>
       </div>
     );

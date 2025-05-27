@@ -5,7 +5,15 @@
   background: linear-gradient(to bottom right, rgb(124, 45, 18), rgb(0, 0, 0), rgb(0, 0, 0));
   color: white;
   min-height: 100vh;
-  padding-top: 2rem;
+  padding-top: 1rem;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .bitcoin-analysis-container {
+    padding-top: 2rem;
+    font-size: 1rem;
+  }
 }
 
 /* Cards & Indicators */
@@ -13,7 +21,13 @@
   background-color: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(251, 146, 60, 0.2);
   border-radius: 0.75rem;
-  padding: 1.25rem;
+  padding: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .bitcoin-price-card {
+    padding: 1.25rem;
+  }
 }
 
 .fear-greed-bar {
@@ -31,12 +45,19 @@
 }
 
 .fear-greed-number {
-  font-size: 1.5rem;
+  font-size: 1.125rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
   background-color: rgba(0, 0, 0, 0.3);
   border-radius: 0.5rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.125rem 0.375rem;
+}
+
+@media (min-width: 640px) {
+  .fear-greed-number {
+    font-size: 1.5rem;
+    padding: 0.25rem 0.5rem;
+  }
 }
 
 .loading-indicator {
@@ -66,8 +87,22 @@
   background-color: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(251, 146, 60, 0.2);
   border-radius: 0.75rem;
-  padding: 1rem;
-  height: 600px;
+  padding: 0.5rem;
+  height: 350px;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .chart-container {
+    padding: 1rem;
+    height: 450px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .chart-container {
+    height: 600px;
+  }
 }
 
 /* Signal Alert */
