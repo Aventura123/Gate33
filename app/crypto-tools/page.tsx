@@ -1285,7 +1285,9 @@ export default function CryptoToolsPage() {
                 ? `fixed top-0 left-0 h-full w-72 max-w-full bg-black/95 z-50 transition-transform duration-300 md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
                 : 'w-full md:w-[22rem] bg-black/40 p-4 md:min-h-screen md:sticky md:top-0 border-r border-orange-900/30'
             }
-            style={isMobile ? {padding: 0} : {}}
+            /* Remove inline style and use a conditional class instead */
+            /* style={isMobile ? {padding: 0} : {}} */
+            data-mobile={isMobile ? 'true' : undefined}
           >
             {/* Botão fechar mobile */}
             {isMobile && (

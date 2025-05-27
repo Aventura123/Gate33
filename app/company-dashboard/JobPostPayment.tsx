@@ -32,7 +32,6 @@ interface JobPostPaymentProps {
   companyProfile: CompanyProfile;
   reloadData: () => void;
 }
-
  // Extend the interface to include dynamic questions and new fields for the AI Job Assistant
 interface JobDataType {
   title: string;
@@ -54,6 +53,7 @@ interface JobDataType {
   // AI Job Assistant fields - reintegrated
   responsibilities: string;
   idealCandidate: string;
+  benefits: string; // Added benefits field
   screeningQuestions?: string[];
   [key: `question${number}`]: string | undefined;
 }
@@ -80,6 +80,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     // Reintegrating the specific fields
     responsibilities: "",
     idealCandidate: "",
+    benefits: "",
     screeningQuestions: []
   });
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
@@ -379,6 +380,19 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                 placeholder="Describe your ideal candidate's profile, including soft skills and cultural fit"
               />
               <p className="text-xs text-gray-400 mt-1">Describe the ideal candidate profile, including soft skills and cultural fit. Use bullet points • or - for better readability.</p>
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Benefits</label>
+              <textarea 
+                name="benefits" 
+                value={jobData.benefits} 
+                onChange={handleChange} 
+                rows={6} 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                placeholder="List the benefits and perks offered with this position"
+              />
+              <p className="text-xs text-gray-400 mt-1">Describe compensation benefits, perks, and any other incentives offered with this position. Use bullet points • or - for better readability.</p>
             </div>
             
             {/* Unified Skills Input Section */}

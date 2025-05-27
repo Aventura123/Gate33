@@ -22,12 +22,142 @@ interface Job {
   location?: string;
   salary?: string;
   sourceLink: string;
+  disabled?: boolean;
+  responsibilities?: string;
+  idealCandidate?: string;
+  benefits?: string;
+  TP?: boolean; // True Posting - posted by team
 }
 
 interface JobsManagerProps {
   activeSubTab: string;
   setActiveSubTab: (subTab: string) => void;
 }
+
+// Job List Item component
+const JobListItem: React.FC<{
+  job: Job;
+  onDelete: () => void;
+  isDeleting: boolean;
+  onToggleDisable: () => void;
+  isDisabling?: boolean;
+}> = ({ job, onDelete, isDeleting, onToggleDisable, isDisabling }) => {
+  const [expanded, setExpanded] = useState(false);
+  
+  return (
+    <li 
+      className={`bg-black/30 rounded-lg overflow-hidden transition-all duration-200 ${expanded ? 'border-orange-500' : job.disabled ? 'border-gray-500' : 'border-gray-700'} border ${job.disabled ? 'opacity-70' : ''}`}
+    >
+      <div 
+        className="flex justify-between items-center p-3 cursor-pointer hover:bg-black/40"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex-1">          <div className="flex items-center gap-2">
+            <p className={`font-bold truncate ${job.disabled ? 'text-gray-400' : 'text-orange-500'}`}>
+              {job.title}
+            </p>
+            {job.disabled && (
+              <span className="bg-gray-700 text-gray-300 text-xs px-1.5 py-0.5 rounded">Disabled</span>
+            )}
+            {job.TP && (
+              <span className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded animate-pulse">TP</span>
+            )}
+          </div>
+          <p className="text-gray-300 text-sm">{job.companyName}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {job.location && (
+            <span className="hidden sm:inline-block bg-black/40 px-2 py-0.5 text-xs text-orange-200 rounded-full">
+              {job.location}
+            </span>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent expansion toggle
+              onToggleDisable();
+            }}
+            className={`${job.disabled ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-600 hover:bg-yellow-700'} text-white px-2 py-1 rounded text-xs`}
+            disabled={isDisabling}
+          >
+            {isDisabling ? "..." : job.disabled ? "Enable" : "Disable"}
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent expansion toggle
+              onDelete();
+            }}
+            className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-sm"
+            disabled={isDeleting}
+          >
+            {isDeleting ? "..." : "Delete"}
+          </button>
+          <svg 
+            className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${expanded ? 'transform rotate-180' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
+        {expanded && (
+        <div className="p-4 border-t border-gray-700 bg-black/20">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <span className="text-gray-400 text-xs">Job ID:</span>
+              <p className="text-gray-300 text-sm font-mono break-all select-all">{job.id}</p>
+            </div>
+            {job.salary && (
+              <div>
+                <span className="text-gray-400 text-xs">Salary:</span>
+                <p className="text-orange-300">{job.salary}</p>
+              </div>
+            )}
+            {job.location && (
+              <div>
+                <span className="text-gray-400 text-xs">Location:</span>
+                <p className="text-orange-300">{job.location}</p>
+              </div>
+            )}
+            {job.sourceLink && (
+              <div className="md:col-span-2">
+                <span className="text-gray-400 text-xs">Source:</span>
+                <a href={job.sourceLink} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-words block">
+                  {job.sourceLink}
+                </a>
+              </div>
+            )}
+          </div>          <div className="mb-3">
+            <span className="text-gray-400 text-xs">Description:</span>
+            <p className="text-white text-sm whitespace-pre-wrap mt-1">{job.description}</p>
+          </div>
+          
+          {job.responsibilities && (
+            <div className="mb-3">
+              <span className="text-gray-400 text-xs">Responsibilities:</span>
+              <p className="text-white text-sm whitespace-pre-wrap mt-1">{job.responsibilities}</p>
+            </div>
+          )}
+          
+          {job.idealCandidate && (
+            <div className="mb-3">
+              <span className="text-gray-400 text-xs">Ideal Candidate:</span>
+              <p className="text-white text-sm whitespace-pre-wrap mt-1">{job.idealCandidate}</p>
+            </div>
+          )}
+          
+          {job.benefits && (
+            <div>
+              <span className="text-gray-400 text-xs">Benefits:</span>
+              <p className="text-white text-sm whitespace-pre-wrap mt-1">{job.benefits}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </li>
+  );
+};
 
 const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab }) => {
   // Predefined feature options
@@ -38,18 +168,25 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
     "4x Social Media Promotion",
     "Top Listed",
     "Highlighted in Newsletter"
-  ];
-
-  // Jobs state
+  ];  // Jobs state
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [allJobs, setAllJobs] = useState<Job[]>([]); // Store all jobs for filtering
+  const [searchTerm, setSearchTerm] = useState('');
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
-  const [newJob, setNewJob] = useState({
+  const [disablingJobId, setDisablingJobId] = useState<string | null>(null);  const [newJob, setNewJob] = useState({
     title: "",
     companyName: "",
     description: "",
+    requiredSkills: "",
     location: "",
-    salary: "",
+    salaryRange: "",
+    responsibilities: "",
+    idealCandidate: "",
+    benefits: "",
+    category: "",
+    employmentType: "",
+    experienceLevel: "",
     sourceLink: "",
   });
   const [creatingJob, setCreatingJob] = useState(false);
@@ -85,7 +222,6 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
       fetchJobPlans();
     }
   }, [activeSubTab]);
-
   // Function to fetch jobs
   const fetchJobs = async () => {
     setJobsLoading(true);
@@ -97,14 +233,27 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
       }
 
       const jobsCollection = collection(db, "jobs");
-      const querySnapshot = await getDocs(jobsCollection);
-
-      const jobsList = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Job[];
+      const querySnapshot = await getDocs(jobsCollection);      const jobsList = querySnapshot.docs.map((doc) => {
+        // Transform document data into Job object
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title || "",
+          companyName: data.company || "", // Use companyName for the interface but company for Firestore
+          description: data.description || "",
+          location: data.location || "",
+          salary: data.salaryRange || "",
+          sourceLink: data.sourceLink || "",
+          disabled: data.disabled || false,
+          responsibilities: data.responsibilities || "",
+          idealCandidate: data.idealCandidate || "",
+          benefits: data.benefits || "",
+          TP: data.TP || false
+        } as Job;
+      });
 
       setJobs(jobsList);
+      setAllJobs(jobsList); // Store all jobs for filtering
     } catch (error) {
       console.error("Error fetching jobs:", error);
       setJobsError("Failed to fetch jobs. Please check the console for more details.");
@@ -145,7 +294,6 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
   const refreshJobPlans = async () => {
     await fetchJobPlans();
   };
-
   // Handle job creation
   const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,33 +305,119 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
     try {
       if (!db) {
         throw new Error("Firestore is not initialized.");
-      }
-
+      }        // Format the data for Firestore
       const jobData = {
-        ...newJob,
+        title: newJob.title,
+        company: newJob.companyName, // Store as 'company' to match existing schema
+        description: newJob.description,
+        requiredSkills: newJob.requiredSkills,
+        location: newJob.location,
+        salaryRange: newJob.salaryRange,
+        responsibilities: newJob.responsibilities,
+        idealCandidate: newJob.idealCandidate,
+        benefits: newJob.benefits,
+        category: newJob.category,
+        jobType: newJob.employmentType, // Store as 'jobType' to match existing schema
+        experienceLevel: newJob.experienceLevel,
+        sourceLink: newJob.sourceLink,
         fromExternalSource: true, // Mark as created from the admin panel
+        TP: true, // True Posting - posted by team
         createdAt: new Date().toISOString(),
+        insertedDate: new Date().toISOString(), // Add this to match existing schema
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // Set expiration date to 30 days from now
+        disabled: false, // By default, jobs are enabled
       };
-
-      await addDoc(collection(db, "jobs"), jobData);
-
+      
+      const docRef = await addDoc(collection(db, "jobs"), jobData);      // Create job object with ID for local state update
+      const newJobWithId = {
+        id: docRef.id,
+        ...newJob,
+        disabled: false,
+        TP: true // Mark as True Posting for local state updates
+      };
+      
+      // Add to all jobs
+      const updatedAllJobs = [newJobWithId, ...allJobs];
+      setAllJobs(updatedAllJobs);
+      
+      // Update filtered jobs if needed
+      if (searchTerm) {
+        if (
+          newJobWithId.title?.toLowerCase().includes(searchTerm) || 
+          newJobWithId.companyName?.toLowerCase().includes(searchTerm) ||
+          newJobWithId.description?.toLowerCase().includes(searchTerm)
+        ) {
+          setJobs([newJobWithId, ...jobs]);
+        }
+      } else {
+        setJobs(updatedAllJobs);
+      }      // Reset form
       setNewJob({
         title: "",
         companyName: "",
         description: "",
+        requiredSkills: "",
         location: "",
-        salary: "",
+        salaryRange: "",
+        responsibilities: "",
+        idealCandidate: "",
+        benefits: "",
+        category: "",
+        employmentType: "",
+        experienceLevel: "",
         sourceLink: "",
       });
 
-      fetchJobs(); // Refresh the jobs list
       alert("Job created successfully!");
     } catch (error) {
       console.error("Error creating job:", error);
       alert("Failed to create job. Please check the console for details.");
     } finally {
       setCreatingJob(false);
+    }
+  };  // Handle job disable/enable toggle
+  const handleToggleJobDisable = async (id: string) => {
+    const job = allJobs.find(j => j.id === id);
+    if (!job) return;
+    
+    const action = job.disabled ? "enable" : "disable";
+    if (!window.confirm(`Are you sure you want to ${action} this job?`)) return;
+    
+    setDisablingJobId(id);
+    try {
+      if (!db) {
+        console.error("Firestore is not initialized.");
+        return;
+      }
+      
+      // Update job status in Firestore
+      await updateDoc(doc(db, "jobs", id), {
+        disabled: !job.disabled
+      });
+      
+      // Update local state
+      const updatedAllJobs = allJobs.map(j => 
+        j.id === id ? { ...j, disabled: !j.disabled } : j
+      );
+      setAllJobs(updatedAllJobs);
+      
+      // Update filtered jobs if we're searching
+      if (searchTerm) {
+        setJobs(updatedAllJobs.filter(job => 
+          job.title?.toLowerCase().includes(searchTerm) || 
+          job.companyName?.toLowerCase().includes(searchTerm) ||
+          job.description?.toLowerCase().includes(searchTerm)
+        ));
+      } else {
+        setJobs(updatedAllJobs);
+      }
+      
+      alert(`Job ${job.disabled ? "enabled" : "disabled"} successfully!`);
+    } catch (error) {
+      console.error(`Error ${action}ing job:`, error);
+      alert(`Failed to ${action} job.`);
+    } finally {
+      setDisablingJobId(null);
     }
   };
 
@@ -198,7 +432,22 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         return;
       }
       await deleteDoc(doc(db, "jobs", id));
-      fetchJobs();
+      
+      // Update both job lists after deletion
+      const updatedJobs = allJobs.filter(job => job.id !== id);
+      setAllJobs(updatedJobs);
+      
+      // If we're searching, maintain the filter
+      if (searchTerm) {
+        setJobs(updatedJobs.filter(job => 
+          job.title?.toLowerCase().includes(searchTerm) || 
+          job.companyName?.toLowerCase().includes(searchTerm) ||
+          job.description?.toLowerCase().includes(searchTerm)
+        ));
+      } else {
+        setJobs(updatedJobs);
+      }
+      
       alert("Job deleted successfully!");
     } catch (error) {
       console.error("Error deleting job:", error);
@@ -364,97 +613,325 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   return (
     <div>
-      <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Jobs</h2>
-
-      {activeSubTab === "list" && (
+      <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Jobs</h2>      {activeSubTab === "list" && (
         <div className="mt-6 bg-black/50 p-6 rounded-lg">
           <h3 className="text-xl text-orange-400 mb-4">Jobs List</h3>
+            {/* Search bar */}
+          <div className="mb-4">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchTerm}
+                placeholder="Search jobs by title, company or description..."
+                className="w-full px-4 py-2 pr-10 rounded-lg bg-black/40 border border-orange-500/30 text-white focus:outline-none focus:ring-2 focus:ring-orange-400"
+                onChange={(e) => {
+                  const value = e.target.value.toLowerCase();
+                  setSearchTerm(value);
+                  
+                  if (value === '') {
+                    setJobs(allJobs); // Reset to all jobs when search is cleared
+                  } else {
+                    // Filter jobs based on search term
+                    const filtered = allJobs.filter(job => 
+                      job.title?.toLowerCase().includes(value) || 
+                      job.companyName?.toLowerCase().includes(value) ||
+                      job.description?.toLowerCase().includes(value)
+                    );
+                    setJobs(filtered);
+                  }
+                }}
+              />
+              <div className="absolute right-3 top-2.5 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          
           {jobsLoading && <p className="text-gray-400">Loading jobs...</p>}
-          {jobsError && <p className="text-red-400">{jobsError}</p>}
-          <div className="max-h-80 overflow-y-auto">
-            <ul className="space-y-4">
+          {jobsError && <p className="text-red-400">{jobsError}</p>}          <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
+            <ul className="space-y-2">
               {jobs.map((job) => (
-                <li key={job.id} className="flex justify-between items-center p-4 bg-black/30 rounded-lg">
-                  <div>
-                    <p className="text-orange-500 font-bold">{job.title}</p>
-                    <p className="text-gray-300 text-sm">{job.companyName}</p>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteJob(job.id)}
-                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                    disabled={deletingJobId === job.id}
-                  >
-                    {deletingJobId === job.id ? "Deleting..." : "Delete"}
-                  </button>
-                </li>
+                <JobListItem 
+                  key={job.id} 
+                  job={job} 
+                  onDelete={() => handleDeleteJob(job.id)}
+                  isDeleting={deletingJobId === job.id}
+                  onToggleDisable={() => handleToggleJobDisable(job.id)}
+                  isDisabling={disablingJobId === job.id}
+                />
               ))}
             </ul>
           </div>
         </div>
-      )}
-
-      {activeSubTab === "create" && (
+      )}      {activeSubTab === "create" && (
         <div className="mt-6 bg-black/50 p-6 rounded-lg">
           <h3 className="text-xl text-orange-400 mb-4">Create Job</h3>
-          <form onSubmit={handleCreateJob} className="space-y-4">
-            <input
-              type="text"
-              name="title"
-              value={newJob.title}
-              onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
-              placeholder="Job Title"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-              required
-            />
-            <input
-              type="text"
-              name="companyName"
-              placeholder="Company Name"
-              value={newJob.companyName}
-              onChange={(e) => setNewJob({ ...newJob, companyName: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-              required
-            />
-            <textarea
-              name="description"
-              value={newJob.description}
-              onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
-              placeholder="Job Description"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-              required
-              rows={5}
-            />
-            <input
-              type="text"
-              name="location"
-              value={newJob.location}
-              onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
-              placeholder="Location"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-            />
-            <input
-              type="text"
-              name="salary"
-              value={newJob.salary}
-              onChange={(e) => setNewJob({ ...newJob, salary: e.target.value })}
-              placeholder="Salary"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-            />
-            <input
-              type="text"
-              name="sourceLink"
-              value={newJob.sourceLink}
-              onChange={(e) => setNewJob({ ...newJob, sourceLink: e.target.value })}
-              placeholder="Source Link"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-              required
-            />
-            <button
-              type="submit"
-              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
-            >
-              Create Job
-            </button>
+          <form onSubmit={handleCreateJob} className="space-y-6">
+            {/* --- Job Basic Info --- */}
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Job Title *</label>
+              <input 
+                type="text" 
+                name="title" 
+                value={newJob.title} 
+                onChange={(e) => setNewJob({ ...newJob, title: e.target.value })} 
+                placeholder="Job Title" 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                required 
+              />
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Company Name *</label>
+              <input 
+                type="text" 
+                name="companyName" 
+                placeholder="Company Name" 
+                value={newJob.companyName} 
+                onChange={(e) => setNewJob({ ...newJob, companyName: e.target.value })} 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                required 
+              />
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Job Category</label>
+              <select
+                name="category"
+                value={newJob.category}
+                onChange={(e) => setNewJob({ ...newJob, category: e.target.value })}
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+              >
+                <option value="">Select Category</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Design">Design</option>
+                <option value="Operations">Operations</option>
+                <option value="Sales">Sales</option>
+                <option value="Product">Product</option>
+                <option value="Finance">Finance</option>
+                <option value="DeFi">DeFi</option>
+                <option value="Web3">Web3</option>
+                <option value="Non-Tech">Non-Tech</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Job Description *</label>
+              <textarea 
+                name="description" 
+                value={newJob.description} 
+                onChange={(e) => setNewJob({ ...newJob, description: e.target.value })} 
+                placeholder="Enter a complete job description" 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                required 
+                rows={10} 
+              />
+              <p className="text-xs text-gray-400 mt-1">Include details about the position and technical requirements.</p>
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Responsibilities</label>
+              <textarea 
+                name="responsibilities" 
+                value={newJob.responsibilities} 
+                onChange={(e) => setNewJob({ ...newJob, responsibilities: e.target.value })} 
+                placeholder="List key responsibilities for this role. Use bullet points (•) for better readability." 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                rows={6} 
+              />
+              <p className="text-xs text-gray-400 mt-1">Describe the main tasks and responsibilities of the position.</p>
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Ideal Candidate</label>
+              <textarea 
+                name="idealCandidate" 
+                value={newJob.idealCandidate} 
+                onChange={(e) => setNewJob({ ...newJob, idealCandidate: e.target.value })} 
+                placeholder="Describe your ideal candidate's profile, including soft skills and cultural fit" 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                rows={6} 
+              />
+              <p className="text-xs text-gray-400 mt-1">Describe the ideal candidate profile, including soft skills and cultural fit.</p>
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Benefits</label>
+              <textarea 
+                name="benefits" 
+                value={newJob.benefits} 
+                onChange={(e) => setNewJob({ ...newJob, benefits: e.target.value })} 
+                placeholder="List the benefits and perks offered with this position" 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                rows={6} 
+              />
+              <p className="text-xs text-gray-400 mt-1">Describe compensation benefits, perks, and any other incentives offered with this position.</p>
+            </div>
+            
+            {/* Required Skills Section */}
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Required Skills</label>
+              <div className="mb-2">
+                <input 
+                  name="requiredSkills"
+                  type="text"
+                  value={newJob.requiredSkills} 
+                  onChange={(e) => setNewJob({ ...newJob, requiredSkills: e.target.value })} 
+                  className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                  placeholder="Enter skills separated by commas or select from below"
+                />
+                <p className="text-xs text-gray-400 mt-1">Click on tags below to add or remove skills, or type custom skills above.</p>
+              </div>
+              
+              {/* Display selected skills as tags */}
+              {newJob.requiredSkills && (
+                <div className="mt-3 mb-4">
+                  <label className="block text-sm text-gray-300 mb-1">Selected Skills:</label>
+                  <div className="flex flex-wrap gap-2">
+                    {newJob.requiredSkills.split(',').map((skill, index) => {
+                      const trimmedSkill = skill.trim();
+                      if (!trimmedSkill) return null;
+                      
+                      return (
+                        <div key={index} className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm flex items-center">
+                          {trimmedSkill}
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const skills = newJob.requiredSkills.split(',')
+                                .map(s => s.trim())
+                                .filter(s => s !== trimmedSkill)
+                                .join(', ');
+                              setNewJob(prev => ({ ...prev, requiredSkills: skills }));
+                            }}
+                            className="ml-2 text-white hover:text-orange-200"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Common Skill Tags */}
+              <div className="flex flex-wrap gap-2">
+                {['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Human Resources','C++','Full-stack Developer','Developer Relations','iOS','Android Developer','Node.js','SEO','AI'].map(tag => (
+                  <button 
+                    type="button" 
+                    key={tag} 
+                    onClick={() => {
+                      const skills = newJob.requiredSkills;
+                      const skillsArray = skills ? skills.split(',').map(s => s.trim()) : [];
+                      const exists = skillsArray.includes(tag);
+                      
+                      let newSkills;
+                      if (exists) {
+                        newSkills = skillsArray.filter(s => s !== tag).join(', ');
+                      } else {
+                        newSkills = skills ? `${skills}, ${tag}` : tag;
+                      }
+                      
+                      setNewJob(prev => ({ ...prev, requiredSkills: newSkills }));
+                    }} 
+                    className={`px-3 py-1 rounded-full border text-sm ${newJob.requiredSkills.includes(tag) ? 'bg-orange-500 text-white border-orange-500' : 'bg-black/50 text-gray-300 border-gray-700'}`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Job Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-orange-400 font-semibold mb-1">Job Location</label>
+                <input 
+                  type="text"
+                  name="location" 
+                  value={newJob.location} 
+                  onChange={(e) => setNewJob({ ...newJob, location: e.target.value })} 
+                  placeholder="Leave blank if 100% Remote" 
+                  className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                />
+              </div>
+              
+              <div>
+                <label className="block text-orange-400 font-semibold mb-1">Employment Type</label>
+                <select
+                  name="employmentType"
+                  value={newJob.employmentType}
+                  onChange={(e) => setNewJob({ ...newJob, employmentType: e.target.value })}
+                  className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                >
+                  <option value="">Select Type</option>
+                  <option value="Full-Time">Full-Time</option>
+                  <option value="Part-Time">Part-Time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Freelance">Freelance</option>
+                </select>
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Salary Range</label>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  name="salaryRange" 
+                  value={newJob.salaryRange} 
+                  onChange={(e) => setNewJob({ ...newJob, salaryRange: e.target.value })} 
+                  placeholder="e.g. $60,000-$90,000/year" 
+                  className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Experience Level</label>
+              <select
+                name="experienceLevel"
+                value={newJob.experienceLevel}
+                onChange={(e) => setNewJob({ ...newJob, experienceLevel: e.target.value })}
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+              >
+                <option value="">Select Experience Level</option>
+                <option value="Junior">Junior</option>
+                <option value="Mid-Level">Mid-Level</option>
+                <option value="Senior">Senior</option>
+                <option value="Lead">Lead</option>
+              </select>
+            </div>
+            
+            {/* Application Methods */}            {/* Removed Application Link and Contact Email fields as requested */}
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Source Link (Admin Only) *</label>
+              <input 
+                type="text" 
+                name="sourceLink" 
+                value={newJob.sourceLink} 
+                onChange={(e) => setNewJob({ ...newJob, sourceLink: e.target.value })} 
+                placeholder="Original job posting URL" 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                required 
+              />
+              <p className="text-xs text-gray-400 mt-1">This is only for admin reference and not shown to users.</p>
+            </div>
+            
+            <div className="pt-4">
+              <button
+                type="submit"
+                className="w-full bg-orange-500 text-white py-3 rounded-full font-semibold text-lg hover:bg-orange-600"
+              >
+                Create Job
+              </button>
+            </div>
           </form>
         </div>
       )}

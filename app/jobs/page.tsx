@@ -27,6 +27,8 @@ interface Job {
   responsibilities?: string; // Responsabilidades da vaga
   idealCandidate?: string; // Perfil do candidato ideal
   screeningQuestions?: string[]; // Perguntas de triagem
+  disabled?: boolean; // Whether the job is disabled and shouldn't be shown publicly
+  TP?: boolean; // True Posting - posted by team
 }
 
 // Array of categories for the filter
@@ -170,7 +172,14 @@ export default function JobsPage() {
     <div className="bg-black/70 rounded-lg border border-orange-500/30 shadow-lg p-6 h-fit sticky top-4">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <h2 className="text-2xl font-bold text-orange-400 mb-2">{job.jobTitle}</h2>
+          <div className="flex items-center gap-2 mb-2">
+            <h2 className="text-2xl font-bold text-orange-400">{job.jobTitle}</h2>
+            {job.TP && (
+              <div className="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-md animate-pulse">
+                TP
+              </div>
+            )}
+          </div>
           <p className="text-orange-200 text-lg mb-1">{job.companyName}</p>
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <div className="flex items-center bg-black/40 px-3 py-1 rounded-full border border-orange-500/30">
@@ -335,11 +344,13 @@ export default function JobsPage() {
             acceptsCryptoPay: data.acceptsCryptoPay || false,
             experienceLevel: data.experienceLevel || "Mid-Level",
             techTags: techTags, // Add the extracted tags
+            disabled: data.disabled || false, // Include disabled status
             
             // Adicionando os novos campos com verificação
             responsibilities: data.responsibilities || "",
             idealCandidate: data.idealCandidate || "",
-            screeningQuestions: screeningQuestions
+            screeningQuestions: screeningQuestions,
+            TP: data.TP || false // True Posting - posted by team
           };
         });
         setJobs(fetchedJobs);
@@ -354,6 +365,9 @@ export default function JobsPage() {
   // Filtrar os jobs de acordo com os critérios selecionados
   const filteredJobs = jobs.filter(
     (job) => {
+      // Don't show disabled jobs on public page
+      if (job.disabled) return false;
+      
       const matchesSearch = job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesLocation = job.location.toLowerCase().includes(locationQuery.toLowerCase());
       const matchesCategory = selectedCategory === "All" || job.category === selectedCategory;
@@ -667,6 +681,14 @@ export default function JobsPage() {
                         <div className="absolute left-0 -top-3 w-20 h-8 z-30 pointer-events-none select-none overflow-visible">
                           <div className="bg-orange-500 text-white text-xs font-bold shadow border-2 border-white w-24 text-center py-1 px-0 animate-pulse rotate-[-25deg] -translate-x-6 translate-y-2 rounded-md">
                             <span className="mr-1 align-middle">★</span> Featured
+                          </div>
+                        </div>
+                      )}
+                      {/* True Posting Badge */}
+                      {job.TP && (
+                        <div className="absolute right-2 top-2 z-30">
+                          <div className="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-md animate-pulse">
+                            TP
                           </div>
                         </div>
                       )}

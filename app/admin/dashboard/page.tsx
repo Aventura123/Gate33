@@ -1037,8 +1037,8 @@ const AdminDashboard: React.FC = () => {
       }
     }
   };
-
-  const [isMobile, setIsMobile] = useState(false);
+  // Use null initially to prevent hydration mismatch
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -1918,9 +1918,19 @@ const fetchEmployersList = async () => {
   const [learn2earnDropdownOpen, setLearn2earnDropdownOpen] = useState(false);
   const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
   const [marketingDropdownOpen, setMarketingDropdownOpen] = useState(false); // NOVO
-
   return (
     <Layout>
+      {/* Prevent hydration mismatch by not rendering mobile-dependent content until isMobile is determined */}
+      {isMobile === null ? (
+        <main className="min-h-screen flex bg-gradient-to-br from-orange-900 to-black text-white">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+              <p className="text-gray-300">Loading...</p>
+            </div>
+          </div>
+        </main>
+      ) : (
       <main className="min-h-screen flex bg-gradient-to-br from-orange-900 to-black text-white min-h-screen">
         {/* Mobile menu toggle button - move to bottom left */}
         {isMobile && !mobileMenuOpen && (
@@ -1999,7 +2009,7 @@ const fetchEmployersList = async () => {
             {hasPermission('canEditContent') && (
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "nfts" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "nfts" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                   onClick={() => {
                     if (activeTab === "nfts") setNftsDropdownOpen((open: boolean) => !open);
                     else {
@@ -2011,7 +2021,7 @@ const fetchEmployersList = async () => {
                   }}
                 >
                   <span>Manage NFTs</span>
-                  <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "nfts" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "nfts" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
                 {activeTab === "nfts" && nftsDropdownOpen && (
                   <ul className="ml-6 mt-2 space-y-1">
@@ -2048,7 +2058,7 @@ const fetchEmployersList = async () => {
             {(hasPermission('canManageUsers') || hasPermission('canApproveCompanies') || hasPermission('canEditContent')) && (
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "users" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "users" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                   onClick={() => {
                     if (activeTab === "users") setUsersDropdownOpen((open) => !open);
                     else {
@@ -2060,7 +2070,7 @@ const fetchEmployersList = async () => {
                   }}
                 >
                   <span>Manage Users</span>
-                  <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "users" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "users" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
                 {activeTab === "users" && usersDropdownOpen && (
                   <ul className="ml-6 mt-2 space-y-1">
@@ -2112,7 +2122,7 @@ const fetchEmployersList = async () => {
               </li>
             )}            <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "jobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "jobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   if (activeTab === "jobs") setNftsDropdownOpen((open: boolean) => !open);
                   else {
@@ -2124,7 +2134,7 @@ const fetchEmployersList = async () => {
                 }}
               >
                 <span>Manage Jobs</span>
-                <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "jobs" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "jobs" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
               {activeTab === "jobs" && nftsDropdownOpen && (
                 <ul className="ml-6 mt-2 space-y-1">
@@ -2172,7 +2182,7 @@ const fetchEmployersList = async () => {
             </li>            {/* Instant Jobs tab */}
             <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${isClient && activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   setActiveTab("instantJobs");
                   setActiveSubTab(null);
@@ -2184,7 +2194,7 @@ const fetchEmployersList = async () => {
             </li>            {/* Learn2Earn tab */}
             <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   if (activeTab === "learn2earn") setLearn2earnDropdownOpen((open) => !open);
                   else {
@@ -2196,7 +2206,7 @@ const fetchEmployersList = async () => {
                 }}
               >
                 <span>Learn2Earn</span>
-                <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "learn2earn" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "learn2earn" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
               {activeTab === "learn2earn" && learn2earnDropdownOpen && (
                 <ul className="ml-6 mt-2 space-y-1">
@@ -2230,7 +2240,7 @@ const fetchEmployersList = async () => {
               )}
             </li>            <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${isClient && activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   setActiveTab("accounting");
                   setActiveSubTab(null);
@@ -2243,7 +2253,7 @@ const fetchEmployersList = async () => {
 
             <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${isClient && activeTab === "ads" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "ads" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   setActiveTab("ads");
                   setActiveSubTab(null);
@@ -2256,7 +2266,7 @@ const fetchEmployersList = async () => {
 
             <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${isClient && activeTab === "payments" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "payments" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   setActiveTab("payments");
                   setActiveSubTab("config");
@@ -2268,7 +2278,7 @@ const fetchEmployersList = async () => {
             </li>            {/* --- MARKETING MENU --- */}
             <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "marketing" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "marketing" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
                   if (activeTab === "marketing") setMarketingDropdownOpen((open) => !open);
                   else {
@@ -2280,7 +2290,7 @@ const fetchEmployersList = async () => {
                 }}
               >
                 <span>Marketing</span>
-                <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "marketing" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "marketing" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
               {activeTab === "marketing" && marketingDropdownOpen && (
                 <ul className="ml-6 mt-2 space-y-1">
@@ -2313,7 +2323,7 @@ const fetchEmployersList = async () => {
             {hasPermission('canAccessSettings') && (
               <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${isClient && activeTab === "settings" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "settings" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                   onClick={() => {
                     if (activeTab === "settings") setSettingsDropdownOpen((open) => !open);
                     else {
@@ -2325,7 +2335,7 @@ const fetchEmployersList = async () => {
                   }}
                 >
                   <span>Settings</span>
-                  <svg className={`w-4 h-4 ml-2 transition-transform ${isClient && activeTab === "settings" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "settings" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
                 {activeTab === "settings" && settingsDropdownOpen && (
                   <ul className="ml-6 mt-2 space-y-1">
@@ -3814,10 +3824,9 @@ const fetchEmployersList = async () => {
             onClose={() => setShowNotifications(false)}
            
             overlay
-          />
-
-               )}
+          />               )}
       </main>
+      )}
     </Layout>
   );
 };
