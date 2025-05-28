@@ -4,7 +4,7 @@ import { db } from '../lib/firebase';
 
 // Store contract addresses in Firestore instead of hardcoded
 // This variable will be populated from Firebase and with default values for known networks
-const INSTANT_JOBS_ESCROW_ADDRESS: Record<string, string> = {
+export const INSTANT_JOBS_ESCROW_ADDRESS: Record<string, string> = {
   'ethereum': '0x0000000000000000000000000000000000000000',
   'polygon': '0x0000000000000000000000000000000000000000',
   'optimism': '0x0000000000000000000000000000000000000000',
@@ -286,6 +286,15 @@ class InstantJobsEscrowService {
   private initialized: boolean = false;
 
   /**
+   * Normalizes network names consistently (public version for use outside the class)
+   * @param networkName The network name to normalize
+   * @returns Normalized network name
+   */
+  normalizeNetworkNamePublic(networkName: string): string {
+    return this.normalizeNetworkName(networkName);
+  }
+
+  /**
    * Loads contract addresses from Firebase (um documento por rede)
    */
   async loadContractAddresses() {
@@ -334,9 +343,7 @@ class InstantJobsEscrowService {
       console.error('Error saving contract address:', error);
       throw error;
     }
-  }
-
-  /**
+  }  /**
    * Detects the current wallet network
    * @returns Network name or null if not detected
    */
@@ -344,16 +351,63 @@ class InstantJobsEscrowService {
     try {
       const networkInfo = await web3Service.getNetworkInfo();
       if (networkInfo && networkInfo.name) {
-        // Normalize BNB Smart Chain Testnet/BSC Testnet network names
-        let networkName = networkInfo.name.toLowerCase();
+        // Standardized network normalization
+        let networkName = this.normalizeNetworkName(networkInfo.name);
         
-        // Map variations of BSC Testnet names to a single name
-        if (networkName.includes('bnb') && (networkName.includes('test') || networkName.includes('bnbt'))) {
-          networkName = 'bsc testnet';
-          console.log('BSC Testnet network detected and normalized');
-        } else if (networkInfo.chainId === 97) {
-          networkName = 'bsc testnet';
-          console.log('BSC Testnet detected by chain ID (97)');
+        // Additional handling for chain IDs for definitive identification
+        switch (networkInfo.chainId) {
+          // Ethereum networks
+          case 1:
+            networkName = 'ethereum';
+            console.log('Ethereum Mainnet detected by chain ID (1)');
+            break;
+          case 5:
+            networkName = 'goerli'; // Keep goerli unique if needed
+            console.log('Goerli Testnet detected by chain ID (5)');
+            break;
+          case 11155111:
+            networkName = 'sepolia'; // Keep sepolia unique if needed
+            console.log('Sepolia Testnet detected by chain ID (11155111)');
+            break;
+            
+          // Polygon networks
+          case 137:
+            networkName = 'polygon';
+            console.log('Polygon Mainnet detected by chain ID (137)');
+            break;
+          case 80001:
+            networkName = 'polygonTestnet'; // Mumbai testnet
+            console.log('Polygon Mumbai Testnet detected by chain ID (80001)');
+            break;
+            
+          // Avalanche networks
+          case 43114:
+            networkName = 'avalanche';
+            console.log('Avalanche C-Chain detected by chain ID (43114)');
+            break;
+          case 43113:
+            networkName = 'avalancheTestnet'; // Fuji testnet
+            console.log('Avalanche Fuji Testnet detected by chain ID (43113)');
+            break;
+            
+          // Binance Smart Chain networks
+          case 56:
+            networkName = 'binance';
+            console.log('BSC/BNB Smart Chain detected by chain ID (56)');
+            break;
+          case 97:
+            networkName = 'binancetestnet';
+            console.log('BSC Testnet detected by chain ID (97)');
+            break;
+            
+          // Optimism networks
+          case 10:
+            networkName = 'optimism';
+            console.log('Optimism Mainnet detected by chain ID (10)');
+            break;
+            
+          default:
+            console.log('Using name-based network detection:', networkName);
         }
         
         this.currentNetwork = networkName;
@@ -366,12 +420,82 @@ class InstantJobsEscrowService {
       return null;
     }
   }
-
+    /**
+   * Normalizes network names consistently
+   * @param networkName The network name to normalize
+   * @returns Normalized network name
+   */
+  private normalizeNetworkName(networkName: string): string {
+    if (!networkName) return '';
+    
+    // Pre-normalize - convert to lowercase and remove special chars 
+    // except spaces (to preserve specific matching like "smart chain")
+    const preNormalized = networkName.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+    
+    // Then create a version with all spaces removed for pattern matching
+    const n = preNormalized.replace(/\s/g, '');
+    
+    // Polygon - enhanced detection
+    if (
+      n.includes('polygon') ||
+      n.includes('matic') ||
+      n.includes('polyg') ||
+      n === 'matic' ||
+      (n.includes('polygon') && n.includes('main'))
+    ) return 'polygon';
+    
+    // Binance Smart Chain (mainnet)
+    if (
+      n.includes('bsc') ||
+      n.includes('binancesmartchain') ||
+      preNormalized === 'binance smart chain' ||
+      (n.includes('binance') && n.includes('smart') && n.includes('chain')) ||
+      (n.includes('binance') && n.includes('mainnet')) ||
+      (n.includes('binance') && !n.includes('test')) ||
+      n.includes('bnb') && !n.includes('test')
+    ) return 'binance';
+    
+    // Binance Testnet
+    if (
+      n.includes('binancetestnet') ||
+      n.includes('bsctestnet') ||
+      n.includes('bnbsmartchaintestnet') ||
+      (n.includes('binance') && n.includes('test')) ||
+      (n.includes('bnb') && n.includes('test'))
+    ) return 'binancetestnet';
+    
+    // Optimism
+    if (n.includes('optimism')) return 'optimism';
+    
+    // Avalanche - enhanced detection
+    if (
+      n.includes('avalanche') || 
+      n.includes('avax') ||
+      n.includes('avalanchecchain') ||
+      n.includes('avalanchec') ||
+      (n.includes('avax') && n.includes('c'))
+    ) return 'avalanche';
+      // Ethereum - enhanced detection
+    if (
+      n === 'mainnet' ||
+      n.includes('ethereum') ||
+      n.includes('homestead') || // Ethers.js uses 'homestead' for Ethereum mainnet
+      n.includes('ethmainnet') ||
+      n.includes('ethereummainnet') || 
+      n === 'eth' ||
+      (n.startsWith('eth') && (n.includes('main') || !n.includes('test'))) ||
+      (n.includes('main') && !n.includes('test') && !n.includes('polygon') && !n.includes('bsc'))
+    ) return 'ethereum';
+    
+    // Default: return the cleaned network name
+    return n;
+  }
   /**
    * Initializes the service with automatically detected network
    * @param forcedNetwork Force a specific network (optional)
+   * @param forceReinitialization Force reinitialization even if already initialized on the same network
    */
-  async init(forcedNetwork?: string) {
+  async init(forcedNetwork?: string, forceReinitialization: boolean = false) {
     try {
       // Load addresses from Firebase
       await this.loadContractAddresses();
@@ -383,6 +507,13 @@ class InstantJobsEscrowService {
         throw new Error('Could not detect network. Please connect your wallet.');
       }
       
+      // If already initialized on the same network and not forcing reinitialization, return early
+      if (this.initialized && this.currentNetwork === network && !forceReinitialization) {
+        console.log(`Escrow service already initialized for network ${network}`);
+        return true;
+      }
+      
+      // Always reinitialize when network changes or is forced
       this.currentNetwork = network;
       this.contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[this.currentNetwork];
       
@@ -390,7 +521,7 @@ class InstantJobsEscrowService {
         throw new Error(`Contract not configured for network ${network}. Configure the contract address first.`);
       }
       
-      // Get contract instance
+      // Get contract instance - always create a new instance to ensure fresh state
       this.contract = await web3Service.getContract(this.contractAddress, INSTANT_JOBS_ESCROW_ABI);
       
       if (!this.contract) {
