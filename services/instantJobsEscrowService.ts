@@ -2,19 +2,9 @@ import { web3Service } from './web3Service';
 import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
-// Store contract addresses in Firestore instead of hardcoded
-// This variable will be populated from Firebase and with default values for known networks
-export const INSTANT_JOBS_ESCROW_ADDRESS: Record<string, string> = {
-  'ethereum': '0x0000000000000000000000000000000000000000',
-  'polygon': '0x0000000000000000000000000000000000000000',
-  'optimism': '0x0000000000000000000000000000000000000000',
-  'arbitrum': '0x0000000000000000000000000000000000000000',
-  'sepolia': '0x0000000000000000000000000000000000000000',
-  'bnb smart chain testnet': '0x3ca9962d4c956783dff3cd27b2db943df0f0d7ac', // BSC Testnet with known address
-  'bnb smart chain': '0x0000000000000000000000000000000000000000',
-  'bnbt': '0x3ca9962d4c956783dff3cd27b2db943df0f0d7ac', // Alternative for BSC Testnet
-  'bsc testnet': '0x3ca9962d4c956783dff3cd27b2db943df0f0d7ac' // Another alternative for BSC Testnet
-};
+// Store contract addresses in Firestore
+// This variable will be populated from Firebase when loadContractAddresses() is called
+export const INSTANT_JOBS_ESCROW_ADDRESS: Record<string, string> = {};
 
 // ABI for InstantJobsEscrow contract
 const INSTANT_JOBS_ESCROW_ABI = [
@@ -285,6 +275,16 @@ class InstantJobsEscrowService {
   private currentNetwork: string = '';
   private initialized: boolean = false;
 
+  constructor() {
+    // Load contract addresses from Firebase when the service is created
+    // Use setTimeout to ensure Firebase has been initialized
+    setTimeout(() => {
+      this.loadContractAddresses().catch(err => 
+        console.error('Error pre-loading contract addresses:', err)
+      );
+    }, 0);
+  }
+
   /**
    * Normalizes network names consistently (public version for use outside the class)
    * @param networkName The network name to normalize
@@ -296,22 +296,27 @@ class InstantJobsEscrowService {
 
   /**
    * Loads contract addresses from Firebase (um documento por rede)
-   */
-  async loadContractAddresses() {
+   */  async loadContractAddresses() {
     try {
       // Busca todos os documentos da subcoleção contracts
       const addresses: Record<string, string> = {};
       const contractsColRef = collection(db, 'settings', 'contractInstantJobs_addresses', 'contracts');
       const querySnapshot = await getDocs(contractsColRef);
+      
+      if (querySnapshot.empty) {
+        console.warn('No contract addresses found in Firebase. Please configure them first.');
+      }
+
       querySnapshot.forEach(docSnap => {
         const data = docSnap.data();
         if (data && data.address) {
           addresses[docSnap.id.toLowerCase()] = data.address;
         }
       });
+      
       // Atualiza cache local
       Object.assign(INSTANT_JOBS_ESCROW_ADDRESS, addresses);
-      console.log('Contract addresses loaded (by document):', INSTANT_JOBS_ESCROW_ADDRESS);
+      console.log('Contract addresses loaded from Firebase:', INSTANT_JOBS_ESCROW_ADDRESS);
       return true;
     } catch (error) {
       console.error('Error loading contract addresses:', error);
@@ -512,13 +517,19 @@ class InstantJobsEscrowService {
         console.log(`Escrow service already initialized for network ${network}`);
         return true;
       }
-      
-      // Always reinitialize when network changes or is forced
+        // Always reinitialize when network changes or is forced
       this.currentNetwork = network;
       this.contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[this.currentNetwork];
       
-      if (!this.contractAddress || this.contractAddress === '0x0000000000000000000000000000000000000000') {
-        throw new Error(`Contract not configured for network ${network}. Configure the contract address first.`);
+      if (!this.contractAddress) {
+        console.warn(`No contract address found for network ${network}. Trying to load from Firebase again...`);
+        // Try loading addresses again to ensure we have the latest data
+        await this.loadContractAddresses();
+        this.contractAddress = INSTANT_JOBS_ESCROW_ADDRESS[this.currentNetwork];
+        
+        if (!this.contractAddress) {
+          throw new Error(`Contract not configured for network ${network}. Configure the contract address in Firebase first.`);
+        }
       }
       
       // Get contract instance - always create a new instance to ensure fresh state
