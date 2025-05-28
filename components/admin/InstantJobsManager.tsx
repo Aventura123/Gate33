@@ -41,7 +41,7 @@ const InstantJobsManager = () => {
   const [platformFeePercentage, setPlatformFeePercentage] = useState(0);
   const [newFeePercentage, setNewFeePercentage] = useState(0);
   const [newFeeCollector, setNewFeeCollector] = useState('');
-  const [networkInfo, setNetworkInfo] = useState<{name: string, chainId: number} | null>(null);
+  // Removed networkInfo state
   
   // Contract states
   const [contractAddress, setContractAddress] = useState('');
@@ -66,34 +66,26 @@ const InstantJobsManager = () => {
   // Configure contract address for current network
   const setupContractAddress = async () => {
     try {
-      if (!networkInfo) {
+      if (!currentNetwork) {
         throw new Error("No network detected. Connect your wallet first.");
       }
-      
       if (!newContractAddress || !web3Service.isValidAddress(newContractAddress)) {
         throw new Error("Invalid contract address");
       }
-      
       setSettingContractAddress(true);
       setError(null);
       setSuccess(null);
-      
       // Save contract address to Firebase
       await instantJobsEscrowService.saveContractAddress(
-        networkInfo.name.toLowerCase(),
+        currentNetwork, // use string directly
         newContractAddress
       );
-      
       // Reinitialize service with new address
       await instantJobsEscrowService.init();
-      
       // Load contract data
       await loadContractData();
-      
       setContractAddress(newContractAddress);
-      setSuccess(`Contract address successfully configured for ${networkInfo.name} network`);
-      
-      // Clear field after success
+      setSuccess(`Contract address successfully configured for ${currentNetwork} network`);
       setNewContractAddress('');
     } catch (err: any) {
       console.error("Error configuring contract address:", err);
@@ -102,51 +94,45 @@ const InstantJobsManager = () => {
       setSettingContractAddress(false);
     }
   };
-  
+
   // Load contract data
   const loadContractData = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+      if (!currentNetwork) {
+        setIsLoading(false);
+        return;
+      }
       // Check if contract is initialized
       if (!instantJobsEscrowService.isContractInitialized()) {
         await instantJobsEscrowService.init();
       }
-      
       // Get contract data
       const owner = await instantJobsEscrowService.getContractOwner();
       setContractOwner(owner);
-      
       const collector = await instantJobsEscrowService.getFeeCollector();
       setFeeCollector(collector);
       setNewFeeCollector(collector);
-      
       const feePercentage = await instantJobsEscrowService.getPlatformFeePercentage();
       setPlatformFeePercentage(feePercentage);
       setNewFeePercentage(feePercentage);
-      
       // Update displayed contract address
-      if (networkInfo) {
-        // Try to load contract addresses from Firebase
-        await instantJobsEscrowService.loadContractAddresses();
-
-        // Get address for current network from settings/contractInstantJobs_addresses/contracts/{network}
-        const networkKey = networkInfo.name.toLowerCase();
-        try {
-          const contractDocRef = doc(db, 'settings', 'contractInstantJobs_addresses', 'contracts', networkKey);
-          const contractDoc = await getDoc(contractDocRef);
-          if (contractDoc.exists() && contractDoc.data().address) {
-            setContractAddress(contractDoc.data().address);
-          } else {
-            setContractAddress('');
-          }
-        } catch (e) {
-          console.error("Error fetching contract address:", e);
+      await instantJobsEscrowService.loadContractAddresses();
+      // Get address for current network from settings/contractInstantJobs_addresses/contracts/{network}
+      const networkKey = currentNetwork; // use string directly
+      try {
+        const contractDocRef = doc(db, 'settings', 'contractInstantJobs_addresses', 'contracts', networkKey);
+        const contractDoc = await getDoc(contractDocRef);
+        if (contractDoc.exists() && contractDoc.data().address) {
+          setContractAddress(contractDoc.data().address);
+        } else {
           setContractAddress('');
         }
+      } catch (e) {
+        console.error("Error fetching contract address:", e);
+        setContractAddress('');
       }
-      
     } catch (err: any) {
       console.error("Error loading contract data:", err);
       setError(err.message || "Error loading contract data");
@@ -154,42 +140,29 @@ const InstantJobsManager = () => {
       setIsLoading(false);
     }
   };
-  
+
   // Load jobs from Firebase and contract
   const loadJobs = async () => {
-    if (!networkInfo) {
+    if (!currentNetwork) {
       setError("No network detected. Connect your wallet first.");
       return;
     }
-    
     setIsLoadingJobs(true);
     setError(null);
-    
     try {
-      // Use instantJobs collection as shown in the Firebase screenshot
       const jobsCollection = collection(db, "instantJobs");
-      
-      // Get ALL jobs, not just for current network
       let q = query(jobsCollection);
-      
       const querySnapshot = await getDocs(q);
       const jobsData: InstantJob[] = [];
-      
-      // Process jobs from Firebase
       for (const docSnapshot of querySnapshot.docs) {
         const jobData = docSnapshot.data() as any;
-        
-        // Normalize network for comparison (if defined)
         const jobNetwork = jobData.network ? jobData.network.toLowerCase() : '';
-        const currentNetwork = networkInfo.name.toLowerCase();
-        
-        // Create job object with Firebase data
+        const currentNetworkKey = currentNetwork; // use string directly
         const job: InstantJob = {
           id: docSnapshot.id,
           title: jobData.title || "No title",
           description: jobData.description || "",
           payment: jobData.budget || jobData.payment || 0,
-          // Set default currency as ETH if not specified
           currency: jobData.currency || "ETH",
           deadline: jobData.deadline ? new Date(jobData.deadline) : new Date(),
           employer: jobData.employer || jobData.companyId || "",
@@ -198,20 +171,14 @@ const InstantJobsManager = () => {
           network: jobNetwork || "unknown",
           createdAt: jobData.createdAt ? new Date(jobData.createdAt) : new Date()
         };
-        
-        // Add more properties from the structure
         if (jobData.category) job.category = jobData.category;
         if (jobData.companyName) job.companyName = jobData.companyName;
         if (jobData.requiredSkills) job.requiredSkills = jobData.requiredSkills;
-        
-        // Try to get contract data if available
         if (instantJobsEscrowService.isContractInitialized() && 
-            (!jobNetwork || jobNetwork === currentNetwork || jobNetwork.includes(currentNetwork))) {
+            (!jobNetwork || jobNetwork === currentNetworkKey || jobNetwork.includes(currentNetworkKey))) {
           try {
-            const contractJobInfo = await instantJobsEscrowService.getJobInfo(currentNetwork, docSnapshot.id);
+            const contractJobInfo = await instantJobsEscrowService.getJobInfo(currentNetworkKey, docSnapshot.id);
             job.contractData = contractJobInfo;
-            
-            // Update status based on contract data
             if (contractJobInfo.isPaid) {
               job.status = "completed";
             } else if (contractJobInfo.isApproved) {
@@ -221,8 +188,6 @@ const InstantJobsManager = () => {
             } else if (contractJobInfo.isAccepted) {
               job.status = "in-progress";
             }
-            
-            // Update worker if available in contract
             if (contractJobInfo.worker && contractJobInfo.worker !== "0x0000000000000000000000000000000000000000") {
               job.worker = contractJobInfo.worker;
             }
@@ -230,16 +195,11 @@ const InstantJobsManager = () => {
             console.warn(`Couldn't get contract data for job ${docSnapshot.id}:`, err);
           }
         }
-        
         jobsData.push(job);
       }
-      
-      // Sort by creation date (newest first)
       jobsData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      
       setInstantJobs(jobsData);
       console.log(`Loaded ${jobsData.length} Instant Jobs`);
-      
       if (jobsData.length === 0) {
         console.log("No Instant Jobs found");
       }
@@ -331,34 +291,45 @@ const InstantJobsManager = () => {
   };
   // Check wallet connection and load data when wallet state or network changes
   useEffect(() => {
-    console.log("[InstantJobsManager] useEffect disparado. walletAddress:", walletAddress, "currentNetwork:", currentNetwork);
     const loadWalletData = async () => {
-      if (walletAddress) {
-        // Get network information
-        const network = await web3Service.getNetworkInfo();
-        if (network) {
-          console.log("Network changed in InstantJobsManager:", network.name, network.chainId);
-          setNetworkInfo(network);
-        }
-        try {
-          await loadContractData();
-        } catch (err) {
-          console.warn("Error loading contract data:", err);
-          setIsLoading(false);
-        }
+      if (walletAddress && currentNetwork) {
+        await loadContractData();
       } else {
         setIsLoading(false);
       }
     };
     loadWalletData();
-  }, [walletAddress, currentNetwork]); // Added currentNetwork dependency
-  
+  }, [walletAddress, currentNetwork]);
+
   // Load jobs when wallet connects and network is available
   useEffect(() => {
-    if (walletAddress && networkInfo) {
+    if (walletAddress && currentNetwork) {
       loadJobs();
     }
-  }, [walletAddress, networkInfo]);  // Render component
+  }, [walletAddress, currentNetwork]); 
+  
+  // Atualiza informações do contrato sempre que currentNetwork mudar
+  useEffect(() => {
+    if (walletAddress && currentNetwork) {
+      loadContractData();
+    }
+  }, [currentNetwork]);
+  
+  // Helper to get display name and chainId for currentNetwork
+  const getNetworkDisplayInfo = (network: string | null) => {
+    switch (network) {
+      case 'ethereum': return { name: 'Ethereum Mainnet', chainId: 1 };
+      case 'polygon': return { name: 'Polygon', chainId: 137 };
+      case 'binance': return { name: 'Binance Smart Chain', chainId: 56 };
+      case 'binanceTestnet': return { name: 'BSC Testnet', chainId: 97 };
+      case 'avalanche': return { name: 'Avalanche', chainId: 43114 };
+      case 'optimism': return { name: 'Optimism', chainId: 10 };
+      default: return { name: network || 'Unknown', chainId: 'N/A' };
+    }
+  };
+  const networkDisplay = getNetworkDisplayInfo(currentNetwork);
+
+  // Render component
   return (
     <div className="bg-amber-950 p-6 rounded-lg shadow-lg">
       <h2 className="text-2xl font-semibold text-orange-500 mb-6">Instant Jobs Management</h2>
@@ -395,7 +366,7 @@ const InstantJobsManager = () => {
             <div className="flex items-center">
               <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
               <p className="text-white">
-                {networkInfo ? `${networkInfo.name} (Chain ID: ${networkInfo.chainId})` : "Unknown network"}
+                {currentNetwork ? `${networkDisplay.name} (Chain ID: ${networkDisplay.chainId})` : "Unknown network"}
               </p>
             </div>
             <p className="text-gray-400 text-sm mt-1">
@@ -407,7 +378,7 @@ const InstantJobsManager = () => {
             <div className="bg-neutral-900/40 border border-yellow-600/50 p-4 rounded-lg mb-6 backdrop-blur-sm">
               <h3 className="text-lg font-semibold text-yellow-500 mb-2">Configure Contract</h3>
               <p className="text-gray-300 mb-4">
-                There's no contract configured for the {networkInfo?.name} network yet. Configure the contract address below:
+                {`There's no contract configured for the ${networkDisplay.name} network yet. Configure the contract address below:`}
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4">
@@ -514,7 +485,7 @@ const InstantJobsManager = () => {
                     <input
                       type="text"
                       value={newFeeCollector}
-                      onChange={(e) => setNewFeeCollector(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewFeeCollector(e.target.value)}
                       className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                       placeholder="0x..."
                     />
@@ -545,7 +516,7 @@ const InstantJobsManager = () => {
               <p className="text-gray-400">Loading jobs...</p>
             ) : instantJobs.length === 0 ? (
               <div>
-                <p className="text-gray-400 mb-4">No Instant Jobs found for this network ({networkInfo?.name}).</p>
+                <p className="text-gray-400 mb-4">No Instant Jobs found for this network ({networkDisplay.name}).</p>
                 <button
                   onClick={loadJobs}
                   className="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded text-sm"
