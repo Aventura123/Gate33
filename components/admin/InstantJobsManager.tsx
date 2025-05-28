@@ -615,4 +615,8 @@ const InstantJobsManager = () => {
   );
 };
 
-export default InstantJobsManager;
+export default function InstantJobsManagerWrapper() {
+  const { currentNetwork } = useWallet();
+  // Força remount ao trocar de rede
+  return <InstantJobsManager key={currentNetwork || 'none'} />;
+}
