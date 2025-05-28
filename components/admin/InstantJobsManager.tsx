@@ -308,12 +308,41 @@ const InstantJobsManager = () => {
     }
   }, [walletAddress, currentNetwork]); 
   
+  // Limpa estado de contrato ao trocar de rede
+  useEffect(() => {
+    setContractOwner('');
+    setFeeCollector('');
+    setPlatformFeePercentage(0);
+    setNewFeePercentage(0);
+    setNewFeeCollector('');
+    setContractAddress('');
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+  }, [currentNetwork]);
+
   // Atualiza informações do contrato sempre que currentNetwork mudar
   useEffect(() => {
-    if (walletAddress && currentNetwork) {
-      loadContractData();
-    }
-  }, [currentNetwork]);
+    let cancelled = false;
+    const load = async () => {
+      if (walletAddress && currentNetwork) {
+        setIsLoading(true);
+        try {
+          // Re-inicializa o serviço para a nova rede
+          await instantJobsEscrowService.init();
+          if (!cancelled) {
+            await loadContractData();
+          }
+        } catch (err: any) {
+          if (!cancelled) setError(err.message || 'Erro ao carregar dados do contrato');
+        } finally {
+          if (!cancelled) setIsLoading(false);
+        }
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [walletAddress, currentNetwork]);
   
   // Helper to get display name and chainId for currentNetwork
   const getNetworkDisplayInfo = (network: string | null) => {
