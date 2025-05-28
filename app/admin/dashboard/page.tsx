@@ -25,6 +25,7 @@ import AdManager from "../../../components/admin/AdManager";
 import WalletButton from '../../../components/WalletButton';
 import AdminNewsletterManager from "../../../components/admin/AdminNewsletterManager";
 import AdminSocialMediaManager from "../../../components/admin/AdminSocialMediaManager";
+import Learn2EarnContractsPanel from '../../../components/ui/Learn2EarnContractsPanel';
 
 interface NFT {
   id: string;
@@ -451,13 +452,10 @@ const AdminDashboard: React.FC = () => {
       }
     };
     fetchPendingCompanies();
-    
     // Reload learn2earn if on learn2earn tab (changed from airdrops)
     if (activeTab === "learn2earn") { // Changed from airdrops
       if (activeSubTab === "list") {
         fetchLearn2Earns();
-      } else if (activeSubTab === "contracts") {
-        fetchNetworkContracts();
       }
     }
   }, [activeTab, activeSubTab]);
@@ -1166,36 +1164,36 @@ const AdminDashboard: React.FC = () => {
     fetchAdminPhotoFromFirebase();
   }, []);
 
-const fetchEmployersList = async () => {
-  try {
-    if (!db) throw new Error("Firestore is not initialized");
-    
-    const companiesCollection = collection(db, "companies");
-    const querySnapshot = await getDocs(companiesCollection);
-    
-    const employersList = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      // Ensure these fields exist, with name taking priority for display
-      name: doc.data().name || doc.data().companyName || '',
-      email: doc.data().email || '',
-      companyName: doc.data().companyName || doc.data().name || '',
-      responsiblePerson: doc.data().responsiblePerson || '',
-      responsibleName: doc.data().responsibleName || doc.data().responsiblePerson || '',
-      companySize: doc.data().companySize || doc.data().employees || '',
-      industry: doc.data().industry || '',
-      blocked: doc.data().blocked || false
-    }));
+  const fetchEmployersList = async () => {
+    try {
+      if (!db) throw new Error("Firestore is not initialized");
+      
+      const companiesCollection = collection(db, "companies");
+      const querySnapshot = await getDocs(companiesCollection);
+      
+      const employersList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        // Ensure these fields exist, with name taking priority for display
+        name: doc.data().name || doc.data().companyName || '',
+        email: doc.data().email || '',
+        companyName: doc.data().companyName || doc.data().name || '',
+        responsiblePerson: doc.data().responsiblePerson || '',
+        responsibleName: doc.data().responsibleName || doc.data().responsiblePerson || '',
+        companySize: doc.data().companySize || doc.data().employees || '',
+        industry: doc.data().industry || '',
+        blocked: doc.data().blocked || false
+      }));
 
-    console.log("Employers list:", employersList);
-    setEmployers(employersList);
-  } catch (error) {
-    console.error("Error fetching employers:", error);
-    setEmployersError("Failed to fetch employers list");
-  } finally {
-    setEmployersLoading(false);
-  }
-};
+      console.log("Employers list:", employersList);
+      setEmployers(employersList);
+    } catch (error) {
+      console.error("Error fetching employers:", error);
+      setEmployersError("Failed to fetch employers list");
+    } finally {
+      setEmployersLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (activeSubTab === "employers-list") {
@@ -1526,192 +1524,69 @@ const fetchEmployersList = async () => {
   const [learn2earns, setLearn2Earns] = useState<any[]>([]);
   const [learn2earnLoading, setLearn2EarnLoading] = useState(false);
   const [learn2earnError, setLearn2EarnError] = useState<string | null>(null);
-  const [deletingLearn2EarnId, setDeletingLearn2EarnId] = useState<string | null>(null);
-  const [pausingLearn2EarnId, setPausingLearn2EarnId] = useState<string | null>(null);
   
-  // State for learn2earn contract management (changed from airdrop)
-  const [networkContract, setNetworkContract] = useState({
-    network: "sepolia",
-    contractAddress: "",
-    type: "", // Added type field
-  });
-  const [networkContracts, setNetworkContracts] = useState<any[]>([]);
-  const [isAddingContract, setIsAddingContract] = useState(false);
-  const [contractActionError, setContractActionError] = useState<string | null>(null);
-
-  // Fetch airdrops from Firestore
-  const fetchLearn2Earns = async () => {
-    setLearn2EarnLoading(true);
-    setLearn2EarnError(null);
-    try {
-      if (!db) {
-        throw new Error("Firestore is not initialized.");
-      }
-
-      const learn2earnCollection = collection(db, "learn2earn");
-      const querySnapshot = await getDocs(learn2earnCollection);
-
-      if (querySnapshot.empty) {
-        console.log("No learn2earn found in Firestore");
-        setLearn2Earns([]);
-        setLearn2EarnLoading(false);
-        return;
-      }
-
-      const learn2earnList = querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          status: data.status || 'inactive',
-        };
-      });
-
-      setLearn2Earns(learn2earnList);
-    } catch (error) {
-      console.error("Error fetching learn2earn:", error);
-      setLearn2EarnError("Failed to fetch learn2earn. Please check the console for more details.");
-      setLearn2Earns([]);
-    } finally {
-      setLearn2EarnLoading(false);
-    }
-  };
-
-  // Fetch smart contract configurations from Firestore
-  const fetchNetworkContracts = async () => {
-    try {
-      if (!db) {
-        throw new Error("Firestore is not initialized.");
-      }
-
-      console.log("Fetching network contracts from Firestore...");
-      
-      const settingsDoc = doc(db, "settings", "learn2earn");
-      const settingsSnapshot = await getDoc(settingsDoc);
-
-      if (!settingsSnapshot.exists()) {
-        console.log("No network contracts found in Firestore");
-        setNetworkContracts([]);
-        return;
-      }
-
-      const contracts = settingsSnapshot.data().contracts || [];
-
-      console.log("Fetched network contracts:", contracts.length);
-      setNetworkContracts(contracts);
-    } catch (error) {
-      console.error("Error fetching network contracts:", error);
-      // Show the error but don't clear existing contracts
-      alert("Failed to fetch network contracts. Check console for details.");
-    }
-  };
-
-  const validateContract = async (network: string, contractAddress: string): Promise<boolean> => {
-    try {
-      if (!ethers.utils.isAddress(contractAddress)) {
-        alert("Invalid contract address format. Please enter a valid Ethereum address.");
-        return false;
-      }
-  
-      // Configure a provider for the selected network
-      let providerUrl;
-      switch(network) {
-        case "ethereum": providerUrl = "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"; break; // Public Infura endpoint
-        case "polygon": providerUrl = "https://polygon-rpc.com"; break;
-        case "bsc": providerUrl = "https://bsc-dataseed.binance.org/"; break;
-        case "arbitrum": providerUrl = "https://arb1.arbitrum.io/rpc"; break;
-        case "optimism": providerUrl = "https://mainnet.optimism.io"; break;
-        case "avalanche": providerUrl = "https://api.avax.network/ext/bc/C/rpc"; break;
-        case "sepolia": providerUrl = "https://rpc.sepolia.org"; break;
-        case "mumbai": providerUrl = "https://rpc-mumbai.maticvigil.com"; break;
-        case "bscTestnet": providerUrl = "https://data-seed-prebsc-1-s1.binance.org:8545/"; break;
-        default: providerUrl = "https://rpc.sepolia.org"; break;
-      }
-  
-      const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-      
+  useEffect(() => {
+    const fetchLearn2Earns = async () => {
+      setLearn2EarnLoading(true);
+      setLearn2EarnError(null);
       try {
-        // Check if the address contains contract code
-        const code = await provider.getCode(contractAddress);
-        if (code === "0x") {
-          alert("The address does not contain a valid contract. Make sure the contract is deployed on the selected network.");
-          return false;
+        if (!db) {
+          throw new Error("Firestore is not initialized.");
         }
-      } catch (error) {
-        console.error("Error checking contract code:", error);
-        alert(`Cannot verify contract on the ${network} network. Please check if the network is accessible.`);
-        return false;
-      }
-  
-      return true; // Validation passed
-    } catch (error) {
-      console.error("Error validating contract:", error);
-      alert("Failed to validate the contract. Check the console for details.");
-      return false;
-    }
-  };
-  
-  const handleAddNetworkContract = async (e: React.FormEvent) => {
-    e.preventDefault();
-  
-    if (!networkContract.network || !networkContract.contractAddress || !networkContract.type) {
-      alert("Please fill in all fields.");
-      return;
-    }
-  
-    const isValid = await validateContract(networkContract.network, networkContract.contractAddress);
-    if (!isValid) {
-      return;
-    }
-  
-    setIsAddingContract(true);
-    setContractActionError(null);
-  
-    try {
-      const settingsDoc = doc(db, "settings", "learn2earn");
-      const settingsSnapshot = await getDoc(settingsDoc);
-  
-      let existingContracts = [];
-      if (settingsSnapshot.exists()) {
-        existingContracts = settingsSnapshot.data().contracts || [];
-      }
-  
-      const isDuplicate = existingContracts.some(
-        (contract: any) => contract.network === networkContract.network
-      );
-  
-      if (isDuplicate) {
-        const confirmReplace = window.confirm("A contract for this network already exists. Do you want to replace it?");
-        if (!confirmReplace) {
+
+        const learn2earnCollection = collection(db, "learn2earn");
+        const querySnapshot = await getDocs(learn2earnCollection);
+
+        if (querySnapshot.empty) {
+          console.log("No learn2earn found in Firestore");
+          setLearn2Earns([]);
+          setLearn2EarnLoading(false);
           return;
         }
 
-        // Remove the existing contract for this network
-        existingContracts = existingContracts.filter(
-          (contract: any) => contract.network !== networkContract.network
-        );
+        const learn2earnList = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            status: data.status || 'inactive',
+          };
+        });
+
+        setLearn2Earns(learn2earnList);
+      } catch (error) {
+        console.error("Error fetching learn2earn:", error);
+        setLearn2EarnError("Failed to fetch learn2earn. Please check the console for more details.");
+        setLearn2Earns([]);
+      } finally {
+        setLearn2EarnLoading(false);
       }
-  
-      const newContract = {
-        network: networkContract.network,
-        contractAddress: networkContract.contractAddress,
-        type: networkContract.type,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-  
-      existingContracts.push(newContract);
-  
-      await setDoc(settingsDoc, { contracts: existingContracts }, { merge: true });
-  
-      setNetworkContract({ network: "", contractAddress: "", type: "" });
-      alert("Network contract added successfully.");
-      fetchNetworkContracts();
+    };
+
+    fetchLearn2Earns();
+  }, []);
+
+  const handleAddLearn2Earn = async (data: any) => {
+    try {
+      if (!db) {
+        throw new Error("Firestore is not initialized.");
+      }
+      
+      const learn2earnCollection = collection(db, "learn2earn");
+      const docRef = await addDoc(learn2earnCollection, {
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      
+      console.log("Learn2Earn added with ID:", docRef.id);
+      alert("Learn2Earn added successfully!");
+      
+      // Reload data
+      fetchLearn2Earns();
     } catch (error) {
-      console.error("Error adding network contract:", error);
-      setContractActionError("Failed to add network contract. Please try again.");
-    } finally {
-      setIsAddingContract(false);
+      console.error("Error adding Learn2Earn:", error);
+      alert("Failed to add Learn2Earn. Check console for details.");
     }
   };
 
@@ -1747,7 +1622,6 @@ const fetchEmployersList = async () => {
       console.log(`Learn2Earn status updated to: ${newStatus}`);
       
       // Update local state to reflect the change
-      // Update local state to reflect the change
       setLearn2Earns(learn2earns.map(item => 
         item.id === learn2earnId ? {...item, status: newStatus} : item
       ));
@@ -1761,156 +1635,61 @@ const fetchEmployersList = async () => {
     }
   };
     const handleDeleteLearn2Earn = async (learn2earnId: string) => { // Changed from handleDeleteAirdrop
-    if (!learn2earnId) {
-      alert("Invalid learn2earn ID"); // Changed from airdrop
-      return;
-    }
-    
-    if (!window.confirm("Are you sure you want to delete this learn2earn opportunity? This action cannot be undone.")) { // Changed from airdrop
-      return;
-    }
-    
-    setDeletingLearn2EarnId(learn2earnId);
-    try {
-      if (!db) {
-        throw new Error("Firestore is not initialized.");
-      }
-      
-      console.log(`Deleting learn2earn with ID: ${learn2earnId}`); // Changed from airdrop
-      
-      // First check if the document exists
-      const learn2earnRef = doc(db, "learn2earn", learn2earnId); // Changed from airdropRef
-      const learn2earnDoc = await getDoc(learn2earnRef); // Changed from airdropDoc
-      
-
-      
-      if (!learn2earnDoc.exists()) {
-        throw new Error("Learn2Earn document not found"); // Changed from Airdrop
-      }
-      
-      // Delete the document
-      await deleteDoc(learn2earnRef);
-      
-      console.log(`Learn2Earn deleted successfully`); // Changed from Airdrop
-      
-      // Update local state to remove the deleted learn2earn
-      setLearn2Earns(learn2earns.filter(item => item.id !== learn2earnId)); // Changed from airdrop
-      
-      alert("Learn2Earn deleted successfully!"); // Changed from Airdrop
-    } catch (error: any) {
-      console.error("Error deleting airdrop:", error);
-      alert(`Failed to delete airdrop: ${error.message}`);
-    } finally {
-      setDeletingLearn2EarnId(null);
-    }
-  };
-
-  // Handle changing network contract input
-  const handleNetworkContractChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNetworkContract(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  if (!learn2earnId) {
+    alert("Invalid learn2earn ID"); // Changed from airdrop
+    return;
+  }
   
-  // Load airdrops when the Airdrops tab is active
-  useEffect(() => {
-    if (activeTab === "learn2earn") { // Changed from airdrops
-      if (activeSubTab === "list") {
-        fetchLearn2Earns();
-      } else if (activeSubTab === "contracts") {
-
-        fetchNetworkContracts();
-      }
-    }
-  }, [activeTab, activeSubTab]);
-
-  // Add these lines near the other useState hooks at the top of AdminDashboard (after other useState calls)
-  const [expandedPendingCompanyId, setExpandedPendingCompanyId] = useState<string | null>(null);
-  const [expandedSeekerId, setExpandedSeekerId] = useState<string | null>(null);
-
-  const togglePendingCompanyDetails = (id: string) => {
-    setExpandedPendingCompanyId(prevId => prevId === id ? null : id);
-  };
-
-  const toggleSeekerDetails = (id: string) => {
-    setExpandedSeekerId(prevId => prevId === id ? null : id);
-  };
-
-  // Helper function for formatting timestamps
-  const formatFirestoreTimestamp = (timestamp: any) => {
-    if (! timestamp) return 'N/A';
-    
-    try {
-      // Handle both Firestore timestamp and ISO string formats
-      if (timestamp.seconds) {
-        return new Date(timestamp.seconds * 1000).toLocaleDateString();
-      } else if (timestamp.toDate) {
-        return timestamp.toDate().toLocaleDateString();
-      } else if (typeof timestamp === 'string') {
-        return new Date(timestamp).toLocaleDateString();
-      }
-      return 'Invalid date';
-    } catch (error) {
-      console.error("Error formatting timestamp:", error);
-      return 'Invalid date';
-    }
-  };
+  if (!window.confirm("Are you sure you want to delete this learn2earn opportunity? This action cannot be undone.")) { // Changed from airdrop
+    return;
+  }
   
-  // Function to create a shared notification for all super_admins
-  const createSharedAdminNotification = async (title: string, body: string, type: string = "general", data: any = {}) => {
-    try {
-      await createAdminNotification(
-        {
-          title,
-          body,
-          type,
-          data
-        },
-        true // This makes it a shared notification
-      );
-      console.log("Shared admin notification created successfully");
-    } catch (error) {
-      console.error("Error creating shared admin notification:", error);
+  setDeletingLearn2EarnId(learn2earnId);
+  try {
+    if (!db) {
+      throw new Error("Firestore is not initialized.");
     }
-  };
-  // Fetch unread admin notifications - combines personal and shared notifications for super_admin
+    
+    console.log(`Deleting learn2earn with ID: ${learn2earnId}`); // Changed from airdrop
+    
+    // First check if the document exists
+    const learn2earnRef = doc(db, "learn2earn", learn2earnId); // Changed from airdropRef
+    const learn2earnDoc = await getDoc(learn2earnRef); // Changed from airdropDoc
+    
+
+    
+    if (!learn2earnDoc.exists()) {
+      throw new Error("Learn2Earn document not found"); // Changed from Airdrop
+    }
+    
+    // Delete the document
+    await deleteDoc(learn2earnRef);
+    
+    console.log(`Learn2Earn deleted successfully`); // Changed from Airdrop
+    
+    // Update local state to remove the deleted learn2earn
+    setLearn2Earns(learn2earns.filter(item => item.id !== learn2earnId)); // Changed from airdrop
+    
+    alert("Learn2Earn deleted successfully!"); // Changed from Airdrop
+  } catch (error: any) {
+    console.error("Error deleting airdrop:", error);
+    alert(`Failed to delete airdrop: ${error.message}`);
+  } finally {
+    setDeletingLearn2EarnId(null);
+  }
+};
+
+  // Refresh data when tab changes
   useEffect(() => {
-    if (!db || !adminId) return;
-    
-    let interval: NodeJS.Timeout;
-      const fetchUnreadAdminNotifications = async () => {
-      try {
-               let totalUnreadCount = 0;
-        
-        // Only super_admins can see notifications
-        if (role === "super_admin") {
-          // Get shared notifications for super_admins only
-          const sharedQuery = query(
-            collection(db, "adminNotifications"),
-            where("isShared", "==", true),
-            where("read", "==", false)
-          );
-          const sharedSnapshot = await getDocs(sharedQuery);
-          totalUnreadCount = sharedSnapshot.size;
-        } else {
-          // Non-super_admins don't see any notifications
-          totalUnreadCount = 0;
-        }
-        
-        setUnreadCount(totalUnreadCount);
-      } catch (error) {
-        console.error("Error fetching unread admin notifications:", error);
-        setUnreadCount(0);
-      }
-    };
-    
-    fetchUnreadAdminNotifications();
-    interval = setInterval(fetchUnreadAdminNotifications, 10000); // Check every 10 seconds
-    
-    return () => clearInterval(interval);
-  }, [role, db, adminId]);
+    reloadData();
+  }, [activeTab, reloadData]);
+
+  // Refresh data when subtab changes
+  useEffect(() => {
+    if (activeSubTab) {
+      reloadData();
+    }
+  }, [activeSubTab, reloadData]);
 
   // Estados para controlar dropdowns da barra lateral
   const [nftsDropdownOpen, setNftsDropdownOpen] = useState(false);
@@ -2091,6 +1870,8 @@ const fetchEmployersList = async () => {
                       <li>
                         <button
                           className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        <button
+                          className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
                             activeSubTab === "employers-approve" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
                           }`}
                           onClick={() => {
@@ -2122,127 +1903,6 @@ const fetchEmployersList = async () => {
               </li>
             )}            <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "jobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  if (activeTab === "jobs") setNftsDropdownOpen((open: boolean) => !open);
-                  else {
-                    setActiveTab("jobs");
-                    setActiveSubTab("list");
-                    setNftsDropdownOpen(true);
-                  }
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                <span>Manage Jobs</span>
-                <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "jobs" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </button>
-              {activeTab === "jobs" && nftsDropdownOpen && (
-                <ul className="ml-6 mt-2 space-y-1">
-                  <li>
-                    <button
-                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                        activeSubTab === "list" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("list");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Jobs List
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                        activeSubTab === "create" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("create");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Create Job
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                        activeSubTab === "prices" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("prices");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Job Pricing
-                    </button>
-                  </li>
-                </ul>
-              )}
-            </li>            {/* Instant Jobs tab */}
-            <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  setActiveTab("instantJobs");
-                  setActiveSubTab(null);
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                Manage Instant Jobs
-              </button>
-            </li>            {/* Learn2Earn tab */}
-            <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  if (activeTab === "learn2earn") setLearn2earnDropdownOpen((open) => !open);
-                  else {
-                    setActiveTab("learn2earn");
-                    setActiveSubTab("list");
-                    setLearn2earnDropdownOpen(true);
-                  }
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                <span>Learn2Earn</span>
-                <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "learn2earn" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </button>
-              {activeTab === "learn2earn" && learn2earnDropdownOpen && (
-                <ul className="ml-6 mt-2 space-y-1">
-                  <li>
-                    <button
-                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                        activeSubTab === "list" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("list");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Learn2Earn List
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                        activeSubTab === "contracts" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("contracts");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Smart Contracts
-                    </button>
-                  </li>
-                </ul>
-              )}
-            </li>            <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  setActiveTab("accounting");
                   setActiveSubTab(null);
                   if (isMobile) setMobileMenuOpen(false);
                 }}
@@ -2628,10 +2288,10 @@ const fetchEmployersList = async () => {
                                         <h5 className="font-bold text-white mb-2">System Information</h5>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">                                          <div>
                                             <p className="mb-1"><span className="font-semibold text-orange-300">Status:</span> {employer.blocked ? 'Blocked' : 'Active'}</p>
-                                            <p className="mb-1"><span className="font-semibold text-orange-300">Created:</span> {formatFirestoreTimestamp(employer.createdAt)}</p>
+                                            <p className="mb-1"><span className="font-semibold text-orange-300">Created:</span> {employer.createdAt}</p>
                                           </div>
                                           <div>
-                                            <p className="mb-1"><span className="font-semibold text-orange-300">Updated:</span> {formatFirestoreTimestamp(employer.updatedAt)}</p>
+                                            <p className="mb-1"><span className="font-semibold text-orange-300">Updated:</span> {employer.updatedAt}</p>
                                             <p className="mb-1"><span className="font-semibold text-orange-300">ID:</span> {employer.id || 'N/A'}</p>
                                           </div>
                                           <div>
@@ -2862,8 +2522,8 @@ const fetchEmployersList = async () => {
                             {seekers.map((seeker) => (
                               <li 
                                 key={seeker.id} 
-                                className={`mb-4 p-4 border ${expandedSeekerId === seeker.id ? 'border-orange-500' : 'border-gray-700'} rounded-lg cursor-pointer transition-all hover:shadow-md ${expandedSeekerId === seeker.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
-                                onClick={() => toggleSeekerDetails(seeker.id)
+                                className={`mb-4 p-4 border ${expandedEmployerId === seeker.id ? 'border-orange-500' : 'border-gray-700'} rounded-lg cursor-pointer transition-all hover:shadow-md ${expandedEmployerId === seeker.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
+                                onClick={() => toggleEmployerDetails(seeker.id)
                                 }
                               >
                                 <div className="flex items-center justify-between">                                  <span className="text-left">
@@ -2898,7 +2558,7 @@ const fetchEmployersList = async () => {
                                 </div>
 
                                 {/* Expanded Seeker Details */}
-                                {expandedSeekerId === seeker.id && (
+                                {expandedEmployerId === seeker.id && (
                                   <div className="mt-4 bg-black/40 p-4 rounded text-sm text-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {/* Professional Information */}
                                     <div className="col-span-1 md:col-span-2 border-b border-gray-700 mb-4 pb-2">
@@ -3587,7 +3247,7 @@ const fetchEmployersList = async () => {
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Instant Jobs</h2>
                     <div className="mt-6 bg-black/50 p-6 rounded-lg">
                       <p className="text-gray-300 mb-4">
-                        Manage instant jobs and their associated settings.
+                        Manage advertising campaigns and ads for display on the website and app.
                       </p>
                       
                       {/* Main component loaded directly without checking subtab */}
@@ -3618,108 +3278,8 @@ const fetchEmployersList = async () => {
                     <div className="mt-6 bg-black/50 p-6 rounded-lg">
                       {/* Learn2Earn Fee Management Panel */}
                       <Learn2EarnFeePanel />
-                      {/* Form to add or update contracts */}
-                      <div className="bg-black/30 p-5 rounded-lg border border-gray-700 mb-6">
-                        <h3 className="text-xl text-orange-400 mb-4">Add/Update Network Contract</h3>
-                        <form onSubmit={handleAddNetworkContract} className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-1">Network</label>
-                            <select
-                              name="network"
-                             
-                             
-
-                              value={networkContract.network}
-                              onChange={handleNetworkContractChange}
-                              className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
-                              required
-                            >
-                              <option value="sepolia">Sepolia (Ethereum Testnet)</option>
-                              <option value="mumbai">Mumbai (Polygon Testnet)</option>
-                              <option value="bscTestnet">BSC Testnet</option>
-                              <option value="ethereum">Ethereum Mainnet</option>
-                              <option value="polygon">Polygon Mainnet</option>
-                              <option value="bsc">Binance Smart Chain</option>
-                                                                                                                     <option value="arbitrum">Arbitrum</option>
-                              <option value="optimism">Optimism</option>
-                              <option value="avalanche">Avalanche</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-1">Contract Address</label>
-                            <input
-                              type="text"
-                              name="contractAddress"
-                              value={networkContract.contractAddress}
-                              onChange={handleNetworkContractChange}
-                              placeholder="0x..."
-                              className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
-                            <input
-                              type="text"
-                              name="type"
-                              value={networkContract.type}
-                              onChange={handleNetworkContractChange}
-                              placeholder="Contract Type"
-                              className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
-                              required
-                            />
-                          </div>
-                          {contractActionError && (
-                            <p className="text-red-500 text-sm">{contractActionError}</p>                          )}
-                          <button
-                            type="submit"
-                            className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60"
-                            disabled={isAddingContract}
-                          >
-                            {isAddingContract ? 'Processing...' : 'Add/Update Contract'}
-                          </button>
-                        </form>
-                      </div>
-
-                      {/* List of existing contracts */}
-                      <div>
-                        <h3 className="text-xl text-orange-400 mb-4">Current Smart Contracts</h3>
-                        {networkContracts.length === 0 ? (
-                          <p className="text-gray-400">No contract configurations found. Add one above.</p>
-                        ) : (
-                          <div className="space-y-4">
-                            {networkContracts.map((contract) => (
-                              <div key={contract.id} className="bg-black/30 p-4 rounded-lg border border-gray-700 hover:border-orange-500 transition-all">
-                                <div className="flex flex-col md:flex-row justify-between">
-                                  <div>
-                                    <h4 className="text-lg font-medium text-orange-300">
-                                      {contract.network.charAt(0).toUpperCase() + contract.network.slice(1)}
-                                    </h4>
-                                    <p className="text-sm text-gray-300 break-all">
-                                      Address: {contract.contractAddress}
-                                    </p>
-                                    <p className="text-sm text-gray-300 break-all">
-                                      Type: {contract.type}
-                                    </p>
-                                    <p className="text-xs text-gray-400">
-                                      Added: {formatFirestoreTimestamp(contract.createdAt)}
-                                      {contract.updatedAt && ` (Updated: ${formatFirestoreTimestamp(contract.updatedAt)})`}
-                                    </p>
-                                  </div>
-                                  <div className="flex mt-3 md:mt-0 md:ml-6 min-w-[160px]">
-                                                                       {/* Removed the "Edit" button as we have the Add/Update form above */}
-                                                                                                         <Learn2EarnTestButton 
- 
-                                      network={contract.network}
-                                      contractAddress={contract.contractAddress}
-                                   />
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      {/* Network Contracts Panel - toda a lógica e UI foi movida para o componente abaixo */}
+                      <Learn2EarnContractsPanel />
                     </div>
                   </div>
                 )}
@@ -3785,8 +3345,8 @@ const fetchEmployersList = async () => {
                               <span>Amount: <b>{l2e.tokenAmount}</b></span>
                               <span>Per User: <b>{l2e.tokenPerParticipant}</b></span>
                               <span>Participants: <b>{l2e.totalParticipants || 0} / {l2e.maxParticipants || '∞'}</b></span>
-                              <span>Start: {formatFirestoreTimestamp(l2e.startDate)}</span>
-                              <span>End: {formatFirestoreTimestamp(l2e.endDate)}</span>
+                              <span>Start: {l2e.startDate}</span>
+                              <span>End: {l2e.endDate}</span>
                             </div>
                             <div className="text-xs text-gray-500">ID: {l2e.id}</div>
                           </div>
