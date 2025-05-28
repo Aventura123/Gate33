@@ -130,17 +130,20 @@ const InstantJobsManager = () => {
       if (networkInfo) {
         // Try to load contract addresses from Firebase
         await instantJobsEscrowService.loadContractAddresses();
-        
-        // Get address for current network from settings/contractInstantJobs_addresses
+
+        // Get address for current network from settings/contractInstantJobs_addresses/contracts/{network}
         const networkKey = networkInfo.name.toLowerCase();
         try {
-          const contractsDocRef = doc(db, 'settings', 'contractInstantJobs_addresses');
-          const contractsDoc = await getDoc(contractsDocRef);
-          if (contractsDoc.exists() && contractsDoc.data()[networkKey]) {
-            setContractAddress(contractsDoc.data()[networkKey]);
+          const contractDocRef = doc(db, 'settings', 'contractInstantJobs_addresses', 'contracts', networkKey);
+          const contractDoc = await getDoc(contractDocRef);
+          if (contractDoc.exists() && contractDoc.data().address) {
+            setContractAddress(contractDoc.data().address);
+          } else {
+            setContractAddress('');
           }
         } catch (e) {
           console.error("Error fetching contract address:", e);
+          setContractAddress('');
         }
       }
       

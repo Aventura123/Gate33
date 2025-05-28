@@ -286,31 +286,24 @@ class InstantJobsEscrowService {
   private initialized: boolean = false;
 
   /**
-   * Loads contract addresses from Firebase
+   * Loads contract addresses from Firebase (um documento por rede)
    */
   async loadContractAddresses() {
     try {
-      // Reference to the document that stores contract addresses
-      const contractsDocRef = doc(db, 'settings', 'contractInstantJobs_addresses');
-      const contractsDoc = await getDoc(contractsDocRef);
-
-      if (contractsDoc.exists()) {
-        const addresses = contractsDoc.data();
-        // Update addresses with values from Firebase
-        Object.keys(addresses).forEach(network => {
-          if (addresses[network] && 
-              addresses[network] !== '0x0000000000000000000000000000000000000000' && 
-              network !== 'createdAt' && 
-              network !== 'updatedAt') {
-            INSTANT_JOBS_ESCROW_ADDRESS[network.toLowerCase()] = addresses[network];
-          }
-        });
-        console.log('Contract addresses loaded:', INSTANT_JOBS_ESCROW_ADDRESS);
-        return true;
-      } else {
-        console.warn('Contract document not found in Firebase');
-        return false;
-      }
+      // Busca todos os documentos da subcoleção contracts
+      const addresses: Record<string, string> = {};
+      const contractsColRef = collection(db, 'settings', 'contractInstantJobs_addresses', 'contracts');
+      const querySnapshot = await getDocs(contractsColRef);
+      querySnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data && data.address) {
+          addresses[docSnap.id.toLowerCase()] = data.address;
+        }
+      });
+      // Atualiza cache local
+      Object.assign(INSTANT_JOBS_ESCROW_ADDRESS, addresses);
+      console.log('Contract addresses loaded (by document):', INSTANT_JOBS_ESCROW_ADDRESS);
+      return true;
     } catch (error) {
       console.error('Error loading contract addresses:', error);
       return false;
@@ -318,45 +311,24 @@ class InstantJobsEscrowService {
   }
 
   /**
-   * Saves a contract address to Firebase
+   * Saves a contract address to Firebase (um documento por rede)
    * @param network Blockchain network
    * @param address Contract address
    */
   async saveContractAddress(network: string, address: string) {
     try {
-      // Validate address
       if (!web3Service.isValidAddress(address)) {
         throw new Error('Invalid contract address');
       }
-
       const networkKey = network.toLowerCase();
-      
-      // Update local cache
       INSTANT_JOBS_ESCROW_ADDRESS[networkKey] = address;
-      
-      // Reference to the document that stores contract addresses
-      const contractsDocRef = doc(db, 'settings', 'contractInstantJobs_addresses');
-      
-      // Check if the document exists
-      const docSnap = await getDoc(contractsDocRef);
-      
-      if (docSnap.exists()) {
-        // Update existing document
-        await setDoc(contractsDocRef, {
-          ...docSnap.data(),
-          [networkKey]: address,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
-      } else {
-        // Create new document
-        await setDoc(contractsDocRef, {
-          [networkKey]: address,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
-      }
-      
-      console.log(`Contract address for ${network} saved:`, address);
+      // Salva em um documento separado para cada rede na subcoleção contracts
+      const contractDocRef = doc(db, 'settings', 'contractInstantJobs_addresses', 'contracts', networkKey);
+      await setDoc(contractDocRef, {
+        address,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+      console.log(`Contract address for ${network} saved (by document):`, address);
       return true;
     } catch (error) {
       console.error('Error saving contract address:', error);
