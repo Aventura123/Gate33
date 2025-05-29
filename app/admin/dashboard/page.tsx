@@ -3445,10 +3445,6 @@ const fetchEmployersList = async () => {
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Ads Manager</h2>
                     <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                      <p className="text-gray-300 mb-4">
-                        Manage advertising campaigns and ads for display on the website and app.
-                      </p>
-                      
                       {/* Main component for ad management */}
                       <AdManager />
                     </div>
