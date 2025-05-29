@@ -356,7 +356,7 @@ const InstantJobsManager = () => {
     updateNetworkInfo();
   }, [currentNetwork]);
   
-  // Botão de refresh da lista de jobs
+  // Refresh jobs list button
   const handleRefreshJobs = () => {
     if (currentNetwork) {
       const normalizedNetwork = instantJobsEscrowService.normalizeNetworkNamePublic(currentNetwork);

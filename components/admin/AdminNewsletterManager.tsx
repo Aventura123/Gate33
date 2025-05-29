@@ -128,14 +128,12 @@ const AdminNewsletterManager: React.FC = () => {
             const isSelected = selectedJobIds.includes(job.id);
             return (
               <li key={job.id} className="bg-gray-800 rounded p-3 flex flex-col md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-2">
-                  <button
+                <div className="flex items-center gap-2">                  <button
                     type="button"
                     onClick={() => handleToggleJob(job.id)}
-                    className={`rounded-full border w-6 h-6 flex items-center justify-center text-xs font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400 ${isSelected ? 'border-green-400 bg-green-900/40 text-green-300 hover:bg-green-700/40' : 'border-gray-500 bg-gray-800 text-gray-400 hover:bg-red-900/40'}`}
+                    className={`rounded-full border w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center text-xs font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400 ${isSelected ? 'border-green-400 bg-green-900/40 text-green-300 hover:bg-green-700/40' : 'border-gray-500 bg-gray-800 text-gray-400 hover:bg-red-900/40'}`}
                     title={isSelected ? 'Remove from newsletter' : 'Include in newsletter'}
                     aria-label={isSelected ? 'Remove from newsletter' : 'Include in newsletter'}
-                    style={{ minWidth: 24, minHeight: 24 }}
                   >
                     {isSelected ? (
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">

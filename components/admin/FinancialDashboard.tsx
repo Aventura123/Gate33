@@ -20,7 +20,7 @@ import {
 } from 'chart.js';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-// Interface para os dados financeiros
+// Interface for financial data
 interface RevenueItem {
   id: string;
   amount: number;
@@ -46,7 +46,7 @@ interface RevenueItem {
   distributionAddresses?: any;
 }
 
-// Interface para estatísticas
+// Interface for statistics
 interface RevenueSummary {
   totalRevenue: number;
   instantJobsRevenue: number;
@@ -56,13 +56,13 @@ interface RevenueSummary {
 }
 
 const FinancialDashboard: React.FC = () => {
-  const [revenue, setRevenue] = useState<RevenueItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [revenue, setRevenue] = useState<RevenueItem[]>([]);  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterPeriod, setFilterPeriod] = useState<'all' | 'month' | 'quarter' | 'year'>('month');
   const [filterCurrency, setFilterCurrency] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [showTooManyAlert, setShowTooManyAlert] = useState<boolean>(false);
   const [summary, setSummary] = useState<RevenueSummary>({
     totalRevenue: 0,
     instantJobsRevenue: 0,
@@ -74,6 +74,8 @@ const FinancialDashboard: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<RevenueItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // State for pagination - moved from nested IIFE to component top level
+  const [currentPage, setCurrentPage] = useState(0);
   // Novos estados para filtros avançados e abas
   const [filterJobId, setFilterJobId] = useState('');
   const [filterCompanyId, setFilterCompanyId] = useState('');
@@ -87,30 +89,25 @@ const FinancialDashboard: React.FC = () => {
   const [configL2L, setConfigL2L] = useState<any>(null);
   // Chart state
   const [chartType, setChartType] = useState<'jobs'|'instantjobs'|'l2l'|'all'>('all');
-
-  // Função para buscar os dados financeiros
+  // Function to fetch financial data
   const fetchRevenueData = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      if (!db) throw new Error("Firestore não está inicializado");
-
-      // Coleção de comissões de InstantJobs
+      if (!db) throw new Error("Firestore is not initialized");      // Collection of InstantJobs commissions
       const instantJobsCommissionsQuery = query(collection(db, "commissions"));
       const instantJobsCommissionsSnapshot = await getDocs(instantJobsCommissionsQuery);
 
-      // Coleção de pagamentos de JobPosts
+      // Collection of JobPosts payments
       const jobPaymentsQuery = query(collection(db, "payments"));
       const jobPaymentsSnapshot = await getDocs(jobPaymentsQuery);
 
-      // Coleção de participações em Learn2Earn
+      // Collection of Learn2Earn participations
       const learn2earnPaymentsQuery = query(collection(db, "learn2earnPayments"));
       const learn2earnPaymentsSnapshot = await getDocs(learn2earnPaymentsQuery);
 
-      // Combinando todos os dados
-      const allRevenue: RevenueItem[] = [];
-
-      // Processando comissões de InstantJobs
+      // Combining all data
+      const allRevenue: RevenueItem[] = [];      // Processing InstantJobs commissions
       instantJobsCommissionsSnapshot.forEach((doc) => {
         const data = doc.data();
         allRevenue.push({
@@ -127,12 +124,10 @@ const FinancialDashboard: React.FC = () => {
           workerId: data.workerId,
           jobType: data.jobType
         });
-      });
-
-      // Processando pagamentos de JobPosts
+      });      // Processing JobPosts payments
       jobPaymentsSnapshot.forEach((doc) => {
         const data = doc.data();
-        // Adiciona se status for 'confirmed' ou 'completed'
+        // Add if status is 'confirmed' or 'completed'
         if (data.status === 'confirmed' || data.status === 'completed') {
           allRevenue.push({
             id: doc.id,
@@ -152,9 +147,7 @@ const FinancialDashboard: React.FC = () => {
             companyId: data.companyId
           });
         }
-      });
-
-      // Processando pagamentos de Learn2Earn
+      });      // Processing Learn2Earn payments
       learn2earnPaymentsSnapshot.forEach((doc) => {
         const data = doc.data();
         allRevenue.push({
@@ -174,22 +167,18 @@ const FinancialDashboard: React.FC = () => {
         const dateA = getDate(a.timestamp);
         const dateB = getDate(b.timestamp);
         return dateB.getTime() - dateA.getTime();
-      });
-
-      // Obtendo a lista de moedas únicas
+      });      // Getting the list of unique currencies
       const uniqueCurrencies = [...new Set(allRevenue.map(item => item.currency))];
       setCurrencies(uniqueCurrencies);
 
-      // Filtrando com base no período selecionado
+      // Filtering based on the selected period
       const filteredRevenue = filterRevenueByPeriod(allRevenue, filterPeriod, startDate, endDate);
       setRevenue(filteredRevenue);
 
-      // Calculando o resumo
-      calculateSummary(filteredRevenue);
-
-    } catch (error) {
-      console.error("Erro ao buscar dados financeiros:", error);
-      setError("Falha ao carregar dados financeiros. Por favor, tente novamente.");
+      // Calculating the summary
+      calculateSummary(filteredRevenue);    } catch (error) {
+      console.error("Error fetching financial data:", error);
+      setError("Failed to load financial data. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -200,23 +189,21 @@ const FinancialDashboard: React.FC = () => {
     // @ts-ignore
     return ts instanceof Date ? ts : (typeof ts?.toDate === 'function' ? ts.toDate() : new Date(ts));
   }
-
-  // Função para filtrar os dados por período
+  // Function to filter data by period
   const filterRevenueByPeriod = (data: RevenueItem[], period: string, start?: string, end?: string): RevenueItem[] => {
     if (period === 'all') return data;
-    const now = new Date();
-    let startDateFilter: Date;
+    const now = new Date();    let startDateFilter: Date;
     if (period === 'month') {
-      // Último mês
+      // Last month
       startDateFilter = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
     } else if (period === 'quarter') {
-      // Últimos 3 meses
+      // Last 3 months
       startDateFilter = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
     } else if (period === 'year') {
-      // Último ano
+      // Last year
       startDateFilter = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
     } else if (start && end) {
-      // Período personalizado
+      // Custom period
       return data.filter(item => {
         const itemDate = getDate(item.timestamp);
         const startDateTime = new Date(start).getTime();
@@ -232,8 +219,7 @@ const FinancialDashboard: React.FC = () => {
       return itemDate.getTime() >= startDateFilter.getTime();
     });
   };
-
-  // Função para calcular o resumo financeiro
+  // Function to calculate the financial summary
   const calculateSummary = (filteredData: RevenueItem[]) => {
     const summary = {
       totalRevenue: 0,
@@ -241,9 +227,7 @@ const FinancialDashboard: React.FC = () => {
       jobPostingsRevenue: 0,
       learn2earnRevenue: 0,
       otherRevenue: 0
-    };
-
-    // Verificar se há filtragem por moeda
+    };    // Check if there is currency filtering
     const dataToCalculate = filterCurrency === 'all' 
       ? filteredData 
       : filteredData.filter(item => item.currency === filterCurrency);
@@ -264,8 +248,7 @@ const FinancialDashboard: React.FC = () => {
 
     setSummary(summary);
   };
-
-  // Função para calcular resumo por carteira
+  // Function to calculate wallet summary
   const calculateWalletSummary = (data: RevenueItem[]) => {
     const summary: any = {
       feeCollector: 0,
@@ -283,19 +266,20 @@ const FinancialDashboard: React.FC = () => {
     });
     setWalletSummary(summary);
   };
-
-  // Efeito para buscar dados quando o componente é montado
+  // Effect to fetch data when component is mounted
   useEffect(() => {
     fetchRevenueData();
   }, []);
-
-  // Efeito para recalcular quando os filtros mudam
+  // Effect to recalculate when filters change
   useEffect(() => {
     if (revenue.length > 0) {
       const filteredData = filterRevenueByPeriod(revenue, filterPeriod, startDate, endDate);
       calculateSummary(filteredData);
+        // Check if there are many transactions and if the period filter is 'all'
+      const showAlert = filteredData.length > 100 && filterPeriod === 'all' && !startDate && !endDate;
+      setShowTooManyAlert(showAlert);
     }
-  }, [filterPeriod, filterCurrency, startDate, endDate]);
+  }, [filterPeriod, filterCurrency, startDate, endDate, revenue]);
 
   // Atualizar walletSummary sempre que revenue ou filtros mudarem
   useEffect(() => {
@@ -306,7 +290,6 @@ const FinancialDashboard: React.FC = () => {
     );
     calculateWalletSummary(filtered);
   }, [revenue, filterJobId, filterCompanyId, filterWallet]);
-
   // Fetch config summaries for each payment system
   useEffect(() => {
     const fetchConfigs = async () => {
@@ -315,34 +298,31 @@ const FinancialDashboard: React.FC = () => {
         if (jobsDoc.exists()) setConfigJobs(jobsDoc.data());
         const instantJobsDoc = await getDoc(doc(db, "settings", "paymentConfig_instantjobs"));
         if (instantJobsDoc.exists()) setConfigInstantJobs(instantJobsDoc.data());
-        const l2lDoc = await getDoc(doc(db, "settings", "paymentConfig_l2l"));
-        if (l2lDoc.exists()) setConfigL2L(l2lDoc.data());
+        // Removido a busca por configurações de Learn2Earn
       } catch (err) {
         setConfigJobs(null);
         setConfigInstantJobs(null);
-        setConfigL2L(null);
+        // Removido o configL2L
       }
     };
     fetchConfigs();
   }, []);
-
-  // Handler para mudar o período de filtro
+  // Handler to change filter period
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilterPeriod(e.target.value as 'all' | 'month' | 'quarter' | 'year');
   };
 
-  // Handler para mudar a moeda
+  // Handler to change currency
   const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilterCurrency(e.target.value);
   };
 
-  // Formatar data para exibição
+  // Format date for display
   const formatDate = (date: Date | Timestamp) => {
     const d = getDate(date);
     return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
   };
-
-  // Exportar para Excel
+  // Export to Excel
   const exportToExcel = () => {
     setIsExporting(true);
     try {
@@ -399,37 +379,34 @@ const FinancialDashboard: React.FC = () => {
       setIsExporting(false);
     }
   };
-
-  // Exportar para PDF
+  // Export to PDF
   const exportToPdf = async () => {
     setIsExporting(true);
-    try {
-      // Criar um novo documento PDF
+    try {      // Create a new PDF document
       const pdfDoc = await PDFDocument.create();
       const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
       const { width, height } = page.getSize();
       
-      // Adicionar a fonte
+      // Add font
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
       
-      // Definir as margens
+      // Define margins
       const margin = 50;
       let y = height - margin;
       const lineHeight = 18;
       
-      // Adicionar título
+      // Add title
       page.drawText('Gate33 - Financial Report', { x: margin, y, size: 20, font: boldFont, color: rgb(1, 0.5, 0) });
       
       y -= 30;
-      
-      // Adicionar data do relatório
+        // Add report date
       const currentDate = new Date().toLocaleDateString();
       page.drawText(`Report generated: ${currentDate}`, { x: margin, y, size: 12, font, color: rgb(1,1,1) });
       
       y -= 20;
       
-      // Adicionar resumo
+      // Add summary
       page.drawText('Summary', { x: margin, y, size: 14, font: boldFont, color: rgb(1, 0.5, 0) });
       
       y -= 18;
@@ -443,13 +420,12 @@ const FinancialDashboard: React.FC = () => {
       y -= 16;
       page.drawText(`Evolution: ${walletSummary.evolution?.toFixed(6) || 0}`, { x: margin, y, size: 12, font, color: rgb(1,1,1) });
       y -= 24;
-      
-      // Adicionar tabela de dados
+        // Add data table
       page.drawText('Transactions (all statuses)', { x: margin, y, size: 14, font: boldFont, color: rgb(1, 0.5, 0) });
       
       y -= 18;
       
-      // Cabeçalhos da tabela
+      // Table headers
       const headers = ['Type','Amount','Currency','Date','Status','TxHash','JobID','CompanyID','Fee','Dev','Charity','Evol','Main'];
       const colWidths = [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60];
       
@@ -460,8 +436,7 @@ const FinancialDashboard: React.FC = () => {
       });
       
       y -= lineHeight;
-      
-      // Limitar a quantidade de itens para caber na página
+        // Limit the number of items to fit on the page
       const maxItems = 20;
       const dataToShow = revenue
         .filter(item =>
@@ -481,8 +456,7 @@ const FinancialDashboard: React.FC = () => {
           ].includes(filterWallet) : true)
         )
         .slice(0, maxItems);
-      
-      // Adicionar dados da tabela
+        // Add table data
       dataToShow.forEach(item => {
         x = margin;
         
@@ -501,25 +475,22 @@ const FinancialDashboard: React.FC = () => {
         page.drawText(item.distribution?.mainRecipient?.amount?.toFixed(4) || '', { x, y, size: 8, font, color: rgb(1,1,1) });
         
         y -= lineHeight;
-        
-        // Verificar se precisa de nova página
+          // Check if a new page is needed
         if (y < margin + 60) {
           const newPage = pdfDoc.addPage([595.28, 841.89]);
           y = height - margin;
         }
       });
-      
-      // Se houver mais dados do que podemos mostrar
+        // If there are more data than we can show
       if (revenue.length > maxItems) {
         y -= 10;
         page.drawText(`...and ${revenue.length - maxItems} more transactions.`, { x: margin, y, size: 9, font, color: rgb(1,1,1) });
       }
-      
-      // Adicionar rodapé
+        // Add footer
       y = margin;
       page.drawText('Gate33 - Accounting Report', { x: margin, y, size: 10, font, color: rgb(1,1,1) });
 
-      // Gerar o arquivo PDF
+      // Generate PDF file
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
 
@@ -535,8 +506,7 @@ const FinancialDashboard: React.FC = () => {
       setIsExporting(false);
     }
   };
-
-  // Função para obter descrição amigável do tipo
+  // Function to get friendly description of the type
   const getTypeDescription = (type: string): string => {
     switch(type) {
       case 'instantJob': return 'Instant Job';
@@ -596,23 +566,18 @@ const FinancialDashboard: React.FC = () => {
         }
       ]
     };
-  };
-
-  return (
-    <div className="p-6 bg-black/50 rounded-lg">
+  };  return (
+    <div className="p-3 md:p-6 bg-black/60 rounded-xl border border-gray-700">
       {/* Config summary cards for each payment system */}
       {configJobs && renderConfigCard(configJobs, 'Jobs')}
-      {configInstantJobs && renderConfigCard(configInstantJobs, 'InstantJobs')}
-      {configL2L && renderConfigCard(configL2L, 'Learn2Earn')}
-      <h2 className="text-2xl font-bold text-orange-500 mb-6">Financial Dashboard</h2>
-      {/* Filters */}
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+      {configInstantJobs && renderConfigCard(configInstantJobs, 'InstantJobs')}{/* Filters - optimized for mobile */}      
+      <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Period</label>
+          <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">Period</label>
           <select
             value={filterPeriod}
             onChange={handlePeriodChange}
-            className="w-full p-2 bg-black border border-gray-600 rounded-md text-white"
+            className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
           >
             <option value="all">All data</option>
             <option value="month">Last month</option>
@@ -621,11 +586,11 @@ const FinancialDashboard: React.FC = () => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Currency</label>
+          <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">Currency</label>
           <select
             value={filterCurrency}
             onChange={handleCurrencyChange}
-            className="w-full p-2 bg-black border border-gray-600 rounded-md text-white"
+            className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
           >
             <option value="all">All currencies</option>
             {currencies.map(currency => (
@@ -634,107 +599,109 @@ const FinancialDashboard: React.FC = () => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Start Date</label>
+          <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">Start Date</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="w-full p-2 bg-black border border-gray-600 rounded-md text-white"
+            className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">End Date</label>
+          <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">End Date</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="w-full p-2 bg-black border border-gray-600 rounded-md text-white"
+            className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
           />
         </div>
-      </div>
-      {/* Advanced filter and tabs */}
-      <div className="mb-4 flex flex-wrap gap-2 items-center">
-        <button
-          className={`px-4 py-2 rounded font-bold ${activeTab==='confirmed' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
-          onClick={()=>setActiveTab('confirmed')}
-        >Confirmed Transactions</button>
-        <button
-          className={`px-4 py-2 rounded font-bold ${activeTab==='pending_failed' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
-          onClick={()=>setActiveTab('pending_failed')}
-        >Pending/Failed</button>
-        <input
-          type="text"
-          placeholder="Filter by Job ID"
-          value={filterJobId}
-          onChange={e=>setFilterJobId(e.target.value)}
-          className="ml-2 p-2 rounded bg-gray-800 text-white border border-gray-600"
-        />
-        <input
-          type="text"
-          placeholder="Filter by Company ID"
-          value={filterCompanyId}
-          onChange={e=>setFilterCompanyId(e.target.value)}
-          className="p-2 rounded bg-gray-800 text-white border border-gray-600"
-        />
-        <input
-          type="text"
-          placeholder="Filter by Wallet Address"
-          value={filterWallet}
-          onChange={e=>setFilterWallet(e.target.value)}
-          className="p-2 rounded bg-gray-800 text-white border border-gray-600"
-        />
-      </div>
-      {/* Wallet summary */}
-      <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gray-800 p-3 rounded text-white">
-          <div className="font-bold text-orange-400">FeeCollector</div>
-          <div>{walletSummary.feeCollector?.toFixed(6) || 0}</div>
+      </div>      {/* Advanced filter and tabs - optimized for mobile */}
+      <div className="mb-6">
+        <div className="flex mb-3 gap-2">
+          <button
+            className={`flex-1 px-3 py-2 rounded-lg font-semibold shadow text-xs md:text-sm ${activeTab==='confirmed' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`}
+            onClick={()=>setActiveTab('confirmed')}
+          >Confirmed</button>
+          <button
+            className={`flex-1 px-3 py-2 rounded-lg font-semibold shadow text-xs md:text-sm ${activeTab==='pending_failed' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`}
+            onClick={()=>setActiveTab('pending_failed')}
+          >Pending/Failed</button>
         </div>
-        <div className="bg-gray-800 p-3 rounded text-white">
-          <div className="font-bold text-orange-400">Development</div>
-          <div>{walletSummary.development?.toFixed(6) || 0}</div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
+          <input
+            type="text"
+            placeholder="Filter by Job ID"
+            value={filterJobId}
+            onChange={e=>setFilterJobId(e.target.value)}
+            className="p-2 text-sm rounded-lg bg-black/70 text-white border border-gray-700 hover:border-orange-500"
+          />
+          <input
+            type="text"
+            placeholder="Filter by Company ID"
+            value={filterCompanyId}
+            onChange={e=>setFilterCompanyId(e.target.value)}
+            className="p-2 text-sm rounded-lg bg-black/70 text-white border border-gray-700 hover:border-orange-500"
+          />
+          <input
+            type="text"
+            placeholder="Filter by Wallet Address"
+            value={filterWallet}
+            onChange={e=>setFilterWallet(e.target.value)}
+            className="p-2 text-sm rounded-lg bg-black/70 text-white border border-gray-700 hover:border-orange-500"
+          />
         </div>
-        <div className="bg-gray-800 p-3 rounded text-white">
-          <div className="font-bold text-orange-400">Charity</div>
-          <div>{walletSummary.charity?.toFixed(6) || 0}</div>
+      </div>{/* Wallet summary - optimized for mobile */}
+      <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+        <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
+          <div className="font-bold text-orange-400 text-sm md:text-base mb-1">FeeCollector</div>
+          <div className="text-white text-sm md:text-base overflow-hidden text-ellipsis">{walletSummary.feeCollector?.toFixed(6) || 0}</div>
         </div>
-        <div className="bg-gray-800 p-3 rounded text-white">
-          <div className="font-bold text-orange-400">Evolution</div>
-          <div>{walletSummary.evolution?.toFixed(6) || 0}</div>
+        <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
+          <div className="font-bold text-orange-400 text-sm md:text-base mb-1">Development</div>
+          <div className="text-white text-sm md:text-base overflow-hidden text-ellipsis">{walletSummary.development?.toFixed(6) || 0}</div>
         </div>
-      </div>
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-        <div className="bg-gradient-to-r from-purple-800 to-purple-600 p-4 rounded-lg shadow-lg">
-          <h3 className="text-white text-lg font-semibold mb-2">Total Revenue</h3>
-          <p className="text-white text-2xl font-bold">{summary.totalRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
+        <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
+          <div className="font-bold text-orange-400 text-sm md:text-base mb-1">Charity</div>
+          <div className="text-white text-sm md:text-base overflow-hidden text-ellipsis">{walletSummary.charity?.toFixed(6) || 0}</div>
         </div>
-        <div className="bg-gradient-to-r from-blue-800 to-blue-600 p-4 rounded-lg shadow-lg">
-          <h3 className="text-white text-lg font-semibold mb-2">Instant Jobs</h3>
-          <p className="text-white text-2xl font-bold">{summary.instantJobsRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
+        <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
+          <div className="font-bold text-orange-400 text-sm md:text-base mb-1">Evolution</div>
+          <div className="text-white text-sm md:text-base overflow-hidden text-ellipsis">{walletSummary.evolution?.toFixed(6) || 0}</div>
         </div>
-        <div className="bg-gradient-to-r from-green-800 to-green-600 p-4 rounded-lg shadow-lg">
-          <h3 className="text-white text-lg font-semibold mb-2">Job Postings</h3>
-          <p className="text-white text-2xl font-bold">{summary.jobPostingsRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
+      </div>{/* Summary cards - improved for mobile with smaller padding and font sizes */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-8">
+        <div className="bg-black/70 border border-purple-700 p-3 md:p-6 rounded-xl shadow">
+          <h3 className="text-orange-500 text-base md:text-xl font-bold mb-1 md:mb-3">Total Revenue</h3>
+          <p className="text-white text-lg md:text-2xl font-bold">{summary.totalRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
         </div>
-        <div className="bg-gradient-to-r from-orange-800 to-orange-600 p-4 rounded-lg shadow-lg">
-          <h3 className="text-white text-lg font-semibold mb-2">Learn2Earn</h3>
-          <p className="text-white text-2xl font-bold">{summary.learn2earnRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
+        <div className="bg-black/70 border border-blue-700 p-3 md:p-6 rounded-xl shadow">
+          <h3 className="text-orange-500 text-base md:text-xl font-bold mb-1 md:mb-3">Instant Jobs</h3>
+          <p className="text-white text-lg md:text-2xl font-bold">{summary.instantJobsRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
         </div>
-        <div className="bg-gradient-to-r from-red-800 to-red-600 p-4 rounded-lg shadow-lg">
-          <h3 className="text-white text-lg font-semibold mb-2">Other</h3>
-          <p className="text-white text-2xl font-bold">{summary.otherRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
+        <div className="bg-black/70 border border-green-700 p-3 md:p-6 rounded-xl shadow">
+          <h3 className="text-orange-500 text-base md:text-xl font-bold mb-1 md:mb-3">Job Postings</h3>
+          <p className="text-white text-lg md:text-2xl font-bold">{summary.jobPostingsRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
         </div>
-      </div>
-      {/* Evolution Chart */}
-      <div className="mb-8 bg-black/30 p-4 rounded-lg max-h-300">
-        <div className="flex gap-2 mb-2">
-          <button className={`px-3 py-1 rounded ${chartType==='all' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`} onClick={()=>setChartType('all')}>All</button>
-          <button className={`px-3 py-1 rounded ${chartType==='jobs' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`} onClick={()=>setChartType('jobs')}>Jobs</button>
-          <button className={`px-3 py-1 rounded ${chartType==='instantjobs' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`} onClick={()=>setChartType('instantjobs')}>InstantJobs</button>
-          <button className={`px-3 py-1 rounded ${chartType==='l2l' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`} onClick={()=>setChartType('l2l')}>Learn2Earn</button>
+        <div className="bg-black/70 border border-orange-700 p-3 md:p-6 rounded-xl shadow">
+          <h3 className="text-orange-500 text-base md:text-xl font-bold mb-1 md:mb-3">Learn2Earn</h3>
+          <p className="text-white text-lg md:text-2xl font-bold">{summary.learn2earnRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
         </div>
-        <div className="chart-container">
+        <div className="bg-black/70 border border-red-700 p-3 md:p-6 rounded-xl shadow">
+          <h3 className="text-orange-500 text-base md:text-xl font-bold mb-1 md:mb-3">Other</h3>
+          <p className="text-white text-lg md:text-2xl font-bold">{summary.otherRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
+        </div>
+      </div>      {/* Evolution Chart - optimized for mobile */}
+      <div className="mb-10 bg-black/60 p-3 md:p-6 rounded-xl border border-gray-700 shadow">
+        <h3 className="text-lg md:text-xl font-bold text-orange-500 mb-3 md:mb-4">Revenue Evolution</h3>
+        <div className="grid grid-cols-4 gap-1 md:flex md:gap-3 mb-4">
+          <button className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-semibold ${chartType==='all' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`} onClick={()=>setChartType('all')}>All</button>
+          <button className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-semibold ${chartType==='jobs' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`} onClick={()=>setChartType('jobs')}>Jobs</button>
+          <button className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-semibold ${chartType==='instantjobs' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`} onClick={()=>setChartType('instantjobs')}>InstantJobs</button>
+          <button className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-semibold ${chartType==='l2l' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`} onClick={()=>setChartType('l2l')}>L2Earn</button>
+        </div>
+        <div className="chart-container bg-black/30 p-2 md:p-4 rounded-lg">
           <Line 
             data={getChartData()} 
             options={{
@@ -744,37 +711,38 @@ const FinancialDashboard: React.FC = () => {
                 legend: { 
                   position: 'top' as const,
                   labels: {
-                    boxWidth: 12,
-                    font: { size: 11 }
+                    boxWidth: 10,
+                    font: { size: window.innerWidth < 768 ? 8 : 11 }
                   }
                 },
                 title: { 
-                  display: true, 
-                  text: 'Revenue Evolution',
-                  font: { size: 14 }
+                  display: false
                 }
               },
               scales: {
                 y: { 
                   beginAtZero: true,
-                  ticks: { font: { size: 10 } }
+                  ticks: { font: { size: window.innerWidth < 768 ? 8 : 10 } }
                 },
                 x: {
-                  ticks: { font: { size: 10 } }
+                  ticks: { 
+                    font: { size: window.innerWidth < 768 ? 8 : 10 },
+                    maxRotation: 45,
+                    minRotation: 45
+                  }
                 }
               }
             }} 
           />
         </div>
-      </div>
-      {/* Export buttons */}
-      <div className="flex gap-4 mb-6">
+      </div>      {/* Export buttons - further simplified for mobile */}
+      <div className="grid grid-cols-2 gap-3 md:flex md:gap-4 mb-6 md:mb-8">
         <button
           onClick={exportToExcel}
           disabled={isExporting || isLoading}
-          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex items-center disabled:opacity-50"
+          className="bg-orange-500 hover:bg-orange-600 text-white px-3 md:px-4 py-2 rounded disabled:opacity-60 font-medium shadow text-xs md:text-sm flex items-center justify-center"
         >
-          <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg className="h-4 w-4 md:h-5 md:w-5 mr-1 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
           Export Excel
@@ -783,16 +751,16 @@ const FinancialDashboard: React.FC = () => {
         <button
           onClick={exportToPdf}
           disabled={isExporting || isLoading}
-          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center disabled:opacity-50"
+          className="bg-orange-500 hover:bg-orange-600 text-white px-3 md:px-4 py-2 rounded disabled:opacity-60 font-medium shadow text-xs md:text-sm flex items-center justify-center"
         >
-          <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg className="h-4 w-4 md:h-5 md:w-5 mr-1 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
           Export PDF
         </button>
       </div>
-      {/* Transaction table with status filter and advanced filters */}
-      <div className="overflow-x-auto">
+      {/* Transaction table with status filter and advanced filters */}      <div className="bg-black/30 rounded-xl border border-gray-700 p-3 md:p-6">
+        <h3 className="text-lg md:text-xl font-bold text-orange-500 mb-3 md:mb-4">Transaction Details</h3>
         {isLoading ? (
           <div className="text-center py-10">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
@@ -803,7 +771,7 @@ const FinancialDashboard: React.FC = () => {
             <p className="text-red-500">{error}</p>
             <button 
               onClick={fetchRevenueData}
-              className="mt-4 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
+              className="mt-4 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm"
             >
               Try again
             </button>
@@ -813,22 +781,83 @@ const FinancialDashboard: React.FC = () => {
             <p className="text-gray-300">No financial data found for the selected period.</p>
           </div>
         ) : (
-          <table className="min-w-full bg-black/30 rounded-lg overflow-hidden">
-            <thead className="bg-gray-800">
-              <tr>
-                <th className="py-3 px-4 text-left">Type</th>
-                <th className="py-3 px-4 text-left">Amount</th>
-                <th className="py-3 px-4 text-left">Currency</th>
-                <th className="py-3 px-4 text-left">Date</th>
-                <th className="py-3 px-4 text-left">Transaction ID</th>
-                <th className="py-3 px-4 text-left">Details</th>
-                <th className="py-3 px-4 text-left">Distribution</th>
-                <th className="py-3 px-4 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {revenue
-                .filter(item =>
+          <div className="overflow-x-auto">
+            {/* Desktop Table - Hidden on mobile */}            <table className="min-w-full bg-black/60 rounded-lg overflow-hidden hidden md:table">
+              <thead className="bg-black/70 border-b border-gray-700">
+                <tr>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-orange-400">Type</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-orange-400">Amount</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-orange-400">Currency</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-orange-400">Date</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-orange-400">Transaction ID</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-orange-400">Details</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-orange-400">Distribution</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-orange-400">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(() => {
+                  const filteredItems = revenue
+                    .filter(item =>
+                      (activeTab === 'confirmed'
+                        ? item.status === 'confirmed' || item.status === 'completed'
+                        : item.status === 'pending' || item.status === 'failed') &&
+                      (filterCurrency === 'all' || item.currency === filterCurrency) &&
+                      (filterJobId ? item.jobId === filterJobId : true) &&
+                      (filterCompanyId ? item.companyId === filterCompanyId : true) &&
+                      (filterWallet ? [item.distribution?.feeCollector?.address, item.distribution?.development?.address, item.distribution?.charity?.address, item.distribution?.evolution?.address].includes(filterWallet) : true)
+                    );
+                    
+                  // Using pagination state from component level
+                  const itemsPerPage = 10;
+                  
+                  // Items to display on current page
+                  const currentItems = filteredItems.slice(
+                    currentPage * itemsPerPage,
+                    (currentPage + 1) * itemsPerPage
+                  );
+                  
+                  return currentItems.map((item) => (
+                    <tr key={item.id} className="border-b border-gray-700 hover:bg-gray-800/50">
+                      <td className="py-3 px-4">{getTypeDescription(item.type)}</td>
+                      <td className="py-3 px-4">{item.amount.toFixed(2)}</td>
+                      <td className="py-3 px-4">{item.currency}</td>
+                      <td className="py-3 px-4">{formatDate(item.timestamp)}</td>
+                      <td className="py-3 px-4">
+                        {item.transactionHash ? (
+                          <span className="text-xs font-mono text-gray-400">
+                            {item.transactionHash.substring(0, 8)}...{item.transactionHash.substring(item.transactionHash.length - 8)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">N/A</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {item.jobId && <span className="text-gray-400 mr-2">Job: {item.jobId.substring(0, 6)}...</span>}
+                        {item.companyId && <span className="text-gray-400 mr-2">Company: {item.companyId.substring(0, 6)}...</span>}
+                        {item.workerId && <span className="text-gray-400">Worker: {item.workerId.substring(0, 6)}...</span>}
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold"
+                          onClick={() => openModal(item)}
+                        >
+                          Details
+                        </button>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`text-xs px-2 py-1 rounded-md ${item.status==='confirmed' ? 'bg-green-900/70 text-green-300 border border-green-700' : item.status==='pending' ? 'bg-yellow-900/70 text-yellow-300 border border-yellow-700' : 'bg-red-900/70 text-red-300 border border-red-700'}`}>{item.status}</span>
+                      </td>
+                    </tr>
+                  ));
+                })()}
+              </tbody>
+            </table>
+            
+            {/* Desktop pagination controls */}
+            <div className="mt-6 hidden md:flex justify-between items-center">
+              {(() => {
+                const filteredItems = revenue.filter(item =>
                   (activeTab === 'confirmed'
                     ? item.status === 'confirmed' || item.status === 'completed'
                     : item.status === 'pending' || item.status === 'failed') &&
@@ -836,45 +865,134 @@ const FinancialDashboard: React.FC = () => {
                   (filterJobId ? item.jobId === filterJobId : true) &&
                   (filterCompanyId ? item.companyId === filterCompanyId : true) &&
                   (filterWallet ? [item.distribution?.feeCollector?.address, item.distribution?.development?.address, item.distribution?.charity?.address, item.distribution?.evolution?.address].includes(filterWallet) : true)
-                )
-                .map((item) => (
-                  <tr key={item.id} className="border-b border-gray-700 hover:bg-gray-800/50">
-                    <td className="py-3 px-4">{getTypeDescription(item.type)}</td>
-                    <td className="py-3 px-4">{item.amount.toFixed(2)}</td>
-                    <td className="py-3 px-4">{item.currency}</td>
-                    <td className="py-3 px-4">{formatDate(item.timestamp)}</td>
-                    <td className="py-3 px-4">
-                      {item.transactionHash ? (
-                        <span className="text-xs font-mono text-gray-400">
-                          {item.transactionHash.substring(0, 8)}...{item.transactionHash.substring(item.transactionHash.length - 8)}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">N/A</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      {item.jobId && <span className="text-gray-400 mr-2">Job: {item.jobId.substring(0, 6)}...</span>}
-                      {item.companyId && <span className="text-gray-400 mr-2">Company: {item.companyId.substring(0, 6)}...</span>}
-                      {item.workerId && <span className="text-gray-400">Worker: {item.workerId.substring(0, 6)}...</span>}
-                    </td>
-                    <td className="py-3 px-4">
-                      <button
-                        className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-xs"
-                        onClick={() => openModal(item)}
-                      >
-                        Details
-                      </button>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`text-xs px-2 py-1 rounded ${item.status==='confirmed' ? 'bg-green-700 text-white' : item.status==='pending' ? 'bg-yellow-700 text-white' : 'bg-red-700 text-white'}`}>{item.status}</span>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+                );
+                
+                const itemsPerPage = 10;
+                const pageCount = Math.ceil(filteredItems.length / itemsPerPage);
+                
+                return pageCount > 1 ? (
+                  <>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                      disabled={currentPage === 0}
+                      className={`px-4 py-2 rounded-md font-medium ${
+                        currentPage === 0
+                          ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                          : 'bg-orange-500 text-white hover:bg-orange-600'
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    <div className="text-gray-300">
+                      Page {currentPage + 1} of {pageCount}
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(pageCount - 1, prev + 1))}
+                      disabled={currentPage === pageCount - 1}
+                      className={`px-4 py-2 rounded-md font-medium ${
+                        currentPage === pageCount - 1
+                          ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                          : 'bg-orange-500 text-white hover:bg-orange-600'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </>
+                ) : null;
+              })()}
+            </div>
+            
+            {/* Mobile Card Layout - Exact match to screenshot */}            <div className="md:hidden">
+
+
+              {(() => {
+                const filteredItems = revenue.filter(item =>
+                  (activeTab === 'confirmed'
+                    ? item.status === 'confirmed' || item.status === 'completed'
+                    : item.status === 'pending' || item.status === 'failed') &&
+                  (filterCurrency === 'all' || item.currency === filterCurrency) &&
+                  (filterJobId ? item.jobId === filterJobId : true) &&
+                  (filterCompanyId ? item.companyId === filterCompanyId : true) &&
+                  (filterWallet ? [item.distribution?.feeCollector?.address, item.distribution?.development?.address, item.distribution?.charity?.address, item.distribution?.evolution?.address].includes(filterWallet) : true)
+                );
+                  // Using pagination state from component level
+                const itemsPerPage = 10;
+                const pageCount = Math.ceil(filteredItems.length / itemsPerPage);
+                
+                // Items to display on current page
+                const currentItems = filteredItems.slice(
+                  currentPage * itemsPerPage,
+                  (currentPage + 1) * itemsPerPage
+                );
+                
+                return (
+                  <>
+                    {currentItems.map((item) => (
+                      <div key={item.id} className="mb-1.5 bg-black/80 p-1.5 rounded-md border border-gray-800">
+                        <div className="flex justify-between items-center">
+                          <div className="text-orange-400 font-medium text-sm">
+                            {getTypeDescription(item.type)}
+                          </div>
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${item.status==='confirmed' || item.status==='completed' ? 'bg-green-900 text-white' : item.status==='pending' ? 'bg-yellow-900 text-white' : 'bg-red-900 text-white'}`}>
+                            {item.status === 'completed' ? 'completed' : item.status}
+                          </span>
+                        </div>
+                        
+                        <div className="text-white font-bold text-base">
+                          {item.amount.toFixed(2)} {item.currency}
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <div className="text-xs text-gray-400">
+                            {getDate(item.timestamp).toLocaleDateString().split('/').slice(0,2).join('/')}
+                          </div>
+                          <button
+                            className="bg-orange-500 hover:bg-orange-600 text-white px-2 py-0.5 rounded text-xs font-medium"
+                            onClick={() => openModal(item)}
+                          >
+                            Details
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Pagination controls */}
+                    {pageCount > 1 && (
+                      <div className="flex justify-between items-center mt-4">
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                          disabled={currentPage === 0}
+                          className={`px-3 py-1 text-xs rounded-md ${
+                            currentPage === 0
+                              ? 'bg-gray-700 text-gray-400'
+                              : 'bg-black/70 border border-gray-600 text-orange-400 hover:bg-black/90'
+                          }`}
+                        >
+                          Previous
+                        </button>
+                        <div className="text-gray-300 text-xs">
+                          Page {currentPage + 1} of {pageCount}
+                        </div>
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.min(pageCount - 1, prev + 1))}
+                          disabled={currentPage === pageCount - 1}
+                          className={`px-3 py-1 text-xs rounded-md ${
+                            currentPage === pageCount - 1
+                              ? 'bg-gray-700 text-gray-400'
+                              : 'bg-black/70 border border-gray-600 text-orange-400 hover:bg-black/90'
+                          }`}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
         )}
-      </div>
-      {/* Modal de Detalhamento da Transação */}
+      </div>      {/* Transaction Detail Modal */}
       <Transition.Root show={isModalOpen} as={Fragment}>
         <Dialog as="div" className="fixed z-50 inset-0 overflow-y-auto" onClose={closeModal}>
           <div className="flex items-center justify-center min-h-screen px-4">
@@ -898,9 +1016,8 @@ const FinancialDashboard: React.FC = () => {
               leave="ease-in duration-200"
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
-            >
-              <div className="inline-block bg-gray-900 rounded-lg px-8 py-6 text-left overflow-hidden shadow-xl transform transition-all align-middle max-w-lg w-full">
-                <Dialog.Title as="h3" className="text-lg leading-6 font-bold text-orange-400 mb-4">
+            >              <div className="inline-block bg-black/70 rounded-xl px-8 py-6 text-left overflow-hidden shadow-xl transform transition-all align-middle max-w-lg w-full border border-gray-700">
+                <Dialog.Title as="h3" className="text-xl leading-6 font-bold text-orange-500 mb-6">
                   Transaction Distribution
                 </Dialog.Title>
                 {selectedTransaction && selectedTransaction.distribution ? (
@@ -947,10 +1064,9 @@ const FinancialDashboard: React.FC = () => {
                   </div>
                 ) : (
                   <div className="text-gray-400">No distribution data for this transaction.</div>
-                )}
-                <div className="mt-6 flex justify-end">
+                )}                <div className="mt-8 flex justify-end">
                   <button
-                    className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded"
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm"
                     onClick={closeModal}
                   >
                     Close
@@ -960,10 +1076,9 @@ const FinancialDashboard: React.FC = () => {
             </Transition.Child>
           </div>
         </Dialog>
-      </Transition.Root>
-      {/* Show total count */}
+      </Transition.Root>      {/* Show total count */}
       {!isLoading && !error && revenue.length > 0 && (
-        <div className="mt-4 text-right text-gray-400">
+        <div className="mt-4 text-right text-gray-400 text-sm">
           Showing {revenue.filter(item => filterCurrency === 'all' || item.currency === filterCurrency).length} transactions
         </div>
       )}
@@ -973,19 +1088,19 @@ const FinancialDashboard: React.FC = () => {
 
 // Helper to render config card (now shows all wallet addresses if present)
 const renderConfigCard = (config: any, label: string) => (
-  <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-orange-900 to-black text-white border border-orange-700">
-    <div className="font-bold text-lg mb-2 text-orange-400">Current Payment Distribution Settings ({label})</div>
-    <div className="text-sm">
-      <div><b>FeeCollector:</b> {config?.receiverAddress || config?.feeCollectorAddress}</div>
-      {config?.developmentWalletAddress && <div><b>Development:</b> {config.developmentWalletAddress}</div>}
-      {config?.charityWalletAddress && <div><b>Charity:</b> {config.charityWalletAddress}</div>}
-      {config?.evolutionWalletAddress && <div><b>Evolution:</b> {config.evolutionWalletAddress}</div>}
-      {config?.instantJobsFeeCollector && <div><b>FeeCollector (InstantJobs):</b> {config.instantJobsFeeCollector}</div>}
-      {config?.l2lFeeCollector && <div><b>FeeCollector (L2L):</b> {config.l2lFeeCollector}</div>}
-      <div><b>Service Fee:</b> {config?.serviceFee}%</div>
-      <div><b>Transaction Timeout:</b> {config?.transactionTimeout/1000} seconds</div>
-      <div><b>Contracts:</b> ETH: {config?.contracts?.ethereum} | Polygon: {config?.contracts?.polygon} | BSC: {config?.contracts?.binance}</div>
-      <div><b>Last Update:</b> {config?.updatedAt ? (typeof config.updatedAt === 'object' && 'seconds' in config.updatedAt ? new Date(config.updatedAt.seconds * 1000).toLocaleString() : new Date(config.updatedAt).toLocaleString()) : 'N/A'}</div>
+  <div className="mb-6 p-6 rounded-xl bg-black/70 text-white border border-orange-700 shadow">
+    <div className="font-bold text-xl mb-3 text-orange-400">Current Payment Distribution Settings ({label})</div>
+    <div className="text-sm text-gray-300">
+      <div className="mb-1"><span className="font-semibold text-orange-300">FeeCollector:</span> {config?.receiverAddress || config?.feeCollectorAddress}</div>
+      {config?.developmentWalletAddress && <div className="mb-1"><span className="font-semibold text-orange-300">Development:</span> {config.developmentWalletAddress}</div>}
+      {config?.charityWalletAddress && <div className="mb-1"><span className="font-semibold text-orange-300">Charity:</span> {config.charityWalletAddress}</div>}
+      {config?.evolutionWalletAddress && <div className="mb-1"><span className="font-semibold text-orange-300">Evolution:</span> {config.evolutionWalletAddress}</div>}
+      {config?.instantJobsFeeCollector && <div className="mb-1"><span className="font-semibold text-orange-300">FeeCollector (InstantJobs):</span> {config.instantJobsFeeCollector}</div>}
+      {config?.l2lFeeCollector && <div className="mb-1"><span className="font-semibold text-orange-300">FeeCollector (L2L):</span> {config.l2lFeeCollector}</div>}
+      <div className="mb-1"><span className="font-semibold text-orange-300">Service Fee:</span> {config?.serviceFee}%</div>
+      <div className="mb-1"><span className="font-semibold text-orange-300">Transaction Timeout:</span> {config?.transactionTimeout/1000} seconds</div>
+      <div className="mb-1"><span className="font-semibold text-orange-300">Contracts:</span> ETH: {config?.contracts?.ethereum} | Polygon: {config?.contracts?.polygon} | BSC: {config?.contracts?.binance}</div>
+      <div className="mb-1"><span className="font-semibold text-orange-300">Last Update:</span> {config?.updatedAt ? (typeof config.updatedAt === 'object' && 'seconds' in config.updatedAt ? new Date(config.updatedAt.seconds * 1000).toLocaleString() : new Date(config.updatedAt).toLocaleString()) : 'N/A'}</div>
     </div>
   </div>
 );
