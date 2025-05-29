@@ -13,19 +13,16 @@ import { AdminRole, useAdminPermissions } from "../../../hooks/useAdminPermissio
 import { ethers } from "ethers";
 import NotificationsPanel, { NotificationBell } from '../../../components/ui/NotificationsPanel';
 import { createAdminNotification } from '../../../lib/notifications';
-
 import AdminPermissionsManager from "../../../app/components/AdminPermissionsManager";
-import Learn2EarnTestButton from "../../../components/ui/Learn2EarnTestButton";
 import InstantJobsManager from "../../../components/admin/InstantJobsManager";
 import JobsManager from "../../../components/admin/JobsManager";
 import PaymentSettings from "../../../components/admin/PaymentSettings";
-import Learn2EarnFeePanel from "../../../components/ui/Learn2EarnFeePanel";
 import FinancialDashboard from "../../../components/admin/FinancialDashboard";
 import AdManager from "../../../components/admin/AdManager";
 import WalletButton from '../../../components/WalletButton';
 import AdminNewsletterManager from "../../../components/admin/AdminNewsletterManager";
 import AdminSocialMediaManager from "../../../components/admin/AdminSocialMediaManager";
-import Learn2EarnContractsPanel from '../../../components/ui/Learn2EarnContractsPanel';
+import Learn2EarnContractsPanel from "../../../components/ui/Learn2EarnContractsPanel";
 
 interface NFT {
   id: string;
@@ -452,11 +449,12 @@ const AdminDashboard: React.FC = () => {
       }
     };
     fetchPendingCompanies();
-    // Reload learn2earn if on learn2earn tab (changed from airdrops)
+      // Reload learn2earn if on learn2earn tab (changed from airdrops)
     if (activeTab === "learn2earn") { // Changed from airdrops
       if (activeSubTab === "list") {
         fetchLearn2Earns();
       }
+      // Contract management has been moved to Learn2EarnContractsPanel component
     }
   }, [activeTab, activeSubTab]);
 
@@ -1164,36 +1162,36 @@ const AdminDashboard: React.FC = () => {
     fetchAdminPhotoFromFirebase();
   }, []);
 
-  const fetchEmployersList = async () => {
-    try {
-      if (!db) throw new Error("Firestore is not initialized");
-      
-      const companiesCollection = collection(db, "companies");
-      const querySnapshot = await getDocs(companiesCollection);
-      
-      const employersList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        // Ensure these fields exist, with name taking priority for display
-        name: doc.data().name || doc.data().companyName || '',
-        email: doc.data().email || '',
-        companyName: doc.data().companyName || doc.data().name || '',
-        responsiblePerson: doc.data().responsiblePerson || '',
-        responsibleName: doc.data().responsibleName || doc.data().responsiblePerson || '',
-        companySize: doc.data().companySize || doc.data().employees || '',
-        industry: doc.data().industry || '',
-        blocked: doc.data().blocked || false
-      }));
+const fetchEmployersList = async () => {
+  try {
+    if (!db) throw new Error("Firestore is not initialized");
+    
+    const companiesCollection = collection(db, "companies");
+    const querySnapshot = await getDocs(companiesCollection);
+    
+    const employersList = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      // Ensure these fields exist, with name taking priority for display
+      name: doc.data().name || doc.data().companyName || '',
+      email: doc.data().email || '',
+      companyName: doc.data().companyName || doc.data().name || '',
+      responsiblePerson: doc.data().responsiblePerson || '',
+      responsibleName: doc.data().responsibleName || doc.data().responsiblePerson || '',
+      companySize: doc.data().companySize || doc.data().employees || '',
+      industry: doc.data().industry || '',
+      blocked: doc.data().blocked || false
+    }));
 
-      console.log("Employers list:", employersList);
-      setEmployers(employersList);
-    } catch (error) {
-      console.error("Error fetching employers:", error);
-      setEmployersError("Failed to fetch employers list");
-    } finally {
-      setEmployersLoading(false);
-    }
-  };
+    console.log("Employers list:", employersList);
+    setEmployers(employersList);
+  } catch (error) {
+    console.error("Error fetching employers:", error);
+    setEmployersError("Failed to fetch employers list");
+  } finally {
+    setEmployersLoading(false);
+  }
+};
 
   useEffect(() => {
     if (activeSubTab === "employers-list") {
@@ -1524,71 +1522,49 @@ const AdminDashboard: React.FC = () => {
   const [learn2earns, setLearn2Earns] = useState<any[]>([]);
   const [learn2earnLoading, setLearn2EarnLoading] = useState(false);
   const [learn2earnError, setLearn2EarnError] = useState<string | null>(null);
-  
-  useEffect(() => {
-    const fetchLearn2Earns = async () => {
-      setLearn2EarnLoading(true);
-      setLearn2EarnError(null);
-      try {
-        if (!db) {
-          throw new Error("Firestore is not initialized.");
-        }
+  const [deletingLearn2EarnId, setDeletingLearn2EarnId] = useState<string | null>(null);
+  const [pausingLearn2EarnId, setPausingLearn2EarnId] = useState<string | null>(null);
+    // Contract management has been moved to Learn2EarnContractsPanel component
 
-        const learn2earnCollection = collection(db, "learn2earn");
-        const querySnapshot = await getDocs(learn2earnCollection);
-
-        if (querySnapshot.empty) {
-          console.log("No learn2earn found in Firestore");
-          setLearn2Earns([]);
-          setLearn2EarnLoading(false);
-          return;
-        }
-
-        const learn2earnList = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            status: data.status || 'inactive',
-          };
-        });
-
-        setLearn2Earns(learn2earnList);
-      } catch (error) {
-        console.error("Error fetching learn2earn:", error);
-        setLearn2EarnError("Failed to fetch learn2earn. Please check the console for more details.");
-        setLearn2Earns([]);
-      } finally {
-        setLearn2EarnLoading(false);
-      }
-    };
-
-    fetchLearn2Earns();
-  }, []);
-
-  const handleAddLearn2Earn = async (data: any) => {
+  // Fetch airdrops from Firestore
+  const fetchLearn2Earns = async () => {
+    setLearn2EarnLoading(true);
+    setLearn2EarnError(null);
     try {
       if (!db) {
         throw new Error("Firestore is not initialized.");
       }
-      
+
       const learn2earnCollection = collection(db, "learn2earn");
-      const docRef = await addDoc(learn2earnCollection, {
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      const querySnapshot = await getDocs(learn2earnCollection);
+
+      if (querySnapshot.empty) {
+        console.log("No learn2earn found in Firestore");
+        setLearn2Earns([]);
+        setLearn2EarnLoading(false);
+        return;
+      }
+
+      const learn2earnList = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          status: data.status || 'inactive',
+        };
       });
-      
-      console.log("Learn2Earn added with ID:", docRef.id);
-      alert("Learn2Earn added successfully!");
-      
-      // Reload data
-      fetchLearn2Earns();
+
+      setLearn2Earns(learn2earnList);
     } catch (error) {
-      console.error("Error adding Learn2Earn:", error);
-      alert("Failed to add Learn2Earn. Check console for details.");
+      console.error("Error fetching learn2earn:", error);
+      setLearn2EarnError("Failed to fetch learn2earn. Please check the console for more details.");
+      setLearn2Earns([]);
+    } finally {
+      setLearn2EarnLoading(false);
     }
   };
+
+    // Contract management functions have been moved to Learn2EarnContractsPanel component
 
   // Handle pausing/resuming an learn2earn (changed from airdrop)
   const handleToggleLearn2EarnStatus = async (learn2earnId: string, currentStatus: string) => {
@@ -1622,6 +1598,7 @@ const AdminDashboard: React.FC = () => {
       console.log(`Learn2Earn status updated to: ${newStatus}`);
       
       // Update local state to reflect the change
+      // Update local state to reflect the change
       setLearn2Earns(learn2earns.map(item => 
         item.id === learn2earnId ? {...item, status: newStatus} : item
       ));
@@ -1635,61 +1612,149 @@ const AdminDashboard: React.FC = () => {
     }
   };
     const handleDeleteLearn2Earn = async (learn2earnId: string) => { // Changed from handleDeleteAirdrop
-  if (!learn2earnId) {
-    alert("Invalid learn2earn ID"); // Changed from airdrop
-    return;
-  }
+    if (!learn2earnId) {
+      alert("Invalid learn2earn ID"); // Changed from airdrop
+      return;
+    }
+    
+    if (!window.confirm("Are you sure you want to delete this learn2earn opportunity? This action cannot be undone.")) { // Changed from airdrop
+      return;
+    }
+    
+    setDeletingLearn2EarnId(learn2earnId);
+    try {
+      if (!db) {
+        throw new Error("Firestore is not initialized.");
+      }
+      
+      console.log(`Deleting learn2earn with ID: ${learn2earnId}`); // Changed from airdrop
+      
+      // First check if the document exists
+      const learn2earnRef = doc(db, "learn2earn", learn2earnId); // Changed from airdropRef
+      const learn2earnDoc = await getDoc(learn2earnRef); // Changed from airdropDoc
+      
+
+      
+      if (!learn2earnDoc.exists()) {
+        throw new Error("Learn2Earn document not found"); // Changed from Airdrop
+      }
+      
+      // Delete the document
+      await deleteDoc(learn2earnRef);
+      
+      console.log(`Learn2Earn deleted successfully`); // Changed from Airdrop
+      
+      // Update local state to remove the deleted learn2earn
+      setLearn2Earns(learn2earns.filter(item => item.id !== learn2earnId)); // Changed from airdrop
+      
+      alert("Learn2Earn deleted successfully!"); // Changed from Airdrop
+    } catch (error: any) {
+      console.error("Error deleting airdrop:", error);
+      alert(`Failed to delete airdrop: ${error.message}`);
+    } finally {
+      setDeletingLearn2EarnId(null);
+    }
+  };
+
+  // Handle changing network contract input  // handleNetworkContractChange function has been moved to Learn2EarnContractsPanel component
   
-  if (!window.confirm("Are you sure you want to delete this learn2earn opportunity? This action cannot be undone.")) { // Changed from airdrop
-    return;
-  }
+  // Load airdrops when the Airdrops tab is active
+  useEffect(() => {
+    if (activeTab === "learn2earn") { // Changed from airdrops
+      if (activeSubTab === "list") {
+        fetchLearn2Earns();
+      } else if (activeSubTab === "contracts") {
+
+        // fetchNetworkContracts(); // Removed because function is not defined
+      }
+    }
+  }, [activeTab, activeSubTab]);
+
+  // Add these lines near the other useState hooks at the top of AdminDashboard (after other useState calls)
+  const [expandedPendingCompanyId, setExpandedPendingCompanyId] = useState<string | null>(null);
+  const [expandedSeekerId, setExpandedSeekerId] = useState<string | null>(null);
+
+  const togglePendingCompanyDetails = (id: string) => {
+    setExpandedPendingCompanyId(prevId => prevId === id ? null : id);
+  };
+
+  const toggleSeekerDetails = (id: string) => {
+    setExpandedSeekerId(prevId => prevId === id ? null : id);
+  };
+
+  // Helper function for formatting timestamps
+  const formatFirestoreTimestamp = (timestamp: any) => {
+    if (! timestamp) return 'N/A';
+    
+    try {
+      // Handle both Firestore timestamp and ISO string formats
+      if (timestamp.seconds) {
+        return new Date(timestamp.seconds * 1000).toLocaleDateString();
+      } else if (timestamp.toDate) {
+        return timestamp.toDate().toLocaleDateString();
+      } else if (typeof timestamp === 'string') {
+        return new Date(timestamp).toLocaleDateString();
+      }
+      return 'Invalid date';
+    } catch (error) {
+      console.error("Error formatting timestamp:", error);
+      return 'Invalid date';
+    }
+  };
   
-  setDeletingLearn2EarnId(learn2earnId);
-  try {
-    if (!db) {
-      throw new Error("Firestore is not initialized.");
+  // Function to create a shared notification for all super_admins
+  const createSharedAdminNotification = async (title: string, body: string, type: string = "general", data: any = {}) => {
+    try {
+      await createAdminNotification(
+        {
+          title,
+          body,
+          type,
+          data
+        },
+        true // This makes it a shared notification
+      );
+      console.log("Shared admin notification created successfully");
+    } catch (error) {
+      console.error("Error creating shared admin notification:", error);
     }
-    
-    console.log(`Deleting learn2earn with ID: ${learn2earnId}`); // Changed from airdrop
-    
-    // First check if the document exists
-    const learn2earnRef = doc(db, "learn2earn", learn2earnId); // Changed from airdropRef
-    const learn2earnDoc = await getDoc(learn2earnRef); // Changed from airdropDoc
-    
-
-    
-    if (!learn2earnDoc.exists()) {
-      throw new Error("Learn2Earn document not found"); // Changed from Airdrop
-    }
-    
-    // Delete the document
-    await deleteDoc(learn2earnRef);
-    
-    console.log(`Learn2Earn deleted successfully`); // Changed from Airdrop
-    
-    // Update local state to remove the deleted learn2earn
-    setLearn2Earns(learn2earns.filter(item => item.id !== learn2earnId)); // Changed from airdrop
-    
-    alert("Learn2Earn deleted successfully!"); // Changed from Airdrop
-  } catch (error: any) {
-    console.error("Error deleting airdrop:", error);
-    alert(`Failed to delete airdrop: ${error.message}`);
-  } finally {
-    setDeletingLearn2EarnId(null);
-  }
-};
-
-  // Refresh data when tab changes
+  };
+  // Fetch unread admin notifications - combines personal and shared notifications for super_admin
   useEffect(() => {
-    reloadData();
-  }, [activeTab, reloadData]);
-
-  // Refresh data when subtab changes
-  useEffect(() => {
-    if (activeSubTab) {
-      reloadData();
-    }
-  }, [activeSubTab, reloadData]);
+    if (!db || !adminId) return;
+    
+    let interval: NodeJS.Timeout;
+      const fetchUnreadAdminNotifications = async () => {
+      try {
+               let totalUnreadCount = 0;
+        
+        // Only super_admins can see notifications
+        if (role === "super_admin") {
+          // Get shared notifications for super_admins only
+          const sharedQuery = query(
+            collection(db, "adminNotifications"),
+            where("isShared", "==", true),
+            where("read", "==", false)
+          );
+          const sharedSnapshot = await getDocs(sharedQuery);
+          totalUnreadCount = sharedSnapshot.size;
+        } else {
+          // Non-super_admins don't see any notifications
+          totalUnreadCount = 0;
+        }
+        
+        setUnreadCount(totalUnreadCount);
+      } catch (error) {
+        console.error("Error fetching unread admin notifications:", error);
+        setUnreadCount(0);
+      }
+    };
+    
+    fetchUnreadAdminNotifications();
+    interval = setInterval(fetchUnreadAdminNotifications, 10000); // Check every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [role, db, adminId]);
 
   // Estados para controlar dropdowns da barra lateral
   const [nftsDropdownOpen, setNftsDropdownOpen] = useState(false);
@@ -1870,8 +1935,6 @@ const AdminDashboard: React.FC = () => {
                       <li>
                         <button
                           className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                        <button
-                          className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
                             activeSubTab === "employers-approve" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
                           }`}
                           onClick={() => {
@@ -1903,6 +1966,127 @@ const AdminDashboard: React.FC = () => {
               </li>
             )}            <li>
               <button
+                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "jobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                onClick={() => {
+                  if (activeTab === "jobs") setNftsDropdownOpen((open: boolean) => !open);
+                  else {
+                    setActiveTab("jobs");
+                    setActiveSubTab("list");
+                    setNftsDropdownOpen(true);
+                  }
+                  if (isMobile) setMobileMenuOpen(false);
+                }}
+              >
+                <span>Manage Jobs</span>
+                <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "jobs" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+              {activeTab === "jobs" && nftsDropdownOpen && (
+                <ul className="ml-6 mt-2 space-y-1">
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "list" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("list");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Jobs List
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "create" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("create");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Create Job
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "prices" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("prices");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Job Pricing
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </li>            {/* Instant Jobs tab */}
+            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                onClick={() => {
+                  setActiveTab("instantJobs");
+                  setActiveSubTab(null);
+                  if (isMobile) setMobileMenuOpen(false);
+                }}
+              >
+                Manage Instant Jobs
+              </button>
+            </li>            {/* Learn2Earn tab */}
+            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                onClick={() => {
+                  if (activeTab === "learn2earn") setLearn2earnDropdownOpen((open) => !open);
+                  else {
+                    setActiveTab("learn2earn");
+                    setActiveSubTab("list");
+                    setLearn2earnDropdownOpen(true);
+                  }
+                  if (isMobile) setMobileMenuOpen(false);
+                }}
+              >
+                <span>Learn2Earn</span>
+                <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "learn2earn" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+              {activeTab === "learn2earn" && learn2earnDropdownOpen && (
+                <ul className="ml-6 mt-2 space-y-1">
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "list" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("list");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Learn2Earn List
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "contracts" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        setActiveSubTab("contracts");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      Smart Contracts
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </li>            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                onClick={() => {
+                  setActiveTab("accounting");
                   setActiveSubTab(null);
                   if (isMobile) setMobileMenuOpen(false);
                 }}
@@ -2288,10 +2472,10 @@ const AdminDashboard: React.FC = () => {
                                         <h5 className="font-bold text-white mb-2">System Information</h5>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">                                          <div>
                                             <p className="mb-1"><span className="font-semibold text-orange-300">Status:</span> {employer.blocked ? 'Blocked' : 'Active'}</p>
-                                            <p className="mb-1"><span className="font-semibold text-orange-300">Created:</span> {employer.createdAt}</p>
+                                            <p className="mb-1"><span className="font-semibold text-orange-300">Created:</span> {formatFirestoreTimestamp(employer.createdAt)}</p>
                                           </div>
                                           <div>
-                                            <p className="mb-1"><span className="font-semibold text-orange-300">Updated:</span> {employer.updatedAt}</p>
+                                            <p className="mb-1"><span className="font-semibold text-orange-300">Updated:</span> {formatFirestoreTimestamp(employer.updatedAt)}</p>
                                             <p className="mb-1"><span className="font-semibold text-orange-300">ID:</span> {employer.id || 'N/A'}</p>
                                           </div>
                                           <div>
@@ -2522,8 +2706,8 @@ const AdminDashboard: React.FC = () => {
                             {seekers.map((seeker) => (
                               <li 
                                 key={seeker.id} 
-                                className={`mb-4 p-4 border ${expandedEmployerId === seeker.id ? 'border-orange-500' : 'border-gray-700'} rounded-lg cursor-pointer transition-all hover:shadow-md ${expandedEmployerId === seeker.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
-                                onClick={() => toggleEmployerDetails(seeker.id)
+                                className={`mb-4 p-4 border ${expandedSeekerId === seeker.id ? 'border-orange-500' : 'border-gray-700'} rounded-lg cursor-pointer transition-all hover:shadow-md ${expandedSeekerId === seeker.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
+                                onClick={() => toggleSeekerDetails(seeker.id)
                                 }
                               >
                                 <div className="flex items-center justify-between">                                  <span className="text-left">
@@ -2558,7 +2742,7 @@ const AdminDashboard: React.FC = () => {
                                 </div>
 
                                 {/* Expanded Seeker Details */}
-                                {expandedEmployerId === seeker.id && (
+                                {expandedSeekerId === seeker.id && (
                                   <div className="mt-4 bg-black/40 p-4 rounded text-sm text-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {/* Professional Information */}
                                     <div className="col-span-1 md:col-span-2 border-b border-gray-700 mb-4 pb-2">
@@ -3247,9 +3431,9 @@ const AdminDashboard: React.FC = () => {
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Instant Jobs</h2>
                     <div className="mt-6 bg-black/50 p-6 rounded-lg">
                       <p className="text-gray-300 mb-4">
-                        Manage advertising campaigns and ads for display on the website and app.
+                        Manage instant jobs and their associated settings.
                       </p>
-                      
+                                            
                       {/* Main component loaded directly without checking subtab */}
                       <InstantJobsManager />
                     </div>
@@ -3274,13 +3458,7 @@ const AdminDashboard: React.FC = () => {
                 {/* Rendering of the "Smart Contracts" section within Learn2Earn in the main dashboard area */}
                 {activeTab === "learn2earn" && activeSubTab === "contracts" && (
                   <div>
-                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Smart Contracts Management</h2>
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                      {/* Learn2Earn Fee Management Panel */}
-                      <Learn2EarnFeePanel />
-                      {/* Network Contracts Panel - toda a lógica e UI foi movida para o componente abaixo */}
-                      <Learn2EarnContractsPanel />
-                    </div>
+                    <Learn2EarnContractsPanel db={db} isMobile={isMobile} />
                   </div>
                 )}
 
@@ -3345,8 +3523,8 @@ const AdminDashboard: React.FC = () => {
                               <span>Amount: <b>{l2e.tokenAmount}</b></span>
                               <span>Per User: <b>{l2e.tokenPerParticipant}</b></span>
                               <span>Participants: <b>{l2e.totalParticipants || 0} / {l2e.maxParticipants || '∞'}</b></span>
-                              <span>Start: {l2e.startDate}</span>
-                              <span>End: {l2e.endDate}</span>
+                              <span>Start: {formatFirestoreTimestamp(l2e.startDate)}</span>
+                              <span>End: {formatFirestoreTimestamp(l2e.endDate)}</span>
                             </div>
                             <div className="text-xs text-gray-500">ID: {l2e.id}</div>
                           </div>
@@ -3390,5 +3568,4 @@ const AdminDashboard: React.FC = () => {
     </Layout>
   );
 };
-
 export default AdminDashboard;

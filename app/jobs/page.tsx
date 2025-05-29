@@ -286,7 +286,7 @@ export default function JobsPage() {
       {/* Apply Button */}
       <div className="pt-4 border-t border-orange-500/30">
         <Button 
-          onClick={() => window.open(job.applyLink, '_blank')}
+          onClick={() => setShowApplyPopup(true)}
           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 transition-colors"
         >
           Apply Now
@@ -398,6 +398,9 @@ export default function JobsPage() {
   const [subscribeSuccess, setSubscribeSuccess] = useState(false);
   const [subscribeError, setSubscribeError] = useState("");
 
+  // Popup state for Apply button
+  const [showApplyPopup, setShowApplyPopup] = useState(false);
+
   const handleJobAlertSubscribe = async () => {
     setSubscribing(true);
     setSubscribeError("");
@@ -434,6 +437,21 @@ export default function JobsPage() {
 
   return (
     <Layout>
+      {/* Popup Modal for Apply Button */}
+      {showApplyPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <div className="bg-black border border-orange-500/50 rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+            <h2 className="text-xl font-bold text-orange-400 mb-4">In Development</h2>
+            <p className="text-orange-200 mb-6">This platform is still under development. The job offers are for testing purposes only and are not real at this time.</p>
+            <button
+              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2 rounded transition-colors"
+              onClick={() => setShowApplyPopup(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       <div className="bg-gradient-to-b from-black via-[#18181b] to-black min-h-screen text-white">
         {/* Header Section */}
         <div className="border-b border-orange-500/30 py-8 px-2 sm:py-16 sm:px-4 bg-black/80">
