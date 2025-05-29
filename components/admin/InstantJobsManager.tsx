@@ -363,71 +363,70 @@ const InstantJobsManager = () => {
       loadJobsWithNetwork(normalizedNetwork);
     }
   };
-
   // Render component
   return (
-    <div className="bg-amber-950 p-6 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-semibold text-orange-500 mb-6">Instant Jobs Management</h2>
+    <div>      <h2 className="font-bold text-3xl mb-8 text-left text-orange-500">Instant Jobs Management</h2>
       
       {error && (
-        <div className="bg-red-900/50 border border-red-500 text-red-100 px-4 py-3 rounded mb-4">
-          <strong className="font-bold">Error: </strong>
-          <span>{error}</span>
+        <div className="bg-red-800/50 text-red-200 p-3 rounded-lg mb-4 border border-red-700">
+          <strong>Error:</strong> {error}
         </div>
       )}
       
       {success && (
-        <div className="bg-green-900/50 border border-green-500 text-green-100 px-4 py-3 rounded mb-4">
-          <strong className="font-bold">Success: </strong>
-          <span>{success}</span>
+        <div className="bg-green-800/50 text-green-200 p-3 rounded-lg mb-4 border border-green-700">
+          <strong>Success:</strong> {success}
         </div>
-      )}
-        {!walletAddress ? (
-        <div className="mb-6">              <button
-                onClick={handleConnectWallet}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition cursor-not-allowed opacity-70"
-                title="Wallet connection is handled in the dashboard"
-              >
-                Connect Wallet to Manage Instant Jobs
-              </button>
-          <p className="text-gray-400 text-sm mt-2">
-            Please connect your wallet in the dashboard to manage Instant Jobs settings and view contract details.
-          </p>
+      )}      {!walletAddress ? (
+        <div className="bg-black/60 border border-orange-700 rounded-xl shadow-lg flex flex-col gap-6 p-6">
+          <h3 className="font-bold text-orange-400 mb-4 text-xl">Connect Wallet</h3>
+          <p className="text-gray-300 mb-4">Please connect your wallet in the dashboard to manage Instant Jobs settings and view contract details.</p>
+          <button 
+            onClick={handleConnectWallet}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg disabled:opacity-60 w-full font-semibold shadow text-sm"
+            title="Wallet connection is handled in the dashboard"
+          >
+            Connect Wallet to Manage Instant Jobs
+          </button>
         </div>
-      ) : (
-        <>          {/* Network Information */}
-          <div className="bg-neutral-900/40 p-4 rounded-lg mb-6 backdrop-blur-sm border border-gray-700">
-            <h3 className="text-lg font-semibold text-orange-400 mb-2">Current Blockchain Network</h3>
-            <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-              <p className="text-white">
-                {networkInfo ? `${networkInfo.name} (Chain ID: ${networkInfo.chainId})` : "Unknown network"}
-              </p>
+      ): (
+        <>          {/* Status Panel - Network Information */}
+          <div className="bg-black/70 border border-orange-700 rounded-xl shadow-lg p-6 mb-8">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
+              {/* Network Status */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="h-3 w-3 rounded-full bg-green-500 inline-block"></span>
+                  <span className="text-xl font-bold text-orange-300">Current Blockchain Network</span>
+                </div>
+                <div className="text-white font-medium mb-1 text-base">
+                  {networkInfo ? `${networkInfo.name} (Chain ID: ${networkInfo.chainId})` : "Unknown network"}
+                </div>
+                <div className="text-xs text-gray-400 break-all">Your wallet: {walletAddress}</div>
+              </div>
             </div>
-            <p className="text-gray-400 text-sm mt-1">
-              Your wallet: <span className="text-gray-300 font-mono text-xs">{walletAddress}</span>
-            </p>
-          </div>
-            {/* Contract Configuration (if not configured yet) */}
-          {(!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') && (
-            <div className="bg-neutral-900/40 border border-yellow-600/50 p-4 rounded-lg mb-6 backdrop-blur-sm">
-              <h3 className="text-lg font-semibold text-yellow-500 mb-2">Configure Contract</h3>
+          </div>{/* Contract Configuration (if not configured yet) */}          {(!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') && (
+            <div className="bg-black/60 border border-orange-700 rounded-xl shadow-lg flex flex-col gap-6 p-6 mb-8">
+              <h3 className="font-bold text-orange-400 mb-4 text-xl">Configure Contract</h3>
               <p className="text-gray-300 mb-4">
                 There's no contract configured for the {networkInfo?.name} network yet. Configure the contract address below:
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4">
-                <input
-                  type="text"
-                  placeholder="Contract address (0x...)"
-                  value={newContractAddress}
-                  onChange={(e) => setNewContractAddress(e.target.value)}
-                  className="flex-grow p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-orange-500"
-                />
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-2">Contract Address</label>
+                  <input
+                    type="text"
+                    placeholder="Contract address (0x...)"
+                    value={newContractAddress}
+                    onChange={(e) => setNewContractAddress(e.target.value)}
+                    className="w-full border border-gray-700 rounded-lg px-3 py-2 bg-black/70 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  />
+                </div>
                 <button
                   onClick={setupContractAddress}
                   disabled={settingContractAddress || !newContractAddress}
-                  className={`px-4 py-2 rounded font-medium ${settingContractAddress || !newContractAddress ? 'bg-gray-600 text-gray-400 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-600 text-white'}`}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg disabled:opacity-60 w-full font-semibold shadow text-sm"
                 >
                   {settingContractAddress ? "Configuring..." : "Configure Contract"}
                 </button>
@@ -435,105 +434,104 @@ const InstantJobsManager = () => {
             </div>
           )}
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">            {/* Contract Information */}
-            <div className="bg-neutral-950/80 p-4 rounded-lg border border-amber-800/30 backdrop-blur-sm">
-              <h3 className="text-lg font-semibold text-orange-400 mb-4">Contract Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">            {/* Contract Information */}            <div className="bg-black/70 p-6 rounded-xl border border-orange-700 backdrop-blur-sm">
+              <h3 className="text-xl font-bold text-orange-400 mb-4">Contract Information</h3>
               
               {isLoading ? (
                 <p className="text-gray-400">Loading contract data...</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {contractAddress && contractAddress !== '0x0000000000000000000000000000000000000000' && (
                     <div>
-                      <p className="text-sm text-gray-400">Contract Address:</p>
-                      <p className="text-white font-mono truncate text-xs">{contractAddress}</p>
+                      <p className="text-sm font-bold text-gray-300 mb-1">Contract Address:</p>
+                      <p className="text-white font-mono truncate text-xs bg-black/30 p-2 rounded-lg border border-gray-700">{contractAddress}</p>
                     </div>
                   )}
                   
                   <div>
-                    <p className="text-sm text-gray-400">Contract Owner:</p>
-                    <p className="text-white font-mono truncate text-xs">{contractOwner || "Not available"}</p>
+                    <p className="text-sm font-bold text-gray-300 mb-1">Contract Owner:</p>
+                    <p className="text-white font-mono truncate text-xs bg-black/30 p-2 rounded-lg border border-gray-700">{contractOwner || "Not available"}</p>
                     {contractOwner && walletAddress.toLowerCase() === contractOwner.toLowerCase() && (
-                      <span className="inline-block bg-green-800 text-green-200 text-xs px-2 py-1 rounded mt-1">
+                      <span className="inline-block bg-green-800 text-green-200 text-xs px-2 py-1 rounded-md mt-1 border border-green-700">
                         You are the owner
                       </span>
                     )}
                   </div>
                   
                   <div>
-                    <p className="text-sm text-gray-400">Fee Collector Address:</p>
-                    <p className="text-white font-mono truncate text-xs">{feeCollector || "Not available"}</p>
+                    <p className="text-sm font-bold text-gray-300 mb-1">Fee Collector Address:</p>
+                    <p className="text-white font-mono truncate text-xs bg-black/30 p-2 rounded-lg border border-gray-700">{feeCollector || "Not available"}</p>
                   </div>
                   
                   <div>
-                    <p className="text-sm text-gray-400">Platform Fee:</p>
-                    <p className="text-white">{platformFeePercentage ? `${(platformFeePercentage / 10).toFixed(1)}%` : "Not available"}</p>
+                    <p className="text-sm font-bold text-gray-300 mb-1">Platform Fee:</p>
+                    <p className="text-white bg-black/30 p-2 rounded-lg border border-gray-700">{platformFeePercentage ? `${(platformFeePercentage / 10).toFixed(1)}%` : "Not available"}</p>
                   </div>
                 </div>
               )}
             </div>
-              {/* Settings */}
-            <div className="bg-neutral-900/40 p-4 rounded-lg border border-gray-700 backdrop-blur-sm">
-              <h3 className="text-lg font-semibold text-orange-400 mb-4">Settings</h3>
+              {/* Settings */}            <div className="bg-black/60 p-6 rounded-xl border border-orange-700 backdrop-blur-sm">
+              <h3 className="text-xl font-bold text-orange-400 mb-4">Settings</h3>
               
               {isLoading ? (
                 <p className="text-gray-400">Loading settings...</p>
               ) : contractOwner && walletAddress.toLowerCase() !== contractOwner.toLowerCase() ? (
                 <p className="text-yellow-500">Only the contract owner can change these settings.</p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
                     <label className="block text-gray-300 text-sm font-bold mb-2">
                       Platform Fee Percentage
                     </label>
-                    <div className="flex items-center">
+                    <div className="flex items-center bg-black/70 border border-gray-700 rounded-lg px-3 py-2">
                       <input
                         type="number"
                         min="0"
                         max="100"
                         value={newFeePercentage}
                         onChange={(e) => setNewFeePercentage(parseInt(e.target.value))}
-                        className="shadow appearance-none border rounded py-2 px-3 mr-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline w-24"
+                        className="bg-transparent appearance-none rounded mr-2 text-white leading-tight focus:outline-none focus:ring-1 focus:ring-orange-500 w-24"
                       />
                       <span className="text-gray-400">(Base 1000: {newFeePercentage} = {(newFeePercentage / 10).toFixed(1)}%)</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-400 mt-1">
                       Maximum allowed value is 100 (10%)
                     </p>
                     <button
                       onClick={updateFeePercentage}
                       disabled={isUpdatingFee || newFeePercentage === platformFeePercentage || !instantJobsEscrowService.isContractInitialized()}
-                      className={`mt-2 py-1 px-3 rounded text-sm ${
+                      className={`mt-3 py-2 px-4 rounded-lg text-sm ${
                         isUpdatingFee || newFeePercentage === platformFeePercentage || !instantJobsEscrowService.isContractInitialized()
                           ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                          : "bg-orange-500 hover:bg-orange-600 text-white"
+                          : "bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow"
                       }`}
                     >
                       {isUpdatingFee ? "Updating..." : "Update Fee"}
                     </button>
                   </div>
-                  
-                  <div>
+                    <div>
                     <label className="block text-gray-300 text-sm font-bold mb-2">
                       Fee Collector Address
                     </label>
-                    <input
-                      type="text"
-                      value={newFeeCollector}
-                      onChange={(e) => setNewFeeCollector(e.target.value)}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      placeholder="0x..."
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <div className="bg-black/70 border border-gray-700 rounded-lg px-3 py-2">
+                      <input
+                        type="text"
+                        value={newFeeCollector}
+                        onChange={(e) => setNewFeeCollector(e.target.value)}
+                        className="bg-transparent w-full appearance-none text-white leading-tight focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        placeholder="0x..."
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
                       This address will receive the platform fees
                     </p>
                     <button
                       onClick={updateFeeCollector}
                       disabled={isUpdatingCollector || newFeeCollector === feeCollector || !instantJobsEscrowService.isContractInitialized()}
-                      className={`mt-2 py-1 px-3 rounded text-sm ${
+                      className={`mt-3 py-2 px-4 rounded-lg text-sm ${
                         isUpdatingCollector || newFeeCollector === feeCollector || !instantJobsEscrowService.isContractInitialized()
                           ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                          : "bg-orange-500 hover:bg-orange-600 text-white"
+                          : "bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow"
                       }`}
                     >
                       {isUpdatingCollector ? "Updating..." : "Update Collector"}
@@ -543,46 +541,45 @@ const InstantJobsManager = () => {
               )}
             </div>
           </div>
-            {/* Jobs List */}
-          <div className="bg-neutral-900/40 p-4 rounded-lg border border-gray-700 backdrop-blur-sm">
-            <h3 className="text-lg font-semibold text-orange-400 mb-4">Instant Jobs</h3>
+            {/* Jobs List */}          <div className="bg-black/60 p-6 rounded-xl border border-orange-700 backdrop-blur-sm">
+            <h3 className="text-xl font-bold text-orange-400 mb-4">Instant Jobs</h3>
             
             {isLoadingJobs ? (
               <p className="text-gray-400">Loading jobs...</p>
             ) : instantJobs.length === 0 ? (
               <div>
-                <p className="text-gray-400 mb-4">No Instant Jobs found for this network ({networkInfo?.name}).</p>
+                <p className="text-gray-300 mb-4">No Instant Jobs found for this network ({networkInfo?.name}).</p>
                 <button
                   onClick={handleRefreshJobs}
-                  className="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded text-sm"
+                  className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg text-sm font-semibold shadow"
                 >
                   Refresh List
                 </button>
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-gray-300">
+                <div className="overflow-x-auto bg-black/30 rounded-lg border border-gray-700 p-2">
+                  <table className="min-w-full text-white">
                     <thead className="border-b border-gray-700">
                       <tr>
-                        <th className="text-left py-2">ID</th>
-                        <th className="text-left py-2">Title</th>
-                        <th className="text-left py-2">Employer</th>
-                        <th className="text-left py-2">Status</th>
-                        <th className="text-left py-2">Payment</th>
-                        <th className="text-left py-2">Fee</th>
+                        <th className="text-left py-3 px-2 text-orange-300">ID</th>
+                        <th className="text-left py-3 px-2 text-orange-300">Title</th>
+                        <th className="text-left py-3 px-2 text-orange-300">Employer</th>
+                        <th className="text-left py-3 px-2 text-orange-300">Status</th>
+                        <th className="text-left py-3 px-2 text-orange-300">Payment</th>
+                        <th className="text-left py-3 px-2 text-orange-300">Fee</th>
                       </tr>
                     </thead>
                     <tbody>
                       {instantJobs.map((job) => (
                         <tr key={job.id} className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
-                          <td className="py-2 text-xs font-mono">{job.id.substring(0, 8)}...</td>
-                          <td className="py-2">{job.title}</td>
-                          <td className="py-2 text-xs font-mono">
+                          <td className="py-3 px-2 text-xs font-mono">{job.id.substring(0, 8)}...</td>
+                          <td className="py-3 px-2">{job.title}</td>
+                          <td className="py-3 px-2 text-xs font-mono">
                             {job.employer.substring(0, 6)}...{job.employer.substring(job.employer.length - 4)}
                           </td>
-                          <td className="py-2">
-                            <span className={`inline-block px-2 py-1 text-xs rounded ${
+                          <td className="py-3 px-2">
+                            <span className={`inline-block px-2 py-1 text-xs rounded-md ${
                               job.status === 'completed' ? 'bg-green-800/70 text-green-200 border border-green-700' :
                               job.status === 'approved' ? 'bg-amber-800/70 text-amber-200 border border-amber-700' : 
                               job.status === 'delivered' ? 'bg-yellow-800/70 text-yellow-200 border border-yellow-700' :
@@ -592,23 +589,23 @@ const InstantJobsManager = () => {
                               {job.status}
                             </span>
                           </td>
-                          <td className="py-2">{job.payment.toFixed(2)} {job.currency}</td>
-                          <td className="py-2">{(job.payment * platformFeePercentage / 1000).toFixed(4)} {job.currency}</td>
+                          <td className="py-3 px-2">{job.payment.toFixed(2)} {job.currency}</td>
+                          <td className="py-3 px-2">{(job.payment * platformFeePercentage / 1000).toFixed(4)} {job.currency}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 
-                <div className="mt-4 flex justify-between">
+                <div className="mt-6 flex justify-between items-center">
                   <button
                     onClick={handleRefreshJobs}
-                    className="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded text-sm"
+                    className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg text-sm font-semibold shadow"
                   >
                     Refresh List
                   </button>
                   
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-orange-300 text-sm font-semibold">
                     Total: {instantJobs.length} job{instantJobs.length !== 1 ? 's' : ''}
                   </p>
                 </div>

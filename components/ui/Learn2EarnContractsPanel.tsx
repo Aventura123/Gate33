@@ -108,22 +108,20 @@ const Learn2EarnTestButton: React.FC<Learn2EarnTestButtonProps> = ({ network, co
       try {
         const contract = new ethers.Contract(contractAddress, minimalABI, signer);
         const name = await contract.name();
-        setResult(`Connection successful! Contract name: ${name}`);
+        setResult(`Connection successful! Contract exists at this address. Name: ${name}`);
       } catch (functionError) {
-        setResult(`Contract exists on ${network}, but couldn't retrieve its name. This is normal for some contracts.`);
+        setResult(`Connection successful! Contract exists at this address.`);
       }
     } catch (error: any) {
       setResult(`Error: ${error.message || 'Unknown error'}`);
     } finally {
       setTesting(false);
     }
-  };
-  return (
-    <div>
-      <button
+  };  return (
+    <div>      <button
         onClick={testConnection}
         disabled={testing}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md disabled:opacity-50"
+        className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-md disabled:opacity-60 text-sm font-semibold"
       >
         {testing ? 'Testing...' : 'Test Connection'}
       </button>
@@ -186,64 +184,61 @@ const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
       if (feePercent < 0 || feePercent > 100) {
         throw new Error("Fee percent must be between 0 and 100.");
       }
-      // Save to Firebase
+      // Primeiro tenta atualizar o contrato
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await updateFeeConfig("", provider, feeCollector, feePercent);
+      } catch (contractError: any) {
+        setError(`Contract update failed: ${contractError.message || "Unknown error"}. Settings were not saved.`);
+        setSaving(false);
+        return;
+      }
+      // Só salva no Firebase se o contrato foi atualizado com sucesso
       await setDoc(doc(db, "settings", "paymentConfig_l2l"), {
         feeCollectorAddress: feeCollector,
         feePercent,
         updatedAt: new Date(),
       }, { merge: true });
-      // Update the smart contract
-      try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        // No need to specify the contract address here
-        // The updateFeeConfig function will fetch from Firestore
-        await updateFeeConfig("", provider, feeCollector, feePercent);
-        setSuccess(true);
-      } catch (contractError: any) {
-        console.error("Contract interaction failed:", contractError);
-        // Saving to Firebase worked, so show partial success
-        setSuccess(true);
-        setError(`Settings saved to database, but contract update failed: ${contractError.message || "Unknown error"}. Contract changes will be applied when you connect to a supported network.`);
-      }
+      setSuccess(true);
     } catch (err: any) {
       setError(err.message || "Failed to save config.");
     } finally {
       setSaving(false);
     }
   };
-  return (
-    <div className="bg-black/30 p-4 rounded-lg border border-gray-700 shadow-md">
-      <h3 className="text-xl font-bold text-orange-400 mb-2">Learn2Earn Fee Management</h3>
-      <form onSubmit={handleSave} className="space-y-4">
+    return (
+    <div className="bg-black/60 border border-gray-700 rounded-xl shadow-lg flex flex-col gap-6 p-6">
+      <h3 className="font-bold text-orange-400 mb-4 text-xl">Learn2Earn Fee Management</h3>
+      <form onSubmit={handleSave} className="space-y-5">
         <div>
-          <label className="block text-gray-300 text-sm font-bold mb-1">Fee Collector Wallet Address</label>
+          <label className="block text-sm font-semibold text-gray-300 mb-1">Fee Collector Wallet Address</label>
           <input
             type="text"
             value={feeCollector}
             onChange={e => setFeeCollector(e.target.value)}
-            className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
+            className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/70 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
             placeholder="0x..."
           />
           <p className="text-xs text-gray-400 mt-1">This wallet will receive the Learn2Earn fee on all deposits.</p>
         </div>
         <div>
-          <label className="block text-gray-300 text-sm font-bold mb-1">Fee Percentage (%)</label>
+          <label className="block text-sm font-semibold text-gray-300 mb-1">Fee Percentage (%)</label>
           <input
             type="number"
             min={0}
             max={100}
             value={feePercent}
             onChange={e => setFeePercent(Number(e.target.value))}
-            className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
+            className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/70 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
           />
           <p className="text-xs text-gray-400 mt-1">A {feePercent}% fee will be deducted from all Learn2Earn deposits (all currencies).</p>
         </div>
-        {error && <div className="bg-red-800 text-white p-2 rounded">{error}</div>}
-        {success && <div className="bg-green-800 text-white p-2 rounded">Settings saved successfully!</div>}
+        {error && <div className="bg-red-800/50 text-red-200 p-2 rounded-md">{error}</div>}
+        {success && <div className="bg-green-800/50 text-green-200 p-2 rounded-md">Settings saved successfully!</div>}
         <button
           type="submit"
+          className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-full font-semibold shadow text-sm"
           disabled={saving}
-          className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save Settings"}
         </button>
@@ -256,10 +251,10 @@ const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
 // Interface for Learn2EarnContractsPanel props
 interface Learn2EarnContractsPanelProps {
   db: any;
-  isMobile: boolean;
+  isMobile: boolean; // Mantemos o prop para compatibilidade com chamadas existentes
 }
 
-const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db, isMobile }) => {
+const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db }) => { // Não usaremos mais isMobile
   // State for learn2earn contract management
   const [networkContract, setNetworkContract] = useState({
     network: "sepolia",
@@ -269,6 +264,8 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db,
   const [networkContracts, setNetworkContracts] = useState<any[]>([]);
   const [isAddingContract, setIsAddingContract] = useState(false);
   const [contractActionError, setContractActionError] = useState<string | null>(null);
+  // Expanded contracts state (array of contract ids)
+  const [expandedContracts, setExpandedContracts] = useState<string[]>([]);
   // Fetch smart contract configurations from Firestore
   const fetchNetworkContracts = async () => {
     try {
@@ -334,11 +331,12 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db,
   };
   const handleAddNetworkContract = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!networkContract.network || !networkContract.contractAddress || !networkContract.type) {
-      alert("Please fill in all fields.");
+    // Usa sempre a currentNetwork como network
+    if (!currentNetwork || !networkContract.contractAddress || !networkContract.type) {
+      alert("Please fill in all fields and connect your wallet.");
       return;
     }
-    const isValid = await validateContract(networkContract.network, networkContract.contractAddress);
+    const isValid = await validateContract(currentNetwork, networkContract.contractAddress);
     if (!isValid) {
       return;
     }
@@ -352,7 +350,7 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db,
         existingContracts = settingsSnapshot.data().contracts || [];
       }
       const isDuplicate = existingContracts.some(
-        (contract: any) => contract.network === networkContract.network
+        (contract: any) => contract.network?.toLowerCase() === currentNetwork.toLowerCase()
       );
       if (isDuplicate) {
         const confirmReplace = window.confirm("A contract for this network already exists. Do you want to replace it?");
@@ -361,12 +359,12 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db,
         }
         // Remove the existing contract for this network
         existingContracts = existingContracts.filter(
-          (contract: any) => contract.network !== networkContract.network
+          (contract: any) => contract.network?.toLowerCase() !== currentNetwork.toLowerCase()
         );
       }
       const newContract = {
-        id: `${networkContract.network}-${Date.now()}`,
-        network: networkContract.network,
+        id: `${currentNetwork}-${Date.now()}`,
+        network: currentNetwork,
         contractAddress: networkContract.contractAddress,
         type: networkContract.type,
         createdAt: new Date().toISOString(),
@@ -374,7 +372,7 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db,
       };
       existingContracts.push(newContract);
       await setDoc(settingsDoc, { contracts: existingContracts }, { merge: true });
-      setNetworkContract({ network: "", contractAddress: "", type: "" });
+      setNetworkContract({ network: '', contractAddress: '', type: '' });
       alert("Network contract added successfully.");
       fetchNetworkContracts();
     } catch (error) {
@@ -415,7 +413,10 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db,
   }, [db]);
   const { walletAddress, currentNetwork } = useWallet();
   // Dummy contract info for now (replace with real data fetch if needed)
-  const mainContract = networkContracts[0] || {};
+  // Find the contract for the current network
+  const mainContract = networkContracts.find(
+    c => c.network?.toLowerCase() === (currentNetwork?.toLowerCase() || '')
+  ) || {};
   const contractInfo = {
     contractAddress: mainContract.contractAddress || '',
     contractOwner: mainContract.contractOwner || walletAddress || '',
@@ -424,73 +425,54 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db,
   };
   const isOwner = contractInfo.contractOwner && walletAddress && contractInfo.contractOwner.toLowerCase() === walletAddress.toLowerCase();
   return (
-    <div>
-      <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Smart Contracts Management</h2>
+    <div>      <h2 className="font-bold text-3xl mb-6 text-left text-orange-500">Smart Contracts Management</h2>
       {/* Status Panel - moved below the title */}
-      <div className="bg-black/70 border border-orange-700 rounded-xl shadow-lg p-6 mb-8">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
+      <div className="bg-black/70 border border-orange-700 rounded-xl shadow-lg p-6 mb-8">        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
           {/* Network Status */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <span className="h-3 w-3 rounded-full bg-green-500 inline-block"></span>
               <span className="text-lg font-semibold text-orange-300">Current Blockchain Network</span>
             </div>
-            <div className="text-white text-base font-medium mb-1">
-              {currentNetwork}
-            </div>
-            <div className="text-xs text-gray-400 break-all">
-              Your wallet: {walletAddress}
-            </div>
+            <div className="text-white font-medium mb-1 text-base">{currentNetwork}</div>
+            <div className="text-xs text-gray-400 break-all">Your wallet: {walletAddress}</div>
           </div>
           {/* Contract Info */}
-          <div className="flex-1 bg-black/40 rounded-lg p-4 border border-gray-700">
-            <div className="text-orange-400 font-bold mb-2">Contract Information</div>
-            <div className="text-sm text-gray-300 break-all mb-1">
-              <span className="font-semibold">Contract Address:</span> {contractInfo.contractAddress}
-            </div>
-            <div className="text-sm text-gray-300 break-all mb-1 flex items-center gap-2">
-              <span className="font-semibold">Contract Owner:</span> {contractInfo.contractOwner}
-              {isOwner && <span className="bg-green-700 text-green-100 px-2 py-0.5 rounded text-xs font-bold">You are the owner</span>}
-            </div>
-            <div className="text-sm text-gray-300 break-all mb-1">
-              <span className="font-semibold">Fee Collector Address:</span> {contractInfo.feeCollector}
-            </div>
-            <div className="text-sm text-gray-300 mb-1">
-              <span className="font-semibold">Platform Fee:</span> {contractInfo.platformFee}%
-            </div>
+          <div className="flex-1 bg-black/40 rounded-lg border border-gray-700 p-4">
+            <div className="font-bold text-orange-400 mb-2 text-lg">Contract Information</div>
+            {mainContract && mainContract.contractAddress ? (
+              <>
+                <div className="text-sm text-gray-300 break-all mb-1">
+                  <span className="font-semibold">Contract Address:</span> {contractInfo.contractAddress}
+                </div>
+                <div className="text-sm text-gray-300 break-all mb-1 flex items-center gap-2">
+                  <span className="font-semibold">Contract Owner:</span> {contractInfo.contractOwner}
+                  {isOwner && <span className="bg-green-700 text-green-100 px-2 py-0.5 rounded text-xs font-bold">You are the owner</span>}
+                </div>
+                <div className="text-sm text-gray-300 break-all mb-1">
+                  <span className="font-semibold">Fee Collector Address:</span> {contractInfo.feeCollector}
+                </div>
+                <div className="text-sm text-gray-300 mb-1">
+                  <span className="font-semibold">Platform Fee:</span> {contractInfo.platformFee}%
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-red-400 font-semibold">No contract configured for this network.</div>
+            )}
           </div>
         </div>
-      </div>
-      {/* Main content grid */}
+      </div>      {/* Main content grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Fee Management Panel - aprimorado visualmente */}
-        <div className="bg-black/60 border border-gray-700 rounded-xl shadow-lg p-6 flex flex-col gap-6">
-          <h3 className="text-xl font-bold text-orange-400 mb-4">Learn2Earn Fee Management</h3>
-          <Learn2EarnFeePanel db={db} />
-        </div>
-        {/* Add/Update Network Contract - aprimorado visualmente */}
-        <div className="bg-black/60 border border-gray-700 rounded-xl shadow-lg p-6 flex flex-col gap-6">
-          <h3 className="text-xl font-bold text-orange-400 mb-4">Add/Update Network Contract</h3>
+        {/* Fee Management Panel - directly using the panel component */}
+        <Learn2EarnFeePanel db={db} />
+        {/* Add/Update Network Contract - visually improved */}
+        <div className="bg-black/60 border border-gray-700 rounded-xl shadow-lg flex flex-col gap-6 p-6"> 
+          <h3 className="font-bold text-orange-400 mb-4 text-xl">Add/Update Network Contract</h3>
           <form onSubmit={handleAddNetworkContract} className="space-y-5">
+            {/* Network (now using currentNetwork) */}
             <div>
               <label className="block text-sm font-semibold text-gray-300 mb-1">Network</label>
-              <select
-                name="network"
-                value={networkContract.network}
-                onChange={handleNetworkContractChange}
-                className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/70 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
-                required
-              >
-                <option value="sepolia">Sepolia (Ethereum Testnet)</option>
-                <option value="mumbai">Mumbai (Polygon Testnet)</option>
-                <option value="bscTestnet">BSC Testnet</option>
-                <option value="ethereum">Ethereum Mainnet</option>
-                <option value="polygon">Polygon Mainnet</option>
-                <option value="bsc">Binance Smart Chain</option>
-                <option value="arbitrum">Arbitrum</option>
-                <option value="optimism">Optimism</option>
-                <option value="avalanche">Avalanche</option>
-              </select>
+              <div className="w-full px-3 py-2 rounded-lg bg-black/70 text-white border border-gray-600 text-sm">{currentNetwork || 'No network detected'}</div>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-300 mb-1">Contract Address</label>
@@ -500,69 +482,101 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db,
                 value={networkContract.contractAddress}
                 onChange={handleNetworkContractChange}
                 placeholder="0x..."
-                className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/70 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/70 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                 required
               />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-300 mb-1">Type</label>
-              <input
-                type="text"
+              <select
                 name="type"
                 value={networkContract.type}
                 onChange={handleNetworkContractChange}
-                placeholder="Contract Type"
-                className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/70 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/70 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                 required
-              />
+              >
+                <option value="">Select type</option>
+                <option value="Mainnet">Mainnet</option>
+                <option value="Testnet">Testnet</option>
+              </select>
             </div>
             {contractActionError && (
               <p className="text-red-500 text-sm">{contractActionError}</p>
             )}
             <button
               type="submit"
-              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-full font-semibold shadow"
+              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-full font-semibold shadow text-sm"
               disabled={isAddingContract}
             >
               {isAddingContract ? 'Processing...' : 'Add/Update Contract'}
             </button>
           </form>
-        </div>
-      </div>
-      {/* List of existing contracts - mantém visual anterior */}
+        </div>      </div>      {/* List of existing contracts - keeps previous look */}
       <div className="mt-10">
-        <h3 className="text-xl text-orange-400 mb-4">Current Smart Contracts</h3>
+        <h3 className="text-orange-400 mb-4 text-xl">Current Smart Contracts</h3>
         {networkContracts.length === 0 ? (
           <p className="text-gray-400">No contract configurations found. Add one above.</p>
         ) : (
-          <div className="space-y-4">
-            {networkContracts.map((contract, index) => (
-              <div key={contract.id || `${contract.network}-${index}`} className="bg-black/30 p-4 rounded-lg border border-gray-700 hover:border-orange-500 transition-all">
-                <div className="flex flex-col md:flex-row justify-between">
-                  <div>
-                    <h4 className="text-lg font-medium text-orange-300">
-                      {contract.network.charAt(0).toUpperCase() + contract.network.slice(1)}
-                    </h4>
-                    <p className="text-sm text-gray-300 break-all">
-                      Address: {contract.contractAddress}
-                    </p>
-                    <p className="text-sm text-gray-300 break-all">
-                      Type: {contract.type}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Added: {formatFirestoreTimestamp(contract.createdAt)}
-                      {contract.updatedAt && ` (Updated: ${formatFirestoreTimestamp(contract.updatedAt)})`}
-                    </p>
-                  </div>
-                  <div className="flex mt-3 md:mt-0 md:ml-6 min-w-[160px]">
-                    <Learn2EarnTestButton 
-                      network={contract.network}
-                      contractAddress={contract.contractAddress}
-                    />
-                  </div>
+          <div className="space-y-2">
+            {networkContracts.map((contract, index) => {
+              const expanded = expandedContracts.includes(contract.id || `${contract.network}-${index}`);
+              const toggleExpand = () => {
+                const id = contract.id || `${contract.network}-${index}`;
+                setExpandedContracts(prev =>
+                  prev.includes(id)
+                    ? prev.filter(eid => eid !== id)
+                    : [...prev, id]
+                );
+              };
+              // Ensure networkKey is the technical key (e.g., 'bsc', 'ethereum')
+              let networkKey = contract.network;
+              if (networkKey && NETWORK_CONFIG[networkKey.toLowerCase()]) {
+                networkKey = networkKey.toLowerCase();
+              } else {
+                const mapping: Record<string, string> = {
+                  'binance': 'bsc',
+                  'binance smart chain': 'bsc',
+                  'ethereum mainnet': 'ethereum',
+                  'optimism': 'optimism',
+                  'avalanche': 'avalanche',
+                  'bsc testnet': 'bsctestnet',
+                  'polygon': 'polygon',
+                };
+                const lower = (contract.network || '').toLowerCase();
+                networkKey = mapping[lower] || lower;
+              }
+              const displayName = NETWORK_CONFIG[networkKey]?.chainName || contract.network;
+              return (                <div
+                  key={contract.id || `${contract.network}-${index}`}
+                  className="bg-black/30 rounded-lg border border-gray-700 hover:border-orange-500 shadow transition-all mb-1 cursor-pointer"
+                >                  <div
+                    className="flex items-center justify-between px-3 py-2 select-none"
+                    onClick={toggleExpand}
+                  >
+                    <span className="font-semibold text-orange-300 truncate max-w-[60vw]">{displayName}</span>
+                    <span className="text-xs text-orange-200">{expanded ? '▲' : '▼'}</span>
+                  </div>{expanded && (
+                    <div className="mt-2 px-3 pb-3 pt-1 text-xs text-gray-300">
+                      <div className="mb-1 break-all">
+                        <span className="font-semibold">Address:</span> {contract.contractAddress}
+                      </div>
+                      <div className="mb-1">
+                        <span className="font-semibold">Type:</span> {contract.type}
+                      </div>                      <div className="mb-2 text-xs text-gray-400">
+                        Added: {formatFirestoreTimestamp(contract.createdAt)}
+                        {contract.updatedAt && ` (Updated: ${formatFirestoreTimestamp(contract.updatedAt)})`}
+                      </div>
+                      <div className="flex min-w-[120px]">
+                        <Learn2EarnTestButton 
+                          network={networkKey}
+                          contractAddress={contract.contractAddress}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
