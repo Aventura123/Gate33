@@ -2,32 +2,49 @@
 import React, { useState, useEffect } from "react";
 import { getMonitoringState } from "../../utils/monitors/contractMonitor";
 
-
-// Interface temporária para funcionar com o componente
+// Temporary interface for component compatibility
 interface MonitoringState {
   isRunning: boolean;
   lastCheck?: string | Date;
   contractsCount?: number;
   errors?: string[];
+  fullState?: {
+    isLearn2EarnMonitoring: boolean;
+    isWalletMonitoring: boolean;
+    isTokenDistributionMonitoring: boolean;
+  }
 }
 
-// Componente de monitoramento de contratos integrado
+// Integrated contract monitoring component
 const ContractMonitor: React.FC = () => {
   const [monitoringState, setMonitoringState] = useState<MonitoringState | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isRestarting, setIsRestarting] = useState<boolean>(false);
   const [restartMessage, setRestartMessage] = useState<string | null>(null);
+
+  // Add contract names and keys for display
+  const contracts = [
+    { key: "isLearn2EarnMonitoring", label: "Learn2Earn" },
+    { key: "isWalletMonitoring", label: "Wallet" },
+    { key: "isTokenDistributionMonitoring", label: "Token Distribution" }
+  ];
   async function fetchMonitoringState() {
     try {
       setLoading(true);
       const state = await getMonitoringState();
-      // Adaptar o estado retornado para a nossa interface temporária
+      
+      // Set all state properties at once to prevent double rendering
       setMonitoringState({
         isRunning: state.isLearn2EarnMonitoring || state.isWalletMonitoring || state.isTokenDistributionMonitoring,
         lastCheck: new Date().toISOString(),
-        contractsCount: state.errors.length === 0 ? 3 : 3 - state.errors.length,
-        errors: state.errors
+        contractsCount: contracts.length,
+        errors: state.errors,
+        fullState: {
+          isLearn2EarnMonitoring: state.isLearn2EarnMonitoring,
+          isWalletMonitoring: state.isWalletMonitoring,
+          isTokenDistributionMonitoring: state.isTokenDistributionMonitoring
+        }
       });
       setError(null);
     } catch (err: any) {
@@ -40,13 +57,11 @@ const ContractMonitor: React.FC = () => {
 
   useEffect(() => {
     fetchMonitoringState();
-    
-    // Update every 30 seconds
     const interval = setInterval(fetchMonitoringState, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Função para reiniciar o monitoramento de contratos
+  // Function to restart contract monitoring
   const handleRestartMonitoring = async () => {
     try {
       setIsRestarting(true);
@@ -85,7 +100,8 @@ const ContractMonitor: React.FC = () => {
   }
 
   if (error) {
-    return (      <div className="p-6 bg-black/30 rounded-lg">
+    return (
+      <div className="p-6 bg-black/30 rounded-lg">
         <p className="text-center text-red-400">Error: {error}</p>
         <button
           onClick={fetchMonitoringState}
@@ -123,10 +139,38 @@ const ContractMonitor: React.FC = () => {
         
         <div className="flex items-center justify-between mb-2">
           <span className="text-gray-300">Contracts Tracked:</span>
-          <span className="text-sm text-orange-200">{monitoringState?.contractsCount || 0}</span>
+          <span className="text-sm text-orange-200">{contracts.length}</span>
+        </div>
+        <div className="mt-4">
+          <h4 className="text-orange-300 text-sm mb-2">Tracked Contracts:</h4>
+          <table className="w-full text-sm">
+            <thead>
+              <tr>
+                <th className="text-left text-gray-400 pb-1">Contract</th>
+                <th className="text-left text-gray-400 pb-1">Monitored</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contracts.map(contract => (
+                <tr key={contract.key}>
+                  <td className="py-1 text-gray-200">{contract.label}</td>
+                  <td className="py-1">                    <span className={
+                      (monitoringState?.fullState && monitoringState.fullState[contract.key as keyof typeof monitoringState.fullState])
+                        ? "text-green-400"
+                        : "text-red-400"
+                    }>
+                      {(monitoringState?.fullState && monitoringState.fullState[contract.key as keyof typeof monitoringState.fullState])
+                        ? "Yes"
+                        : "No"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-        <button
+      <button
         className="w-full bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg flex items-center justify-center"
         onClick={handleRestartMonitoring}
         disabled={isRestarting}
@@ -140,7 +184,7 @@ const ContractMonitor: React.FC = () => {
   );
 };
 
-// Tipo para os logs do sistema
+// Type for system logs
 interface SystemLog {
   id: string;
   timestamp: string;
@@ -149,7 +193,7 @@ interface SystemLog {
   details?: Record<string, any>;
 }
 
-// Componente principal de monitoramento de atividades do sistema
+// Main component for monitoring system activities
 const SystemActivityMonitor: React.FC = () => {
 
   const [logs, setLogs] = useState<SystemLog[]>([]);
@@ -159,10 +203,10 @@ const SystemActivityMonitor: React.FC = () => {
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [filter, setFilter] = useState('all');
   const [actionTypes, setActionTypes] = useState<string[]>([]);
-  // Paginação
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const logsPerPage = 12;
-  // Estados para o gerenciamento de logs
+  // States for log management
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [exportFormat, setExportFormat] = useState<'excel' | 'pdf'>('excel');
@@ -174,9 +218,9 @@ const SystemActivityMonitor: React.FC = () => {
   const fetchLogs = async () => {
     try {
       setLoadingLogs(true);
-      setCurrentPage(1); // Reset para primeira página quando novos logs são buscados
+      setCurrentPage(1); // Reset to first page when new logs are fetched
 
-      // Obter o token de autenticação do usuário atual
+      // Get the authentication token of the current user
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("You need to be authenticated to view system logs.");
@@ -209,17 +253,17 @@ const SystemActivityMonitor: React.FC = () => {
   useEffect(() => {
     fetchLogs();
   }, []);
-  // Filtra os logs com base no filtro selecionado
+  // Filters logs based on the selected filter
   const filteredLogs = filter === 'all' 
     ? logs 
     : logs.filter(log => log.action === filter);
     
-  // Calcula os logs da página atual
+  // Calculates the logs of the current page
   const indexOfLastLog = currentPage * logsPerPage;
   const indexOfFirstLog = indexOfLastLog - logsPerPage;
   const currentLogs = filteredLogs.slice(indexOfFirstLog, indexOfLastLog);
   
-  // Calcula o número total de páginas
+  // Calculates the total number of pages
   const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
   
   // Helper function to format log details
@@ -250,7 +294,7 @@ const SystemActivityMonitor: React.FC = () => {
       });
   };
 
-  // Função para exportar logs
+  // Function to export logs
   const handleExportLogs = async () => {
     try {
       setIsExporting(true);
@@ -280,7 +324,7 @@ const SystemActivityMonitor: React.FC = () => {
         throw new Error(`Error exporting logs: ${response.status}`);
       }
       
-      // Se for Excel, precisamos baixar o arquivo
+      // If Excel, we need to download the file
       if (exportFormat === 'excel') {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -292,7 +336,7 @@ const SystemActivityMonitor: React.FC = () => {
         window.URL.revokeObjectURL(url);
         a.remove();
       } else {
-        // Para PDF, abrimos em nova aba
+        // For PDF, open in new tab
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         window.open(url, '_blank');
@@ -310,7 +354,7 @@ const SystemActivityMonitor: React.FC = () => {
     } finally {
       setIsExporting(false);
     }
-  };  // Função para limpar logs usando autenticação do Firebase
+  };  // Function to clear logs using Firebase authentication
   const handleClearLogs = async () => {
     if (!startDate || !endDate) {
       setOperationMessage({ type: 'error', text: 'Please select a valid date range.' });
@@ -328,7 +372,7 @@ const SystemActivityMonitor: React.FC = () => {
         throw new Error('You do not have permission to clear system logs.');
       }
 
-      // Enviar a senha diretamente para o backend verificar
+      // Send the password directly to the backend for verification
       const clearResponse = await fetch('/api/support/logs', {
         method: 'DELETE',
         headers: {
@@ -357,7 +401,7 @@ const SystemActivityMonitor: React.FC = () => {
       setIsClearing(false);
     }
   };
-  // Função para iniciar o processo de confirmação de limpeza
+  // Function to start the clear confirmation process
   const startClearConfirmation = () => {
     if (!startDate || !endDate) {
       setOperationMessage({ type: 'error', text: 'Please select a valid date range.' });
@@ -366,7 +410,7 @@ const SystemActivityMonitor: React.FC = () => {
     setClearConfirmation(true);
   };
 
-  // Função para cancelar a limpeza
+  // Function to cancel the clearing
   const cancelClearLogs = () => {
     setClearConfirmation(false);
   };
@@ -385,7 +429,7 @@ const SystemActivityMonitor: React.FC = () => {
                   value={filter}
                   onChange={(e) => {
                     setFilter(e.target.value);
-                    setCurrentPage(1); // Reset para primeira página ao mudar o filtro
+                    setCurrentPage(1); // Reset to first page when changing the filter
                   }}
                 >
                   <option value="all">All</option>
@@ -406,7 +450,7 @@ const SystemActivityMonitor: React.FC = () => {
             </button>
           </div>
         </div>
-        {/* Tabs para alternar entre logs do sistema, monitoramento de contratos e gerenciamento de logs */}
+        {/* Tabs to switch between system logs, contract monitoring, and log management */}
         <div className="mb-6 border-b border-orange-800">
           <div className="flex">
             <button
@@ -431,7 +475,7 @@ const SystemActivityMonitor: React.FC = () => {
           </div>
         </div>
 
-        {/* Conteúdo baseado na tab selecionada */}
+        {/* Content based on the selected tab */}
         {activeTab === 'system' ? (
           <>
             {loadingLogs && (              <div className="flex justify-center my-12">
@@ -510,11 +554,11 @@ const SystemActivityMonitor: React.FC = () => {
               </div>
             )}
             
-            {/* Paginação */}
+            {/* Pagination */}
             {!loadingLogs && !error && filteredLogs.length > logsPerPage && (
               <div className="mt-4 flex justify-between items-center">
                 <div className="text-gray-300">
-                  Página {currentPage} de {totalPages} ({filteredLogs.length} logs)
+                  Page {currentPage} of {totalPages} ({filteredLogs.length} logs)
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -549,10 +593,10 @@ const SystemActivityMonitor: React.FC = () => {
               </div>
             )}
           </>        ) : activeTab === 'contracts' ? (
-          // Componente de monitoramento de contratos
+          // Contract monitoring component
           <ContractMonitor />
         ) : (
-          // Componente de gerenciamento de logs
+          // Log management component
           <div className="bg-black/30 p-6 rounded-lg">
             <h3 className="text-xl text-orange-400 mb-4">Logs Management</h3>
             
@@ -565,7 +609,7 @@ const SystemActivityMonitor: React.FC = () => {
             )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Exportar logs */}
+              {/* Export logs */}
               <div className="bg-black/50 p-4 rounded-lg">
                 <h4 className="text-lg text-orange-400 mb-3">Export Logs</h4>
                 <div className="space-y-3">
@@ -630,7 +674,7 @@ const SystemActivityMonitor: React.FC = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Exportando...
+                        Exporting...
                       </>
                     ) : (
                       <>
@@ -644,7 +688,7 @@ const SystemActivityMonitor: React.FC = () => {
                 </div>
               </div>
               
-              {/* Limpar logs */}
+              {/* Clear logs */}
               <div className="bg-black/50 p-4 rounded-lg">
                 <h4 className="text-lg text-orange-400 mb-3">Clear System Logs</h4>
                 <div className="space-y-3">

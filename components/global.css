@@ -116,4 +116,12 @@ body {
   .border-border {
     border-color: var(--border-color, #FFA500); /* Exemplo: cor laranja */
   }
+  .main-wallet-bar[data-width] {
+    width: attr(data-width);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .fee-distribution-bar[data-width] {
+    width: attr(data-width);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 }

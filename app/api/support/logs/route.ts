@@ -6,23 +6,23 @@ export async function GET(request: Request) {
   try {
     console.log("API: Fetching system logs...");
     
-    // Consulta os logs do Firestore sem exigir autenticação
+    // Fetch logs from Firestore without requiring authentication
     const logsCollection = collection(db, "systemLogs");
     const logsQuery = query(
       logsCollection,
       orderBy("timestamp", "desc"),
-      limit(100) // Limita a 100 logs mais recentes
+      limit(100) // Limit to 100 most recent logs
     );
     
     const logsSnapshot = await getDocs(logsQuery);
     
-    // Se não houver logs, retorne um array vazio
+    // If there are no logs, return an empty array
     if (logsSnapshot.empty) {
       console.log("API: No logs found");
       return NextResponse.json([], { status: 200 });
     }
     
-    // Converte os documentos em objetos de log
+    // Convert documents to log objects
     const logs = logsSnapshot.docs.map(doc => {
       const data = doc.data();
       return {
@@ -44,11 +44,11 @@ export async function GET(request: Request) {
 
 export async function DELETE(request: Request) {
   try {    
-    console.log("API: Recebendo requisição para limpar logs");
+    console.log("API: Received request to clear logs");
     const requestData = await request.json();
     const { startDate, endDate, userId } = requestData;
     
-    // Verifica o token do Firebase na header Authorization
+    // Check Firebase token in Authorization header
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: "Authentication token missing" }, { status: 401 });
@@ -58,7 +58,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Invalid authentication token" }, { status: 401 });
     }
     
-    // Verifica se o userId foi fornecido
+    // Check if userId was provided
     if (!userId) {
       return NextResponse.json({ error: "User ID not provided" }, { status: 400 });
     }
@@ -69,7 +69,7 @@ export async function DELETE(request: Request) {
 
     const startDateTime = new Date(startDate);
     const endDateTime = new Date(endDate);
-    endDateTime.setHours(23, 59, 59, 999); // Definir para o fim do dia
+    endDateTime.setHours(23, 59, 59, 999); // Set to end of the day
     const startTimestamp = Timestamp.fromDate(startDateTime);
     const endTimestamp = Timestamp.fromDate(endDateTime);
 
@@ -108,7 +108,7 @@ export async function DELETE(request: Request) {
       await setDoc(doc(systemLogsCollection), newLogData);
     } catch (logError) {
       console.error("Error logging clearance action:", logError);
-      // Não interrompe o fluxo por falha no log de auditoria
+      // Do not interrupt flow due to audit log failure
     }
 
     return NextResponse.json({ 

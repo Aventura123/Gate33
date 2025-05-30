@@ -1,17 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+ import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
-
-const NETWORK_URLS = {
-  ethereum: "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161", // Public Infura endpoint
-  polygon: "https://polygon-rpc.com",
-  bsc: "https://bsc-dataseed.binance.org/",
-  arbitrum: "https://arb1.arbitrum.io/rpc",
-  optimism: "https://mainnet.optimism.io",
-  avalanche: "https://api.avax.network/ext/bc/C/rpc",
-  sepolia: "https://rpc.sepolia.org",
-  mumbai: "https://rpc-mumbai.maticvigil.com",
-  bscTestnet: "https://data-seed-prebsc-1-s1.binance.org:8545/"
-};
+import { getHttpRpcUrls } from '@/config/rpcConfig';
 
 // Simple ERC20 interface for basic validation
 const ERC20_ABI = [
@@ -32,20 +21,28 @@ const LEARN2EARN_ABI = [ // Changed from AIRDROP_ABI
 export async function POST(request: NextRequest) {
   try {
     const { contractAddress, network = 'sepolia' } = await request.json();
-    
-    // Validate contract address format
+      // Validate contract address format
     if (!ethers.utils.isAddress(contractAddress)) {
       return NextResponse.json({ 
         valid: false, 
         error: "Invalid Ethereum address format"
       }, { status: 400 });
     }
+    // Map network names for compatibility with rpcConfig
+    const networkMapping: Record<string, string> = {
+      bsc: 'binance',
+      bscTestnet: 'binance'
+      // Outros mapeamentos são desnecessários quando os nomes já correspondem
+    };
+      // Get mapped network name or use the original
+    const mappedNetwork = networkMapping[network] || network;
     
-    // Get provider URL
-    const providerUrl = NETWORK_URLS[network as keyof typeof NETWORK_URLS] || NETWORK_URLS.sepolia;
+    // Get provider URLs from centralized config
+    const providerUrls = getHttpRpcUrls(mappedNetwork);
     
-    // Create provider
-    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+    // Create provider with the first available URL (or default to sepolia if none found)
+    const rpcUrl = providerUrls.length ? providerUrls[0] : "https://rpc.sepolia.org";
+    const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
     
     // Check if address has code (is a contract)
     const code = await provider.getCode(contractAddress);
@@ -88,12 +85,11 @@ export async function POST(request: NextRequest) {
           owner
         }
       });
-    } catch (airdropError) {
-      // Contract might still be valid but doesn't conform to our interfaces
+    } catch (airdropError) {      // Contract might still be valid but doesn't conform to our interfaces
       return NextResponse.json({
         valid: true,
         genericContract: true,
-        message: "Contract exists but doesn't match ERC20 or Airdrop patterns"
+        message: "Contract exists but doesn't match ERC20 or Learn2Earn patterns"
       });
     }
   } catch (error: any) {

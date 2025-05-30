@@ -1311,14 +1311,17 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 <span className="text-orange-400 font-bold">{mainWalletPercentage.toFixed(1)}%</span>
               </div>
               <div className="w-full bg-black/50 h-4 rounded-lg overflow-hidden">
-                <div className="h-full bg-orange-500" style={{ width: `${mainWalletPercentage}%` }}></div>
+                <div
+                  className="h-full bg-orange-500 main-wallet-bar"
+                  data-width={`${mainWalletPercentage}%`}
+                ></div>
               </div>
                 <div className="flex justify-between items-center mt-1">
                 <span className="text-gray-300 text-sm">Fee Distribution (total):</span>
                 <span className="text-orange-400 font-bold">{totalPercentage.toFixed(1)}%</span>
               </div>
               <div className="w-full bg-black/50 h-4 rounded-lg overflow-hidden">
-                <div className="h-full bg-orange-500" style={{ width: `${totalPercentage}%` }}></div>
+                <div className="h-full bg-orange-500 fee-distribution-bar" data-width={`${totalPercentage}%`}></div>
               </div><div className="grid grid-cols-4 gap-1 mt-1">
                 <div className="text-center">
                   <div className="text-xs text-gray-400">Fee Collector</div>

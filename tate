@@ -1,0 +1,149 @@
+[33mcommit d4ea8960912939dcc8fad22026519cb2690582b6[m
+Author: Andre Ventura <ventura.vnsa@gmail.com>
+Date:   Sun May 11 10:45:26 2025 +0100
+
+    refactor: centralize and unify multi-network RPC config, dynamic [1;31mmonitor[ming for polygon/ethereum/bsc, remove rpcUrls.ts
+
+[1mdiff --git a/lib/server-init.ts b/lib/server-init.ts[m
+[1mindex 0b7d6a7..93e15fb 100644[m
+[1m--- a/lib/server-init.ts[m
+[1m+++ b/lib/server-init.ts[m
+[36m@@ -48,10 +48,12 @@[m [mexport const serverStatus: ServerStatus = {[m
+ // Flag to ensure initialization only happens once[m
+ let isInitialized = false;[m
+ [m
+[31m-// Exemplo de uso centralizado:[m
+[31m-const WS_RPC_ENDPOINTS = getWsRpcUrls();[m
+[31m-const HTTP_RPC_ENDPOINTS = getHttpRpcUrls();[m
+[31m-const ALL_RPC_ENDPOINTS = getAllRpcUrls();[m
+[32m+[m[32m// Redes a monitorar (pode ser configurado por env ou hardcoded)[m
+[32m+[m[32mconst MONITOR_NETWORKS = (process.env.MONITOR_NETWORKS || 'polygon,ethereum,binance').split(',').map(n => n.trim().toLowerCase());[m
+[32m+[m
+[32m+[m[32mconst WS_RPC_ENDPOINTS = MONITOR_NETWORKS.flatMap(net => getWsRpcUrls(net));[m
+[32m+[m[32mconst HTTP_RPC_ENDPOINTS = MONITOR_NETWORKS.flatMap(net => getHttpRpcUrls(net));[m
+[32m+[m[32mconst ALL_RPC_ENDPOINTS = MONITOR_NETWORKS.flatMap(net => getAllRpcUrls(net));[m
+ [m
+ /**[m
+  * Starts all server-side services[m
+[1mdiff --git a/services/smartContractService.ts b/services/smartContractService.ts[m
+[1mindex 13407ce..421376a 100644[m
+[1m--- a/services/smartContractService.ts[m
+[1m+++ b/services/smartContractService.ts[m
+[36m@@ -2,7 +2,6 @@[m [mimport { ethers } from "ethers";[m
+ import { db } from "../lib/firebase";[m
+ import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";[m
+ import { web3Service } from "./web3Service";[m
+[31m-import RPC_URLS, { getRpcUrl } from "../config/rpcUrls";[m
+ import { getHttpRpcUrls } from "../config/rpcConfig";[m
+ [m
+ class SmartContractService {[m
+[36m@@ -1695,7 +1694,7 @@[m [mclass SmartContractService {[m
+ [m
+       // Para Polygon, Ethereum e Binance, sempre usar o endpoint do rpcConfig[m
+       if (["polygon", "ethereum", "binance"].includes(normalizedNetworkName)) {[m
+[31m-        const rpcList = getHttpRpcUrls();[m
+[32m+[m[32m        const rpcList = getHttpRpcUrls(normalizedNetworkName);[m
+         // Filtra para pegar o endpoint correto para a rede[m
+         if (normalizedNetworkName === "polygon") {[m
+           rpcUrl = rpcList.find(url => url.includes("polygon"));[m
+[36m@@ -1722,10 +1721,11 @@[m [mclass SmartContractService {[m
+           binanceTestnet: "https://data-seed-prebsc-1-s1.binance.org:8545"[m
+         };[m
+         rpcUrl = publicRPCs[normalizedNetworkName];[m
+[32m+[m[32m        // Fallback: se não encontrar, tenta pegar o primeiro endpoint HTTP disponível[m
+         if (!rpcUrl) {[m
+[31m-          const configUrl = getRpcUrl(normalizedNetworkName);[m
+[31m-          if (configUrl && !configUrl.includes("infura.io/v3/undefined")) {[m
+[31m-            rpcUrl = configUrl;[m
+[32m+[m[32m          const fallbackList = getHttpRpcUrls(normalizedNetworkName);[m
+[32m+[m[32m          if (fallbackList.length > 0) {[m
+[32m+[m[32m            rpcUrl = fallbackList[0];[m
+           }[m
+         }[m
+       }[m
+[1mdiff --git a/utils/monitors/contractMonitor.ts b/utils/monitors/contractMonitor.ts[m
+[1mindex 9ad64e2..a4b237a 100644[m
+[1m--- a/utils/monitors/contractMonitor.ts[m
+[1m+++ b/utils/monitors/contractMonitor.ts[m
+[36m@@ -40,9 +40,11 @@[m [mif (!serviceWalletAddress && process.env.OWNER_PRIVATE_KEY) {[m
+ }[m
+ const tokenDistributorAddress = process.env.TOKEN_DISTRIBUTOR_ADDRESS || process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS || '';[m
+ [m
+[31m-// Obter endpoints centralizados[m
+[31m-const wsRpcUrls = getWsRpcUrls();[m
+[31m-const httpRpcUrls = getHttpRpcUrls();[m
+[32m+[m[32m// Redes a monitorar (pode ser configurado por env ou hardcoded)[m
+[32m+[m[32mconst MONITOR_NETWORKS = (process.env.MONITOR_NETWORKS || 'polygon,ethereum,binance').split(',').map(n => n.trim().toLowerCase());[m
+[32m+[m
+[32m+[m[32mconst wsRpcUrls = MONITOR_NETWORKS.flatMap(net => getWsRpcUrls(net));[m
+[32m+[m[32mconst httpRpcUrls = MONITOR_NETWORKS.flatMap(net => getHttpRpcUrls(net));[m
+ [m
+ console.log('WebSocket RPC URLs (prioridade):', wsRpcUrls);[m
+ console.log('HTTP RPC URLs (fallback):', httpRpcUrls);[m
+
+[33mcommit 5a19470199b099e7e4880859c9f8cc83cfa8b2ae[m
+Author: Andre Ventura <ventura.vnsa@gmail.com>
+Date:   Tue May 6 12:03:24 2025 +0100
+
+    Corrigido erros de tipagem no server-init.ts e arquivos relacionados ao [1;31mmonitor[mamento de contratos
+
+[1mdiff --git a/app/admin/dashboard/page.tsx b/app/admin/dashboard/page.tsx[m
+[1mindex b102ee7..06b2a66 100644[m
+[1m--- a/app/admin/dashboard/page.tsx[m
+[1m+++ b/app/admin/dashboard/page.tsx[m
+[36m@@ -82,10 +82,10 @@[m [mconst AdminDashboard: React.FC = () => {[m
+   // Use the permissions hook[m
+   const { role, permissions, loading: permissionsLoading, hasPermission } = useAdminPermissions();[m
+ [m
+[31m-  // Definir um estado inicial consistente para evitar problemas de hidratação SSR vs CSR[m
+[32m+[m[32m  // Define a consistent initial state to avoid SSR vs CSR hydration problems[m
+   const [isClient, setIsClient] = useState(false);[m
+   [m
+[31m-  // Certificar-se de que a renderização no cliente seja consistente com o servidor[m
+[32m+[m[32m  // Ensure client-side rendering is consistent with the server[m
+   useEffect(() => {[m
+     setIsClient(true);[m
+   }, []);[m
+[36m@@ -2127,7 +2127,7 @@[m [mconst fetchEmployersList = async () => {[m
+         <aside className="w-1/4 bg-black/70 p-6 flex flex-col items-start min-h-screen">[m
+           <div className="flex flex-col items-center mb-6">[m
+           </div>[m
+[31m-            {/* Foto do Usuário */}[m
+[32m+[m[32m            {/* User Photo */}[m
+             <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">[m
+               <img[m
+                 src={userPhoto}[m
+[36m@@ -2287,7 +2287,7 @@[m [mconst fetchEmployersList = async () => {[m
+                 }`}[m
+                 onClick={() => {[m
+                   setActiveTab("instantJobs");[m
+[31m-                  // Não definir um subtab específico, deixar null para mostrar tudo[m
+[32m+[m[32m                  // Don't set a specific subtab, leave as null to show everything[m
+                 }}[m
+               >[m
+                 Manage Instant Jobs[m
+[36m@@ -2431,7 +2431,7 @@[m [mconst fetchEmployersList = async () => {[m
+             </div>[m
+           )}[m
+           [m
+[31m-          {/* Mostrar conteúdo apenas se não estiver carregando permissões */}[m
+[32m+[m[32m          {/* Show content only if permissions are not loading */}[m
+           {!permissionsLoading && ([m
+             <>[m
+               {/* Add Loading and Error states display */}[m
+[36m@@ -2443,7 +2443,7 @@[m [mconst fetchEmployersList = async () => {[m
+                   <h2 className="text-3xl font-semibold text-orange-500 mb-6 text-left">Manage Users</h2>[m
+                   <p className="text-gray-300 text-left"></p>[m
+                   <div className="mt-6 bg-black/50 p-6 rounded-lg">[m
+[31m-                    {/* Lista de empregadores é visível para todos os níveis */}[m
+[32m+[m[32m                    {/* Employer list is visible for all levels */}[m
+                     {activeSubTab === "employers-list" && ([m
+                       <div>[m
+                         <div className="flex justify-between items-center mb-4">[m
+[36m@@ -2456,7 +2456,7 @@[m [mconst fetchEmployersList = async () => {[m
+                             className="border border-gray-300 rounded-lg px-3 py-1 text-black w-1/3"[m
+                           />[m
+                         </div>[m
+[31m-                        {/* Formulário para criar novo employer */}[m
+[32m+[m[32m                        {/* Form to create new employer */}[m
+                         <form onSubmit={ha

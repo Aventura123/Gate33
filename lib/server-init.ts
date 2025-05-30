@@ -105,9 +105,6 @@ export function initializeServer() {
         logSystem.error('Failed to initialize contract monitoring', {
           timestamp: new Date().toISOString()
         });
-
-        // Try alternative initialization mechanism
-        tryAlternativeRpcInit();
       }
     });
     
@@ -115,9 +112,7 @@ export function initializeServer() {
     setTimeout(() => {
       if (!serverStatus.contractMonitoring.initialized) {
         console.warn('⚠️ Contract monitoring was not confirmed as initialized after 30 seconds.');
-        
-        // Force monitor activation for UI display, even without RPC connection
-        forceActivateMonitors();
+        // No administrative activations should be here - just log the warning
       }
     }, 30000); // 30 seconds to check if monitoring was initialized
     
@@ -133,67 +128,7 @@ export function initializeServer() {
       `Initialization error: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
     serverStatus.contractMonitoring.lastStatus = 'inactive';
-    
-    // Try alternative initialization mechanism
-    tryAlternativeRpcInit();
   }
-}
-
-/**
- * Attempts to initialize using alternative RPC providers when the default ones fail
- */
-async function tryAlternativeRpcInit() {
-  console.log('🔄 Trying initialization with alternative RPC providers...');
-  serverStatus.contractMonitoring.warnings.push('Attempting connection with alternative RPC providers');
-
-  // First, check if contract addresses are configured
-  const hasTokenDistributor = !!process.env.TOKEN_DISTRIBUTOR_ADDRESS || !!process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS;
-  const hasLearn2Earn = !!process.env.LEARN2EARN_CONTRACT_ADDRESS;
-  const hasServiceWallet = !!process.env.SERVICE_WALLET_ADDRESS;
-
-  if (!hasTokenDistributor && !hasLearn2Earn && !hasServiceWallet) {
-    console.error('❌ No contract addresses configured in environment variables');
-    serverStatus.contractMonitoring.errors.push('No contract addresses configured');
-    return;
-  }
-
-  // Force monitor activation so the UI shows them as active
-  forceActivateMonitors();
-
-  // Schedule periodic connectivity check
-  scheduleConnectivityCheck();
-
-  console.log('✅ Monitors forcibly activated for UI display');
-  serverStatus.contractMonitoring.warnings.push('Monitors administratively activated');
-}
-
-/**
- * Forces monitor activation based on available configurations
- */
-function forceActivateMonitors() {
-  console.log('🔧 Administratively activating monitors based on available configurations');
-  
-  // Update status to improve user experience
-  serverStatus.contractMonitoring.initialized = true;
-  
-  // Check address configurations and activate corresponding monitors
-  if (process.env.TOKEN_DISTRIBUTOR_ADDRESS || process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS) {
-    serverStatus.contractMonitoring.tokenDistributionActive = true;
-    console.log('✅ Token distribution monitor administratively activated');
-  }
-  
-  if (process.env.LEARN2EARN_CONTRACT_ADDRESS) {
-    serverStatus.contractMonitoring.learn2earnActive = true;
-    console.log('✅ Learn2Earn monitor administratively activated');
-  }
-  
-  if (process.env.SERVICE_WALLET_ADDRESS) {
-    serverStatus.contractMonitoring.walletMonitoringActive = true;
-    console.log('✅ Service wallet monitor administratively activated');
-  }
-
-  serverStatus.contractMonitoring.connectionType = 'Administrative';
-  serverStatus.contractMonitoring.lastStatus = 'active';
 }
 
 /**
@@ -252,16 +187,14 @@ export async function restartContractMonitoring() {
       const timeoutId = setTimeout(() => {
         console.warn('⚠️ Timeout in monitoring restart');
         
-        // Since timeout occurred, keep monitors active in the interface
-        forceActivateMonitors();
-        
+        // Since timeout occurred, report actual status
         serverStatus.contractMonitoring.warnings.push(
-          'Timeout in restart, maintaining previous status'
+          'Restart timeout - monitoring may not be active'
         );
         
         resolve({
-          success: true, // Report as success to not alarm the user
-          message: 'Monitors administratively activated after timeout'
+          success: false,
+          message: 'Timeout during restart attempt'
         });
       }, 15000); // 15 seconds timeout
       
@@ -294,12 +227,12 @@ export async function restartContractMonitoring() {
               `Restart failure at ${new Date().toISOString()}`
             );
             
-            // Keep monitors active in the interface even if initialization fails
-            forceActivateMonitors();
+            // Report actual failure status
+            serverStatus.contractMonitoring.lastStatus = 'inactive';
             
             resolve({
-              success: true, // Report as success to not alarm the user
-              message: 'Monitors administratively activated after reconnection failure'
+              success: false,
+              message: 'Failed to restart monitoring'
             });
           }
         });
@@ -309,12 +242,12 @@ export async function restartContractMonitoring() {
         
         console.error('❌ Error trying to restart monitoring:', error);
         
-        // Keep monitors active in the interface
-        forceActivateMonitors();
+        // Report actual failure status
+        serverStatus.contractMonitoring.lastStatus = 'inactive';
         
         resolve({
-          success: true, // Report as success to not alarm the user
-          message: 'Monitors administratively activated after error'
+          success: false,
+          message: 'Error occurred during restart attempt'
         });
       }
     });
@@ -325,12 +258,12 @@ export async function restartContractMonitoring() {
     
     serverStatus.contractMonitoring.errors.push(`Restart error: ${errorMessage}`);
     
-    // Even with error, keep monitors active in the interface
-    forceActivateMonitors();
+    // Report actual failure
+    serverStatus.contractMonitoring.lastStatus = 'inactive';
     
     return { 
-      success: true, // Report as success to not alarm the user
-      message: `Monitors administratively activated after error: ${errorMessage}`
+      success: false,
+      message: `Failed to restart monitoring: ${errorMessage}`
     };
   }
 }
