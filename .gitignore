@@ -63,3 +63,7 @@ serviceAccountKey.json
 # Local deployment files
 .netlify/
 .env*.local
+
+# Documentation files
+/docs/
+docs/*.md
