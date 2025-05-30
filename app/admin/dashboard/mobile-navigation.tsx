@@ -4,11 +4,11 @@ import React from 'react';
 
 // Define o tipo para as props do componente
 interface MobileNavigationProps {
-  activeTab: "nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "notifications";
+  activeTab: "nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "notifications" | "systemActivity" | "accounting" | "ads" | "newsletter" | "marketing";
   isMobileMenuOpen: boolean;
   hasPermission: (permission: string) => boolean;
   activeSubTab: string | null;
-  handleMobileMenuOptionClick: (tab: "nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "notifications", subTab?: string | null) => void;
+  handleMobileMenuOptionClick: (tab: "nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "notifications" | "systemActivity" | "accounting" | "ads" | "newsletter" | "marketing", subTab?: string | null) => void;
 }
 
 /**
@@ -271,6 +271,16 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             </li>
           </ul>
         )}
+      </li>      {/* System Activity Tab */}
+      <li>
+        <div
+          className={`cursor-pointer p-2 rounded-lg text-center md:text-left text-sm ${
+            activeTab === "systemActivity" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
+          }`}
+          onClick={() => handleMobileMenuOptionClick("systemActivity")}
+        >
+          System Activity
+        </div>
       </li>
 
       {/* Notifications Tab */}

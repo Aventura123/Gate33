@@ -23,6 +23,7 @@ import WalletButton from '../../../components/WalletButton';
 import AdminNewsletterManager from "../../../components/admin/AdminNewsletterManager";
 import AdminSocialMediaManager from "../../../components/admin/AdminSocialMediaManager";
 import Learn2EarnContractsPanel from "../../../components/ui/Learn2EarnContractsPanel";
+import SystemActivityMonitor from "../../../components/admin/SystemActivityMonitor";
 
 interface NFT {
   id: string;
@@ -148,10 +149,9 @@ type Employer = {
   address?: string;
 };
 
-const AdminDashboard: React.FC = () => {
-  const router = useRouter();
-  // Update the type declaration to include "learn2earn" and "instantJobs"
-  const [activeTab, setActiveTab] = useState<"nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "instantJobs" | "accounting" | "ads" | "newsletter" | "marketing">("nfts");
+const AdminDashboard: React.FC = () => {  const router = useRouter();
+  // Update the type declaration to include new tabs
+  const [activeTab, setActiveTab] = useState<"nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "instantJobs" | "accounting" | "ads" | "newsletter" | "marketing" | "systemActivity">("nfts");
   const [activeSubTab, setActiveSubTab] = useState<string | null>("add");
   
   // Use the permissions hook
@@ -2020,10 +2020,23 @@ const fetchEmployersList = async () => {
                     >
                       Job Pricing
                     </button>
+                  </li>                  <li>
+                    <button
+                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                        activeSubTab === "config" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                      }`}
+                      onClick={() => {
+                        setActiveTab("payments");
+                        setActiveSubTab("config");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                    >
+                      JobPost P. Manag.
+                    </button>
                   </li>
-                </ul>
-              )}
-            </li>            {/* Instant Jobs tab */}
+                </ul>              )}
+            </li>
+            {/* Instant Jobs tab */}
             <li>
               <button
                 className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
@@ -2035,7 +2048,7 @@ const fetchEmployersList = async () => {
               >
                 Manage Instant Jobs
               </button>
-            </li>            {/* Learn2Earn tab */}
+            </li>{/* Learn2Earn tab */}
             <li>
               <button
                 className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
@@ -2081,19 +2094,7 @@ const fetchEmployersList = async () => {
                     </button>
                   </li>
                 </ul>
-              )}
-            </li>            <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  setActiveTab("accounting");
-                  setActiveSubTab(null);
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                Accounting Dashboard
-              </button>
-            </li>
+              )}            </li>
 
             <li>
               <button
@@ -2105,21 +2106,7 @@ const fetchEmployersList = async () => {
                 }}
               >
                 Ads Manager
-              </button>
-            </li>
-
-            <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "payments" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  setActiveTab("payments");
-                  setActiveSubTab("config");
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                JobPost P. Manag.
-              </button>
-            </li>            {/* --- MARKETING MENU --- */}
+              </button>            </li>{/* --- MARKETING MENU --- */}
             <li>
               <button
                 className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "marketing" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
@@ -2159,11 +2146,32 @@ const fetchEmployersList = async () => {
                     >
                       Social Media
                     </button>
-                  </li>
-                </ul>
+                  </li>                </ul>
               )}
             </li>
-            {/* --- END MARKETING MENU --- */}
+            {/* --- END MARKETING MENU --- */}            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                onClick={() => {
+                  setActiveTab("accounting");
+                  setActiveSubTab(null);
+                  if (isMobile) setMobileMenuOpen(false);
+                }}
+              >
+                Accounting Dashboard
+              </button>
+            </li>            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "systemActivity" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                onClick={() => {
+                  setActiveTab("systemActivity");
+                  setActiveSubTab(null);
+                  if (isMobile) setMobileMenuOpen(false);
+                }}
+              >
+                System Activity
+              </button>
+            </li>
             {hasPermission('canAccessSettings') && (
               <li>
                 <button
@@ -3456,9 +3464,15 @@ const fetchEmployersList = async () => {
                   <div>
                     <Learn2EarnContractsPanel db={db} isMobile={isMobile} />
                   </div>
+                )}                {/* System Activity Monitor Section */}
+                {activeTab === "systemActivity" && (
+                  <div>
+                    <SystemActivityMonitor />
+                  </div>
                 )}
 
-                {/* Accounting Dashboard Section */}                {activeTab === "accounting" && (
+                {/* Accounting Dashboard Section */}
+                {activeTab === "accounting" && (
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Accounting Dashboard</h2>
                     <div className="mt-6">
