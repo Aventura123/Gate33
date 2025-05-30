@@ -400,10 +400,6 @@ class InstantJobsEscrowService {
             networkName = 'binance';
             console.log('BSC/BNB Smart Chain detected by chain ID (56)');
             break;
-          case 97:
-            networkName = 'binancetestnet';
-            console.log('BSC Testnet detected by chain ID (97)');
-            break;
             
           // Optimism networks
           case 10:
@@ -459,15 +455,6 @@ class InstantJobsEscrowService {
       (n.includes('binance') && !n.includes('test')) ||
       n.includes('bnb') && !n.includes('test')
     ) return 'binance';
-    
-    // Binance Testnet
-    if (
-      n.includes('binancetestnet') ||
-      n.includes('bsctestnet') ||
-      n.includes('bnbsmartchaintestnet') ||
-      (n.includes('binance') && n.includes('test')) ||
-      (n.includes('bnb') && n.includes('test'))
-    ) return 'binancetestnet';
     
     // Optimism
     if (n.includes('optimism')) return 'optimism';

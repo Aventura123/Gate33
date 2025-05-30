@@ -23,7 +23,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [isUsingWalletConnect, setIsUsingWalletConnect] = useState(false);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
-  const [availableNetworks] = useState<string[]>(["ethereum", "polygon", "binance", "binanceTestnet", "avalanche", "optimism"]);
+  const [availableNetworks] = useState<string[]>(["ethereum", "polygon", "binance", "avalanche", "optimism"]);
 
   // Query provider and set state
   const updateWalletInfo = async () => {

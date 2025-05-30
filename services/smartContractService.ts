@@ -18,7 +18,6 @@ class SmartContractService {
     ethereum: '0xdAC17F958D2ee523a2206206994597C13D831ec7',    // Ethereum Mainnet USDT
     polygon: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',     // Polygon USDT
     binance: '0x55d398326f99059fF775485246999027B3197955',     // BSC Mainnet USDT
-    binanceTestnet: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd', // BSC Testnet USDT (para testes)
     avalanche: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',   // Avalanche USDT
     arbitrum: '0xFd086bC7CD5C481DCC9c85ebE478A1C0b69FCbb9',    // Arbitrum USDT
     optimism: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'     // Optimism USDT
@@ -94,6 +93,14 @@ class SmartContractService {
   // Check if contract is initialized
   isContractInitialized() {
     return this.provider !== null && this.signer !== null;
+  }
+
+  // Reset the contract instance when switching networks
+  resetContract() {
+    console.log("Resetting contract instance and contract address");
+    this.contract = null;
+    this.contractAddress = null;
+    this.lastNetworkCheck = 0; // Reset network cache to force update
   }
 
   // Get current network information
@@ -383,6 +390,7 @@ class SmartContractService {
   }
     // Helper method to get network name from chain ID
   private getNetworkName(chainId: number): string | null {
+    // Remove chainId 97 and 'binanceTestnet' from networkMap
     const networkMap: Record<number, string> = {
       1: 'ethereum',    // Ethereum Mainnet
       3: 'ropsten',     // Ropsten Testnet
@@ -390,7 +398,6 @@ class SmartContractService {
       5: 'goerli',      // Goerli Testnet
       42: 'kovan',      // Kovan Testnet
       56: 'binance',    // Binance Smart Chain
-      97: 'binanceTestnet', // Binance Smart Chain Testnet
       137: 'polygon',   // Polygon (Matic) Mainnet
       80001: 'mumbai',  // Mumbai Testnet (Polygon)
       42161: 'arbitrum', // Arbitrum
@@ -412,7 +419,7 @@ class SmartContractService {
     
     // Handle specific network name mappings
     if (normalized.includes("binance") || normalized.includes("bsc")) {
-      return normalized.includes("testnet") ? "binanceTestnet" : "binance";
+      return "binance";
     } else if (normalized.includes("ethereum") || normalized === "eth") {
       return "ethereum";
     } else if (normalized.includes("polygon") || normalized.includes("matic")) {
@@ -425,8 +432,6 @@ class SmartContractService {
       return "optimism";
     } else if (normalized.includes("mumbai")) {
       return "mumbai";
-    } else if (normalized.includes("testnet") && normalized.includes("binance")) {
-      return "binanceTestnet";
     }
     
     // Default: return the cleaned network name
@@ -1561,6 +1566,7 @@ class SmartContractService {
   private getNetworkCurrency(networkName: string | null): string | null {
     if (!networkName) return null;
     
+    // Remove 'binanceTestnet' from currencyMap
     const currencyMap: Record<string, string> = {
       'ethereum': 'ETH',
       'ropsten': 'ETH',
@@ -1568,7 +1574,6 @@ class SmartContractService {
       'goerli': 'ETH',
       'kovan': 'ETH',
       'binance': 'BNB',
-      'binanceTestnet': 'BNB',
       'polygon': 'MATIC',
       'mumbai': 'MATIC',
       'arbitrum': 'ETH',
@@ -1609,8 +1614,7 @@ class SmartContractService {
           arbitrum: "https://arb1.arbitrum.io/rpc",
           optimism: "https://mainnet.optimism.io",
           ethereum: "https://eth.llamarpc.com",
-          mumbai: "https://rpc-mumbai.maticvigil.com",
-          binanceTestnet: "https://data-seed-prebsc-1-s1.binance.org:8545"
+          mumbai: "https://rpc-mumbai.maticvigil.com"
         };
         rpcUrl = publicRPCs[normalizedNetworkName];
         // Fallback: se não encontrar, tenta pegar o primeiro endpoint HTTP disponível

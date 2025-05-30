@@ -1,6 +1,7 @@
 interface SmartContractService {
   initializeContract(): Promise<void>;
   isContractInitialized(): boolean;
+  resetContract(): void;
   getFeeCollector(): Promise<string>;
   getDevelopmentWallet(): Promise<string>;
   getCharityWallet(): Promise<string>;

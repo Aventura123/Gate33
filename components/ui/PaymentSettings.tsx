@@ -171,13 +171,21 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
   useEffect(() => {
     if (hasPermission) {
       fetchCurrentSettings();
-      checkWalletConnection();
-      
-      // Setup event listener for network changes
+      checkWalletConnection();      // Setup event listener for network changes
       const handleNetworkChange = (event: CustomEvent) => {
         console.log("🔄 Network changed detected:", event.detail);
-        // Re-fetch contract data when network changes
-        fetchContractData();
+        
+        // Show loading state
+        setWalletUpdateError("Switching networks... Fetching fee distribution data for the new network.");
+        
+        // Reset contract initialization to ensure we're using the correct contract for the new network
+        smartContractService.resetContract();
+        
+        // Wait a short delay before fetching new data to ensure network is fully switched
+        setTimeout(() => {
+          // Re-fetch contract data when network changes
+          fetchContractData();
+        }, 1000);
       };
       
       // Register event listener
@@ -210,11 +218,23 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       fetchContractData();
     }
   }, [contextWalletAddress]);
-
   // Fetch contract data (addresses and percentages) with more robust error handling
   const fetchContractData = async () => {
     try {
       setWalletUpdateError(null);
+      
+      // Reset all wallet addresses and percentages when network changes or refreshing data
+      // This prevents showing stale data from a previous network
+      setFeeCollectorAddress("");
+      setDevelopmentWalletAddress("");
+      setCharityWalletAddress("");
+      setEvolutionWalletAddress("");
+      setFeePercentage(0);
+      setDevelopmentPercentage(0);
+      setCharityPercentage(0);
+      setEvolutionPercentage(0);
+      setTotalPercentage(0);
+      setContractOwner("");
 
       // Check the current network
       const walletInfo = web3Service.getWalletInfo();
@@ -275,17 +295,17 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           `Please add a contract for this network in the settings or connect to a supported network.`
         );
         return;
-      }
-
-      // Verify if the contract is initialized before making calls
-      if (!smartContractService.isContractInitialized()) {
-        try {
-          await smartContractService.initializeContract(undefined, contractAddress);
-        } catch (initError: any) {
-          console.error(`Error initializing contract on ${currentNetworkName}:`, initError);
-          setWalletUpdateError(`Could not initialize contract on ${currentNetworkName}: ${initError.message || "check your network connection"}`);
-          return;
-        }
+      }      // Always reinitialize the contract with the current network and address to prevent stale data
+      try {
+        // First ensure we're using the correct network
+        await smartContractService.switchContractNetwork(currentChainId, contractAddress);
+        
+        // Then initialize the contract with the correct address
+        await smartContractService.initializeContract(undefined, contractAddress);
+      } catch (initError: any) {
+        console.error(`Error initializing contract on ${currentNetworkName}:`, initError);
+        setWalletUpdateError(`Could not initialize contract on ${currentNetworkName}: ${initError.message || "check your network connection"}`);
+        return;
       }
       
       if (smartContractService.isContractInitialized()) {
@@ -1299,14 +1319,14 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 <span className="text-orange-400 font-bold">70%</span>
               </div>
               <div className="w-full bg-black/50 h-4 rounded-lg overflow-hidden">
-                <div className="h-full bg-orange-500" style={{width: '70%'}}></div>
+                <div className="h-full bg-orange-500 w-[70%]"></div>
               </div>
                 <div className="flex justify-between items-center mt-1">
                 <span className="text-gray-300 text-sm">Fee Distribution (total):</span>
                 <span className="text-orange-400 font-bold">30%</span>
               </div>
               <div className="w-full bg-black/50 h-4 rounded-lg overflow-hidden">
-                <div className="h-full bg-orange-500" style={{width: '30%'}}></div>
+                <div className="h-full bg-orange-500 w-[30%]"></div>
               </div>
                 <div className="grid grid-cols-4 gap-1 mt-1">
                 <div className="text-center">
@@ -1404,10 +1424,24 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               onChange={(e) => setAvalancheContract(e.target.value)}
               className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
               placeholder="0x..."
-            />
-          </div>
+            />          </div>
         </div>
-          {/* Current Configuration Information */}        <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
+        
+        {/* Save System Settings Button */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            type="submit"
+            disabled={isUpdating}
+            className={`bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg disabled:opacity-60 font-semibold shadow text-sm ${
+              isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            {isUpdating ? 'Updating...' : 'Save System Settings'}
+          </button>
+        </div>
+        
+        {/* Current Configuration Information */}
+        <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
           <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Current System Configuration</h3>          <div className="bg-black/40 p-2 md:p-3 rounded-lg overflow-auto">
             <pre className="text-sm text-gray-400 whitespace-pre-wrap">
               {JSON.stringify(currentSystemConfig, null, 2)}
@@ -1419,18 +1453,6 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               <span> Last update: {currentSystemConfig.updatedAt}</span>
             )}
           </p>
-        </div>
-        
-        <div className="flex items-center justify-between pt-4">
-          <button
-            type="submit"
-            disabled={isUpdating}
-            className={`bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg disabled:opacity-60 font-semibold shadow text-sm ${
-              isUpdating ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-          >
-            {isUpdating ? 'Updating...' : 'Save System Settings'}
-          </button>
         </div>
       </form>
     </div>

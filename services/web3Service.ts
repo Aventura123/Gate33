@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-export type NetworkType = 'ethereum' | 'polygon' | 'binance' | 'binanceTestnet' | 'avalanche' | 'optimism';
+export type NetworkType = 'ethereum' | 'polygon' | 'binance' | 'avalanche' | 'optimism';
 
 export interface WalletInfo {
   address: string;
@@ -54,9 +54,7 @@ class Web3Service {
   /**
    * Gets the name of a network from its chainId
    */  private getNetworkNameForChainId(chainId: number): string {
-    // Specific identification for BSC Testnet (97)
-    if (chainId === 97) return 'BNB Smart Chain Testnet';
-    // Other common networks
+    // Remove BSC Testnet (97) logic
     if (chainId === 1) return 'Ethereum Mainnet';
     if (chainId === 56) return 'Binance Smart Chain';
     if (chainId === 137) return 'Polygon Mainnet';
@@ -303,8 +301,7 @@ class Web3Service {
       }
       
       // Initialize the provider with detected chainId, without forcing any specific network
-      const networkName = chainId === 97 ? "bnbt" : 
-                          chainId === 56 ? "bnb" : 
+      const networkName = chainId === 56 ? "bnb" : 
                           chainId === 1 ? "homestead" : 
                           chainId === 137 ? "matic" :
                           chainId === 43114 ? "avalanche" :
@@ -405,13 +402,12 @@ class Web3Service {
       this.wcV2Provider = await EthereumProvider.init({
         projectId,
         chains,
-        optionalChains: [1, 137, 56, 97, 43114, 10], // Include BSC testnet, Avalanche, and Optimism
+        optionalChains: [1, 137, 56, 43114, 10], // Include Avalanche and Optimism
         showQrModal: true,
         rpcMap: {
           1: infuraRpc,
           137: "https://polygon-rpc.com",
           56: "https://bsc-dataseed.binance.org/",
-          97: "https://data-seed-prebsc-1-s1.binance.org:8545/",
           43114: "https://api.avax.network/ext/bc/C/rpc",
           10: "https://mainnet.optimism.io"
         },
@@ -530,8 +526,7 @@ class Web3Service {
         
         // Determine the network name based on chainId
         let networkName = "any";
-        if (numericChainId === 97) networkName = "bnbt";
-        else if (numericChainId === 56) networkName = "bnb";
+        if (numericChainId === 56) networkName = "bnb";
         else if (numericChainId === 1) networkName = "homestead";
         else if (numericChainId === 137) networkName = "matic";
         else if (numericChainId === 43114) networkName = "avalanche";
@@ -663,7 +658,7 @@ class Web3Service {
    * Switches to a specific network
    */
   async switchNetwork(networkType: NetworkType): Promise<boolean> {
-    const network = this.networks[networkType];
+    const network = this.networks[networkType as keyof typeof this.networks];
 
     // Log the start of the operation with important information
     console.log(`[switchNetwork] Switching to network ${networkType} (chainId: ${network.chainId})`, {
@@ -881,7 +876,7 @@ class Web3Service {
    * Attempts to programmatically switch network for both MetaMask and WalletConnect.
    * Returns true if switch was successful, throws with a clear message if not supported or rejected.
    */  async attemptProgrammaticNetworkSwitch(networkType: NetworkType): Promise<boolean> {
-    const network = this.networks[networkType];
+    const network = this.networks[networkType as keyof typeof this.networks];
     const chainIdHex = '0x' + network.chainId.toString(16);    // WalletConnect v2
     if (this.wcV2Provider) {      
       // Add extensive logging to diagnose WalletConnect session state
@@ -1378,7 +1373,7 @@ class Web3Service {
         }
 
         // Ensure contractAddress is optional in NETWORK_CONFIG
-        const networkConfig = this.networks[network];
+        const networkConfig = this.networks[network as keyof typeof this.networks];
         if (networkConfig && 'contractAddress' in networkConfig) {
             return (networkConfig as any).contractAddress || null;
         }

@@ -7,7 +7,6 @@ const CUSTOM_RPC: Record<string, string | undefined> = {
   polygon: process.env.CUSTOM_POLYGON_RPC,
   ethereum: process.env.CUSTOM_ETHEREUM_RPC,
   binance: process.env.CUSTOM_BSC_RPC,
-  binanceTestnet: process.env.CUSTOM_BSC_TESTNET_RPC,
   avalanche: process.env.CUSTOM_AVALANCHE_RPC,
   optimism: process.env.CUSTOM_OPTIMISM_RPC,
 };
@@ -31,13 +30,6 @@ const HTTP_RPC_URLS: Record<string, string[]> = {
     CUSTOM_RPC.binance,
     'https://bsc-dataseed.binance.org',
     'https://bsc.publicnode.com',
-  ].filter(Boolean) as string[],
-  binanceTestnet: [
-    CUSTOM_RPC.binanceTestnet,
-    'https://bsc-testnet.public.blastapi.io',
-    'https://data-seed-prebsc-1-s1.binance.org:8545',
-    'https://data-seed-prebsc-2-s1.binance.org:8545',
-    'https://bsc-testnet.publicnode.com',
   ].filter(Boolean) as string[],
   avalanche: [
     CUSTOM_RPC.avalanche,
@@ -67,10 +59,6 @@ const WS_RPC_URLS: Record<string, string[]> = {
   binance: [
     CUSTOM_RPC.binance && CUSTOM_RPC.binance.startsWith('wss://') ? CUSTOM_RPC.binance : undefined,
     'wss://bsc-ws-node.nariox.org:443',
-  ].filter(Boolean) as string[],
-  binanceTestnet: [
-    CUSTOM_RPC.binanceTestnet && CUSTOM_RPC.binanceTestnet.startsWith('wss://') ? CUSTOM_RPC.binanceTestnet : undefined,
-    'wss://bsc-testnet.publicnode.com',
   ].filter(Boolean) as string[],
   avalanche: [
     CUSTOM_RPC.avalanche && CUSTOM_RPC.avalanche.startsWith('wss://') ? CUSTOM_RPC.avalanche : undefined,

@@ -54,7 +54,6 @@ const WalletModal: React.FC<WalletModalProps> = ({
       case 'ethereum': return { name: 'Ethereum Mainnet', color: 'bg-blue-500' };
       case 'polygon': return { name: 'Polygon Mainnet', color: 'bg-purple-500' };
       case 'binance': return { name: 'Binance Smart Chain', color: 'bg-yellow-500' };
-      case 'binanceTestnet': return { name: 'BSC Testnet', color: 'bg-orange-500' };
       case 'optimism': return { name: 'Optimism', color: 'bg-pink-500' };
       case 'avalanche': return { name: 'Avalanche C-Chain', color: 'bg-red-500' };
       default: return { name: network, color: 'bg-gray-500' };
