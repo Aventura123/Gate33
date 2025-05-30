@@ -316,22 +316,19 @@ const SystemActivityMonitor: React.FC = () => {
       setOperationMessage({ type: 'error', text: 'Please select a valid date range.' });
       return;
     }
-
     try {
       setIsClearing(true);
-
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('You need to be authenticated to perform this operation.');
       }
-
       const userId = localStorage.getItem('userId');
       const userRole = localStorage.getItem('userRole');
-
       if (userRole !== 'super_admin' && userRole !== 'admin') {
         throw new Error('You do not have permission to clear system logs.');
       }
 
+      // Enviar a senha diretamente para o backend verificar
       const clearResponse = await fetch('/api/support/logs', {
         method: 'DELETE',
         headers: {
@@ -359,7 +356,8 @@ const SystemActivityMonitor: React.FC = () => {
     } finally {
       setIsClearing(false);
     }
-  };  // Função para iniciar o processo de confirmação de limpeza
+  };
+  // Função para iniciar o processo de confirmação de limpeza
   const startClearConfirmation = () => {
     if (!startDate || !endDate) {
       setOperationMessage({ type: 'error', text: 'Please select a valid date range.' });
@@ -683,38 +681,36 @@ const SystemActivityMonitor: React.FC = () => {
                           : 'bg-red-600 hover:bg-red-700 text-white'
                         }`}
                     >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
                       Clear Logs
                     </button>
                   ) : (
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={handleClearLogs}
-                        disabled={isClearing}
-                        className={`w-1/2 px-4 py-2 rounded-lg flex items-center justify-center
-                          ${isClearing ? 'bg-gray-700 cursor-not-allowed text-gray-400' : 'bg-red-600 hover:bg-red-700 text-white'}`}
-                      >
-                        {isClearing ? (
-                          <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Clearing...
-                          </>
-                        ) : (
-                          <>Confirm Clear</>
-                        )}
-                      </button>
-                      <button
-                        onClick={cancelClearLogs}
-                        disabled={isClearing}
-                        className="w-1/2 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-white"
-                      >
-                        Cancel
-                      </button>
+                    <div className="space-y-2">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleClearLogs}
+                          disabled={isClearing}
+                          className={`flex-1 px-4 py-2 rounded-lg ${isClearing ? 'bg-gray-700 text-gray-400' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+                        >
+                          {isClearing ? (
+                            <>
+                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Clearing...
+                            </>
+                          ) : (
+                            <>Confirm Clear</>
+                          )}
+                        </button>
+                        <button
+                          onClick={cancelClearLogs}
+                          className="flex-1 px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600"
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

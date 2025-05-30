@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, limit, where, deleteDoc, Timestamp, doc, getDoc, setDoc } from "firebase/firestore";
-// Removed bcryptjs import as no longer needed
 
 export async function GET(request: Request) {
   try {
@@ -42,30 +41,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to fetch system logs" }, { status: 500 });
   }
 }
-// Função para ser utilizada no cliente para deletar logs
-export const deleteSystemLogs = async (token: string, startDate: string, endDate: string, userId: string) => {
-  try {
-    const response = await fetch('/api/support/logs', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ startDate, endDate, userId })
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Falha ao deletar logs');
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Erro ao deletar logs:', error);
-    throw error;
-  }
-};
 
 export async function DELETE(request: Request) {
-  try {    const { startDate, endDate, userId } = await request.json();
+  try {    
+    console.log("API: Recebendo requisição para limpar logs");
+    const requestData = await request.json();
+    const { startDate, endDate, userId } = requestData;
+    
     // Verifica o token do Firebase na header Authorization
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -75,40 +57,41 @@ export async function DELETE(request: Request) {
     if (!token) {
       return NextResponse.json({ error: "Invalid authentication token" }, { status: 401 });
     }
+    
+    // Verifica se o userId foi fornecido
     if (!userId) {
       return NextResponse.json({ error: "User ID not provided" }, { status: 400 });
     }
-    const userRef = doc(db, "admins", userId);
-    const userDoc = await getDoc(userRef);
-    if (!userDoc.exists()) {
-      return NextResponse.json({ error: "User not found" }, { status: 401 });
-    }
-    const userData = userDoc.data();
-    const userRole = userData.role;
-    if (userRole !== "super_admin" && userRole !== "admin" && userRole !== "support") {
-      return NextResponse.json({ error: "Permission denied. Only administrators can clear logs." }, { status: 403 });
-    }
+    
     if (!startDate || !endDate) {
       return NextResponse.json({ error: "Start and end dates are required" }, { status: 400 });
     }
+
     const startDateTime = new Date(startDate);
     const endDateTime = new Date(endDate);
     endDateTime.setHours(23, 59, 59, 999); // Definir para o fim do dia
     const startTimestamp = Timestamp.fromDate(startDateTime);
     const endTimestamp = Timestamp.fromDate(endDateTime);
+
     const logsCollection = collection(db, "systemLogs");
     const logsQuery = query(
       logsCollection,
       where("timestamp", ">=", startTimestamp),
       where("timestamp", "<=", endTimestamp)
     );
+
     const logsSnapshot = await getDocs(logsQuery);
+
     if (logsSnapshot.empty) {
       return NextResponse.json({ message: "No logs found in the specified date range" }, { status: 200 });
     }
+
     const deletePromises = logsSnapshot.docs.map(doc => deleteDoc(doc.ref));
+
     await Promise.all(deletePromises);
+
     const logsCount = logsSnapshot.size;
+
     try {
       const systemLogsCollection = collection(db, "systemLogs");
       const newLogData = {
@@ -124,12 +107,15 @@ export async function DELETE(request: Request) {
       };
       await setDoc(doc(systemLogsCollection), newLogData);
     } catch (logError) {
+      console.error("Error logging clearance action:", logError);
       // Não interrompe o fluxo por falha no log de auditoria
     }
+
     return NextResponse.json({ 
       message: `${logsCount} logs successfully removed` 
     }, { status: 200 });
   } catch (error) {
+    console.error("API Error during log clearance:", error);
     return NextResponse.json({ error: "Failed to delete system logs" }, { status: 500 });
   }
 }
