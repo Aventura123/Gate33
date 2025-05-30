@@ -60,13 +60,13 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
   const [developmentWalletAddress, setDevelopmentWalletAddress] = useState("");
   const [charityWalletAddress, setCharityWalletAddress] = useState("");
   const [evolutionWalletAddress, setEvolutionWalletAddress] = useState("");
-  
-  // States for distribution percentages
+    // States for distribution percentages
   const [feePercentage, setFeePercentage] = useState(0);
   const [developmentPercentage, setDevelopmentPercentage] = useState(0);
   const [charityPercentage, setCharityPercentage] = useState(0);
   const [evolutionPercentage, setEvolutionPercentage] = useState(0);
   const [totalPercentage, setTotalPercentage] = useState(0);
+  const [mainWalletPercentage, setMainWalletPercentage] = useState(100);
   
   // States for wallet updates
   const [updatingWallets, setUpdatingWallets] = useState(false);
@@ -91,17 +91,14 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
 
   // States for the main wallet update
   const [mainWalletUpdateSuccess, setMainWalletUpdateSuccess] = useState(false);
-  const [mainWalletUpdateError, setMainWalletUpdateError] = useState<string | null>(null);
-
-  // Function to convert percentages (user interface)
-  // Converts contract percentage (base 1000) to display value (0-100)
+  const [mainWalletUpdateError, setMainWalletUpdateError] = useState<string | null>(null);  // Function to convert percentages from contract base 1000 to actual percentage for display
   const contractToDisplayPercentage = (value: number): number => {
-    return value / 10; // Converts base 1000 to real percentage (e.g., 950 -> 95)
+    return value / 10; // Converts base 1000 to real percentage (e.g., 50 -> 5%)
   };
 
-  // Converts display percentage (0-100) to contract value (base 1000)
+  // Converts display percentage (actual percentage) to contract value base 1000
   const displayToContractPercentage = (value: number): number => {
-    return Math.round(value * 10); // Converts percentage to base 1000 (e.g., 95 -> 950)
+    return Math.round(value * 10); // Converts to base 1000 (e.g., 5% -> 50)
   };
 
   // Load settings from Firestore
@@ -643,11 +640,10 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         throw new Error("Connect your wallet first");
       }
 
-      console.log("Validating percentages...");
-      // Use the base 10 values for validation in the interface (feePercentage is in base 10)
+      console.log("Validating percentages...");      // Use the actual percentage values for validation in the interface
       const total = feePercentage + developmentPercentage + charityPercentage + evolutionPercentage;
       
-      // Total in the interface should not exceed 30
+      // Total in the interface should not exceed 30%
       if (total > 30) {
         throw new Error("The total sum of all percentages cannot exceed 30%");
       }
@@ -919,12 +915,15 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
     } finally {
       setIsCheckingOwner(false);
     }
-  };
-
-  // Verify the total sum of percentages whenever they change
+  };  // Verify the total sum of percentages and update main wallet percentage whenever they change
   useEffect(() => {
     const total = feePercentage + developmentPercentage + charityPercentage + evolutionPercentage;
     setTotalPercentage(total);
+    
+    // Calculate the main wallet percentage (100% - fee distribution percentages)
+    // Ensuring it's never lower than 70%
+    const calculatedMainWalletPercentage = Math.max(70, 100 - total);
+    setMainWalletPercentage(calculatedMainWalletPercentage);
     
     // Check and alert if it exceeds 30%
     if (total > 30) {
@@ -1035,10 +1034,9 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>Main wallet updated successfully!</p>
           </div>
-        )}
-          <div className="p-2 mb-3 bg-green-900/20 border border-green-800/50 rounded">
+        )}          <div className="p-2 mb-3 bg-green-900/20 border border-green-800/50 rounded">
           <p className="text-sm text-gray-300">
-            This wallet will receive <span className="font-bold text-green-400">70%</span> of all job posting payments. 
+            This wallet will receive <span className="font-bold text-green-400">{mainWalletPercentage.toFixed(1)}%</span> of all job posting payments. 
             This is separate from the fee distribution wallets below.
           </p>
         </div><form onSubmit={handleUpdateMainWallet} className="flex flex-col space-y-1">
@@ -1070,10 +1068,10 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         </form>
       </div>      {/* Fee distribution section (30% split across wallets) */}
       <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
-        <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Fee Distribution Wallets (30%)</h3>
+        <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Fee Distribution Wallets ({totalPercentage.toFixed(1)}%)</h3>
           <div className="p-2 mb-3 bg-orange-900/20 border border-orange-800/50 rounded-lg">
           <p className="text-sm text-gray-300">
-            The remaining <span className="font-bold text-orange-400">30%</span> of each payment is distributed 
+            The remaining <span className="font-bold text-orange-400">{totalPercentage.toFixed(1)}%</span> of each payment is distributed
             among the following wallets according to the percentages you set. 
             <span className="block mt-1 font-bold">These settings are stored in the smart contract and require wallet connection to update.</span>
           </p>
@@ -1155,18 +1153,17 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="feePercentage">
                     Fee Collector (%)
-                  </label>                  <input
-                    id="feePercentage"
+                  </label>                  <input                    id="feePercentage"
                     type="number"
                     min="0"
-                    max="100"
-                    step="1"
-                    value={feePercentage}
-                    onChange={(e) => setFeePercentage(parseInt(e.target.value))}
+                    max="30"
+                    step="0.1"
+                    value={feePercentage || ''}
+                    onChange={(e) => setFeePercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
                     className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                   />
                   <p className="text-xs text-gray-400 mt-1">
-                    Base 1000: {feePercentage} = {(feePercentage / 10).toFixed(1)}%
+                    Contract value (base 1000): {displayToContractPercentage(feePercentage)}
                   </p>
                 </div>
                 
@@ -1188,17 +1185,17 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="developmentPercentage">
                     Development Percentage (%)
-                  </label>                  <input
-                    id="developmentPercentage"
+                  </label>                  <input                    id="developmentPercentage"
                     type="number"
                     min="0"
-                    max="100"
-                    step="1"
-                    value={developmentPercentage}
-                    onChange={(e) => setDevelopmentPercentage(parseInt(e.target.value))}
+                    max="30"
+                    step="0.1"
+                    value={developmentPercentage || ''}
+                    onChange={(e) => setDevelopmentPercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
                     className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                  />                  <p className="text-xs text-gray-400 mt-1">
-                    Base 1000: {developmentPercentage} = {(developmentPercentage / 10).toFixed(1)}%
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Contract value (base 1000): {displayToContractPercentage(developmentPercentage)}
                   </p>
                 </div>
                 
@@ -1220,19 +1217,17 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="charityPercentage">
                     Charity Percentage (%)
-                  </label>
-                  <input
-                    id="charityPercentage"
+                  </label>                  <input                    id="charityPercentage"
                     type="number"
                     min="0"
-                    max="100"
-                    step="1"
-                    value={charityPercentage}
-                    onChange={(e) => setCharityPercentage(parseInt(e.target.value))}
+                    max="30"
+                    step="0.1"
+                    value={charityPercentage || ''}
+                    onChange={(e) => setCharityPercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
                     className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                   />
                   <p className="text-gray-400 text-xs mt-1">
-                    Base 1000: {charityPercentage} = {(charityPercentage / 10).toFixed(1)}%
+                    Contract value (base 1000): {displayToContractPercentage(charityPercentage)}
                   </p>
                 </div>
                   {/* Evolution Wallet */}
@@ -1253,31 +1248,29 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="evolutionPercentage">
                     Evolution Percentage (%)
-                  </label>
-                  <input
-                    id="evolutionPercentage"
+                  </label>                  <input                    id="evolutionPercentage"
                     type="number"
                     min="0"
-                    max="100"
-                    step="1"
-                    value={evolutionPercentage}
-                    onChange={(e) => setEvolutionPercentage(parseInt(e.target.value))}
+                    max="30"
+                    step="0.1"
+                    value={evolutionPercentage || ''}
+                    onChange={(e) => setEvolutionPercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
                     className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                   />
                   <p className="text-gray-400 text-xs mt-1">
-                    Base 1000: {evolutionPercentage} = {(evolutionPercentage / 10).toFixed(1)}%
+                    Contract value (base 1000): {displayToContractPercentage(evolutionPercentage)}
                   </p>
                 </div>
               </div>                <div className="mt-3 p-2 md:p-3 bg-black/40 border border-gray-700 rounded-lg">
-                <p className="text-white font-semibold text-sm">Total fees: {(totalPercentage / 10).toFixed(1)}%</p>
+                <p className="text-white font-semibold text-sm">Total fees: {totalPercentage.toFixed(1)}%</p>
                 <div className="w-full bg-black/50 h-2 mt-2 rounded-full overflow-hidden">
                   <div 
-                    className={`h-full ${totalPercentage > 300 ? 'bg-red-500' : 'bg-orange-500'} progress-bar dynamic-width`} 
-                    data-width={`${Math.min((totalPercentage / 300) * 100, 100)}%`}
+                    className={`h-full ${totalPercentage > 30 ? 'bg-red-500' : 'bg-orange-500'} progress-bar dynamic-width`} 
+                    data-width={`${Math.min((totalPercentage / 30) * 100, 100)}%`}
                   ></div>
                 </div>
                 <p className="text-xs text-gray-400 mt-1">
-                  The total sum must not exceed 300 (30%)
+                  The total sum must not exceed 30%
                 </p>
               </div>
                 <div className="flex gap-4 mt-4">
@@ -1309,41 +1302,39 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                   {updatingPercentages ? 'Updating Percentages...' : 'Update Percentages'}
                 </button>              </div>
             </div>
-          </div>
-        {/* Payment Distribution Overview */}
+          </div>        {/* Payment Distribution Overview */}
         <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
           <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Payment Distribution Overview</h3>          <div className="bg-black/40 p-2 rounded-lg">
             <div className="flex flex-col space-y-1">
               <div className="flex justify-between items-center">
                 <span className="text-gray-300 text-sm">Main Recipient:</span>
-                <span className="text-orange-400 font-bold">70%</span>
+                <span className="text-orange-400 font-bold">{mainWalletPercentage.toFixed(1)}%</span>
               </div>
               <div className="w-full bg-black/50 h-4 rounded-lg overflow-hidden">
-                <div className="h-full bg-orange-500 w-[70%]"></div>
+                <div className="h-full bg-orange-500" style={{ width: `${mainWalletPercentage}%` }}></div>
               </div>
                 <div className="flex justify-between items-center mt-1">
                 <span className="text-gray-300 text-sm">Fee Distribution (total):</span>
-                <span className="text-orange-400 font-bold">30%</span>
+                <span className="text-orange-400 font-bold">{totalPercentage.toFixed(1)}%</span>
               </div>
               <div className="w-full bg-black/50 h-4 rounded-lg overflow-hidden">
-                <div className="h-full bg-orange-500 w-[30%]"></div>
-              </div>
-                <div className="grid grid-cols-4 gap-1 mt-1">
+                <div className="h-full bg-orange-500" style={{ width: `${totalPercentage}%` }}></div>
+              </div><div className="grid grid-cols-4 gap-1 mt-1">
                 <div className="text-center">
                   <div className="text-xs text-gray-400">Fee Collector</div>
-                  <div className="text-sm text-gray-300">{(feePercentage / 10).toFixed(1)}%</div>
+                  <div className="text-sm text-gray-300">{feePercentage.toFixed(1)}%</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-400">Development</div>
-                  <div className="text-sm text-gray-300">{(developmentPercentage / 10).toFixed(1)}%</div>
+                  <div className="text-sm text-gray-300">{developmentPercentage.toFixed(1)}%</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-400">Charity</div>
-                  <div className="text-sm text-gray-300">{(charityPercentage / 10).toFixed(1)}%</div>
+                  <div className="text-sm text-gray-300">{charityPercentage.toFixed(1)}%</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-400">Evolution</div>
-                  <div className="text-sm text-gray-300">{(evolutionPercentage / 10).toFixed(1)}%</div>
+                  <div className="text-sm text-gray-300">{evolutionPercentage.toFixed(1)}%</div>
                 </div>
               </div>
             </div>
