@@ -6,7 +6,6 @@ export const CONTRACT_ADDRESSES = {
   ethereum: '0x0000000000000000000000000000000000000000',
   polygon: '0x0000000000000000000000000000000000000000',
   binance: '0x0000000000000000000000000000000000000000',
-  binanceTestnet: '0x0000000000000000000000000000000000000000',
   avalanche: '0x0000000000000000000000000000000000000000',
   optimism: '0x0000000000000000000000000000000000000000'
 };
@@ -32,13 +31,6 @@ export const NETWORK_CONFIG = {
     rpcUrl: 'https://bsc-dataseed.binance.org',
     currencySymbol: 'BNB',
     blockExplorer: 'https://bscscan.com'
-  },
-  binanceTestnet: {
-    chainId: 97, // BSC Testnet chainId
-    name: 'BNB Smart Chain Testnet',
-    rpcUrl: 'https://bsc-testnet.public.blastapi.io',
-    currencySymbol: 'tBNB',
-    blockExplorer: 'https://testnet.bscscan.com'
   },
   avalanche: {
     chainId: 43114,

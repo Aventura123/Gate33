@@ -2117,7 +2117,7 @@ const fetchEmployersList = async () => {
                   if (isMobile) setMobileMenuOpen(false);
                 }}
               >
-                Payments Management
+                JobPost P. Manag.
               </button>
             </li>            {/* --- MARKETING MENU --- */}
             <li>

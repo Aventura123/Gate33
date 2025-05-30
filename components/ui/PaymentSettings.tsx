@@ -6,6 +6,7 @@ import { web3Service } from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
 import InstantJobsManager from "../admin/InstantJobsManager";
 import { NETWORK_CONFIG, CONTRACT_ADDRESSES } from "../../config/paymentConfig";
+import { useWallet } from "../../components/WalletProvider";
 
 interface PaymentConfigProps {
   hasPermission: boolean;
@@ -20,13 +21,22 @@ interface FirestorePaymentConfig {
     ethereum: string;
     polygon: string;
     binance: string;
-    binanceTestnet?: string; // Adding support for the binanceTestnet property
+    optimism?: string;
+    avalanche?: string;
   };
   mainWallet?: string; // Main wallet receiving 70% of payments
   updatedAt?: Date;
 }
 
 const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
+  // Get wallet state from context
+  const { 
+    walletAddress: contextWalletAddress, 
+    currentNetwork, 
+    connectWallet: contextConnectWallet,
+    disconnectWallet: contextDisconnectWallet
+  } = useWallet();
+  
   // States to store configuration values
   const [walletAddress, setWalletAddress] = useState("");
   const [serviceFee, setServiceFee] = useState(0);
@@ -34,32 +44,12 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
   
   // Add a state for the main wallet (70% recipient)
   const [mainWallet, setMainWallet] = useState("");
-  
-  // States for contracts on different networks
+    // States for contracts on different networks
   const [ethContract, setEthContract] = useState("");
   const [polygonContract, setPolygonContract] = useState("");
   const [binanceContract, setBinanceContract] = useState("");
-
-  // New state for Binance Testnet contract
-  const [binanceTestnetContract, setBinanceTestnetContract] = useState("");
-  const [binanceTestnetSaveStatus, setBinanceTestnetSaveStatus] = useState<string | null>(null);
-
-  // Function to save only the Binance Testnet contract in Firestore
-  const handleSaveBinanceTestnetContract = async () => {
-    setBinanceTestnetSaveStatus(null);
-    try {
-      if (!validateEthereumAddress(binanceTestnetContract)) {
-        setBinanceTestnetSaveStatus("Invalid address. Must start with '0x' and have 40 hexadecimal characters.");
-        return;
-      }
-      // Update only the binanceTestnet field in contracts
-      const configRef = doc(db, "settings", "paymentConfig");
-      await setDoc(configRef, { contracts: { binanceTestnet: binanceTestnetContract } }, { merge: true });
-      setBinanceTestnetSaveStatus("Address saved successfully!");
-    } catch (err: any) {
-      setBinanceTestnetSaveStatus("Error saving: " + (err.message || "Unknown error"));
-    }
-  };
+  const [optimismContract, setOptimismContract] = useState("");
+  const [avalancheContract, setAvalancheContract] = useState("");
 
   // State to store the current system configuration (Firestore or config)
   const [currentSystemConfig, setCurrentSystemConfig] = useState<any>(null);
@@ -88,8 +78,8 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Add state for wallet connection
-  const [walletConnected, setWalletConnected] = useState(false);
+  // Using wallet connected state from context
+  const [walletConnected, setWalletConnected] = useState(!!contextWalletAddress);
 
   // Add state to store the contract owner's address
   const [contractOwner, setContractOwner] = useState<string | null>(null);
@@ -135,18 +125,15 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         
         // Load main wallet if exists
         if (data.mainWallet) setMainWallet(data.mainWallet);
-        
-        // Load contract addresses - checking the contracts structure
+          // Load contract addresses - checking the contracts structure
         if (data.contracts) {
           if (data.contracts.ethereum) setEthContract(data.contracts.ethereum);
           if (data.contracts.polygon) setPolygonContract(data.contracts.polygon);
           if (data.contracts.binance) setBinanceContract(data.contracts.binance);
-          
-          // If there is a specific address for BSC Testnet, load it too
-          if (data.contracts.binanceTestnet) setBinanceTestnetContract(data.contracts.binanceTestnet);
+          if (data.contracts.optimism) setOptimismContract(data.contracts.optimism);
+          if (data.contracts.avalanche) setAvalancheContract(data.contracts.avalanche);
         }
-        
-        // Update the system configuration view
+          // Update the system configuration view
         setCurrentSystemConfig({
           receiverAddress: data.receiverAddress || "",
           mainWallet: data.mainWallet || "",
@@ -154,7 +141,8 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             ethereum: data.contracts?.ethereum || "",
             polygon: data.contracts?.polygon || "",
             binance: data.contracts?.binance || "",
-            binanceTestnet: data.contracts?.binanceTestnet || ""
+            optimism: data.contracts?.optimism || "",
+            avalanche: data.contracts?.avalanche || ""
           },
           serviceFee: (data.serviceFee !== undefined ? data.serviceFee : 0) + "%",
           transactionTimeout: (data.transactionTimeout ? data.transactionTimeout / 1000 : 0) + " seconds",
@@ -180,18 +168,32 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       setError("Could not load payment settings. " + (err instanceof Error ? err.message : String(err)));
     }
   }, []);
-
   useEffect(() => {
     if (hasPermission) {
       fetchCurrentSettings();
       checkWalletConnection();
+      
+      // Setup event listener for network changes
+      const handleNetworkChange = (event: CustomEvent) => {
+        console.log("🔄 Network changed detected:", event.detail);
+        // Re-fetch contract data when network changes
+        fetchContractData();
+      };
+      
+      // Register event listener
+      window.addEventListener('web3NetworkChanged', handleNetworkChange as EventListener);
+      
+      // Cleanup event listener on component unmount
+      return () => {
+        window.removeEventListener('web3NetworkChanged', handleNetworkChange as EventListener);
+      };
     }
   }, [hasPermission, fetchCurrentSettings]);
 
-  // Check wallet connection
+  // Check wallet connection using context
   const checkWalletConnection = () => {
     try {
-      const connected = web3Service.isWalletConnected();
+      const connected = !!contextWalletAddress;
       setWalletConnected(connected);
       if (connected) {
         fetchContractData();
@@ -200,6 +202,14 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       console.error("Error checking wallet connection:", err);
     }
   };
+  
+  // Update wallet connection status when context changes
+  useEffect(() => {
+    setWalletConnected(!!contextWalletAddress);
+    if (contextWalletAddress) {
+      fetchContractData();
+    }
+  }, [contextWalletAddress]);
 
   // Fetch contract data (addresses and percentages) with more robust error handling
   const fetchContractData = async () => {
@@ -228,15 +238,13 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         if (!configDoc.empty) {
           const configData = configDoc.docs[0].data();
           const contracts = configData.contracts || {};
-          
-          // Determine which contract field corresponds to the current network
+            // Determine which contract field corresponds to the current network
           let contractField: string | null = null;
           
           switch (currentChainId) {
             case 1: contractField = "ethereum"; break;
             case 137: contractField = "polygon"; break;
             case 56: contractField = "binance"; break;
-            case 97: contractField = "binanceTestnet"; break;
             case 80001: contractField = "mumbai"; break; 
             case 42161: contractField = "arbitrum"; break;
             case 10: contractField = "optimism"; break;
@@ -345,6 +353,20 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
 
       // Try to get the contract owner
       try {
+        // Always switch contract network before calling getContractOwner to avoid provider desync
+        await smartContractService.switchContractNetwork(currentChainId, contractAddress);
+        // --- PATCH: Re-initialize provider and signer after network switch ---
+        if (smartContractService.init) {
+          await smartContractService.init();
+        }
+        // --- END PATCH ---
+        const walletInfo = web3Service.getWalletInfo();
+        if (!walletInfo || !walletInfo.chainId || !walletInfo.networkName) {
+          setWalletUpdateError(
+            'Cannot get contract owner: Wallet/network not connected or not detected. Please connect your wallet and ensure you are on a supported network.'
+          );
+          return;
+        }
         const ownerAddress = await smartContractService.getContractOwner();
         setContractOwner(ownerAddress);
       } catch (e: any) {
@@ -356,28 +378,14 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       setWalletUpdateError(`Error getting contract data on ${web3Service.getWalletInfo()?.networkName || "current network"}: ${err.message || "check your connection"}`);
     }
   };
-
-  // Connect wallet
+  // Connect wallet using context
   const connectWallet = async () => {
     try {
       setWalletUpdateError(null);
       
-      await web3Service.connectWallet();
-      setWalletConnected(true);
+      await contextConnectWallet();
       
-      // Check the current connected network after connecting
-      const walletInfo = web3Service.getWalletInfo();
-      if (!walletInfo) {
-         setWalletUpdateError("Could not get wallet information after connecting.");
-         return;
-      }
-
-      // Just display the current connected network without forcing change to BSC Testnet
-      const currentChainId = walletInfo.chainId;
-      console.log(`Wallet connected to network: ${walletInfo.networkName} (ChainID: ${currentChainId})`);
-      
-      // Try to fetch contract data on the current network
-      await fetchContractData();
+      // The wallet connected state will be updated via the useEffect that watches contextWalletAddress
       
       // Verify the contract owner on the current network
       await checkContractOwner();
@@ -385,12 +393,10 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
     } catch (err: any) {
       console.error("Error connecting wallet:", err);
       setWalletUpdateError(err.message || "Error connecting wallet. Check if MetaMask is installed.");
-      setWalletConnected(false);
     }
   };
 
-  const updatePaymentConfig = async () => {
-    try {
+  const updatePaymentConfig = async () => {    try {
         const configData = {
             receiverAddress: walletAddress,
             serviceFee: serviceFee,
@@ -399,18 +405,20 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             contracts: {
                 ethereum: ethContract,
                 polygon: polygonContract,
-                binance: binanceContract
+                binance: binanceContract,
+                optimism: optimismContract,
+                avalanche: avalancheContract
             },
             updatedAt: new Date(),
         };
 
         // Save to Firestore
-        await setDoc(doc(db, "settings", "paymentConfig"), configData, { merge: true });
-
-        // Update CONTRACT_ADDRESSES dynamically
+        await setDoc(doc(db, "settings", "paymentConfig"), configData, { merge: true });        // Update CONTRACT_ADDRESSES dynamically
         CONTRACT_ADDRESSES.ethereum = ethContract;
         CONTRACT_ADDRESSES.polygon = polygonContract;
         CONTRACT_ADDRESSES.binance = binanceContract;
+        CONTRACT_ADDRESSES.optimism = optimismContract;
+        CONTRACT_ADDRESSES.avalanche = avalancheContract;
 
         // Update the current system configuration
         setCurrentSystemConfig({
@@ -419,7 +427,9 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             contracts: {
                 ethereum: ethContract,
                 polygon: polygonContract,
-                binance: binanceContract
+                binance: binanceContract,
+                optimism: optimismContract,
+                avalanche: avalancheContract
             },
             serviceFee: serviceFee + "%",
             transactionTimeout: transactionTimeout + " seconds",
@@ -448,10 +458,9 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
     setError(null);
     setUpdateSuccess(false);
     
-    try {
-      // Check if we're only updating contract addresses
+    try {      // Check if we're only updating contract addresses
       const onlyUpdatingContracts = 
-        (ethContract || polygonContract || binanceContract) && 
+        (ethContract || polygonContract || binanceContract || optimismContract || avalancheContract) && 
         !walletAddress && 
         serviceFee === 0 && 
         transactionTimeout === 0;
@@ -469,9 +478,16 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       if (polygonContract && !validateEthereumAddress(polygonContract)) {
         throw new Error("Polygon contract address is invalid.");
       }
-      
-      if (binanceContract && !validateEthereumAddress(binanceContract)) {
+        if (binanceContract && !validateEthereumAddress(binanceContract)) {
         throw new Error("Binance contract address is invalid.");
+      }
+      
+      if (optimismContract && !validateEthereumAddress(optimismContract)) {
+        throw new Error("Optimism contract address is invalid.");
+      }
+      
+      if (avalancheContract && !validateEthereumAddress(avalancheContract)) {
+        throw new Error("Avalanche contract address is invalid.");
       }
       
       // Validate service fee
@@ -713,7 +729,6 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       setUpdatingPercentages(false);
     }
   };
-
   // Function to verify who the current contract owner is
   const checkContractOwner = async () => {
     try {
@@ -726,7 +741,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       // setWalletUpdateError(null);
       // setWalletUpdateSuccess(false);
       
-      if (!walletConnected) {
+      if (!contextWalletAddress) {
         // Use owner verification specific states
         setOwnerVerificationError("Connect your wallet first to verify the contract owner");
         return;
@@ -744,13 +759,11 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       const currentAddress = walletInfo.address;
       let networkName: string = "unknown";
       let contractAddress: string | undefined;
-      
-      // 3. Map the network ID to a more user-friendly name
+        // 3. Map the network ID to a more user-friendly name
       switch (currentChainId) {
         case 1: networkName = "Ethereum Mainnet"; break;
         case 137: networkName = "Polygon"; break;
         case 56: networkName = "Binance Smart Chain"; break;
-        case 97: networkName = "BSC Testnet"; break;
         case 80001: networkName = "Mumbai Testnet (Polygon)"; break;
         case 42161: networkName = "Arbitrum"; break;
         case 10: networkName = "Optimism"; break;
@@ -770,12 +783,10 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           
           // 5. Determine which contract field corresponds to the current network
           let contractField: string | null = null;
-          
-          switch (currentChainId) {
+            switch (currentChainId) {
             case 1: contractField = "ethereum"; break;
             case 137: contractField = "polygon"; break;
             case 56: contractField = "binance"; break;
-            case 97: contractField = "binanceTestnet"; break;
             case 80001: contractField = "mumbai"; break; 
             case 42161: contractField = "arbitrum"; break;
             case 10: contractField = "optimism"; break;
@@ -838,12 +849,8 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         }
         
         // 10. Initialize contract for the correct network
-        if (!smartContractService.isContractInitialized()) {
-          await smartContractService.initializeContract(undefined, contractAddress);
-        } else {
-          await smartContractService.switchContractNetwork(currentChainId, contractAddress);
-        }
-        
+        // Always switch contract network before calling getContractOwner to avoid provider desync
+        await smartContractService.switchContractNetwork(currentChainId, contractAddress);
         try {
           // 11. Try to get the contract owner
           const ownerAddress = await smartContractService.getContractOwner();
@@ -995,9 +1002,8 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
           <p>{localStorage.getItem('ownerSuccessMessage')}</p>
         </div>
-      )}      {/* Main wallet configuration section (70% of payments) */}
-      <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
-        <h3 className="text-lg md:text-xl font-bold mb-4 text-orange-400">Primary Payment Wallet (70%)</h3>
+      )}        {/* Main wallet configuration section (70% of payments) */}      <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-3 backdrop-blur-sm">
+        <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Primary Payment Wallet (70%)</h3>
         
         {mainWalletUpdateError && (
           <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
@@ -1010,14 +1016,12 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             <p>Main wallet updated successfully!</p>
           </div>
         )}
-        
-        <div className="p-3 mb-4 bg-green-900/20 border border-green-800/50 rounded">
+          <div className="p-2 mb-3 bg-green-900/20 border border-green-800/50 rounded">
           <p className="text-sm text-gray-300">
             This wallet will receive <span className="font-bold text-green-400">70%</span> of all job posting payments. 
             This is separate from the fee distribution wallets below.
           </p>
-        </div>
-          <form onSubmit={handleUpdateMainWallet} className="flex flex-col space-y-4">
+        </div><form onSubmit={handleUpdateMainWallet} className="flex flex-col space-y-1">
           <div>
             <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="mainWallet">
               Main Recipient Wallet Address
@@ -1045,31 +1049,28 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           </div>
         </form>
       </div>      {/* Fee distribution section (30% split across wallets) */}
-      <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
-        <h3 className="text-lg md:text-xl font-bold mb-4 text-orange-400">Fee Distribution Wallets (30%)</h3>
-        
-        <div className="p-3 mb-4 bg-orange-900/20 border border-orange-800/50 rounded-lg">
+      <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
+        <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Fee Distribution Wallets (30%)</h3>
+          <div className="p-2 mb-3 bg-orange-900/20 border border-orange-800/50 rounded-lg">
           <p className="text-sm text-gray-300">
             The remaining <span className="font-bold text-orange-400">30%</span> of each payment is distributed 
             among the following wallets according to the percentages you set. 
-            <span className="block mt-2 font-bold">These settings are stored in the smart contract and require wallet connection to update.</span>
+            <span className="block mt-1 font-bold">These settings are stored in the smart contract and require wallet connection to update.</span>
           </p>
-        </div>
-        
-        {walletUpdateError && (
-          <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
+        </div>          {walletUpdateError && (
+          <div className="bg-red-900/50 border border-red-500 text-white p-2 md:p-3 rounded-lg mb-3 text-sm">
             <p>{walletUpdateError}</p>
           </div>
         )}
         
         {walletUpdateSuccess && (
-          <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
+          <div className="bg-green-900/50 border border-green-500 text-white p-2 md:p-3 rounded-lg mb-3 text-sm">
             <p>Fee distribution wallets successfully updated in the contract!</p>
           </div>
         )}
         
         {percentageUpdateSuccess && (
-          <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
+          <div className="bg-green-900/50 border border-green-500 text-white p-2 md:p-3 rounded-lg mb-3 text-sm">
             <p>Percentages successfully updated on the blockchain!</p>
           </div>
         )}
@@ -1085,27 +1086,21 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               )}
             </p>
           </div>
-        )}
-          <div className="mb-4 md:mb-6">
-          {!walletConnected ? (
-            <div className="mb-4">
-              <button
-                type="button"
-                onClick={connectWallet}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm"
-              >
-                Connect Wallet to Manage Contract Settings
-              </button>
-              <p className="text-xs text-gray-400 mt-1">
-                You need to connect your wallet to interact with the smart contract.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="mb-4 flex justify-between items-center">
+        )}          <div className="mb-4 md:mb-6">
+            <div className="space-y-3">
+              <div className="mb-1 flex justify-between items-center">
                 <p className="text-gray-300 text-sm">
-                  <span className="inline-block px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-orange-900/50 text-orange-300 border border-orange-700 mr-2">Connected</span>
-                  Wallet connected - you can configure fee distribution
+                  {walletConnected ? (
+                    <>
+                      <span className="inline-block px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-orange-900/50 text-orange-300 border border-orange-700 mr-2">Connected</span>
+                      Wallet connected - you can configure fee distribution
+                    </>
+                  ) : (
+                    <>
+                      <span className="inline-block px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-gray-700 text-gray-300 border border-gray-600 mr-2">Not Connected</span>
+                      Wallet not connected - connect to configure settings
+                    </>
+                  )}
                 </p>
                 
                 <button
@@ -1115,9 +1110,8 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                   className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
                 >
                   {isCheckingOwner ? 'Checking...' : 'Verify Contract Owner'}
-                </button>
-              </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                </button>              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-3">
                 {/* Main Fee Collector */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="feeCollectorAddress">
@@ -1254,8 +1248,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                     Base 1000: {evolutionPercentage} = {(evolutionPercentage / 10).toFixed(1)}%
                   </p>
                 </div>
-              </div>
-                <div className="mt-4 p-3 md:p-4 bg-black/40 border border-gray-700 rounded-lg">
+              </div>                <div className="mt-3 p-2 md:p-3 bg-black/40 border border-gray-700 rounded-lg">
                 <p className="text-white font-semibold text-sm">Total fees: {(totalPercentage / 10).toFixed(1)}%</p>
                 <div className="w-full bg-black/50 h-2 mt-2 rounded-full overflow-hidden">
                   <div 
@@ -1294,15 +1287,13 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                   }`}
                 >
                   {updatingPercentages ? 'Updating Percentages...' : 'Update Percentages'}
-                </button>
-              </div>
+                </button>              </div>
             </div>
-          )}
-        </div>        {/* Payment Distribution Overview */}
-        <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
-          <h3 className="text-lg md:text-xl font-bold mb-4 text-orange-400">Payment Distribution Overview</h3>
-          <div className="bg-black/40 p-4 rounded-lg">
-            <div className="flex flex-col space-y-4">
+          </div>
+        {/* Payment Distribution Overview */}
+        <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
+          <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Payment Distribution Overview</h3>          <div className="bg-black/40 p-2 rounded-lg">
+            <div className="flex flex-col space-y-1">
               <div className="flex justify-between items-center">
                 <span className="text-gray-300 text-sm">Main Recipient:</span>
                 <span className="text-orange-400 font-bold">70%</span>
@@ -1310,16 +1301,14 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               <div className="w-full bg-black/50 h-4 rounded-lg overflow-hidden">
                 <div className="h-full bg-orange-500" style={{width: '70%'}}></div>
               </div>
-              
-              <div className="flex justify-between items-center mt-2">
+                <div className="flex justify-between items-center mt-1">
                 <span className="text-gray-300 text-sm">Fee Distribution (total):</span>
                 <span className="text-orange-400 font-bold">30%</span>
               </div>
               <div className="w-full bg-black/50 h-4 rounded-lg overflow-hidden">
                 <div className="h-full bg-orange-500" style={{width: '30%'}}></div>
               </div>
-              
-              <div className="grid grid-cols-4 gap-2 mt-2">
+                <div className="grid grid-cols-4 gap-1 mt-1">
                 <div className="text-center">
                   <div className="text-xs text-gray-400">Fee Collector</div>
                   <div className="text-sm text-gray-300">{(feePercentage / 10).toFixed(1)}%</div>
@@ -1341,9 +1330,8 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           </div>
         </div>
       </div>
-        <form onSubmit={handleSubmit} className="space-y-6">        {/* Contract Section */}
-        <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
-          <h3 className="text-lg md:text-xl font-bold mb-4 text-orange-400">Contract Addresses</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">        {/* Contract Section */}        <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
+          <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Contract Addresses</h3>
           
           {/* Ethereum Contract */}
           <div className="mb-4">
@@ -1374,68 +1362,53 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               placeholder="0x..."
             />
           </div>
-          
-          {/* Binance Smart Chain Contract */}
+            {/* Binance Smart Chain Contract */}
           <div className="mb-4">
             <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="binanceContract">
               Binance Smart Chain Contract
             </label>
-            <div className="flex gap-2">
-              <input
-                id="binanceContract"
-                type="text"
-                value={binanceContract}
-                onChange={(e) => setBinanceContract(e.target.value)}
-                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                placeholder="0x..."
-              />
-              <button
-                type="button"
-                className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
-                onClick={() => setBinanceContract("0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B")}
-                title="Fill with BSC Testnet address (Chain 97)"
-              >
-                Use Testnet
-              </button>
-            </div>
-            <p className="text-xs text-gray-400 mt-1">
-              Use the button to automatically fill with a BSC Testnet address (Chain 97).
-            </p>
+            <input
+              id="binanceContract"
+              type="text"
+              value={binanceContract}
+              onChange={(e) => setBinanceContract(e.target.value)}
+              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+              placeholder="0x..."
+            />
           </div>
-
-          {/* Binance Testnet Contract */}
+          
+          {/* Optimism Contract */}
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="binanceTestnetContract">
-              Binance Testnet Contract (Chain 97)
+            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="optimismContract">
+              Optimism Contract
             </label>
-            <div className="flex gap-2">
-              <input
-                id="binanceTestnetContract"
-                type="text"
-                value={binanceTestnetContract}
-                onChange={(e) => setBinanceTestnetContract(e.target.value)}
-                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                placeholder="0x..."
-              />
-              <button
-                type="button"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold"
-                onClick={handleSaveBinanceTestnetContract}
-              >
-                Save
-              </button>
-            </div>
-            <p className="text-xs text-gray-400 mt-1">
-              Address saved in <code>contracts.binanceTestnet</code> in Firestore. Use for testing on BSC Testnet (Chain 97).
-            </p>
-            {binanceTestnetSaveStatus && (
-              <div className={`mt-1 text-xs ${binanceTestnetSaveStatus.includes('success') ? 'text-green-400' : 'text-red-400'}`}>{binanceTestnetSaveStatus}</div>
-            )}
+            <input
+              id="optimismContract"
+              type="text"
+              value={optimismContract}
+              onChange={(e) => setOptimismContract(e.target.value)}
+              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+              placeholder="0x..."
+            />
+          </div>
+          
+          {/* Avalanche Contract */}
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="avalancheContract">
+              Avalanche Contract
+            </label>
+            <input
+              id="avalancheContract"
+              type="text"
+              value={avalancheContract}
+              onChange={(e) => setAvalancheContract(e.target.value)}
+              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+              placeholder="0x..."
+            />
           </div>
         </div>
-          {/* Current Configuration Information */}        <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
-          <h3 className="text-lg md:text-xl font-bold mb-4 text-orange-400">Current System Configuration</h3>
-          <div className="bg-black/40 p-3 md:p-4 rounded-lg overflow-auto">
+          {/* Current Configuration Information */}        <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
+          <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Current System Configuration</h3>          <div className="bg-black/40 p-2 md:p-3 rounded-lg overflow-auto">
             <pre className="text-sm text-gray-400 whitespace-pre-wrap">
               {JSON.stringify(currentSystemConfig, null, 2)}
             </pre>
