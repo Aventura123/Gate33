@@ -6,7 +6,6 @@ import { web3Service } from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
 import InstantJobsManager from "../admin/InstantJobsManager";
 import { NETWORK_CONFIG, CONTRACT_ADDRESSES } from "../../config/paymentConfig";
-import "../../styles/payment-settings.css"; // Import of external CSS file
 
 interface PaymentConfigProps {
   hasPermission: boolean;
@@ -973,48 +972,41 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
     }
     return null;
   };
-
   if (!hasPermission) {
     return (
-      <div className="bg-red-800 border border-red-900 text-white px-4 py-3 rounded">
-        <p>You do not have permission to access this section.</p>
+      <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg">
+        <p className="text-sm">You do not have permission to access this section.</p>
       </div>
     );
-  }
-
-  return (
-    <div className="bg-black/30 shadow rounded-lg p-6">
-      <h2 className="text-2xl font-bold mb-6 text-orange-400">Web3 Payment Settings</h2>
+  }  return (
+    <div>
       {error && (
-        <div className="bg-red-800 border border-red-900 text-white px-4 py-3 rounded mb-4">
+        <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
           <p>{error}</p>
         </div>
       )}
       {updateSuccess && (
-        <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
+        <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
           <p>Payment settings updated successfully!</p>
         </div>
       )}
-      
-      {/* Display the owner success message if it exists in localStorage */}
+        {/* Display the owner success message if it exists in localStorage */}
       {localStorage.getItem('ownerSuccessMessage') && (
-        <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
+        <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
           <p>{localStorage.getItem('ownerSuccessMessage')}</p>
         </div>
-      )}
-      
-      {/* Main wallet configuration section (70% of payments) */}
-      <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
-        <h3 className="text-xl font-bold mb-4 text-green-400">Primary Payment Wallet (70%)</h3>
+      )}      {/* Main wallet configuration section (70% of payments) */}
+      <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
+        <h3 className="text-lg md:text-xl font-bold mb-4 text-orange-400">Primary Payment Wallet (70%)</h3>
         
         {mainWalletUpdateError && (
-          <div className="bg-red-800 border border-red-900 text-white px-4 py-3 rounded mb-4">
+          <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>{mainWalletUpdateError}</p>
           </div>
         )}
         
         {mainWalletUpdateSuccess && (
-          <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
+          <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>Main wallet updated successfully!</p>
           </div>
         )}
@@ -1025,10 +1017,9 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             This is separate from the fee distribution wallets below.
           </p>
         </div>
-        
-        <form onSubmit={handleUpdateMainWallet} className="flex flex-col space-y-4">
+          <form onSubmit={handleUpdateMainWallet} className="flex flex-col space-y-4">
           <div>
-            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="mainWallet">
+            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="mainWallet">
               Main Recipient Wallet Address
             </label>
             <input
@@ -1036,10 +1027,10 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               type="text"
               value={mainWallet}
               onChange={(e) => setMainWallet(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
               placeholder="0x..."
             />
-            <p className="text-gray-400 text-xs mt-1">
+            <p className="text-xs text-gray-400 mt-1">
               This address will receive 70% of all job posting payments.
             </p>
           </div>
@@ -1047,19 +1038,17 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           <div>
             <button
               type="submit"
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline text-sm"
             >
               Update Main Wallet
             </button>
           </div>
         </form>
-      </div>
-      
-      {/* Fee distribution section (30% split across wallets) */}
-      <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
-        <h3 className="text-xl font-bold mb-4 text-orange-400">Fee Distribution Wallets (30%)</h3>
+      </div>      {/* Fee distribution section (30% split across wallets) */}
+      <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
+        <h3 className="text-lg md:text-xl font-bold mb-4 text-orange-400">Fee Distribution Wallets (30%)</h3>
         
-        <div className="p-3 mb-4 bg-orange-900/20 border border-orange-800/50 rounded">
+        <div className="p-3 mb-4 bg-orange-900/20 border border-orange-800/50 rounded-lg">
           <p className="text-sm text-gray-300">
             The remaining <span className="font-bold text-orange-400">30%</span> of each payment is distributed 
             among the following wallets according to the percentages you set. 
@@ -1068,55 +1057,54 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         </div>
         
         {walletUpdateError && (
-          <div className="bg-red-800 border border-red-900 text-white px-4 py-3 rounded mb-4">
+          <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>{walletUpdateError}</p>
           </div>
         )}
         
         {walletUpdateSuccess && (
-          <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
+          <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>Fee distribution wallets successfully updated in the contract!</p>
           </div>
         )}
         
         {percentageUpdateSuccess && (
-          <div className="bg-green-800 border border-green-900 text-white px-4 py-3 rounded mb-4">
+          <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>Percentages successfully updated on the blockchain!</p>
           </div>
         )}
         
         {contractOwner && (
-          <div className="bg-blue-800 border border-blue-900 text-white px-4 py-3 rounded mb-4">
+          <div className="bg-black/40 border border-gray-700 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>
               <strong>Contract owner:</strong> {contractOwner}
               {web3Service.getWalletInfo()?.address === contractOwner && (
-                <span className="ml-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                <span className="ml-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
                   You are the owner!
                 </span>
               )}
             </p>
           </div>
         )}
-        
-        <div className="mb-4">
+          <div className="mb-4 md:mb-6">
           {!walletConnected ? (
             <div className="mb-4">
               <button
                 type="button"
                 onClick={connectWallet}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm"
               >
                 Connect Wallet to Manage Contract Settings
               </button>
-              <p className="text-gray-400 text-xs mt-2">
+              <p className="text-xs text-gray-400 mt-1">
                 You need to connect your wallet to interact with the smart contract.
               </p>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="mb-4 flex justify-between items-center">
-                <p className="text-green-400 text-sm">
-                  <span className="inline-block bg-green-900 rounded-full px-2 py-1 text-xs mr-2">Connected</span>
+                <p className="text-gray-300 text-sm">
+                  <span className="inline-block px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-orange-900/50 text-orange-300 border border-orange-700 mr-2">Connected</span>
                   Wallet connected - you can configure fee distribution
                 </p>
                 
@@ -1124,16 +1112,15 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                   type="button"
                   onClick={checkContractOwner}
                   disabled={isCheckingOwner}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded"
+                  className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
                 >
                   {isCheckingOwner ? 'Checking...' : 'Verify Contract Owner'}
                 </button>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                 {/* Main Fee Collector */}
                 <div>
-                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="feeCollectorAddress">
+                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="feeCollectorAddress">
                     Fee Collector Wallet
                   </label>
                   <input
@@ -1141,21 +1128,20 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                     type="text"
                     value={feeCollectorAddress}
                     onChange={(e) => setFeeCollectorAddress(e.target.value)}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                     placeholder="0x..."
                   />
                   {currentFeeCollector && (
-                    <p className="text-gray-400 text-xs mt-1">
+                    <p className="text-xs text-gray-400 mt-1">
                       Current address: <span className="font-mono">{currentFeeCollector}</span>
                     </p>
                   )}
                 </div>
                 
                 <div>
-                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="feePercentage">
+                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="feePercentage">
                     Fee Collector (%)
-                  </label>
-                  <input
+                  </label>                  <input
                     id="feePercentage"
                     type="number"
                     min="0"
@@ -1163,16 +1149,16 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                     step="1"
                     value={feePercentage}
                     onChange={(e) => setFeePercentage(parseInt(e.target.value))}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                   />
-                  <p className="text-gray-400 text-xs mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     Base 1000: {feePercentage} = {(feePercentage / 10).toFixed(1)}%
                   </p>
                 </div>
                 
                 {/* Development Wallet */}
                 <div>
-                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="developmentWalletAddress">
+                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="developmentWalletAddress">
                     Development Wallet
                   </label>
                   <input
@@ -1180,16 +1166,15 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                     type="text"
                     value={developmentWalletAddress}
                     onChange={(e) => setDevelopmentWalletAddress(e.target.value)}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                     placeholder="0x..."
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="developmentPercentage">
+                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="developmentPercentage">
                     Development Percentage (%)
-                  </label>
-                  <input
+                  </label>                  <input
                     id="developmentPercentage"
                     type="number"
                     min="0"
@@ -1197,16 +1182,15 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                     step="1"
                     value={developmentPercentage}
                     onChange={(e) => setDevelopmentPercentage(parseInt(e.target.value))}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
-                  <p className="text-gray-400 text-xs mt-1">
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  />                  <p className="text-xs text-gray-400 mt-1">
                     Base 1000: {developmentPercentage} = {(developmentPercentage / 10).toFixed(1)}%
                   </p>
                 </div>
                 
                 {/* Charity Wallet */}
                 <div>
-                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="charityWalletAddress">
+                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="charityWalletAddress">
                     Charity Wallet
                   </label>
                   <input
@@ -1214,13 +1198,13 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                     type="text"
                     value={charityWalletAddress}
                     onChange={(e) => setCharityWalletAddress(e.target.value)}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                     placeholder="0x..."
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="charityPercentage">
+                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="charityPercentage">
                     Charity Percentage (%)
                   </label>
                   <input
@@ -1231,16 +1215,15 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                     step="1"
                     value={charityPercentage}
                     onChange={(e) => setCharityPercentage(parseInt(e.target.value))}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                   />
                   <p className="text-gray-400 text-xs mt-1">
                     Base 1000: {charityPercentage} = {(charityPercentage / 10).toFixed(1)}%
                   </p>
                 </div>
-                
-                {/* Evolution Wallet */}
+                  {/* Evolution Wallet */}
                 <div>
-                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="evolutionWalletAddress">
+                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="evolutionWalletAddress">
                     Evolution Wallet
                   </label>
                   <input
@@ -1248,13 +1231,13 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                     type="text"
                     value={evolutionWalletAddress}
                     onChange={(e) => setEvolutionWalletAddress(e.target.value)}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                     placeholder="0x..."
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="evolutionPercentage">
+                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="evolutionPercentage">
                     Evolution Percentage (%)
                   </label>
                   <input
@@ -1265,19 +1248,18 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                     step="1"
                     value={evolutionPercentage}
                     onChange={(e) => setEvolutionPercentage(parseInt(e.target.value))}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                   />
                   <p className="text-gray-400 text-xs mt-1">
                     Base 1000: {evolutionPercentage} = {(evolutionPercentage / 10).toFixed(1)}%
                   </p>
                 </div>
               </div>
-              
-              <div className="mt-4 p-3 bg-gray-800 rounded">
-                <p className="text-white font-semibold">Total fees: {(totalPercentage / 10).toFixed(1)}%</p>
-                <div className="w-full bg-gray-700 h-2 mt-2 rounded-full overflow-hidden">
+                <div className="mt-4 p-3 md:p-4 bg-black/40 border border-gray-700 rounded-lg">
+                <p className="text-white font-semibold text-sm">Total fees: {(totalPercentage / 10).toFixed(1)}%</p>
+                <div className="w-full bg-black/50 h-2 mt-2 rounded-full overflow-hidden">
                   <div 
-                    className={`h-full ${totalPercentage > 300 ? 'bg-red-500' : 'bg-green-500'} progress-bar dynamic-width`} 
+                    className={`h-full ${totalPercentage > 300 ? 'bg-red-500' : 'bg-orange-500'} progress-bar dynamic-width`} 
                     data-width={`${Math.min((totalPercentage / 300) * 100, 100)}%`}
                   ></div>
                 </div>
@@ -1285,8 +1267,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                   The total sum must not exceed 300 (30%)
                 </p>
               </div>
-              
-              <div className="flex gap-4 mt-4">
+                <div className="flex gap-4 mt-4">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1294,7 +1275,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                     handleUpdateAdditionalWallets(e as any);
                   }}
                   disabled={updatingWallets}
-                  className={`bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+                  className={`bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg disabled:opacity-60 font-semibold shadow text-sm ${
                     updatingWallets ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
@@ -1308,7 +1289,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                     handleUpdatePercentages(e as any);
                   }}
                   disabled={updatingPercentages}
-                  className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+                  className={`bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-2 rounded-lg text-sm font-semibold ${
                     updatingPercentages ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
@@ -1317,60 +1298,56 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Payment Distribution Overview - Única seção mantida */}
-        <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
-          <h3 className="text-lg font-semibold mb-2 text-gray-300">Payment Distribution Overview</h3>
-          <div className="bg-gray-800/50 p-4 rounded">
-            <div className="flex flex-col space-y-2">
+        </div>        {/* Payment Distribution Overview */}
+        <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
+          <h3 className="text-lg md:text-xl font-bold mb-4 text-orange-400">Payment Distribution Overview</h3>
+          <div className="bg-black/40 p-4 rounded-lg">
+            <div className="flex flex-col space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Main Recipient:</span>
-                <span className="text-green-400 font-bold">70%</span>
+                <span className="text-gray-300 text-sm">Main Recipient:</span>
+                <span className="text-orange-400 font-bold">70%</span>
               </div>
-              <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
-                <div className="h-full bg-green-500 width-70"></div>
+              <div className="w-full bg-black/50 h-4 rounded-lg overflow-hidden">
+                <div className="h-full bg-orange-500" style={{width: '70%'}}></div>
               </div>
               
               <div className="flex justify-between items-center mt-2">
-                <span className="text-gray-300">Fee Distribution (total):</span>
+                <span className="text-gray-300 text-sm">Fee Distribution (total):</span>
                 <span className="text-orange-400 font-bold">30%</span>
               </div>
-              <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
-                <div className="h-full bg-orange-500 width-30"></div>
+              <div className="w-full bg-black/50 h-4 rounded-lg overflow-hidden">
+                <div className="h-full bg-orange-500" style={{width: '30%'}}></div>
               </div>
               
               <div className="grid grid-cols-4 gap-2 mt-2">
                 <div className="text-center">
                   <div className="text-xs text-gray-400">Fee Collector</div>
-                  <div className="text-sm text-white">{(feePercentage / 10).toFixed(1)}%</div>
+                  <div className="text-sm text-gray-300">{(feePercentage / 10).toFixed(1)}%</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-400">Development</div>
-                  <div className="text-sm text-white">{(developmentPercentage / 10).toFixed(1)}%</div>
+                  <div className="text-sm text-gray-300">{(developmentPercentage / 10).toFixed(1)}%</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-400">Charity</div>
-                  <div className="text-sm text-white">{(charityPercentage / 10).toFixed(1)}%</div>
+                  <div className="text-sm text-gray-300">{(charityPercentage / 10).toFixed(1)}%</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-400">Evolution</div>
-                  <div className="text-sm text-white">{(evolutionPercentage / 10).toFixed(1)}%</div>
+                  <div className="text-sm text-gray-300">{(evolutionPercentage / 10).toFixed(1)}%</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Contract Section */}
-        <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
-          <h3 className="text-xl font-bold mb-4 text-purple-400">Contract Addresses</h3>
+        <form onSubmit={handleSubmit} className="space-y-6">        {/* Contract Section */}
+        <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
+          <h3 className="text-lg md:text-xl font-bold mb-4 text-orange-400">Contract Addresses</h3>
           
           {/* Ethereum Contract */}
           <div className="mb-4">
-            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="ethContract">
+            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="ethContract">
               Ethereum Contract
             </label>
             <input
@@ -1378,14 +1355,14 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               type="text"
               value={ethContract}
               onChange={(e) => setEthContract(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
               placeholder="0x..."
             />
           </div>
           
           {/* Polygon Contract */}
           <div className="mb-4">
-            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="polygonContract">
+            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="polygonContract">
               Polygon Contract
             </label>
             <input
@@ -1393,14 +1370,14 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               type="text"
               value={polygonContract}
               onChange={(e) => setPolygonContract(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
               placeholder="0x..."
             />
           </div>
           
           {/* Binance Smart Chain Contract */}
           <div className="mb-4">
-            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="binanceContract">
+            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="binanceContract">
               Binance Smart Chain Contract
             </label>
             <div className="flex gap-2">
@@ -1409,26 +1386,26 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 type="text"
                 value={binanceContract}
                 onChange={(e) => setBinanceContract(e.target.value)}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                 placeholder="0x..."
               />
               <button
                 type="button"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
+                className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
                 onClick={() => setBinanceContract("0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B")}
                 title="Fill with BSC Testnet address (Chain 97)"
               >
                 Use Testnet
               </button>
             </div>
-            <p className="text-gray-400 text-xs mt-1">
+            <p className="text-xs text-gray-400 mt-1">
               Use the button to automatically fill with a BSC Testnet address (Chain 97).
             </p>
           </div>
 
           {/* Binance Testnet Contract */}
           <div className="mb-4">
-            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="binanceTestnetContract">
+            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="binanceTestnetContract">
               Binance Testnet Contract (Chain 97)
             </label>
             <div className="flex gap-2">
@@ -1437,18 +1414,18 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                 type="text"
                 value={binanceTestnetContract}
                 onChange={(e) => setBinanceTestnetContract(e.target.value)}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                 placeholder="0x..."
               />
               <button
                 type="button"
-                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold"
                 onClick={handleSaveBinanceTestnetContract}
               >
                 Save
               </button>
             </div>
-            <p className="text-gray-400 text-xs mt-1">
+            <p className="text-xs text-gray-400 mt-1">
               Address saved in <code>contracts.binanceTestnet</code> in Firestore. Use for testing on BSC Testnet (Chain 97).
             </p>
             {binanceTestnetSaveStatus && (
@@ -1456,16 +1433,14 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             )}
           </div>
         </div>
-        
-        {/* Current Configuration Information */}
-        <div className="border border-gray-700 rounded-lg p-4 mb-6 bg-gray-900/50">
-          <h3 className="text-lg font-semibold mb-2 text-gray-300">Current System Configuration</h3>
-          <div className="bg-black p-3 rounded overflow-auto">
+          {/* Current Configuration Information */}        <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
+          <h3 className="text-lg md:text-xl font-bold mb-4 text-orange-400">Current System Configuration</h3>
+          <div className="bg-black/40 p-3 md:p-4 rounded-lg overflow-auto">
             <pre className="text-sm text-gray-400 whitespace-pre-wrap">
               {JSON.stringify(currentSystemConfig, null, 2)}
             </pre>
           </div>
-          <p className="text-gray-400 text-xs mt-2">
+          <p className="text-xs text-gray-400 mt-2">
             These are the current system settings. Values saved in Firestore take precedence over values defined in the paymentConfig.ts file.
             {currentSystemConfig && currentSystemConfig.updatedAt && (
               <span> Last update: {currentSystemConfig.updatedAt}</span>
@@ -1477,7 +1452,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
           <button
             type="submit"
             disabled={isUpdating}
-            className={`bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+            className={`bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg disabled:opacity-60 font-semibold shadow text-sm ${
               isUpdating ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
