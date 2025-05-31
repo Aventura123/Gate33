@@ -46,21 +46,20 @@ export async function logSystemActivity(
       return null;
     }
 
-    // Creates the systemLogs collection if it does not exist
+    // Create the systemLogs collection
     const logsCollection = collection(db, "systemLogs");
 
-    // Creates the log document
+    // Ensure the timestamp field is always a Firestore serverTimestamp
     const logData: SystemLogData & { timestamp: any } = {
       action,
       user,
       details,
-      timestamp: serverTimestamp() // Uses server timestamp for consistency
+      timestamp: serverTimestamp() // Always Firestore Timestamp
     };
 
-    // Adds the document to the collection
+    // Add the document
     const docRef = await addDoc(logsCollection, logData);
     console.log(`Log successfully registered: ${action} by ${user}`);
-    
     return docRef.id;
   } catch (error) {
     console.error("Error registering log:", error);

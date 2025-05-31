@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { getMonitoringState } from "../../utils/monitors/contractMonitor";
 
 // Temporary interface for component compatibility
 interface MonitoringState {
@@ -9,7 +8,6 @@ interface MonitoringState {
   contractsCount?: number;
   errors?: string[];
   fullState?: {
-    isLearn2EarnMonitoring: boolean;
     isWalletMonitoring: boolean;
     isTokenDistributionMonitoring: boolean;
   }
@@ -25,39 +23,60 @@ const ContractMonitor: React.FC = () => {
 
   // Add contract names and keys for display
   const contracts = [
-    { key: "isLearn2EarnMonitoring", label: "Learn2Earn" },
     { key: "isWalletMonitoring", label: "Wallet" },
     { key: "isTokenDistributionMonitoring", label: "Token Distribution" }
   ];
-  async function fetchMonitoringState() {
+    async function fetchMonitoringState() {
     try {
       setLoading(true);
-      const state = await getMonitoringState();
+      
+      // Make a direct API call instead of using the local state
+      const response = await fetch("/api/diagnostics/monitoring-status");
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+      
+      const state = await response.json();
+      console.log("Monitoring state from API:", state);
+      
+      // Debug log to check actual values
+      console.log("Debug - Monitoring active flags:", {
+        wallet: state.walletMonitoringActive,
+        tokenDistribution: state.tokenDistributionActive,
+        any: state.walletMonitoringActive || state.tokenDistributionActive,
+        initialized: state.initialized
+      });
       
       // Set all state properties at once to prevent double rendering
       setMonitoringState({
-        isRunning: state.isLearn2EarnMonitoring || state.isWalletMonitoring || state.isTokenDistributionMonitoring,
+        // Consider both the specific monitors AND the initialized state
+        isRunning: (state.walletMonitoringActive || state.tokenDistributionActive) && state.initialized,
         lastCheck: new Date().toISOString(),
         contractsCount: contracts.length,
-        errors: state.errors,
+        errors: state.errors || [],
         fullState: {
-          isLearn2EarnMonitoring: state.isLearn2EarnMonitoring,
-          isWalletMonitoring: state.isWalletMonitoring,
-          isTokenDistributionMonitoring: state.isTokenDistributionMonitoring
+          isWalletMonitoring: state.walletMonitoringActive || false,
+          isTokenDistributionMonitoring: state.tokenDistributionActive || false
         }
       });
+      
+      // Clear any error if the state was fetched successfully
       setError(null);
     } catch (err: any) {
-      setError(err.message || "Error fetching monitoring state");
       console.error("Error fetching monitoring state:", err);
+      setError(err.message || "Error fetching monitoring state");
+      // Keep the previous state if there was an error
     } finally {
       setLoading(false);
     }
   }
-
+  
+    // Only need to fetch monitoring state now
   useEffect(() => {
     fetchMonitoringState();
-    const interval = setInterval(fetchMonitoringState, 30000);
+    // Poll more frequently (every 5 seconds) for better responsiveness
+    const interval = setInterval(fetchMonitoringState, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -69,32 +88,79 @@ const ContractMonitor: React.FC = () => {
 
       const response = await fetch("/api/diagnostics/restart-monitoring", {
         method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
       });
 
-      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
 
-      if (result.success) {
+      const result = await response.json();      if (result.success) {
         setRestartMessage("✅ Monitoring restarted successfully! Updating status...");
-        // Fetch updated state after a brief delay
-        setTimeout(() => {
-          fetchMonitoringState();
-          setRestartMessage(null);
-          setIsRestarting(false);
-        }, 2000);
+        
+        // Immediately fetch the status to update UI faster
+        try {
+          // Short delay to allow the server to update its status
+          setTimeout(async () => {
+            await fetchMonitoringState();
+          }, 500);
+        } catch (err) {
+          console.error("Error on immediate status update:", err);
+        }
+        
+        // Poll for status updates a few times after restart
+        let attempts = 0;
+        const maxAttempts = 10; // Increase attempts to ensure we catch the status change
+        const statusCheck = setInterval(async () => {
+          try {
+            await fetchMonitoringState();
+            attempts++;
+            
+            // If monitoring is confirmed active, we can stop polling early
+            if (monitoringState?.isRunning) {
+              clearInterval(statusCheck);
+              setRestartMessage("✅ Monitoring active!");
+              setIsRestarting(false);
+              return;
+            }
+            
+            if (attempts >= maxAttempts) {
+              clearInterval(statusCheck);
+              setRestartMessage(null);
+              setIsRestarting(false);
+            }
+          } catch (err) {
+            console.error("Error checking monitoring status:", err);
+            if (attempts >= maxAttempts) {
+              clearInterval(statusCheck);
+              setRestartMessage("⚠️ Monitoring restarted but status check timed out");
+              setIsRestarting(false);
+            }
+          }
+        }, 1000); // Check more frequently (every 1 second)
       } else {
-        setRestartMessage(`❌ Error restarting: ${result.error}`);
+        setRestartMessage(`❌ Error restarting: ${result.error || "Unknown error"}`);
         setIsRestarting(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to restart monitoring:", error);
-      setRestartMessage("❌ Error restarting the monitoring");
+      setRestartMessage(`❌ Error restarting monitoring: ${error.message || "Unknown error"}`);
       setIsRestarting(false);
     }
   };
   if (loading) {
     return (
       <div className="p-6 bg-black/30 rounded-lg">
-        <p className="text-center text-orange-400">Loading monitoring state...</p>
+        <h3 className="text-xl text-orange-400 mb-4">Contract Monitoring Status</h3>
+        <div className="flex justify-center items-center p-4">
+          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-orange-400">Loading monitoring state...</p>
+        </div>
       </div>
     );
   }
@@ -102,13 +168,16 @@ const ContractMonitor: React.FC = () => {
   if (error) {
     return (
       <div className="p-6 bg-black/30 rounded-lg">
-        <p className="text-center text-red-400">Error: {error}</p>
-        <button
-          onClick={fetchMonitoringState}
-          className="mt-4 mx-auto block bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded"
-        >
-          Try Again
-        </button>
+        <h3 className="text-xl text-orange-400 mb-4">Contract Monitoring Status</h3>
+        <div className="bg-red-900/30 p-4 rounded-lg">
+          <p className="text-center text-red-400">Error: {error}</p>
+          <button
+            onClick={fetchMonitoringState}
+            className="mt-4 mx-auto block bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -124,10 +193,18 @@ const ContractMonitor: React.FC = () => {
       
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-gray-300">Status:</span>
-          <span className={`px-3 py-1 rounded-full text-sm ${monitoringState?.isRunning ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
-            {monitoringState?.isRunning ? 'Running' : 'Stopped'}
+          <span className="text-gray-300">Status:</span>          <span className={`px-3 py-1 rounded-full text-sm ${
+            isRestarting ? 'bg-yellow-900 text-yellow-300' : 
+            monitoringState?.isRunning ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
+          }`}>
+            {isRestarting ? 'Restarting' : monitoringState?.isRunning ? 'Running' : 'Stopped'}
           </span>
+          {isRestarting && (
+            <svg className="animate-spin ml-2 inline-block h-4 w-4 text-yellow-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          )}
         </div>
         
         <div className="flex items-center justify-between mb-2">
@@ -139,8 +216,20 @@ const ContractMonitor: React.FC = () => {
         
         <div className="flex items-center justify-between mb-2">
           <span className="text-gray-300">Contracts Tracked:</span>
-          <span className="text-sm text-orange-200">{contracts.length}</span>
+          <span className="text-sm text-orange-200">{monitoringState?.contractsCount || contracts.length}</span>
         </div>
+
+        {monitoringState?.errors && monitoringState.errors.length > 0 && (
+          <div className="mt-2 mb-4 bg-red-900/20 p-3 rounded-lg">
+            <h4 className="text-red-400 text-sm font-medium mb-1">Monitoring Errors:</h4>
+            <ul className="list-disc list-inside text-xs text-red-300">
+              {monitoringState.errors.map((error, idx) => (
+                <li key={idx}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
         <div className="mt-4">
           <h4 className="text-orange-300 text-sm mb-2">Tracked Contracts:</h4>
           <table className="w-full text-sm">
@@ -154,14 +243,17 @@ const ContractMonitor: React.FC = () => {
               {contracts.map(contract => (
                 <tr key={contract.key}>
                   <td className="py-1 text-gray-200">{contract.label}</td>
-                  <td className="py-1">                    <span className={
+                  <td className="py-1">
+                    <span className={
+                      isRestarting ? "text-yellow-400" :
                       (monitoringState?.fullState && monitoringState.fullState[contract.key as keyof typeof monitoringState.fullState])
                         ? "text-green-400"
                         : "text-red-400"
                     }>
-                      {(monitoringState?.fullState && monitoringState.fullState[contract.key as keyof typeof monitoringState.fullState])
-                        ? "Yes"
-                        : "No"}
+                      {isRestarting ? "Restarting..." :
+                        (monitoringState?.fullState && monitoringState.fullState[contract.key as keyof typeof monitoringState.fullState])
+                          ? "Yes"
+                          : "No"}
                     </span>
                   </td>
                 </tr>
@@ -169,17 +261,42 @@ const ContractMonitor: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
-      <button
-        className="w-full bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg flex items-center justify-center"
-        onClick={handleRestartMonitoring}
-        disabled={isRestarting}
-      >
-        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        {isRestarting ? 'Restarting...' : 'Restart Monitoring'}
-      </button>
+      </div>      <div className="flex flex-col gap-2">
+        {!monitoringState?.isRunning && (
+          <button
+            className="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center justify-center"
+            onClick={fetchMonitoringState}
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh Status
+          </button>
+        )}
+        
+        <button
+          className={`w-full ${isRestarting ? 'bg-gray-600 cursor-wait' : 'bg-orange-600 hover:bg-orange-700'} px-4 py-2 rounded-lg flex items-center justify-center`}
+          onClick={handleRestartMonitoring}
+          disabled={isRestarting}
+        >
+          {isRestarting ? (
+            <>
+              <svg className="animate-spin w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Restarting...
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Restart Monitoring
+            </>
+          )}
+        </button>
+      </div>{/* Learn2Earn contracts monitoring section removed */}
     </div>
   );
 };
@@ -450,6 +567,7 @@ const SystemActivityMonitor: React.FC = () => {
             </button>
           </div>
         </div>
+        
         {/* Tabs to switch between system logs, contract monitoring, and log management */}
         <div className="mb-6 border-b border-orange-800">
           <div className="flex">
@@ -478,7 +596,8 @@ const SystemActivityMonitor: React.FC = () => {
         {/* Content based on the selected tab */}
         {activeTab === 'system' ? (
           <>
-            {loadingLogs && (              <div className="flex justify-center my-12">
+            {loadingLogs && (
+              <div className="flex justify-center my-12">
                 <p className="text-gray-400">Loading logs...</p>
               </div>
             )}
@@ -495,10 +614,12 @@ const SystemActivityMonitor: React.FC = () => {
               </div>
             )}
             
-            {!loadingLogs && !error && filteredLogs.length === 0 && (              <div className="bg-black/30 p-6 rounded-lg text-center">
+            {!loadingLogs && !error && filteredLogs.length === 0 && (
+              <div className="bg-black/30 p-6 rounded-lg text-center">
                 <p className="text-gray-300">No logs found.</p>
               </div>
-            )}            
+            )}
+            
             {!loadingLogs && !error && filteredLogs.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="w-full bg-black/30 rounded-lg">
@@ -523,7 +644,7 @@ const SystemActivityMonitor: React.FC = () => {
                           </td>
                           <td className="p-3 text-gray-300 capitalize">{log.action}</td>
                           <td className="p-3 text-gray-300">{log.user || 'SYSTEM'}</td>
-                          <td className="p-3 border-b border-orange-900/30">
+                          <td className="p-3">
                             <button 
                               className="text-orange-400 hover:text-orange-300 flex items-center"
                               onClick={() => setExpandedLog(expandedLog === (log.id || String(index)) ? null : (log.id || String(index)))}
@@ -715,7 +836,9 @@ const SystemActivityMonitor: React.FC = () => {
                   <div className="bg-red-900/20 border border-red-700/30 rounded-lg p-3 text-sm text-gray-300">
                     <p className="mb-2 text-red-300 font-medium">⚠️ Warning:</p>
                     <p>This action will permanently delete all system logs within the specified date range. This operation cannot be undone.</p>
-                  </div>                  {!clearConfirmation ? (
+                  </div>
+                  
+                  {!clearConfirmation ? (
                     <button
                       onClick={startClearConfirmation}
                       disabled={!startDate || !endDate}
@@ -763,6 +886,9 @@ const SystemActivityMonitor: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Debug information - only visible in development mode */}
+      {/* Removed invalid monitoringState reference here. If you want debug info, add it inside ContractMonitor. */}
     </div>
   );
 };

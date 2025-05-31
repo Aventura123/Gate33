@@ -18,7 +18,6 @@ interface ServerStatus {
     startTime: number | null;
     lastRestart: number | null;
     tokenDistributionActive: boolean;
-    learn2earnActive: boolean;
     walletMonitoringActive: boolean;
     connectionType: string | null;
     errors: string[];
@@ -35,7 +34,6 @@ export const serverStatus: ServerStatus = {
     startTime: null,
     lastRestart: null,
     tokenDistributionActive: false,
-    learn2earnActive: false,
     walletMonitoringActive: false,
     connectionType: null,
     errors: [],
@@ -48,12 +46,8 @@ export const serverStatus: ServerStatus = {
 // Flag to ensure initialization only happens once
 let isInitialized = false;
 
-// Redes a monitorar (pode ser configurado por env ou hardcoded)
+// Networks to monitor (configured by env or default)
 const MONITOR_NETWORKS = (process.env.MONITOR_NETWORKS || 'polygon,ethereum,binance').split(',').map(n => n.trim().toLowerCase());
-
-const WS_RPC_ENDPOINTS = MONITOR_NETWORKS.flatMap(net => getWsRpcUrls(net));
-const HTTP_RPC_ENDPOINTS = MONITOR_NETWORKS.flatMap(net => getHttpRpcUrls(net));
-const ALL_RPC_ENDPOINTS = MONITOR_NETWORKS.flatMap(net => getAllRpcUrls(net));
 
 /**
  * Starts all server-side services
@@ -78,7 +72,6 @@ export function initializeServer() {
     // Start contract monitoring with a callback function that updates the status
     initializeContractMonitoring(false, (success: boolean, providerType: string | null, activeMonitors: {
       tokenDistribution: boolean;
-      learn2earn: boolean;
       wallet: boolean;
     }) => {
       if (success) {
@@ -86,7 +79,6 @@ export function initializeServer() {
         serverStatus.contractMonitoring.initialized = true;
         serverStatus.contractMonitoring.connectionType = providerType;
         serverStatus.contractMonitoring.tokenDistributionActive = activeMonitors.tokenDistribution;
-        serverStatus.contractMonitoring.learn2earnActive = activeMonitors.learn2earn;
         serverStatus.contractMonitoring.walletMonitoringActive = activeMonitors.wallet;
         serverStatus.contractMonitoring.lastStatus = 'active';
         
@@ -131,27 +123,6 @@ export function initializeServer() {
   }
 }
 
-/**
- * Schedules periodic blockchain connectivity checks
- */
-function scheduleConnectivityCheck() {
-  // Try to reconnect every 10 minutes
-  console.log('⏰ Scheduling periodic connectivity check');
-  
-  const checkInterval = setInterval(() => {
-    console.log('🔍 Checking connectivity with RPC endpoints...');
-    
-    // Just try to force status update for the user
-    restartContractMonitoring().then(result => {
-      if (result.success) {
-        console.log('✅ Connectivity check completed successfully');
-      } else {
-        console.warn('⚠️ Connectivity check failed:', result.message);
-      }
-    });
-  }, 10 * 60 * 1000); // every 10 minutes
-}
-
 // If this file is imported directly on the server, start immediately
 if (typeof window === 'undefined') {
   console.log('📝 server-init.ts loaded in server environment');
@@ -168,7 +139,6 @@ export async function restartContractMonitoring() {
     const previousStatus = {
       initialized: serverStatus.contractMonitoring.initialized,
       tokenDistributionActive: serverStatus.contractMonitoring.tokenDistributionActive,
-      learn2earnActive: serverStatus.contractMonitoring.learn2earnActive,
       walletMonitoringActive: serverStatus.contractMonitoring.walletMonitoringActive,
     };
     
@@ -202,7 +172,6 @@ export async function restartContractMonitoring() {
       try {
         initializeContractMonitoring(false, (success: boolean, providerType: string | null, activeMonitors: {
           tokenDistribution: boolean;
-          learn2earn: boolean;
           wallet: boolean;
         }) => {
           // Clear the timeout since the callback was called
@@ -213,7 +182,6 @@ export async function restartContractMonitoring() {
             serverStatus.contractMonitoring.initialized = true;
             serverStatus.contractMonitoring.connectionType = providerType;
             serverStatus.contractMonitoring.tokenDistributionActive = activeMonitors.tokenDistribution;
-            serverStatus.contractMonitoring.learn2earnActive = activeMonitors.learn2earn;
             serverStatus.contractMonitoring.walletMonitoringActive = activeMonitors.wallet;
             serverStatus.contractMonitoring.lastStatus = 'active';
             

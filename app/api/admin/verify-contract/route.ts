@@ -1,4 +1,4 @@
- import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import { getHttpRpcUrls } from '@/config/rpcConfig';
 
@@ -12,37 +12,32 @@ const ERC20_ABI = [
   "function transfer(address to, uint amount) returns (bool)"
 ];
 
-// Minimal Learn2Earn interface for validation (changed from Airdrop)
-const LEARN2EARN_ABI = [ // Changed from AIRDROP_ABI
-  "function owner() view returns (address)",
-  "function distribute(address[]) returns (bool)"
-];
+// ERC20 é o único tipo de contrato que precisamos validar
 
 export async function POST(request: NextRequest) {
   try {
     const { contractAddress, network = 'sepolia' } = await request.json();
-      // Validate contract address format
+    
+    // Validate contract address format
     if (!ethers.utils.isAddress(contractAddress)) {
       return NextResponse.json({ 
         valid: false, 
         error: "Invalid Ethereum address format"
       }, { status: 400 });
     }
-    // Map network names for compatibility with rpcConfig
-    const networkMapping: Record<string, string> = {
-      bsc: 'binance',
-      bscTestnet: 'binance'
-      // Outros mapeamentos são desnecessários quando os nomes já correspondem
-    };
-      // Get mapped network name or use the original
-    const mappedNetwork = networkMapping[network] || network;
     
-    // Get provider URLs from centralized config
-    const providerUrls = getHttpRpcUrls(mappedNetwork);
+    // Get RPC URL directly from config
+    const providerUrls = getHttpRpcUrls(network);
     
-    // Create provider with the first available URL (or default to sepolia if none found)
-    const rpcUrl = providerUrls.length ? providerUrls[0] : "https://rpc.sepolia.org";
-    const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+    if (!providerUrls || providerUrls.length === 0) {
+      return NextResponse.json({ 
+        valid: false, 
+        error: `No RPC URLs available for network: ${network}`
+      }, { status: 400 });
+    }
+    
+    // Create provider with the URL from config
+    const provider = new ethers.providers.JsonRpcProvider(providerUrls[0]);
     
     // Check if address has code (is a contract)
     const code = await provider.getCode(contractAddress);
@@ -72,26 +67,12 @@ export async function POST(request: NextRequest) {
     } catch (erc20Error) {
       console.log("Not an ERC20 token, checking for airdrop functions...");
     }
-    
-    // Try to validate as Learn2Earn contract (changed from Airdrop)
-    try {
-      const learn2earnContract = new ethers.Contract(contractAddress, LEARN2EARN_ABI, provider); // Changed from airdropContract and AIRDROP_ABI
-      const owner = await learn2earnContract.owner();
-      
-      return NextResponse.json({
-        valid: true,
-        isLearn2EarnContract: true, // Changed from isAirdropContract
-        contractDetails: {
-          owner
-        }
-      });
-    } catch (airdropError) {      // Contract might still be valid but doesn't conform to our interfaces
-      return NextResponse.json({
-        valid: true,
-        genericContract: true,
-        message: "Contract exists but doesn't match ERC20 or Learn2Earn patterns"
-      });
-    }
+      // Contract might still be valid but doesn't conform to our interfaces
+    return NextResponse.json({
+      valid: true,
+      genericContract: true,
+      message: "Contract exists but doesn't match ERC20 pattern"
+    });
   } catch (error: any) {
     console.error("Contract verification error:", error);
     return NextResponse.json({

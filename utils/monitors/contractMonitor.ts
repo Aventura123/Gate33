@@ -1,6 +1,8 @@
 import { ethers } from 'ethers';
 import { logSystem } from '../logSystem';
 import { getWsRpcUrls, getHttpRpcUrls } from '../../config/rpcConfig';
+import { db } from '../../lib/firebase';
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 
 // Configuration
 const ALERT_THRESHOLD_ETH = 0.1;  // Alert if spending is greater than this value in ETH
@@ -23,7 +25,6 @@ let reconnectionTimer: NodeJS.Timeout | null = null;
 // Define active monitors state
 const activeMonitors = {
   tokenDistribution: false,
-  learn2earn: false,
   wallet: false,
 };
 
@@ -57,74 +58,6 @@ const sendEmail = async (to: string, subject: string, message: string): Promise<
     console.error("Error sending email:", error);
   }
 };
-
-// Monitor the Learn2Earn contract for suspicious activities
-export async function monitorLearn2EarnActivity(
-  contractAddress: string, 
-  provider: ethers.providers.Provider
-): Promise<void> {
-  try {
-    // Simplified ABI just for the events we want to monitor
-    const abi = [
-      "event Learn2EarnClaimed(uint256 indexed learn2earnId, address indexed user, uint256 amount)",
-      "event Learn2EarnEnded(uint256 indexed learn2earnId)",
-    ];
-    
-    const contract = new ethers.Contract(contractAddress, abi, provider);
-    
-    // Set up listener for claim events
-    contract.on('Learn2EarnClaimed', async (learn2earnId, user, amount, event) => {
-      const amountFormatted = ethers.utils.formatEther(amount);
-      
-      // Log all claims in the log system
-      await logSystem.contractActivity("Learn2EarnContract", "claim", {
-        learn2earnId: learn2earnId.toString(),
-        user,
-        amount: amountFormatted,
-        transactionHash: event.transactionHash
-      });
-      
-      // Alert if the value is above the threshold
-      if (parseFloat(amountFormatted) > ALERT_THRESHOLD_TOKENS) {
-        const message = `ALERT: Large claim detected in Learn2Earn!\n` + 
-                       `ID: ${learn2earnId}\n` +
-                       `User: ${user}\n` + 
-                       `Amount: ${amountFormatted} tokens\n` +
-                       `Transaction hash: ${event.transactionHash}`;
-        
-        // Register alert in the system
-        await logSystem.warn(message, {
-          contractAddress,
-          learn2earnId: learn2earnId.toString(),
-          user,
-          amount: amountFormatted,
-          transactionHash: event.transactionHash,
-          alertType: 'large_claim'
-        });
-                       
-        await sendEmail(ADMIN_EMAIL, 'Gate33 Security Alert - Learn2Earn', message);
-      }
-    });
-    
-    // Set up listener for end events
-    contract.on('Learn2EarnEnded', async (learn2earnId, event) => {
-      const message = `Learn2Earn ID ${learn2earnId} has been ended. Hash: ${event.transactionHash}`;
-      
-      // Log in the log system
-      await logSystem.contractActivity("Learn2EarnContract", "ended", {
-        learn2earnId: learn2earnId.toString(),
-        transactionHash: event.transactionHash
-      });
-      
-      // Always notify when a program ends
-      await sendEmail(ADMIN_EMAIL, 'Learn2Earn Ended', message);
-    });
-    
-    await logSystem.info(`Learn2Earn monitoring started for contract ${contractAddress}`);
-  } catch (error: any) {
-    await logSystem.error(`Error configuring Learn2Earn monitoring: ${error.message}`);
-  }
-}
 
 // Monitor gas spending of the service wallet
 export async function monitorServiceWallet(
@@ -545,7 +478,6 @@ export function initializeContractMonitoring(
     providerType: string | null,
     activeMonitors: {
       tokenDistribution: boolean;
-      learn2earn: boolean;
       wallet: boolean;
     }
   ) => void
@@ -562,7 +494,6 @@ export function initializeContractMonitoring(
         serverStatus.contractMonitoring = {
           initialized: false,
           tokenDistributionActive: false,
-          learn2earnActive: false,
           walletMonitoringActive: false,
           errors: [],
           warnings: []
@@ -646,7 +577,6 @@ export function initializeContractMonitoring(
         if (statusCallback) {
           statusCallback(false, null, {
             tokenDistribution: false,
-            learn2earn: false,
             wallet: false
           });
         }
@@ -663,40 +593,9 @@ export function initializeContractMonitoring(
       // Identificar o tipo de provider para logs
       const providerType = ('_websocket' in provider) ? 'WebSocket' : 'HTTP';
       console.log(`Usando provider tipo ${providerType} para monitoramento`);
+        // Inicializar cada monitor com tratamento de erro independente
       
-      // Inicializar cada monitor com tratamento de erro independente
-      
-      // 1. Learn2Earn Monitor (Firestore)
-      console.log('Iniciando monitoramento de Learn2Earn via Firestore...');
-      try {
-        // Call the locally defined function directly
-        monitorAllLearn2EarnFromFirestore();
-      } catch (l2eErr) {
-        console.error('Erro ao iniciar monitoramento Learn2Earn via Firestore:', l2eErr);
-      }
-
-      // Learn2Earn Monitor (Blockchain)
-      const learn2earnContracts = [];
-      if (process.env.LEARN2EARN_CONTRACT_ADDRESS) {
-        learn2earnContracts.push({
-          contractAddress: process.env.LEARN2EARN_CONTRACT_ADDRESS,
-          provider,
-          network: 'polygon'
-        });
-      }
-      
-      if (learn2earnContracts.length > 0) {
-        console.log('Iniciando monitoramento de Learn2Earn via Blockchain...');
-        try {
-          // Use the locally defined function
-          monitorLearn2EarnContracts(learn2earnContracts);
-          activeMonitors.learn2earn = true;
-        } catch (l2eBlockchainErr) {
-          console.error('Erro ao iniciar monitoramento Learn2Earn via Blockchain:', l2eBlockchainErr);
-        }
-      }
-      
-      // 2. Service wallet monitor
+      // 1. Service wallet monitor
       if (serviceWalletAddress) {
         console.log(`Iniciando monitoramento de carteira de serviço: ${serviceWalletAddress}`);
         try {
@@ -837,19 +736,15 @@ export function initializeContractMonitoring(
       // IMPORTANTE: Chamar o callback apenas após iniciar todos os monitores
       setTimeout(() => {
         // Aguardar um pouco para que os processos de monitoramento sejam iniciados
-        if (statusCallback) {
-          statusCallback(true, providerType, {
+        if (statusCallback) {          statusCallback(true, providerType, {
             tokenDistribution: activeMonitors.tokenDistribution,
-            learn2earn: activeMonitors.learn2earn,
             wallet: activeMonitors.wallet
           });
         }
         
         // Atualizar status global independentemente do callback
         if (serverStatus && serverStatus.contractMonitoring) {
-          serverStatus.contractMonitoring.initialized = true;
-          serverStatus.contractMonitoring.tokenDistributionActive = activeMonitors.tokenDistribution;
-          serverStatus.contractMonitoring.learn2earnActive = activeMonitors.learn2earn;
+          serverStatus.contractMonitoring.initialized = true;          serverStatus.contractMonitoring.tokenDistributionActive = activeMonitors.tokenDistribution;
           serverStatus.contractMonitoring.walletMonitoringActive = activeMonitors.wallet;
         }
       }, 5000); // Aguardar 5 segundos para garantir que os monitores tiveram tempo para iniciar
@@ -857,15 +752,11 @@ export function initializeContractMonitoring(
       try {
         logSystem.info('Sistema de monitoramento de contratos inicializado', {
           rpcUrl: 'Conexão estabelecida com sucesso',
-          providerType,
-          contracts: {
-            learn2earn: process.env.LEARN2EARN_CONTRACT_ADDRESS || 'não configurado',
+          providerType,          contracts: {
             tokenDistributor: tokenDistributorAddress || 'não configurado'
           },
-          serviceWallet: serviceWalletAddress || 'não configurado',
-          activeMonitors: {
+          serviceWallet: serviceWalletAddress || 'não configurado',          activeMonitors: {
             tokenDistribution: activeMonitors.tokenDistribution,
-            learn2earn: activeMonitors.learn2earn,
             wallet: activeMonitors.wallet
           }
         });
@@ -892,7 +783,6 @@ export function initializeContractMonitoring(
       if (statusCallback) {
         statusCallback(false, null, {
           tokenDistribution: false,
-          learn2earn: false,
           wallet: false
         });
       }
@@ -919,7 +809,6 @@ export function initializeContractMonitoring(
         if (statusCallback) {
           statusCallback(false, null, {
             tokenDistribution: false,
-            learn2earn: false,
             wallet: false
           });
         }
@@ -951,24 +840,42 @@ export function initializeContractMonitoring(
     if (statusCallback) {
       statusCallback(false, null, {
         tokenDistribution: false,
-        learn2earn: false,
         wallet: false
       });
     }
   }
 }
 
+// Export a function to get the server status
+export function getServerStatus() {
+  try {
+    // Dynamically import serverStatus to avoid circular import issues
+    const { serverStatus } = require('../../lib/server-init');
+    return serverStatus;
+  } catch (error) {
+    console.error("Error getting server status:", error);
+    // Return a default status in case of error
+    return {
+      contractMonitoring: {
+        initialized: false,
+        startTime: null,
+        lastRestart: null,
+        tokenDistributionActive: false,
+        walletMonitoringActive: false,
+        connectionType: null,
+        errors: ["Error accessing server status: " + (error instanceof Error ? error.message : String(error))],
+        rpcUrl: null,
+        warnings: [],
+        lastStatus: 'unknown'
+      }
+    };
+  }
+}
+
 // Interface for contract monitoring state
 export interface ContractMonitoringState {
-  isLearn2EarnMonitoring: boolean;
   isWalletMonitoring: boolean;
   isTokenDistributionMonitoring: boolean;
-  lastLearn2EarnEvent?: {
-    id: string;
-    user: string;
-    amount: string;
-    timestamp: string;
-  };
   walletBalance?: string;
   tokenDistributions?: {
     count: number;
@@ -982,127 +889,66 @@ export async function getMonitoringState(): Promise<ContractMonitoringState> {
   try {
     // On the client side, we don't have access to server environment variables
     // Let's make a call to our diagnostics API
-    let isLearn2EarnMonitoring = false;
     let isWalletMonitoring = false;
     let isTokenDistributionMonitoring = false;
     let tokenDistributions = undefined;
     let errors: string[] = [];
-
     if (typeof window !== 'undefined') {
       try {
-        console.log("Fetching monitoring data from diagnostics API...");
-        const response = await fetch('/api/diagnostics/tokens');
+        console.log("Obtendo status dos contratos monitorados diretamente...");
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Received diagnostics data:", data);
-          
-          // Only consider active if monitoring is actually active
-          isTokenDistributionMonitoring = !!data.tokensConfig?.distributorAddress &&
-            data.tokensConfig?.distributorAddress !== "Not configured" &&
-            data.monitoringStatus?.tokenDistributionActive === true;
-          
-          // Use only real blockchain data
-          if (data.tokenDistribution) {
-            const availableTokens = parseFloat(data.tokenDistribution.availableTokens) || 0;
-            const totalDistributed = parseFloat(data.tokenDistribution.totalDistributed) || 0;
-            
-            // Only set tokenDistributions if there are actually tokens distributed
-            if (totalDistributed > 0) {
-              // Assume each average donation is 50 tokens to estimate the number of donors
-              const estimatedDonors = Math.max(1, Math.ceil(totalDistributed / 50));
-              
-              tokenDistributions = {
-                count: estimatedDonors,
-                totalTokens: totalDistributed.toLocaleString('en-US')
-              };
-            }
-          }
-          
-          // Add diagnostic errors
-          if (data.errors && data.errors.length > 0) {
-            errors = [...data.errors];
-          }
-          
-          // Get monitoring status of other services
-          isLearn2EarnMonitoring = data.monitoringStatus?.learn2earnActive === true;
-          isWalletMonitoring = data.monitoringStatus?.walletMonitoringActive === true;
-          
-        } else {
-          console.error("Failed to fetch diagnostics data");
-          errors.push("Failed to fetch diagnostics data from API");
-          // Use environment-based checks only, no localStorage fallbacks
-          isTokenDistributionMonitoring = false;
-        }
+        // Obter status do monitoramento de carteira e distribuidor de tokens 
+        // diretamente dos estados ativos em memória
+        isWalletMonitoring = activeMonitors.wallet;
+        isTokenDistributionMonitoring = activeMonitors.tokenDistribution;
+      
+        // Não tentaremos mais buscar dados de diagnóstico via API externa
+        console.log("Status local dos monitores:", { 
+          wallet: isWalletMonitoring, 
+          tokenDistribution: isTokenDistributionMonitoring
+        });
       } catch (err) {
-        console.error("Error fetching monitoring data:", err);
-        errors.push("Error connecting to diagnostics API");
-        // Use environment-based checks only, no localStorage fallbacks
+        console.error("Erro ao verificar status dos monitores:", err);
+        errors.push("Erro ao verificar status dos monitores: " + (err instanceof Error ? err.message : String(err)));
+        
+        // Fornecer estados padrão em caso de erro, sem usar fallbacks
+        isWalletMonitoring = false;
         isTokenDistributionMonitoring = false;
       }
     } else {
-      // On the server side, we can check environment variables
-      isLearn2EarnMonitoring = !!process.env.LEARN2EARN_CONTRACT_ADDRESS;
+      // On the server side, we check configuration
       isWalletMonitoring = !!process.env.SERVICE_WALLET_ADDRESS;
       isTokenDistributionMonitoring = !!process.env.TOKEN_DISTRIBUTOR_ADDRESS;
     }
     
-    return {
-      isLearn2EarnMonitoring,
-      isWalletMonitoring,
-      isTokenDistributionMonitoring,
-      // Only real data, no placeholders
-      walletBalance: isWalletMonitoring ? "Waiting for data..." : undefined,
-      tokenDistributions,
-      errors
-    };
+    // Verifique se estamos no lado do cliente para usar valores de memória
+    if (typeof window !== 'undefined') {
+      // Use os valores determinados diretamente do estado do sistema
+      return {
+        isWalletMonitoring,
+        isTokenDistributionMonitoring,
+        // Não usamos placeholders
+        walletBalance: isWalletMonitoring ? "Monitorando" : undefined,
+        tokenDistributions: isTokenDistributionMonitoring ? { count: 0, totalTokens: "Monitorando" } : undefined,
+        errors
+      };
+    } else {
+      // No lado do servidor, usamos apenas o que sabemos com certeza
+      return {
+        isWalletMonitoring,
+        isTokenDistributionMonitoring,
+        errors
+      };
+    }
   } catch (error: any) {
-    console.error("Error getting monitoring state:", error);
+    // Mensagem de erro mais detalhada para depuração
+    const errorMessage = error.message || "Erro desconhecido obtendo estado de monitoramento";
+    console.error("Erro obtendo estado de monitoramento:", errorMessage, error);
+      // No caso de erro grave, retorne um estado consistente
     return {
-      isLearn2EarnMonitoring: false,
       isWalletMonitoring: false,
       isTokenDistributionMonitoring: false,
-      errors: [error.message || "Unknown error getting state"]
+      errors: [`Erro ao verificar estado do monitoramento: ${errorMessage}`]
     };
-  }
-}
-
-// Implementation of monitorLearn2EarnContracts function directly in this file
-function monitorLearn2EarnContracts(contracts: Array<{
-  contractAddress: string;
-  provider: ethers.providers.Provider;
-  network: string;
-}>): void {
-  try {
-    console.log(`Starting Learn2Earn blockchain monitoring for ${contracts.length} contracts...`);
-    
-    contracts.forEach((contract, index) => {
-      try {
-        console.log(`Initializing monitoring for Learn2Earn contract ${index + 1}: ${contract.contractAddress} on ${contract.network}`);
-        monitorLearn2EarnActivity(contract.contractAddress, contract.provider)
-          .then(() => {
-            console.log(`✅ Learn2Earn monitoring active for ${contract.contractAddress} on ${contract.network}`);
-          })
-          .catch((err: any) => {
-            console.error(`❌ Failed to initialize Learn2Earn monitoring for ${contract.contractAddress}: ${err.message}`);
-          });
-      } catch (err: any) {
-        console.error(`Error setting up Learn2Earn contract ${contract.contractAddress}:`, err);
-      }
-    });
-  } catch (error: any) {
-    console.error(`Error initializing Learn2Earn blockchain monitoring:`, error);
-  }
-}
-
-// Implementation of monitorAllLearn2EarnFromFirestore function directly in this file
-function monitorAllLearn2EarnFromFirestore(): void {
-  try {
-    console.log('Starting Learn2Earn Firestore monitoring...');
-    // This is a placeholder. In a real implementation, this function would
-    // retrieve Learn2Earn data from Firestore and monitor it
-    console.log('Learn2Earn Firestore monitoring successfully started');
-  } catch (error: any) {
-    console.error(`Failed to initialize Learn2Earn Firestore monitoring:`, error);
   }
 }

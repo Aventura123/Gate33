@@ -11,46 +11,47 @@ try {
   serverStatus = { contractMonitoring: { errors: ["Erro ao importar status do servidor"] } };
 }
 
-// Função auxiliar para testar a conexão com a blockchain
+// Função simplificada para testar a conexão com a blockchain usando apenas os RPCs da configuração
 async function testBlockchainConnection() {
-  const debugInfo: any = { triedUrls: [], envVars: {} };
+  const debugInfo: any = { triedUrls: [] };
   try {
     // Obter URLs de RPC da configuração centralizada
     const rpcUrls = getHttpRpcUrls('polygon');
     
-    // Incluir informações de variáveis de ambiente para debug
-    debugInfo.envVars = {
-      CUSTOM_POLYGON_RPC: process.env.CUSTOM_POLYGON_RPC,
-      INFURA_KEY: process.env.INFURA_KEY,
-    };
-    // Testar URLs até encontrar uma que funcione
-    for (const url of rpcUrls) {
-      if (!url) continue;
-      debugInfo.triedUrls.push(url);
-      try {
-        const provider = new ethers.providers.JsonRpcProvider(url);
-        const blockNumber = await Promise.race([
-          provider.getBlockNumber(),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
-        ]);
-        return {
-          success: true,
-          provider,
-          blockNumber,
-          url: url.includes('api_key') ? url.replace(/api_key=.*/, 'api_key=****') : url,
-          debugInfo
-        };
-      } catch (error: any) {
-        debugInfo[`${url}`] = error.message || String(error);
-        // Continuar tentando o próximo URL
-      }
-    }    // Se nenhum RPC funcionou, retornar erro
-    debugInfo.error = "Não foi possível conectar a nenhum RPC Polygon";
-    return {
-      success: false,
-      error: "Não foi possível conectar a nenhum RPC Polygon",
-      debugInfo
-    };
+    if (!rpcUrls || rpcUrls.length === 0) {
+      return {
+        success: false,
+        error: "Nenhum RPC Polygon configurado",
+        debugInfo
+      };
+    }
+    
+    // Usar o primeiro RPC válido da lista
+    const url = rpcUrls[0];
+    debugInfo.triedUrls.push(url);
+    
+    try {
+      const provider = new ethers.providers.JsonRpcProvider(url);
+      const blockNumber = await Promise.race([
+        provider.getBlockNumber(),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+      ]);
+      
+      return {
+        success: true,
+        provider,
+        blockNumber,
+        url: url.includes('api_key') ? url.replace(/api_key=.*/, 'api_key=****') : url,
+        debugInfo
+      };
+    } catch (error: any) {
+      debugInfo.error = error.message || String(error);
+      return {
+        success: false,
+        error: `Falha ao conectar ao RPC Polygon: ${error.message}`,
+        debugInfo
+      };
+    }
   } catch (error: any) {
     debugInfo.catchError = error.message;
     return {
@@ -178,17 +179,15 @@ export async function GET() {
       distributorAddress: process.env.TOKEN_DISTRIBUTOR_ADDRESS || process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS,
       tokenAddress: process.env.G33_TOKEN_ADDRESS,
     };
-    
-    // Verificar status do monitoramento - priorizar o serverStatus
+      // Verificar status do monitoramento - priorizar o serverStatus
     let monitoringStatus = {
       initialized: false,
       tokenDistributionActive: false,
-      learn2earnActive: false,
       walletMonitoringActive: false,
       errors: ["Status de monitoramento não disponível"],
-      warnings: [], // Adicionando a propriedade 'warnings'
-      connectionType: 'unknown', // Adicionando a propriedade 'connectionType'
-      lastStatus: 'unknown' // Adicionando a propriedade 'lastStatus'
+      warnings: [], 
+      connectionType: 'unknown',
+      lastStatus: 'unknown'
     };
     
     // Se serverStatus estiver disponível, use-o
@@ -196,7 +195,6 @@ export async function GET() {
       monitoringStatus = {
         initialized: serverStatus.contractMonitoring.initialized || false,
         tokenDistributionActive: serverStatus.contractMonitoring.tokenDistributionActive || false,
-        learn2earnActive: serverStatus.contractMonitoring.learn2earnActive || false,
         walletMonitoringActive: serverStatus.contractMonitoring.walletMonitoringActive || false,
         errors: serverStatus.contractMonitoring.errors || [],
         warnings: serverStatus.contractMonitoring.warnings || [],

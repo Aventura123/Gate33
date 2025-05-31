@@ -86,6 +86,13 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ message: "No logs found in the specified date range" }, { status: 200 });
     }
 
+    // Log IDs and timestamps of found documents
+    console.log(`Found ${logsSnapshot.size} logs to delete:`);
+    logsSnapshot.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      console.log(`ID: ${docSnap.id}, timestamp:`, data.timestamp);
+    });
+
     const deletePromises = logsSnapshot.docs.map(doc => deleteDoc(doc.ref));
 
     await Promise.all(deletePromises);
