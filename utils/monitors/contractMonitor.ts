@@ -40,6 +40,16 @@ if (!serviceWalletAddress && process.env.OWNER_PRIVATE_KEY) {
 }
 const tokenDistributorAddress = process.env.TOKEN_DISTRIBUTOR_ADDRESS || process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS || '';
 
+// Define Learn2Earn contract addresses por rede
+const learn2EarnContracts = {
+  'bsc-testnet': process.env.LEARN2EARN_BSC_TESTNET_ADDRESS || '0xb05e645920d1bfa7620a6be571d124e39626e3f0',
+  'avalanche': process.env.LEARN2EARN_AVALANCHE_ADDRESS || '0xbafb0d4c913dce37acf18285af6e3de0d3b80280',
+  'bsc': process.env.LEARN2EARN_BSC_ADDRESS || '0xBAfB0d4c913DCE37aCF18285aF6E3De0d3B80280',
+  'optimism': process.env.LEARN2EARN_OPTIMISM_ADDRESS || '0xff4bf9ea47db92af9c41ecd6e746451e80033bd7',
+  'polygon': process.env.LEARN2EARN_POLYGON_ADDRESS || '0xc09538ac9f2e9dd38afb310da734ba077cf09321',
+  'ethereum': process.env.LEARN2EARN_ETHEREUM_ADDRESS || ''
+};
+
 // Redes a monitorar (pode ser configurado por env ou hardcoded)
 const MONITOR_NETWORKS = (process.env.MONITOR_NETWORKS || 'polygon,ethereum,binance').split(',').map(n => n.trim().toLowerCase());
 
@@ -479,6 +489,7 @@ export function initializeContractMonitoring(
     activeMonitors: {
       tokenDistribution: boolean;
       wallet: boolean;
+      learn2Earn?: Record<string, boolean>;
     }
   ) => void
 ): void {
@@ -727,6 +738,35 @@ export function initializeContractMonitoring(
           );
         }
       }
+        // 4. Learn2Earn monitors
+      const learn2EarnMonitors: Record<string, boolean> = {};
+      
+      // Inicializar contrato Learn2Earn em cada rede
+      for (const [network, address] of Object.entries(learn2EarnContracts)) {
+        if (address) {
+          console.log(`🔍 Iniciando monitoramento do contrato Learn2Earn na rede ${network}...`);
+          
+          try {
+            monitorLearn2Earn(address, provider, network)
+              .then(() => {
+                learn2EarnMonitors[network] = true;
+                console.log(`✅ Monitoramento do Learn2Earn em ${network} ativo para ${address}`);
+              })
+              .catch((err: any) => {
+                console.error(`❌ Falha ao inicializar monitoramento do Learn2Earn (${network}): ${err.message}`);
+                
+                // Atualizar status global
+                if (serverStatus && serverStatus.contractMonitoring) {
+                  serverStatus.contractMonitoring.errors.push(
+                    `Falha ao inicializar monitoramento do Learn2Earn (${network}): ${err.message}`
+                  );
+                }
+              });
+          } catch (l2eErr: any) {
+            console.error(`❌ Erro ao iniciar monitoramento do Learn2Earn (${network}):`, l2eErr);
+          }
+        }
+      }
       
       // Após tentar inicializar todos os monitores, atualizar status global
       if (serverStatus && serverStatus.contractMonitoring) {
@@ -736,15 +776,18 @@ export function initializeContractMonitoring(
       // IMPORTANTE: Chamar o callback apenas após iniciar todos os monitores
       setTimeout(() => {
         // Aguardar um pouco para que os processos de monitoramento sejam iniciados
-        if (statusCallback) {          statusCallback(true, providerType, {
+        if (statusCallback) {          
+          statusCallback(true, providerType, {
             tokenDistribution: activeMonitors.tokenDistribution,
-            wallet: activeMonitors.wallet
+            wallet: activeMonitors.wallet,
+            learn2Earn: learn2EarnMonitors
           });
         }
         
         // Atualizar status global independentemente do callback
         if (serverStatus && serverStatus.contractMonitoring) {
-          serverStatus.contractMonitoring.initialized = true;          serverStatus.contractMonitoring.tokenDistributionActive = activeMonitors.tokenDistribution;
+          serverStatus.contractMonitoring.initialized = true;          
+          serverStatus.contractMonitoring.tokenDistributionActive = activeMonitors.tokenDistribution;
           serverStatus.contractMonitoring.walletMonitoringActive = activeMonitors.wallet;
         }
       }, 5000); // Aguardar 5 segundos para garantir que os monitores tiveram tempo para iniciar
@@ -843,6 +886,140 @@ export function initializeContractMonitoring(
         wallet: false
       });
     }
+  }
+}
+
+/**
+ * Monitora um contrato Learn2Earn específico
+ * @param address Endereço do contrato Learn2Earn
+ * @param provider Provider Ethereum
+ * @param network Nome da rede (ex: polygon, bsc, etc.)
+ */
+async function monitorLearn2Earn(address: string, provider: ethers.providers.Provider, network: string): Promise<void> {
+  try {
+    console.log(`🔍 Iniciando monitoramento do contrato Learn2Earn em ${address} (${network})...`);
+    
+    // ABI simplificado para Learn2Earn - apenas com os eventos que queremos monitorar
+    const minimalAbi = [
+      "event TokensClaimed(address indexed participant, uint256 amount)",
+      "event ParticipantAdded(address indexed participant, uint256 amount)",
+      "event Learn2EarnCreated(uint256 indexed id, address creator, uint256 tokenAmount, uint256 startTime, uint256 endTime)",
+      "event MultipleWithdrawals(address indexed user, uint256 count, uint256 totalAmount)"
+    ];
+    
+    // Criar instância do contrato
+    const contract = new ethers.Contract(address, minimalAbi, provider);
+    
+    // Monitorar evento de tokens reclamados
+    contract.on('TokensClaimed', async (participant, amount, event) => {
+      console.log(`Learn2Earn (${network}): Evento TokensClaimed detectado: ${participant} recebeu ${ethers.utils.formatEther(amount)} tokens`);
+      
+      // Registrar evento no sistema de logs
+      try {
+        const tokens = parseFloat(ethers.utils.formatEther(amount));
+        await logSystem.info(`Learn2Earn (${network}): Tokens reclamados`, {
+          participant,
+          amount: tokens,
+          transactionHash: event.transactionHash
+        });
+        
+        // Alertar se o valor for alto
+        if (tokens > ALERT_THRESHOLD_TOKENS) {          await logSystem.warn(`Alerta: Reclamação de alto valor no Learn2Earn (${network})`, {
+            participant,
+            amount: tokens,
+            transactionHash: event.transactionHash
+          });
+        }
+      } catch (logErr) {
+        console.error(`Erro ao registrar evento TokensClaimed (${network}):`, logErr);
+      }
+    });
+    
+    // Monitorar evento de participante adicionado
+    contract.on('ParticipantAdded', async (participant, amount, event) => {
+      console.log(`Learn2Earn (${network}): Novo participante adicionado: ${participant}`);
+      try {
+        await logSystem.info(`Learn2Earn (${network}): Novo participante`, {
+          participant,
+          transactionHash: event.transactionHash
+        });
+      } catch (logErr) {
+        console.error(`Erro ao registrar evento ParticipantAdded (${network}):`, logErr);
+      }
+    });
+    
+    // Monitorar evento de criação de Learn2Earn
+    contract.on('Learn2EarnCreated', async (id, creator, tokenAmount, startTime, endTime, event) => {
+      const tokens = parseFloat(ethers.utils.formatEther(tokenAmount));
+      console.log(`Learn2Earn (${network}): Novo Learn2Earn criado #${id} com ${tokens} tokens`);
+      try {
+        await logSystem.info(`Learn2Earn (${network}): Novo Learn2Earn criado`, {
+          id: id.toString(),
+          creator,
+          amount: tokens,
+          startTime: new Date(startTime.toNumber() * 1000).toISOString(),
+          endTime: new Date(endTime.toNumber() * 1000).toISOString(),
+          transactionHash: event.transactionHash
+        });          // Alertar se o valor for alto
+        if (tokens > ALERT_THRESHOLD_TOKENS) {
+          await logSystem.warn(`Alerta: Novo Learn2Earn de alto valor (${network})`, {
+            id: id.toString(),
+            creator,
+            amount: tokens,
+            transactionHash: event.transactionHash
+          });
+        }
+      } catch (logErr) {
+        console.error(`Erro ao registrar evento Learn2EarnCreated (${network}):`, logErr);
+      }
+    });
+    
+    // Monitorar evento de múltiplos saques (sinal de comportamento potencialmente suspeito)
+    contract.on('MultipleWithdrawals', async (user, count, totalAmount, event) => {
+      console.log(`Learn2Earn (${network}): Múltiplos saques por ${user} - ${count} retiradas`);
+      try {
+        const tokens = parseFloat(ethers.utils.formatEther(totalAmount));
+          // Este é sempre um evento de alerta
+        await logSystem.warn(`Alerta: Múltiplos saques de Learn2Earn (${network})`, {
+          user,
+          count: count.toNumber(),
+          totalAmount: tokens,
+          transactionHash: event.transactionHash
+        });
+      } catch (logErr) {
+        console.error(`Erro ao registrar evento MultipleWithdrawals (${network}):`, logErr);
+      }
+    });
+    
+    // Adicionar informações ao status global
+    const { serverStatus } = require('../../lib/server-init');
+    if (serverStatus && serverStatus.contractMonitoring) {
+      // Garantir que o array existe
+      if (!serverStatus.contractMonitoring.learn2EarnContracts) {
+        serverStatus.contractMonitoring.learn2EarnContracts = [];
+      }
+        // Adicionar ou atualizar o contrato na lista
+      const existingContractIndex = serverStatus.contractMonitoring.learn2EarnContracts.findIndex(
+        (c: {address: string, network: string}) => c.address.toLowerCase() === address.toLowerCase() && c.network === network
+      );
+      
+      if (existingContractIndex >= 0) {
+        serverStatus.contractMonitoring.learn2EarnContracts[existingContractIndex].active = true;
+      } else {
+        serverStatus.contractMonitoring.learn2EarnContracts.push({
+          address,
+          network,
+          active: true,
+          name: `Learn2Earn ${network.charAt(0).toUpperCase() + network.slice(1)}`
+        });
+      }
+    }
+    
+    console.log(`✅ Monitoramento do Learn2Earn (${network}) em ${address} iniciado com sucesso`);
+    return Promise.resolve();
+  } catch (error: any) {
+    console.error(`❌ Erro ao monitorar contrato Learn2Earn (${network}) ${address}:`, error);
+    return Promise.reject(error);
   }
 }
 
@@ -952,3 +1129,6 @@ export async function getMonitoringState(): Promise<ContractMonitoringState> {
     };
   }
 }
+
+// Export the learn2EarnContracts object for use in API routes
+export { learn2EarnContracts };

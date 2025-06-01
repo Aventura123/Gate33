@@ -1,23 +1,61 @@
 import { NextResponse } from 'next/server';
-import { getServerStatus } from '../../../../utils/monitors/contractMonitor';
+import { getServerStatus, learn2EarnContracts as allLearn2EarnContracts } from '../../../../utils/monitors/contractMonitor';
 
 export async function GET() {
-  try {    // Get the current server status
-    const status = getServerStatus();
-    
+  try {
+    // Get the current server status
+    const status = getServerStatus() || {};
+    const contractMonitoring = status.contractMonitoring || {};
+    // Build a list of all possible networks from learn2EarnContracts
+    const allContracts: { [key: string]: any } = allLearn2EarnContracts && typeof allLearn2EarnContracts === 'object' ? allLearn2EarnContracts : {};
+    const allNetworks = Object.keys(allContracts);
+    // Get the current monitored contracts (may be empty or partial)
+    const monitored = contractMonitoring.learn2EarnContracts || [];
+    // Build a map for quick lookup
+    const monitoredMap = Object.fromEntries((Array.isArray(monitored) ? monitored : []).map((c: any) => [c.network, c]));
+
+    // Compose the full list for the UI
+    const learn2EarnContracts = allNetworks.map(network => {
+      const address = allContracts[network] || '';
+      const monitoredEntry = monitoredMap[network];
+      // If address is empty, not monitored
+      if (!address) {
+        return {
+          address: '',
+          network,
+          active: false,
+        };
+      }
+      // If monitored, preserve any extra info (like name)
+      if (monitoredEntry) {
+        return {
+          ...monitoredEntry,
+          address,
+          network,
+          active: true,
+        };
+      }
+      // If address exists but not monitored yet (should be rare)
+      return {
+        address,
+        network,
+        active: true,
+      };
+    });
+
     // Add debug information to help troubleshoot
     console.log("API: Current monitoring status:", {
-      initialized: status.contractMonitoring.initialized,
-      walletActive: status.contractMonitoring.walletMonitoringActive,
-      tokenDistributionActive: status.contractMonitoring.tokenDistributionActive
+      initialized: contractMonitoring.initialized,
+      walletActive: contractMonitoring.walletMonitoringActive,
+      tokenDistributionActive: contractMonitoring.tokenDistributionActive
     });
-    
     return NextResponse.json({
-      initialized: status.contractMonitoring.initialized,
-      walletMonitoringActive: status.contractMonitoring.walletMonitoringActive,
-      tokenDistributionActive: status.contractMonitoring.tokenDistributionActive,
+      initialized: contractMonitoring.initialized,
+      walletMonitoringActive: contractMonitoring.walletMonitoringActive,
+      tokenDistributionActive: contractMonitoring.tokenDistributionActive,
+      learn2EarnContracts,
       lastChecked: new Date().toISOString(),
-      errors: status.contractMonitoring.errors || [],
+      errors: contractMonitoring.errors || [],
     }, { status: 200 });
     
   } catch (error: any) {

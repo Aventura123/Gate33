@@ -10,7 +10,14 @@ interface MonitoringState {
   fullState?: {
     isWalletMonitoring: boolean;
     isTokenDistributionMonitoring: boolean;
-  }
+  };
+  learn2EarnContracts?: Array<{
+    address: string;
+    network: string;
+    active: boolean;
+    name?: string;
+    title?: string;
+  }>;
 }
 
 // Integrated contract monitoring component
@@ -20,6 +27,7 @@ const ContractMonitor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isRestarting, setIsRestarting] = useState<boolean>(false);
   const [restartMessage, setRestartMessage] = useState<string | null>(null);
+  const [learn2EarnContracts, setLearn2EarnContracts] = useState<MonitoringState["learn2EarnContracts"]>([]);
 
   // Add contract names and keys for display
   const contracts = [
@@ -47,19 +55,22 @@ const ContractMonitor: React.FC = () => {
         any: state.walletMonitoringActive || state.tokenDistributionActive,
         initialized: state.initialized
       });
-      
-      // Set all state properties at once to prevent double rendering
+        // Set all state properties at once to prevent double rendering
       setMonitoringState({
         // Consider both the specific monitors AND the initialized state
         isRunning: (state.walletMonitoringActive || state.tokenDistributionActive) && state.initialized,
         lastCheck: new Date().toISOString(),
-        contractsCount: contracts.length,
+        contractsCount: contracts.length + (state.learn2EarnContracts?.length || 0),
         errors: state.errors || [],
         fullState: {
           isWalletMonitoring: state.walletMonitoringActive || false,
           isTokenDistributionMonitoring: state.tokenDistributionActive || false
-        }
+        },
+        learn2EarnContracts: state.learn2EarnContracts || []
       });
+      
+      // Atualizar a lista de contratos learn2earn
+      setLearn2EarnContracts(state.learn2EarnContracts || []);
       
       // Clear any error if the state was fetched successfully
       setError(null);
@@ -239,8 +250,7 @@ const ContractMonitor: React.FC = () => {
                 <th className="text-left text-gray-400 pb-1">Monitored</th>
               </tr>
             </thead>
-            <tbody>
-              {contracts.map(contract => (
+            <tbody>{contracts.map(contract => (
                 <tr key={contract.key}>
                   <td className="py-1 text-gray-200">{contract.label}</td>
                   <td className="py-1">
@@ -257,7 +267,35 @@ const ContractMonitor: React.FC = () => {
                     </span>
                   </td>
                 </tr>
-              ))}
+              ))}              {/* Learn2Earn contracts monitoring */}
+              {learn2EarnContracts && learn2EarnContracts.length > 0 && (
+                <>
+                  <tr>
+                    <td colSpan={2} className="pt-3 pb-1">
+                      <span className="font-semibold text-orange-200">Learn2Earn</span>
+                    </td>
+                  </tr>
+                  {learn2EarnContracts.map((contract, idx) => (
+                    <tr key={`learn2earn-${contract.network}-${idx}`}>
+                      <td className="py-1 pl-4 text-gray-200">
+                        <div className="flex items-center">
+                          <span className="text-xs text-gray-400 mr-2">[{contract.network}]</span>
+                          <span className="text-xs text-orange-100">
+                            {contract.address && contract.address.length > 8
+                              ? `${contract.address.substring(0, 6)}...${contract.address.substring(contract.address.length - 4)}`
+                              : 'No address'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-1">
+                        <span className={isRestarting ? "text-yellow-400" : contract.active ? "text-green-400" : "text-red-400"}>
+                          {isRestarting ? "Restarting..." : contract.active ? "Yes" : "No"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </>
+              )}
             </tbody>
           </table>
         </div>

@@ -24,6 +24,13 @@ interface ServerStatus {
     rpcUrl: string | null;
     warnings: string[];
     lastStatus: 'active' | 'inactive' | 'unknown';
+    learn2EarnContracts?: {
+      address: string;
+      network: string;
+      active: boolean;
+      name?: string;
+      title?: string;
+    }[];
   }
 }
 
@@ -39,7 +46,8 @@ export const serverStatus: ServerStatus = {
     errors: [],
     rpcUrl: null,
     warnings: [],
-    lastStatus: 'unknown'
+    lastStatus: 'unknown',
+    learn2EarnContracts: []
   }
 };
 
