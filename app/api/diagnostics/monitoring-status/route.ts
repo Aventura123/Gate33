@@ -40,15 +40,8 @@ export async function GET() {
         address,
         network,
         active: true,
-      };
-    });
+      };    });
 
-    // Add debug information to help troubleshoot
-    console.log("API: Current monitoring status:", {
-      initialized: contractMonitoring.initialized,
-      walletActive: contractMonitoring.walletMonitoringActive,
-      tokenDistributionActive: contractMonitoring.tokenDistributionActive
-    });
     return NextResponse.json({
       initialized: contractMonitoring.initialized,
       walletMonitoringActive: contractMonitoring.walletMonitoringActive,

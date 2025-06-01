@@ -44,18 +44,9 @@ const ContractMonitor: React.FC = () => {
       if (!response.ok) {
         throw new Error(`Server responded with status: ${response.status}`);
       }
+        const state = await response.json();
       
-      const state = await response.json();
-      console.log("Monitoring state from API:", state);
-      
-      // Debug log to check actual values
-      console.log("Debug - Monitoring active flags:", {
-        wallet: state.walletMonitoringActive,
-        tokenDistribution: state.tokenDistributionActive,
-        any: state.walletMonitoringActive || state.tokenDistributionActive,
-        initialized: state.initialized
-      });
-        // Set all state properties at once to prevent double rendering
+      // Set all state properties at once to prevent double rendering
       setMonitoringState({
         // Consider both the specific monitors AND the initialized state
         isRunning: (state.walletMonitoringActive || state.tokenDistributionActive) && state.initialized,
