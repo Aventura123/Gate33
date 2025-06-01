@@ -251,7 +251,8 @@ const ContractMonitor: React.FC = () => {
                 <th className="text-left text-gray-400 pb-1">Monitored</th>
               </tr>
             </thead>
-            <tbody>{contracts.map(contract => (
+            <tbody>
+              {contracts.map(contract => (
                 <tr key={contract.key}>
                   <td className="py-1 text-gray-200">{contract.label}</td>
                   <td className="py-1">
@@ -262,13 +263,13 @@ const ContractMonitor: React.FC = () => {
                         : "text-red-400"
                     }>
                       {isRestarting ? "Restarting..." :
-                        (monitoringState?.fullState && monitoringState.fullState[contract.key as keyof typeof monitoringState.fullState])
-                          ? "Yes"
+                        (monitoringState?.fullState && monitoringState.fullState[contract.key as keyof typeof monitoringState.fullState])                          ? "Yes"
                           : "No"}
                     </span>
                   </td>
                 </tr>
-              ))}              {/* Learn2Earn contracts monitoring */}
+              ))}
+              {/* Learn2Earn contracts monitoring */}
               {learn2EarnContracts && learn2EarnContracts.length > 0 && (
                 <>
                   <tr>
