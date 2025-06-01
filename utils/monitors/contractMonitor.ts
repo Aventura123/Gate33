@@ -42,12 +42,22 @@ const tokenDistributorAddress = process.env.TOKEN_DISTRIBUTOR_ADDRESS || process
 
 // Define Learn2Earn contract addresses por rede
 const learn2EarnContracts = {
-  'bsc-testnet': process.env.LEARN2EARN_BSC_TESTNET_ADDRESS || '0xb05e645920d1bfa7620a6be571d124e39626e3f0',
-  'avalanche': process.env.LEARN2EARN_AVALANCHE_ADDRESS || '0xbafb0d4c913dce37acf18285af6e3de0d3b80280',
-  'bsc': process.env.LEARN2EARN_BSC_ADDRESS || '0xBAfB0d4c913DCE37aCF18285aF6E3De0d3B80280',
-  'optimism': process.env.LEARN2EARN_OPTIMISM_ADDRESS || '0xff4bf9ea47db92af9c41ecd6e746451e80033bd7',
-  'polygon': process.env.LEARN2EARN_POLYGON_ADDRESS || '0xc09538ac9f2e9dd38afb310da734ba077cf09321',
+  'bsc-testnet': process.env.LEARN2EARN_BSC_TESTNET_ADDRESS || '',
+  'avalanche': process.env.LEARN2EARN_AVALANCHE_ADDRESS || '',
+  'bsc': process.env.LEARN2EARN_BSC_ADDRESS || '',
+  'optimism': process.env.LEARN2EARN_OPTIMISM_ADDRESS || '',
+  'polygon': process.env.LEARN2EARN_POLYGON_ADDRESS || '',
   'ethereum': process.env.LEARN2EARN_ETHEREUM_ADDRESS || ''
+};
+
+// Define InstantJobsEscrow contract addresses for each network
+const instantJobsEscrowContracts = {
+  'bsc-testnet': process.env.INSTANT_JOBS_ESCROW_BSC_TESTNET_ADDRESS || '',
+  'optimism': process.env.INSTANT_JOBS_ESCROW_OPTIMISM_ADDRESS || '',
+  'polygon': process.env.INSTANT_JOBS_ESCROW_POLYGON_ADDRESS || '',
+  'bsc': process.env.INSTANT_JOBS_ESCROW_BSC_ADDRESS || '',
+  'avalanche': process.env.INSTANT_JOBS_ESCROW_AVALANCHE_ADDRESS || '',
+  'ethereum': process.env.INSTANT_JOBS_ESCROW_ETHEREUM_ADDRESS || ''
 };
 
 // Redes a monitorar (pode ser configurado por env ou hardcoded)
@@ -455,6 +465,7 @@ export function initializeContractMonitoring(
       tokenDistribution: boolean;
       wallet: boolean;
       learn2Earn?: Record<string, boolean>;
+      instantJobsEscrow?: Record<string, boolean>;
     }
   ) => void
 ): void {
@@ -697,6 +708,32 @@ export function initializeContractMonitoring(
         }
       }
       
+      // 5. InstantJobsEscrow monitors
+      const instantJobsEscrowMonitors: Record<string, boolean> = {};
+      // Initialize InstantJobsEscrow contract on each network
+      for (const [network, address] of Object.entries(instantJobsEscrowContracts)) {
+        if (address) {
+          try {
+            monitorInstantJobsEscrow(address, provider, network)
+              .then(() => {
+                instantJobsEscrowMonitors[network] = true;
+              })
+              .catch((err: any) => {
+                console.error(`❌ Failed to initialize InstantJobsEscrow monitoring (${network}): ${err.message}`);
+                
+                // Update global status
+                if (serverStatus && serverStatus.contractMonitoring) {
+                  serverStatus.contractMonitoring.errors.push(
+                    `Failed to initialize InstantJobsEscrow monitoring (${network}): ${err.message}`
+                  );
+                }
+              });
+          } catch (ijeErr: any) {
+            console.error(`❌ Error starting InstantJobsEscrow monitoring (${network}):`, ijeErr);
+          }
+        }
+      }
+      
       // Após tentar inicializar todos os monitores, atualizar status global
       if (serverStatus && serverStatus.contractMonitoring) {
         serverStatus.contractMonitoring.initialized = true;
@@ -709,7 +746,8 @@ export function initializeContractMonitoring(
           statusCallback(true, providerType, {
             tokenDistribution: activeMonitors.tokenDistribution,
             wallet: activeMonitors.wallet,
-            learn2Earn: learn2EarnMonitors
+            learn2Earn: learn2EarnMonitors,
+            instantJobsEscrow: instantJobsEscrowMonitors
           });
         }
         
@@ -729,7 +767,9 @@ export function initializeContractMonitoring(
           },
           serviceWallet: serviceWalletAddress || 'não configurado',          activeMonitors: {
             tokenDistribution: activeMonitors.tokenDistribution,
-            wallet: activeMonitors.wallet
+            wallet: activeMonitors.wallet,
+            learn2EarnContracts: Object.keys(learn2EarnMonitors).filter(key => learn2EarnMonitors[key]).length,
+            instantJobsEscrowContracts: Object.keys(instantJobsEscrowMonitors).filter(key => instantJobsEscrowMonitors[key]).length
           }
         });
       } catch (logErr: any) {
@@ -939,7 +979,205 @@ async function monitorLearn2Earn(address: string, provider: ethers.providers.Pro
   }
 }
 
-// Export a function to get the server status
+/**
+ * Monitora um contrato InstantJobsEscrow para atividade
+ * @param address Endereço do contrato InstantJobsEscrow
+ * @param provider Provider Ethereum
+ * @param network Nome da rede (ex: polygon, bsc, etc.)
+ */
+async function monitorInstantJobsEscrow(address: string, provider: ethers.providers.Provider, network: string): Promise<void> {
+  try {
+    // Simplified ABI for InstantJobsEscrow - only with the events we want to monitor
+    const minimalAbi = [
+      "event JobCreated(string jobId, address indexed employer, uint256 payment)",
+      "event JobCompleted(string jobId, address indexed freelancer, uint256 payment)",
+      "event JobCancelled(string jobId, address indexed employer, uint256 refundedAmount)",
+      "event DisputeRaised(string jobId, address indexed initiator, string reason)",
+      "event DisputeResolved(string jobId, address indexed resolvedBy, uint256 freelancerAmount, uint256 employerAmount)",
+      "event FundsWithdrawn(string jobId, address indexed recipient, uint256 amount)"
+    ];
+    
+    // Create contract instance
+    const contract = new ethers.Contract(address, minimalAbi, provider);
+    
+    // Track frequent transactions to detect suspicious activity
+    const transactionTracker = {
+      addresses: {} as Record<string, { count: number, lastTx: number, totalValue: ethers.BigNumber }>,      resetTime: Date.now() + 3600000, // Reset after 1 hour
+      
+      // Method to record transaction 
+      recordTransaction: function(address: string, value: ethers.BigNumber): void {
+        const now = Date.now();
+        
+        // Reset tracker if time elapsed
+        if (now > this.resetTime) {
+          this.addresses = {};
+          this.resetTime = now + 3600000;
+        }
+        
+        if (!this.addresses[address]) {
+          this.addresses[address] = { count: 0, lastTx: 0, totalValue: ethers.BigNumber.from(0) };
+        }
+        
+        const addressTracker = this.addresses[address];
+        addressTracker.count++;
+        addressTracker.lastTx = now;
+        addressTracker.totalValue = addressTracker.totalValue.add(value);
+        
+        // Alert if there's high frequency activity from this address
+        if (addressTracker.count >= 5) {
+          const ethValue = parseFloat(ethers.utils.formatEther(addressTracker.totalValue));
+          logSystem.warn(`High transaction frequency detected in InstantJobsEscrow (${network})`, {
+            address,
+            transactionCount: addressTracker.count,
+            totalValueETH: ethValue
+          });
+        }
+      }
+    };
+    
+    // Monitor JobCreated events 
+    contract.on('JobCreated', async (jobId, employer, payment, event) => {
+      try {
+        const paymentValue = parseFloat(ethers.utils.formatEther(payment));
+        
+        // Record the transaction for frequency monitoring
+        transactionTracker.recordTransaction(employer, payment);
+        
+        await logSystem.info(`InstantJobsEscrow (${network}): Job created`, {
+          jobId,
+          employer,
+          payment: paymentValue,
+          transactionHash: event.transactionHash
+        });
+        
+        // Alert if payment is high
+        if (paymentValue > ALERT_THRESHOLD_ETH) {
+          await logSystem.warn(`High value job created in InstantJobsEscrow (${network})`, {
+            jobId,
+            employer, 
+            payment: paymentValue,
+            transactionHash: event.transactionHash
+          });
+        }
+      } catch (logErr) {
+        console.error(`Error logging JobCreated event (${network}):`, logErr);
+      }
+    });
+    
+    // Monitor JobCompleted events
+    contract.on('JobCompleted', async (jobId, freelancer, payment, event) => {
+      try {
+        const paymentValue = parseFloat(ethers.utils.formatEther(payment));
+        
+        // Record the transaction for frequency monitoring
+        transactionTracker.recordTransaction(freelancer, payment);
+        
+        await logSystem.info(`InstantJobsEscrow (${network}): Job completed`, {
+          jobId,
+          freelancer,
+          payment: paymentValue,
+          transactionHash: event.transactionHash
+        });
+      } catch (logErr) {
+        console.error(`Error logging JobCompleted event (${network}):`, logErr);
+      }
+    });
+    
+    // Monitor JobCancelled events
+    contract.on('JobCancelled', async (jobId, employer, refundedAmount, event) => {
+      try {
+        const refundValue = parseFloat(ethers.utils.formatEther(refundedAmount));
+        
+        await logSystem.info(`InstantJobsEscrow (${network}): Job cancelled`, {
+          jobId,
+          employer,
+          refundedAmount: refundValue,
+          transactionHash: event.transactionHash
+        });
+      } catch (logErr) {
+        console.error(`Error logging JobCancelled event (${network}):`, logErr);
+      }
+    });
+    
+    // Monitor DisputeRaised events - important for potential issues
+    contract.on('DisputeRaised', async (jobId, initiator, reason, event) => {
+      try {
+        // Disputes always generate alerts as they may indicate problems
+        await logSystem.warn(`Dispute raised in InstantJobsEscrow (${network})`, {
+          jobId,
+          initiator,
+          reason,
+          transactionHash: event.transactionHash
+        });
+      } catch (logErr) {
+        console.error(`Error logging DisputeRaised event (${network}):`, logErr);
+      }
+    });
+    
+    // Monitor FundsWithdrawn events - especially important for security
+    contract.on('FundsWithdrawn', async (jobId, recipient, amount, event) => {
+      try {
+        const withdrawValue = parseFloat(ethers.utils.formatEther(amount));
+        
+        // Record the transaction for frequency monitoring
+        transactionTracker.recordTransaction(recipient, amount);
+        
+        await logSystem.info(`InstantJobsEscrow (${network}): Funds withdrawn`, {
+          jobId,
+          recipient,
+          amount: withdrawValue,
+          transactionHash: event.transactionHash
+        });
+        
+        // Alert if withdrawal is high value
+        if (withdrawValue > ALERT_THRESHOLD_ETH) {
+          await logSystem.warn(`High value withdrawal from InstantJobsEscrow (${network})`, {
+            jobId,
+            recipient,
+            amount: withdrawValue,
+            transactionHash: event.transactionHash
+          });
+        }
+      } catch (logErr) {
+        console.error(`Error logging FundsWithdrawn event (${network}):`, logErr);
+      }
+    });
+    
+    // Update global status
+    const { serverStatus } = require('../../lib/server-init');
+    if (serverStatus && serverStatus.contractMonitoring) {
+      // Ensure the array exists
+      if (!serverStatus.contractMonitoring.instantJobsEscrowContracts) {
+        serverStatus.contractMonitoring.instantJobsEscrowContracts = [];
+      }
+      
+      // Add or update the contract in the list
+      const existingContractIndex = serverStatus.contractMonitoring.instantJobsEscrowContracts.findIndex(
+        (c: {address: string, network: string}) => c.address.toLowerCase() === address.toLowerCase() && c.network === network
+      );
+      
+      if (existingContractIndex >= 0) {
+        serverStatus.contractMonitoring.instantJobsEscrowContracts[existingContractIndex].active = true;
+      } else {
+        serverStatus.contractMonitoring.instantJobsEscrowContracts.push({
+          address,
+          network,
+          active: true,
+          name: `InstantJobs ${network.charAt(0).toUpperCase() + network.slice(1)}`
+        });
+      }
+    }
+    
+    return Promise.resolve();
+  } catch (error: any) {
+    console.error(`❌ Error monitoring InstantJobsEscrow contract (${network}) ${address}:`, error);
+    return Promise.reject(error);
+  }
+}
+
+/**
+ * Export a function to get the server status
+ */
 export function getServerStatus() {
   try {
     // Dynamically import serverStatus to avoid circular import issues
@@ -1037,5 +1275,6 @@ export async function getMonitoringState(): Promise<ContractMonitoringState> {
   }
 }
 
-// Export the learn2EarnContracts object for use in API routes
+// Export contract addresses for access by API routes
 export { learn2EarnContracts };
+export { instantJobsEscrowContracts };

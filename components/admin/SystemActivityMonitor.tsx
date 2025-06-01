@@ -18,6 +18,13 @@ interface MonitoringState {
     name?: string;
     title?: string;
   }>;
+  instantJobsEscrowContracts?: Array<{
+    address: string;
+    network: string;
+    active: boolean;
+    name?: string;
+    title?: string;
+  }>;
 }
 
 // Integrated contract monitoring component
@@ -28,6 +35,7 @@ const ContractMonitor: React.FC = () => {
   const [isRestarting, setIsRestarting] = useState<boolean>(false);
   const [restartMessage, setRestartMessage] = useState<string | null>(null);
   const [learn2EarnContracts, setLearn2EarnContracts] = useState<MonitoringState["learn2EarnContracts"]>([]);
+  const [instantJobsEscrowContracts, setInstantJobsEscrowContracts] = useState<MonitoringState["instantJobsEscrowContracts"]>([]);
 
   // Add contract names and keys for display
   const contracts = [
@@ -45,24 +53,26 @@ const ContractMonitor: React.FC = () => {
         throw new Error(`Server responded with status: ${response.status}`);
       }
         const state = await response.json();
-      
-      // Set all state properties at once to prevent double rendering
+        // Set all state properties at once to prevent double rendering
       setMonitoringState({
         // Consider both the specific monitors AND the initialized state
         isRunning: (state.walletMonitoringActive || state.tokenDistributionActive) && state.initialized,
         lastCheck: new Date().toISOString(),
-        contractsCount: contracts.length + (state.learn2EarnContracts?.length || 0),
+        contractsCount: contracts.length + 
+                       (state.learn2EarnContracts?.length || 0) + 
+                       (state.instantJobsEscrowContracts?.length || 0),
         errors: state.errors || [],
         fullState: {
           isWalletMonitoring: state.walletMonitoringActive || false,
           isTokenDistributionMonitoring: state.tokenDistributionActive || false
         },
-        learn2EarnContracts: state.learn2EarnContracts || []
+        learn2EarnContracts: state.learn2EarnContracts || [],
+        instantJobsEscrowContracts: state.instantJobsEscrowContracts || []
       });
       
-      // Atualizar a lista de contratos learn2earn
+      // Update the lists of contracts
       setLearn2EarnContracts(state.learn2EarnContracts || []);
-      
+      setInstantJobsEscrowContracts(state.instantJobsEscrowContracts || []);
       // Clear any error if the state was fetched successfully
       setError(null);
     } catch (err: any) {
@@ -268,6 +278,36 @@ const ContractMonitor: React.FC = () => {
                   </tr>
                   {learn2EarnContracts.map((contract, idx) => (
                     <tr key={`learn2earn-${contract.network}-${idx}`}>
+                      <td className="py-1 pl-4 text-gray-200">
+                        <div className="flex items-center">
+                          <span className="text-xs text-gray-400 mr-2">[{contract.network}]</span>
+                          <span className="text-xs text-orange-100">
+                            {contract.address && contract.address.length > 8
+                              ? `${contract.address.substring(0, 6)}...${contract.address.substring(contract.address.length - 4)}`
+                              : 'No address'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-1">
+                        <span className={isRestarting ? "text-yellow-400" : contract.active ? "text-green-400" : "text-red-400"}>
+                          {isRestarting ? "Restarting..." : contract.active ? "Yes" : "No"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </>
+              )}
+              
+              {/* InstantJobsEscrow contracts monitoring */}
+              {instantJobsEscrowContracts && instantJobsEscrowContracts.length > 0 && (
+                <>
+                  <tr>
+                    <td colSpan={2} className="pt-3 pb-1">
+                      <span className="font-semibold text-orange-200">Instant Jobs Escrow</span>
+                    </td>
+                  </tr>
+                  {instantJobsEscrowContracts.map((contract, idx) => (
+                    <tr key={`instantjobs-${contract.network}-${idx}`}>
                       <td className="py-1 pl-4 text-gray-200">
                         <div className="flex items-center">
                           <span className="text-xs text-gray-400 mr-2">[{contract.network}]</span>

@@ -31,6 +31,13 @@ interface ServerStatus {
       name?: string;
       title?: string;
     }[];
+    instantJobsEscrowContracts?: {
+      address: string;
+      network: string;
+      active: boolean;
+      name?: string;
+      title?: string;
+    }[];
   }
 }
 
@@ -47,7 +54,8 @@ export const serverStatus: ServerStatus = {
     rpcUrl: null,
     warnings: [],
     lastStatus: 'unknown',
-    learn2EarnContracts: []
+    learn2EarnContracts: [],
+    instantJobsEscrowContracts: []
   }
 };
 
@@ -76,11 +84,12 @@ export function initializeServer() {
     
     // Updating status before starting
     serverStatus.contractMonitoring.startTime = Date.now();
-    
-    // Start contract monitoring with a callback function that updates the status
+      // Start contract monitoring with a callback function that updates the status
     initializeContractMonitoring(false, (success: boolean, providerType: string | null, activeMonitors: {
       tokenDistribution: boolean;
       wallet: boolean;
+      learn2Earn?: Record<string, boolean>;
+      instantJobsEscrow?: Record<string, boolean>;
     }) => {
       if (success) {
         console.log('✅ Blockchain contract monitoring initialized successfully!');

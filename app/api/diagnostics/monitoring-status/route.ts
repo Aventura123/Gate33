@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getServerStatus, learn2EarnContracts as allLearn2EarnContracts } from '../../../../utils/monitors/contractMonitor';
+import { 
+  getServerStatus, 
+  learn2EarnContracts as allLearn2EarnContracts,
+  instantJobsEscrowContracts as allInstantJobsEscrowContracts 
+} from '../../../../utils/monitors/contractMonitor';
 
 export async function GET() {
   try {
@@ -12,7 +16,11 @@ export async function GET() {
     // Get the current monitored contracts (may be empty or partial)
     const monitored = contractMonitoring.learn2EarnContracts || [];
     // Build a map for quick lookup
-    const monitoredMap = Object.fromEntries((Array.isArray(monitored) ? monitored : []).map((c: any) => [c.network, c]));
+    const monitoredMap = Object.fromEntries((Array.isArray(monitored) ? monitored : []).map((c: any) => [c.network, c]));    // Get InstantJobsEscrow contracts data
+    const allInstantJobsContracts: { [key: string]: any } = typeof allInstantJobsEscrowContracts === 'object' && allInstantJobsEscrowContracts !== null ? allInstantJobsEscrowContracts : {};
+    const allInstantJobsNetworks = Object.keys(allInstantJobsContracts);
+    const monitoredInstantJobs = contractMonitoring.instantJobsEscrowContracts || [];
+    const monitoredInstantJobsMap = Object.fromEntries((Array.isArray(monitoredInstantJobs) ? monitoredInstantJobs : []).map((c: any) => [c.network, c]));
 
     // Compose the full list for the UI
     const learn2EarnContracts = allNetworks.map(network => {
@@ -40,13 +48,42 @@ export async function GET() {
         address,
         network,
         active: true,
-      };    });
-
-    return NextResponse.json({
+      };    });    // Process InstantJobsEscrow contracts
+    const instantJobsEscrowContracts = allInstantJobsNetworks.map(network => {
+      const address = allInstantJobsContracts[network] || '';
+      const monitoredEntry = monitoredInstantJobsMap[network];
+      
+      // If address is empty, not monitored
+      if (!address) {
+        return {
+          address: '',
+          network,
+          active: false,
+        };
+      }
+      
+      // If monitored, preserve any extra info (like name)
+      if (monitoredEntry) {
+        return {
+          ...monitoredEntry,
+          address,
+          network,
+          active: true,
+        };
+      }
+      
+      // If address exists but not monitored yet (should be rare)
+      return {
+        address,
+        network,
+        active: true,
+      };
+    });    return NextResponse.json({
       initialized: contractMonitoring.initialized,
       walletMonitoringActive: contractMonitoring.walletMonitoringActive,
       tokenDistributionActive: contractMonitoring.tokenDistributionActive,
       learn2EarnContracts,
+      instantJobsEscrowContracts,
       lastChecked: new Date().toISOString(),
       errors: contractMonitoring.errors || [],
     }, { status: 200 });
