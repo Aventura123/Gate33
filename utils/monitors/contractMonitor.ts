@@ -285,10 +285,11 @@ export async function monitorTokenDistribution(
  */
 async function createStableWebSocketProvider(): Promise<ethers.providers.WebSocketProvider | null> {
   if (wsRpcUrls.length === 0) {
-    console.warn('Nenhum URL WebSocket disponível para conexão');
+    logSystem.error('Nenhum URL WebSocket disponível para conexão');
     return null;
   }
-    // Tentar cada URL de WebSocket em ordem
+
+  // Tentar cada URL de WebSocket em ordem
   for (const wsUrl of wsRpcUrls) {
     try {
       // Criar o provider WebSocket
@@ -299,13 +300,11 @@ async function createStableWebSocketProvider(): Promise<ethers.providers.WebSock
         const ws = (provider as any)._websocket;
         
         if (!ws) {
-          console.warn('WebSocket não encontrado no provider, reconexão automática pode não funcionar');
+          logSystem.error('WebSocket não encontrado no provider, reconexão automática pode não funcionar');
           return;
         }
         
         ws.onclose = (event: any) => {
-          console.log(`WebSocket fechado (código: ${event.code}). Tentando reconexão em ${CONNECTION_RETRY_DELAY / 1000} segundos...`);
-          
           // Limpar o timer existente, se houver
           if (reconnectionTimer) {
             clearTimeout(reconnectionTimer);
@@ -317,14 +316,11 @@ async function createStableWebSocketProvider(): Promise<ethers.providers.WebSock
           
           // Verificar se atingimos o limite de tentativas
           if (reconnectionAttempts > MAX_CONNECTION_ATTEMPTS) {
-            console.warn(`Máximo de ${MAX_CONNECTION_ATTEMPTS} tentativas de reconexão WebSocket atingido. Alternando para HTTP...`);
-            
-            // Notificar o sistema sobre a mudança
-            try {
-              logSystem.warn(`WebSocket instável após ${MAX_CONNECTION_ATTEMPTS} tentativas. Alternando para HTTP.`);
-            } catch (logErr) {
-              console.error('Erro ao registrar alerta de reconexão:', logErr);
-            }
+            // Log apenas quando exceder tentativas máximas
+            logSystem.error(`Falha no WebSocket após ${MAX_CONNECTION_ATTEMPTS} tentativas. Alternando para HTTP.`, {
+              reconnectionAttempts,
+              lastErrorCode: event.code
+            });
             
             // Se HTTP fallback estiver habilitado, reiniciar o monitoramento com HTTP
             if (HTTP_FALLBACK_ENABLED) {
@@ -332,10 +328,9 @@ async function createStableWebSocketProvider(): Promise<ethers.providers.WebSock
               try {
                 provider.removeAllListeners();
               } catch (clearErr) {
-                console.warn('Erro ao limpar listeners:', clearErr);
+                logSystem.error('Erro ao limpar listeners WebSocket', { error: clearErr });
               }
               
-              console.log('Reiniciando monitoramento com providers HTTP...');
               initializeContractMonitoring(true); // true indica que está usando fallback HTTP
               return;
             }
@@ -343,19 +338,17 @@ async function createStableWebSocketProvider(): Promise<ethers.providers.WebSock
           
           // Tentar reconexão após o delay
           reconnectionTimer = setTimeout(() => {
-            console.log(`Tentativa de reconexão ${reconnectionAttempts}...`);
             try {
-              // Para websockets, é melhor reiniciar o monitoramento totalmente
               initializeContractMonitoring();
             } catch (err) {
-              console.error('Erro ao reiniciar monitoramento:', err);
+              logSystem.error('Erro ao reiniciar monitoramento WebSocket', { error: err });
             }
           }, CONNECTION_RETRY_DELAY);
         };
         
         ws.onerror = (error: any) => {
-          console.error('Erro no WebSocket:', error);
-          // Quando ocorre um erro, o onclose geralmente é chamado logo em seguida
+          // Log apenas erros críticos do WebSocket
+          logSystem.error('Erro crítico no WebSocket', { error });
         };
       };
       
