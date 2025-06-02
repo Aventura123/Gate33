@@ -87,11 +87,13 @@ export async function monitorServiceWallet(
       const balanceEth = parseFloat(ethers.utils.formatEther(balance));
       
       // Log balance in the log system
-      await logSystem.info(`Service wallet balance: ${balanceEth} ETH`, {
-        walletAddress,
-        balance: balanceEth,
-        checkType: 'scheduled'
-      });
+      if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+        await logSystem.info(`Service wallet balance: ${balanceEth} ETH`, {
+          walletAddress,
+          balance: balanceEth,
+          checkType: 'scheduled'
+        });
+      }
       
       // Alert if balance is too low (less than 0.01 ETH)
       if (balanceEth < 0.01) {
@@ -119,13 +121,15 @@ export async function monitorServiceWallet(
         const gasUsedEth = parseFloat(ethers.utils.formatEther(gasUsed));
         
         // Log transaction in the log system
-        await logSystem.info(`Transaction sent: ${tx.hash}, Gas used: ${gasUsedEth} ETH`, {
-          transactionHash: tx.hash,
-          from: tx.from,
-          to: tx.to,
-          gasUsed: gasUsedEth,
-          walletAddress
-        });
+        if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+          await logSystem.info(`Transaction sent: ${tx.hash}, Gas used: ${gasUsedEth} ETH`, {
+            transactionHash: tx.hash,
+            from: tx.from,
+            to: tx.to,
+            gasUsed: gasUsedEth,
+            walletAddress
+          });
+        }
         
         // Alert if gas spending is high
         if (gasUsedEth > ALERT_THRESHOLD_ETH) {
@@ -149,7 +153,9 @@ export async function monitorServiceWallet(
       }
     });
     
-    await logSystem.info(`Service wallet monitoring started for ${walletAddress}`);
+    if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+      await logSystem.info(`Service wallet monitoring started for ${walletAddress}`);
+    }
   } catch (error: any) {
     await logSystem.error(`Error configuring wallet monitoring: ${error.message}`);
   }
@@ -248,7 +254,9 @@ export async function monitorTokenDistribution(
     }
     
     try {
-      await logSystem.info(`G33 token distribution monitoring started for contract ${contractAddress}`);
+      if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+        await logSystem.info(`G33 token distribution monitoring started for contract ${contractAddress}`);
+      }
     } catch (logErr: any) {
       console.error("Error logging info:", logErr);
     }
@@ -428,7 +436,9 @@ async function createFallbackHttpProvider(): Promise<ethers.providers.Provider |
     
     // Registrar no sistema
     try {
-      await logSystem.info(`FallbackProvider criado com ${providerConfigs.length} endpoints.`);
+      if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+        await logSystem.info(`FallbackProvider criado com ${providerConfigs.length} endpoints.`);
+      }
     } catch (logErr) {
       console.error('Erro ao registrar criação de FallbackProvider:', logErr);
     }
@@ -648,7 +658,9 @@ export function initializeContractMonitoring(
                   
                   // Registrar no sistema
                   try {
-                    logSystem.info(`Monitoramento de distribuição de tokens G33 reinicializado com sucesso para ${tokenDistributorAddress}`);
+                    if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+                      logSystem.info(`Monitoramento de distribuição de tokens G33 reinicializado com sucesso para ${tokenDistributorAddress}`);
+                    }
                   } catch (logErr: any) {
                     console.error("Erro ao registrar info:", logErr);
                   }
@@ -756,18 +768,20 @@ export function initializeContractMonitoring(
       }, 5000); // Aguardar 5 segundos para garantir que os monitores tiveram tempo para iniciar
       
       try {
-        logSystem.info('Sistema de monitoramento de contratos inicializado', {
-          rpcUrl: 'Conexão estabelecida com sucesso',
-          providerType,          contracts: {
-            tokenDistributor: tokenDistributorAddress || 'não configurado'
-          },
-          serviceWallet: serviceWalletAddress || 'não configurado',          activeMonitors: {
-            tokenDistribution: activeMonitors.tokenDistribution,
-            wallet: activeMonitors.wallet,
-            learn2EarnContracts: Object.keys(learn2EarnMonitors).filter(key => learn2EarnMonitors[key]).length,
-            instantJobsEscrowContracts: Object.keys(instantJobsEscrowMonitors).filter(key => instantJobsEscrowMonitors[key]).length
-          }
-        });
+        if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+          logSystem.info('Sistema de monitoramento de contratos inicializado', {
+            rpcUrl: 'Conexão estabelecida com sucesso',
+            providerType,          contracts: {
+              tokenDistributor: tokenDistributorAddress || 'não configurado'
+            },
+            serviceWallet: serviceWalletAddress || 'não configurado',          activeMonitors: {
+              tokenDistribution: activeMonitors.tokenDistribution,
+              wallet: activeMonitors.wallet,
+              learn2EarnContracts: Object.keys(learn2EarnMonitors).filter(key => learn2EarnMonitors[key]).length,
+              instantJobsEscrowContracts: Object.keys(instantJobsEscrowMonitors).filter(key => instantJobsEscrowMonitors[key]).length
+            }
+          });
+        }
       } catch (logErr: any) {
         console.error("Erro ao registrar info:", logErr);
       }
@@ -874,22 +888,24 @@ async function monitorLearn2Earn(address: string, provider: ethers.providers.Pro
     const contract = new ethers.Contract(address, minimalAbi, provider);
       // Monitorar evento de tokens reclamados
     contract.on('TokensClaimed', async (participant, amount, event) => {
-      // Registrar evento no sistema de logs
       try {
         const tokens = parseFloat(ethers.utils.formatEther(amount));
-        await logSystem.info(`Learn2Earn (${network}): Tokens reclamados`, {
-          participant,
-          amount: tokens,
-          transactionHash: event.transactionHash
-        });
-        
-        // Alertar se o valor for alto
-        if (tokens > ALERT_THRESHOLD_TOKENS) {          await logSystem.warn(`Alerta: Reclamação de alto valor no Learn2Earn (${network})`, {
+        // Só logar no Firebase se for alerta relevante
+        if (tokens > ALERT_THRESHOLD_TOKENS) {
+          await logSystem.warn(`Alerta: Reclamação de alto valor no Learn2Earn (${network})`, {
             participant,
             amount: tokens,
             transactionHash: event.transactionHash
           });
         }
+        // Se quiser logar tudo em debug, descomente abaixo:
+        // else if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+        //   await logSystem.info(`Learn2Earn (${network}): Tokens reclamados`, {
+        //     participant,
+        //     amount: tokens,
+        //     transactionHash: event.transactionHash
+        //   });
+        // }
       } catch (logErr) {
         console.error(`Erro ao registrar evento TokensClaimed (${network}):`, logErr);
       }
@@ -897,10 +913,13 @@ async function monitorLearn2Earn(address: string, provider: ethers.providers.Pro
       // Monitorar evento de participante adicionado
     contract.on('ParticipantAdded', async (participant, amount, event) => {
       try {
-        await logSystem.info(`Learn2Earn (${network}): Novo participante`, {
-          participant,
-          transactionHash: event.transactionHash
-        });
+        // Só logar em debug
+        if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+          await logSystem.info(`Learn2Earn (${network}): Novo participante`, {
+            participant,
+            transactionHash: event.transactionHash
+          });
+        }
       } catch (logErr) {
         console.error(`Erro ao registrar evento ParticipantAdded (${network}):`, logErr);
       }
@@ -909,14 +928,7 @@ async function monitorLearn2Earn(address: string, provider: ethers.providers.Pro
     contract.on('Learn2EarnCreated', async (id, creator, tokenAmount, startTime, endTime, event) => {
       const tokens = parseFloat(ethers.utils.formatEther(tokenAmount));
       try {
-        await logSystem.info(`Learn2Earn (${network}): Novo Learn2Earn criado`, {
-          id: id.toString(),
-          creator,
-          amount: tokens,
-          startTime: new Date(startTime.toNumber() * 1000).toISOString(),
-          endTime: new Date(endTime.toNumber() * 1000).toISOString(),
-          transactionHash: event.transactionHash
-        });          // Alertar se o valor for alto
+        // Só logar no Firebase se for alerta relevante
         if (tokens > ALERT_THRESHOLD_TOKENS) {
           await logSystem.warn(`Alerta: Novo Learn2Earn de alto valor (${network})`, {
             id: id.toString(),
@@ -925,6 +937,17 @@ async function monitorLearn2Earn(address: string, provider: ethers.providers.Pro
             transactionHash: event.transactionHash
           });
         }
+        // Se quiser logar tudo em debug, descomente abaixo:
+        // else if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+        //   await logSystem.info(`Learn2Earn (${network}): Novo Learn2Earn criado`, {
+        //     id: id.toString(),
+        //     creator,
+        //     amount: tokens,
+        //     startTime: new Date(startTime.toNumber() * 1000).toISOString(),
+        //     endTime: new Date(endTime.toNumber() * 1000).toISOString(),
+        //     transactionHash: event.transactionHash
+        //   });
+        // }
       } catch (logErr) {
         console.error(`Erro ao registrar evento Learn2EarnCreated (${network}):`, logErr);
       }
@@ -933,7 +956,7 @@ async function monitorLearn2Earn(address: string, provider: ethers.providers.Pro
     contract.on('MultipleWithdrawals', async (user, count, totalAmount, event) => {
       try {
         const tokens = parseFloat(ethers.utils.formatEther(totalAmount));
-          // Este é sempre um evento de alerta
+        // Sempre alerta
         await logSystem.warn(`Alerta: Múltiplos saques de Learn2Earn (${network})`, {
           user,
           count: count.toNumber(),
@@ -1035,18 +1058,8 @@ async function monitorInstantJobsEscrow(address: string, provider: ethers.provid
     contract.on('JobCreated', async (jobId, employer, payment, event) => {
       try {
         const paymentValue = parseFloat(ethers.utils.formatEther(payment));
-        
-        // Record the transaction for frequency monitoring
         transactionTracker.recordTransaction(employer, payment);
-        
-        await logSystem.info(`InstantJobsEscrow (${network}): Job created`, {
-          jobId,
-          employer,
-          payment: paymentValue,
-          transactionHash: event.transactionHash
-        });
-        
-        // Alert if payment is high
+        // Só logar no Firebase se for alerta relevante
         if (paymentValue > ALERT_THRESHOLD_ETH) {
           await logSystem.warn(`High value job created in InstantJobsEscrow (${network})`, {
             jobId,
@@ -1055,6 +1068,15 @@ async function monitorInstantJobsEscrow(address: string, provider: ethers.provid
             transactionHash: event.transactionHash
           });
         }
+        // Se quiser logar tudo em debug, descomente abaixo:
+        // else if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+        //   await logSystem.info(`InstantJobsEscrow (${network}): Job created`, {
+        //     jobId,
+        //     employer,
+        //     payment: paymentValue,
+        //     transactionHash: event.transactionHash
+        //   });
+        // }
       } catch (logErr) {
         console.error(`Error logging JobCreated event (${network}):`, logErr);
       }
@@ -1064,16 +1086,16 @@ async function monitorInstantJobsEscrow(address: string, provider: ethers.provid
     contract.on('JobCompleted', async (jobId, freelancer, payment, event) => {
       try {
         const paymentValue = parseFloat(ethers.utils.formatEther(payment));
-        
-        // Record the transaction for frequency monitoring
         transactionTracker.recordTransaction(freelancer, payment);
-        
-        await logSystem.info(`InstantJobsEscrow (${network}): Job completed`, {
-          jobId,
-          freelancer,
-          payment: paymentValue,
-          transactionHash: event.transactionHash
-        });
+        // Só logar em debug
+        if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+          await logSystem.info(`InstantJobsEscrow (${network}): Job completed`, {
+            jobId,
+            freelancer,
+            payment: paymentValue,
+            transactionHash: event.transactionHash
+          });
+        }
       } catch (logErr) {
         console.error(`Error logging JobCompleted event (${network}):`, logErr);
       }
@@ -1083,13 +1105,15 @@ async function monitorInstantJobsEscrow(address: string, provider: ethers.provid
     contract.on('JobCancelled', async (jobId, employer, refundedAmount, event) => {
       try {
         const refundValue = parseFloat(ethers.utils.formatEther(refundedAmount));
-        
-        await logSystem.info(`InstantJobsEscrow (${network}): Job cancelled`, {
-          jobId,
-          employer,
-          refundedAmount: refundValue,
-          transactionHash: event.transactionHash
-        });
+        // Só logar em debug
+        if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+          await logSystem.info(`InstantJobsEscrow (${network}): Job cancelled`, {
+            jobId,
+            employer,
+            refundedAmount: refundValue,
+            transactionHash: event.transactionHash
+          });
+        }
       } catch (logErr) {
         console.error(`Error logging JobCancelled event (${network}):`, logErr);
       }
@@ -1114,18 +1138,8 @@ async function monitorInstantJobsEscrow(address: string, provider: ethers.provid
     contract.on('FundsWithdrawn', async (jobId, recipient, amount, event) => {
       try {
         const withdrawValue = parseFloat(ethers.utils.formatEther(amount));
-        
-        // Record the transaction for frequency monitoring
         transactionTracker.recordTransaction(recipient, amount);
-        
-        await logSystem.info(`InstantJobsEscrow (${network}): Funds withdrawn`, {
-          jobId,
-          recipient,
-          amount: withdrawValue,
-          transactionHash: event.transactionHash
-        });
-        
-        // Alert if withdrawal is high value
+        // Só logar no Firebase se for alerta relevante
         if (withdrawValue > ALERT_THRESHOLD_ETH) {
           await logSystem.warn(`High value withdrawal from InstantJobsEscrow (${network})`, {
             jobId,
@@ -1134,6 +1148,15 @@ async function monitorInstantJobsEscrow(address: string, provider: ethers.provid
             transactionHash: event.transactionHash
           });
         }
+        // Se quiser logar tudo em debug, descomente abaixo:
+        // else if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+        //   await logSystem.info(`InstantJobsEscrow (${network}): Funds withdrawn`, {
+        //     jobId,
+        //     recipient,
+        //     amount: withdrawValue,
+        //     transactionHash: event.transactionHash
+        //   });
+        // }
       } catch (logErr) {
         console.error(`Error logging FundsWithdrawn event (${network}):`, logErr);
       }
