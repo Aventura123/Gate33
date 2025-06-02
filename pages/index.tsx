@@ -260,6 +260,80 @@ function Home() {
           </Link>
         </section>
 
+        <section id="partners" className="partners py-20 text-center bg-gradient-to-r from-black via-orange-900/20 to-black px-4">
+          <h2 className="text-3xl font-bold text-orange-500 mb-8">Our Partners</h2>
+          <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
+            We collaborate with industry leaders to bring you the best opportunities and resources in the blockchain and tech space.
+          </p>
+          
+          <div className="partners-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="partner-card bg-black/20 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all">
+              <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
+                <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" title="Visit CoinGecko">
+                  <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
+                    <Image 
+                      src="/images/1_M4pePOxyzZ5BfowWxLlsfg.webp"
+                      alt="CoinGecko Logo"
+                      width={90}
+                      height={90}
+                      style={{ width: '90px', height: '90px', objectFit: 'cover' }}
+                    />
+                  </div>
+                </a>
+              </div>
+              <h3 className="text-xl text-orange-500 mb-2">CoinGecko</h3>
+              <p className="text-gray-300 text-sm mb-4">
+                Our first official partner! CoinGecko is a leading cryptocurrency data aggregator, providing reliable market data and insights for the blockchain ecosystem.
+              </p>
+              <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="text-orange-400 text-sm hover:underline">Visit CoinGecko →</a>
+            </div>
+            
+            <div className="partner-card bg-black/20 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all">
+              <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
+                <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
+                  <Image 
+                    src="/logo2.png"
+                    alt="Partner Logo"
+                    width={90}
+                    height={90}
+                    style={{ width: '90px', height: '90px', objectFit: 'cover' }}
+                  />
+                </div>
+              </div>
+              <h3 className="text-xl text-orange-500 mb-2">CryptoVentures</h3>
+              <p className="text-gray-300 text-sm mb-4">
+                Investment partner connecting promising blockchain startups with capital and resources.
+              </p>
+              <Link href="#" className="text-orange-400 text-sm hover:underline">Learn more →</Link>
+            </div>
+            
+            <div className="partner-card bg-black/20 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all">
+              <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
+                <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
+                  <Image 
+                    src="/logo2.png"
+                    alt="Partner Logo"
+                    width={90}
+                    height={90}
+                    style={{ width: '90px', height: '90px', objectFit: 'cover' }}
+                  />
+                </div>
+              </div>
+              <h3 className="text-xl text-orange-500 mb-2">TechTalent Network</h3>
+              <p className="text-gray-300 text-sm mb-4">
+                Global recruitment network specializing in blockchain and emerging technology talent.
+              </p>
+              <Link href="#" className="text-orange-400 text-sm hover:underline">Learn more →</Link>
+            </div>
+          </div>
+          
+          <div className="mt-10">
+            <Link href="/partners" className="bg-orange-500/80 text-white py-2 px-6 rounded-lg hover:bg-orange-500 transition-colors">
+              Become a Partner
+            </Link>
+          </div>
+        </section>
+
         <section id="faq" className="faq py-20 bg-black/80 px-4">
           <h2 className="text-3xl font-bold text-orange-500 mb-10 text-center">Frequently Asked Questions</h2>
           <div className="faq-container max-w-4xl mx-auto">

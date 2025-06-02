@@ -24,6 +24,7 @@ const nextConfig = {
         hostname: 'coin-images.coingecko.com',
       },
     ],
+    domains: ['assets.coingecko.com', 'miro.medium.com'],
   },
   
   distDir: '.next',
