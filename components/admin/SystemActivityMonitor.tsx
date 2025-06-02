@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { fetchNativeTokenBalances, NativeTokenBalance } from '../../utils/monitors/multiNetworkBalances';
 
 // Temporary interface for component compatibility
 interface MonitoringState {
@@ -36,6 +37,9 @@ const ContractMonitor: React.FC = () => {
   const [restartMessage, setRestartMessage] = useState<string | null>(null);
   const [learn2EarnContracts, setLearn2EarnContracts] = useState<MonitoringState["learn2EarnContracts"]>([]);
   const [instantJobsEscrowContracts, setInstantJobsEscrowContracts] = useState<MonitoringState["instantJobsEscrowContracts"]>([]);
+  const [nativeBalances, setNativeBalances] = useState<NativeTokenBalance[] | null>(null);
+  const [loadingBalances, setLoadingBalances] = useState<boolean>(true);
+  const [errorBalances, setErrorBalances] = useState<string | null>(null);
 
   // Add contract names and keys for display
   const contracts = [
@@ -87,8 +91,8 @@ const ContractMonitor: React.FC = () => {
     // Only need to fetch monitoring state now
   useEffect(() => {
     fetchMonitoringState();
-    // Poll more frequently (every 5 seconds) for better responsiveness
-    const interval = setInterval(fetchMonitoringState, 5000);
+    // Poll every 60 seconds for better performance
+    const interval = setInterval(fetchMonitoringState, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -162,6 +166,32 @@ const ContractMonitor: React.FC = () => {
       setIsRestarting(false);
     }
   };
+  useEffect(() => {
+    // Fetch native token balances
+    async function fetchBalances() {
+      setLoadingBalances(true);
+      setErrorBalances(null);
+      try {
+        // Use the wallet address from the .env file (injected at build time)
+        const address = '0xDdbC4f514019d835Dd9Ac6198fDa45c39512552C';
+        if (!address) {
+          setErrorBalances('SERVICE_WALLET_ADDRESS not set');
+          setNativeBalances(null);
+        } else {
+          const balances = await fetchNativeTokenBalances(address);
+          setNativeBalances(balances);
+        }
+      } catch (e: any) {
+        setErrorBalances(e.message || 'Error fetching balances');
+        setNativeBalances(null);
+      } finally {
+        setLoadingBalances(false);
+      }
+    }
+    fetchBalances();
+    const interval = setInterval(fetchBalances, 60000); // Refresh every 60s
+    return () => clearInterval(interval);
+  }, []);
   if (loading) {
     return (
       <div className="p-6 bg-black/30 rounded-lg">
@@ -252,24 +282,68 @@ const ContractMonitor: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {contracts.map(contract => (
-                <tr key={contract.key}>
-                  <td className="py-1 text-gray-200">{contract.label}</td>
-                  <td className="py-1">
-                    <span className={
-                      isRestarting ? "text-yellow-400" :
-                      (monitoringState?.fullState && monitoringState.fullState[contract.key as keyof typeof monitoringState.fullState])
-                        ? "text-green-400"
-                        : "text-red-400"
-                    }>
-                      {isRestarting ? "Restarting..." :
-                        (monitoringState?.fullState && monitoringState.fullState[contract.key as keyof typeof monitoringState.fullState])                          ? "Yes"
-                          : "No"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {/* Learn2Earn contracts monitoring */}
+              {/* Service Wallet Native Balances row (replaces Wallet) */}
+              <tr>
+                <td className="py-1 text-gray-200 font-semibold">Service Wallet Native Balances</td>
+                <td className="py-1">
+                  <span className={
+                    isRestarting ? "text-yellow-400" :
+                    (monitoringState?.fullState && monitoringState.fullState['isWalletMonitoring'])
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }>
+                    {isRestarting ? "Restarting..." :
+                      (monitoringState?.fullState && monitoringState.fullState['isWalletMonitoring']) ? "Yes" : "No"}
+                  </span>
+                </td>
+              </tr>
+              {/* Service Wallet Native Balances table (inline, no extra heading) */}
+              <tr>
+                <td colSpan={2}>
+                  {loadingBalances ? (
+                    <div className="text-orange-400">Loading balances...</div>
+                  ) : errorBalances ? (
+                    <div className="text-red-400">{errorBalances}</div>
+                  ) : nativeBalances && nativeBalances.length > 0 ? (
+                    <table className="w-full text-xs mb-2">
+                      <thead>
+                        <tr>
+                          <th className="text-left text-gray-400 pb-1">Network</th>
+                          <th className="text-left text-gray-400 pb-1">Symbol</th>
+                          <th className="text-left text-gray-400 pb-1">Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {nativeBalances.map((b) => (
+                          <tr key={b.network}>
+                            <td className="py-1 text-gray-200">{b.network}</td>
+                            <td className="py-1 text-gray-200">{b.symbol}</td>
+                            <td className="py-1 text-orange-100">{b.balance}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="text-gray-400">No balances found.</div>
+                  )}
+                </td>
+              </tr>
+              {/* Token Distribution row - after balances */}
+              <tr>
+                <td className="py-1 text-gray-200">Token Distribution</td>
+                <td className="py-1">
+                  <span className={
+                    isRestarting ? "text-yellow-400" :
+                    (monitoringState?.fullState && monitoringState.fullState['isTokenDistributionMonitoring'])
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }>
+                    {isRestarting ? "Restarting..." :
+                      (monitoringState?.fullState && monitoringState.fullState['isTokenDistributionMonitoring']) ? "Yes" : "No"}
+                  </span>
+                </td>
+              </tr>
+              {/* ...existing Learn2Earn and InstantJobsEscrow contracts... */}
               {learn2EarnContracts && learn2EarnContracts.length > 0 && (
                 <>
                   <tr>
@@ -366,7 +440,7 @@ const ContractMonitor: React.FC = () => {
             </>
           )}
         </button>
-      </div>{/* Learn2Earn contracts monitoring section removed */}
+      </div>
     </div>
   );
 };
