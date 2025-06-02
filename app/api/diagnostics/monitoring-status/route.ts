@@ -78,7 +78,8 @@ export async function GET() {
         network,
         active: true,
       };
-    });    return NextResponse.json({
+    });
+    return NextResponse.json({
       initialized: contractMonitoring.initialized,
       walletMonitoringActive: contractMonitoring.walletMonitoringActive,
       tokenDistributionActive: contractMonitoring.tokenDistributionActive,

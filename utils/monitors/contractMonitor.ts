@@ -60,7 +60,7 @@ const instantJobsEscrowContracts = {
   'ethereum': process.env.INSTANT_JOBS_ESCROW_ETHEREUM_ADDRESS || ''
 };
 
-// Redes a monitorar (pode ser configurado por env ou hardcoded)
+// Networks to monitor (can be configured by env or hardcoded)
 const MONITOR_NETWORKS = (process.env.MONITOR_NETWORKS || 'polygon,ethereum,binance').split(',').map(n => n.trim().toLowerCase());
 
 const wsRpcUrls = MONITOR_NETWORKS.flatMap(net => getWsRpcUrls(net));
@@ -288,125 +288,127 @@ export async function monitorTokenDistribution(
 }
 
 /**
- * Tenta estabelecer uma conexão WebSocket estável, com reconexão automática
- * @returns Uma Promise que resolve para uma instância de WebSocketProvider ou null em caso de falha
+ * Attempts to establish a stable WebSocket connection, with automatic reconnection
+ * @returns A Promise that resolves to a WebSocketProvider instance or null on failure
  */
 async function createStableWebSocketProvider(): Promise<ethers.providers.WebSocketProvider | null> {
   if (wsRpcUrls.length === 0) {
-    logSystem.error('Nenhum URL WebSocket disponível para conexão');
+    logSystem.error('No WebSocket URL available for connection');
     return null;
   }
 
-  // Tentar cada URL de WebSocket em ordem
+  // Try each WebSocket URL in order
   for (const wsUrl of wsRpcUrls) {
     try {
-      // Criar o provider WebSocket
+      // Create the WebSocket provider
       const wsProvider = new ethers.providers.WebSocketProvider(wsUrl);
-      
-      // Configurar handlers para reconexão
+
+      // Set up handlers for reconnection
       const setupReconnection = (provider: ethers.providers.WebSocketProvider) => {
         const ws = (provider as any)._websocket;
-        
+
         if (!ws) {
-          logSystem.error('WebSocket não encontrado no provider, reconexão automática pode não funcionar');
+          logSystem.error('WebSocket not found on provider, automatic reconnection may not work');
           return;
         }
-        
+
         ws.onclose = (event: any) => {
-          // Limpar o timer existente, se houver
+          // Clear existing timer, if any
           if (reconnectionTimer) {
             clearTimeout(reconnectionTimer);
             reconnectionTimer = null;
           }
-          
-          // Incrementar contador de tentativas
+
+          // Increment attempt counter
           reconnectionAttempts++;
-          
-          // Verificar se atingimos o limite de tentativas
+
+          // Check if we reached the attempt limit
           if (reconnectionAttempts > MAX_CONNECTION_ATTEMPTS) {
-            // Log apenas quando exceder tentativas máximas
-            logSystem.error(`Falha no WebSocket após ${MAX_CONNECTION_ATTEMPTS} tentativas. Alternando para HTTP.`, {
+            // Log only when exceeding max attempts
+            logSystem.error(`WebSocket failed after ${MAX_CONNECTION_ATTEMPTS} attempts. Switching to HTTP.`, {
               reconnectionAttempts,
               lastErrorCode: event.code
             });
-            
-            // Se HTTP fallback estiver habilitado, reiniciar o monitoramento com HTTP
+
+            // If HTTP fallback is enabled, restart monitoring with HTTP
             if (HTTP_FALLBACK_ENABLED) {
-              // Limpar quaisquer monitoramentos ativos
+              // Clear any active monitors
               try {
                 provider.removeAllListeners();
               } catch (clearErr) {
-                logSystem.error('Erro ao limpar listeners WebSocket', { error: clearErr });
+                logSystem.error('Error clearing WebSocket listeners', { error: clearErr });
               }
-              
-              initializeContractMonitoring(true); // true indica que está usando fallback HTTP
+
+              initializeContractMonitoring(true); // true indicates using HTTP fallback
               return;
             }
           }
-          
-          // Tentar reconexão após o delay
+
+          // Try reconnection after the delay
           reconnectionTimer = setTimeout(() => {
             try {
               initializeContractMonitoring();
             } catch (err) {
-              logSystem.error('Erro ao reiniciar monitoramento WebSocket', { error: err });
+              logSystem.error('Error restarting WebSocket monitoring', { error: err });
             }
           }, CONNECTION_RETRY_DELAY);
         };
-        
+
         ws.onerror = (error: any) => {
-          // Log apenas erros críticos do WebSocket
-          logSystem.error('Erro crítico no WebSocket', { error });
+          // Log only critical WebSocket errors
+          logSystem.error('Critical WebSocket error', { error });
         };
       };
-      
-      // Configurar reconexão
+
+      // Set up reconnection
       setupReconnection(wsProvider);
-      
-      // Testar a conexão
+
+      // Test the connection
       const blockNumber = await Promise.race([
         wsProvider.getBlockNumber(),
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout na conexão WebSocket')), 10000)
-        ),      ]);
-      
-      // Resetar contador de tentativas ao estabelecer uma conexão
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('WebSocket connection timeout')), 10000)
+        ),
+      ]);
+
+      // Reset attempt counter on successful connection
       reconnectionAttempts = 0;
-      
-      // Registrar no sistema
-      // Reduzir logs: só registrar conexões WebSocket se for nível debug
+
+      // Log in the system
+      // Reduce logs: only log WebSocket connections if debug level
       if (process.env.MONITOR_LOG_LEVEL === 'debug') {
         try {
-          await logSystem.info(`Conexão WebSocket estabelecida com: ${wsUrl}`);
+          await logSystem.info(`WebSocket connection established with: ${wsUrl}`);
         } catch (logErr) {
-          console.error('Erro ao registrar sucesso de conexão:', logErr);
+          console.error('Error logging connection success:', logErr);
         }
       }
-      
+
       return wsProvider;
     } catch (error) {
-      console.warn(`Falha ao conectar WebSocket com ${wsUrl}:`, error);
+      console.warn(`Failed to connect WebSocket with ${wsUrl}:`, error);
     }
   }
-  
-  console.warn('Não foi possível estabelecer uma conexão WebSocket. Tentando alternativas...');
+
+  console.warn('Could not establish a WebSocket connection. Trying alternatives...');
   return null;
 }
 
 /**
- * Cria uma instância de FallbackProvider com múltiplos endpoints HTTP
- * Esta abordagem é mais confiável que depender de um único provider
+ * Creates a FallbackProvider instance with multiple HTTP endpoints
+ * This approach is more reliable than relying on a single provider
  */
 async function createFallbackHttpProvider(): Promise<ethers.providers.Provider | null> {
   try {
     if (httpRpcUrls.length === 0) {
-      console.warn('Nenhum URL HTTP disponível para FallbackProvider');
-      return null;    }
-    
+      console.warn('No HTTP URL available for FallbackProvider');
+      return null;
+    }
+
     const providerConfigs = [];
     let priority = 1;
-    
-    // Adicionar até 5 HTTP providers para fallback
+
+    // Add up to 5 HTTP providers for fallback
     for (const url of httpRpcUrls.slice(0, 5)) {
       try {
         const provider = new ethers.providers.JsonRpcProvider(url);
@@ -417,46 +419,47 @@ async function createFallbackHttpProvider(): Promise<ethers.providers.Provider |
           stallTimeout: 5000
         });
       } catch (e) {
-        console.warn(`Erro ao criar provider para ${url}:`, e);
+        console.warn(`Error creating provider for ${url}:`, e);
       }
     }
-    
+
     if (providerConfigs.length === 0) {
-      throw new Error('Não foi possível criar nenhum provider para o FallbackProvider');
+      throw new Error('Could not create any provider for FallbackProvider');
     }
-    
+
     const fallbackProvider = new ethers.providers.FallbackProvider(providerConfigs, 1);
-    
-    // Testar o FallbackProvider
+
+    // Test the FallbackProvider
     const blockNumber = await Promise.race([
       fallbackProvider.getBlockNumber(),
-      new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout na conexão com FallbackProvider')), 15000)
-      ),    ]);
-    
-    // Registrar no sistema
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout connecting to FallbackProvider')), 15000)
+      ),
+    ]);
+
+    // Log in the system
     try {
       if (process.env.MONITOR_LOG_LEVEL === 'debug') {
-        await logSystem.info(`FallbackProvider criado com ${providerConfigs.length} endpoints.`);
+        await logSystem.info(`FallbackProvider created with ${providerConfigs.length} endpoints.`);
       }
     } catch (logErr) {
-      console.error('Erro ao registrar criação de FallbackProvider:', logErr);
+      console.error('Error logging FallbackProvider creation:', logErr);
     }
-    
-    // Configurar verificação periódica de saúde do FallbackProvider
+
+    // Set up periodic health check for FallbackProvider
     setInterval(async () => {
       try {
         await fallbackProvider.getBlockNumber();
       } catch (healthCheckError) {
-        console.warn('Verificação de saúde do FallbackProvider falhou:', healthCheckError);
-        console.log('Reiniciando monitoramento...');
+        console.warn('FallbackProvider health check failed:', healthCheckError);
+        console.log('Restarting monitoring...');
         initializeContractMonitoring();
       }
-    }, 3 * 60 * 1000); // Verificar a cada 3 minutos
-    
+    }, 3 * 60 * 1000); // Check every 3 minutes
+
     return fallbackProvider;
   } catch (error) {
-    console.error('Falha ao criar FallbackProvider:', error);
+    console.error('Failed to create FallbackProvider:', error);
     return null;
   }
 }
@@ -481,7 +484,7 @@ export function initializeContractMonitoring(
     try {
       const serverInit = require('../../lib/server-init');
       serverStatus = serverInit.serverStatus;
-      
+
       // Initialize status structure if necessary
       if (!serverStatus.contractMonitoring) {
         serverStatus.contractMonitoring = {
@@ -492,7 +495,7 @@ export function initializeContractMonitoring(
           warnings: []
         };
       }
-      
+
     } catch (importErr) {
       console.warn("Could not import serverStatus, continuing without it:", importErr);
       // Create a simulated object to avoid breaking the code
@@ -503,74 +506,76 @@ export function initializeContractMonitoring(
           warnings: []
         }
       };
-    }    // Verificar se já há uma tentativa de inicialização em andamento
+    }
+    // Check if there is already an initialization attempt in progress
     if (isMonitoringInitialized) {
       return;
     }
-      // Limpar monitoramentos existentes antes de inicializar novos
+    // Clear existing monitors before initializing new ones
     if (currentProvider) {
       try {
-        // Limpar todos os listeners do provider atual
+        // Clear all listeners from the current provider
         if (typeof (currentProvider as any).removeAllListeners === 'function') {
           (currentProvider as any).removeAllListeners();
         }
       } catch (clearErr) {
-        console.warn('Erro ao limpar provider existente:', clearErr);
+        console.warn('Error clearing existing provider:', clearErr);
       }
       currentProvider = null;
     }
 
-    // Escolher estratégia de conexão baseada no parâmetro ou no histórico
-    const connectToBlockchain = async (): Promise<ethers.providers.Provider | null> => {      // Se especificado para usar HTTP ou após muitas falhas de websocket, ir direto para HTTP
+    // Choose connection strategy based on parameter or history
+    const connectToBlockchain = async (): Promise<ethers.providers.Provider | null> => {
+      // If specified to use HTTP or after many websocket failures, go straight to HTTP
       if (useHttpFallback) {
         return await createFallbackHttpProvider();
       } else {
-        // Estratégia padrão: tentar WebSocket primeiro, depois fallback para HTTP
+        // Default strategy: try WebSocket first, then fallback to HTTP
         const wsProvider = await createStableWebSocketProvider();
-          if (wsProvider) {
+        if (wsProvider) {
           return wsProvider;
         }
-        
+
         return await createFallbackHttpProvider();
       }
     };
-    
-    // Tentar estabelecer conexão
+
+    // Try to establish connection
     connectToBlockchain().then(provider => {
       if (!provider) {
-        console.error('Não foi possível estabelecer conexão com nenhum provider. Monitoramento de contratos não será iniciado.');
+        console.error('Could not establish connection with any provider. Contract monitoring will not be started.');
         try {
-          logSystem.error('Não foi possível estabelecer conexão com nenhum provider. Monitoramento de contratos não será iniciado.');
+          logSystem.error('Could not establish connection with any provider. Contract monitoring will not be started.');
         } catch (logErr) {
-          console.error("Erro ao registrar log:", logErr);
+          console.error("Error logging:", logErr);
         }
-        
-        // Atualizar status global
+
+        // Update global status
         if (serverStatus && serverStatus.contractMonitoring) {
           serverStatus.contractMonitoring.initialized = false;
           serverStatus.contractMonitoring.errors = serverStatus.contractMonitoring.errors || [];
           serverStatus.contractMonitoring.errors.push(
-            'Falha ao conectar-se a qualquer provider blockchain. Monitoramento não será iniciado.'
+            'Failed to connect to any blockchain provider. Monitoring will not be started.'
           );
         }
-        
-        // Informar o callback sobre a falha
+
+        // Inform the callback about the failure
         if (statusCallback) {
           statusCallback(false, null, {
             tokenDistribution: false,
             wallet: false
           });
         }
-        
+
         return;
       }
-      
-      // Armazenar o provider atual para referência e limpeza em reinicializações
+
+      // Store the current provider for reference and cleanup on restarts
       currentProvider = provider;
-      
-      // Marcar como inicializado
+
+      // Mark as initialized
       isMonitoringInitialized = true;
-        // Identificar o tipo de provider para logs
+        // Identify provider type for logs
       const providerType = ('_websocket' in provider) ? 'WebSocket' : 'HTTP';
         // Inicializar cada monitor com tratamento de erro independente
         // 1. Service wallet monitor

@@ -445,6 +445,7 @@ const ContractMonitor: React.FC = () => {
   );
 };
 
+
 // Type for system logs
 interface SystemLog {
   id: string;

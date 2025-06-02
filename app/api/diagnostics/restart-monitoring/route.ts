@@ -3,10 +3,10 @@ import { restartContractMonitoring } from '../../../../lib/server-init';
 
 export async function POST() {
   try {
-    // Reiniciar o monitoramento de contratos
+    // Restart contract monitoring
     const result = await restartContractMonitoring();
     
-    // Retornar o resultado
+    // Return the result
     return NextResponse.json({
       success: result.success,
       message: result.message,
@@ -14,11 +14,11 @@ export async function POST() {
     }, { status: 200 });
     
   } catch (error: any) {
-    console.error("Erro ao reiniciar monitoramento:", error);
+    console.error("Error restarting monitoring:", error);
     
     return NextResponse.json({ 
       success: false,
-      error: error.message || "Erro desconhecido ao reiniciar monitoramento",
+      error: error.message || "Unknown error while restarting monitoring",
       timestamp: new Date().toISOString()
     }, { status: 500 });
   }

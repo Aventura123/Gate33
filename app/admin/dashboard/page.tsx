@@ -162,7 +162,6 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
   
   // Notification related states
   const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [adminId, setAdminId] = useState<string | null>(null);
   
   // Ensure client-side rendering is consistent with the server
@@ -233,7 +232,6 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
   const [blockingSeekerId, setBlockingSeekerId] = useState<string|null>(null);
 
   const [pendingCompanies, setPendingCompanies] = useState<any[]>([]);
-
   // --- Profile State and Handlers ---
   const [profileData, setProfileData] = useState({
     name: '',
@@ -247,6 +245,21 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
     address: '',
     country: '',
     phone: '',
+    // Additional profile fields
+    position: '',
+    birthDate: '',
+    nationality: '',
+    preferredLanguage: 'en',
+    mobilePhone: '',
+    city: '',
+    postalCode: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    website: '',
+    linkedin: '',
+    twitter: '',
+    github: '',
+    biography: '',
   });
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -1314,7 +1327,6 @@ const fetchEmployersList = async () => {
         return true;
     }
   };
-
   // Fetch current admin's data when profile tab is active
   useEffect(() => {
     const fetchCurrentAdminProfile = async () => {
@@ -1334,10 +1346,12 @@ const fetchEmployersList = async () => {
             throw new Error(errorData.error || `Error fetching profile: ${response.statusText}`);
           }
           const data = await response.json();
-          // Populate form state, leaving password fields blank initially
+          console.log("Admin profile data loaded:", data);
+
+          // NUNCA use localStorage para username, email ou role
           setProfileData({
             name: data.userData?.name || '',
-            username: data.userData?.username || '',
+            username: data.userData?.username || data.userData?.name || '',
             email: data.userData?.email || '',
             role: data.userData?.role || '',
             lastName: data.userData?.lastName || '',
@@ -1346,6 +1360,21 @@ const fetchEmployersList = async () => {
             phone: data.userData?.phone || '',
             password: '', // Don't pre-fill password
             confirmPassword: '',
+            // New fields
+            position: data.userData?.position || '',
+            birthDate: data.userData?.birthDate || '',
+            nationality: data.userData?.nationality || '',
+            preferredLanguage: data.userData?.preferredLanguage || 'en',
+            mobilePhone: data.userData?.mobilePhone || '',
+            city: data.userData?.city || '',
+            postalCode: data.userData?.postalCode || '',
+            emergencyContactName: data.userData?.emergencyContactName || '',
+            emergencyContactPhone: data.userData?.emergencyContactPhone || '',
+            website: data.userData?.website || '',
+            linkedin: data.userData?.linkedin || '',
+            twitter: data.userData?.twitter || '',
+            github: data.userData?.github || '',
+            biography: data.userData?.biography || '',
           });
         } catch (err: any) {
           console.error("Error fetching profile:", err);
@@ -1359,7 +1388,7 @@ const fetchEmployersList = async () => {
     fetchCurrentAdminProfile();
   }, [activeTab, activeSubTab]);
 
-  const handleProfileInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleProfileInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setProfileData((prev) => ({ ...prev, [name]: value }));
   };
@@ -1702,60 +1731,6 @@ const fetchEmployersList = async () => {
     }
   };
   
-  // Function to create a shared notification for all super_admins
-  const createSharedAdminNotification = async (title: string, body: string, type: string = "general", data: any = {}) => {
-    try {
-      await createAdminNotification(
-        {
-          title,
-          body,
-          type,
-          data
-        },
-        true // This makes it a shared notification
-      );
-      console.log("Shared admin notification created successfully");
-    } catch (error) {
-      console.error("Error creating shared admin notification:", error);
-    }
-  };
-  // Fetch unread admin notifications - combines personal and shared notifications for super_admin
-  useEffect(() => {
-    if (!db || !adminId) return;
-    
-    let interval: NodeJS.Timeout;
-      const fetchUnreadAdminNotifications = async () => {
-      try {
-               let totalUnreadCount = 0;
-        
-        // Only super_admins can see notifications
-        if (role === "super_admin") {
-          // Get shared notifications for super_admins only
-          const sharedQuery = query(
-            collection(db, "adminNotifications"),
-            where("isShared", "==", true),
-            where("read", "==", false)
-          );
-          const sharedSnapshot = await getDocs(sharedQuery);
-          totalUnreadCount = sharedSnapshot.size;
-        } else {
-          // Non-super_admins don't see any notifications
-          totalUnreadCount = 0;
-        }
-        
-        setUnreadCount(totalUnreadCount);
-      } catch (error) {
-        console.error("Error fetching unread admin notifications:", error);
-        setUnreadCount(0);
-      }
-    };
-    
-    fetchUnreadAdminNotifications();
-    interval = setInterval(fetchUnreadAdminNotifications, 10000); // Check every 10 seconds
-    
-    return () => clearInterval(interval);
-  }, [role, db, adminId]);
-
   // Estados para controlar dropdowns da barra lateral
   const [nftsDropdownOpen, setNftsDropdownOpen] = useState(false);
   const [usersDropdownOpen, setUsersDropdownOpen] = useState(false);
@@ -1827,7 +1802,7 @@ const fetchEmployersList = async () => {
               {/* Notification bell positioned to the right of the photo */}
               {role === "super_admin" && (
                 <div className="absolute left-[90%] top-0 z-20">
-                  <NotificationBell unreadCount={unreadCount} onClick={() => setShowNotifications(true)} />
+                  <NotificationBell unreadCount={0} onClick={() => setShowNotifications(true)} />
                 </div>
               )}
             </div>
@@ -2004,7 +1979,7 @@ const fetchEmployersList = async () => {
                         setActiveSubTab("create");
                         if (isMobile) setMobileMenuOpen(false);
                       }}
-                    >
+                                       >
                       Create Job
                     </button>
                   </li>
@@ -2037,7 +2012,7 @@ const fetchEmployersList = async () => {
                 </ul>              )}
             </li>
             {/* Instant Jobs tab */}
-            <li>
+                                             <li>
               <button
                 className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                 onClick={() => {
@@ -2202,17 +2177,6 @@ const fetchEmployersList = async () => {
                         My Profile
                       </button>
                     </li>
-                    <li>
-                      <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "adminTest" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
-                        onClick={() => {
-                          setActiveSubTab("adminTest");
-                          if (isMobile) setMobileMenuOpen(false);
-                        }}
-                      >
-                        Admin Notifications Test
-                      </button>
-                    </li>
                     {hasPermission('canManageUsers') && (
                       <li>
                         <button
@@ -2304,6 +2268,7 @@ const fetchEmployersList = async () => {
                                       <p>{employer.name || employer.companyName}</p>
                                     </div>
 
+                                    {/* Column 2: Responsible Person */}
                                     {/* Column 2: Responsible Person */}
                                     <div className="md:col-span-1">
                                       <p><strong>Responsible Person:</strong></p>
@@ -3017,211 +2982,246 @@ const fetchEmployersList = async () => {
                           <h3 className="text-xl text-orange-400 mb-4 text-left">My Profile</h3>
                           {profileLoading && <p>Loading profile...</p>}
                           {profileError && <p className="text-red-400 mb-4">{profileError}</p>}
-                          {!profileLoading && (
-                            <form onSubmit={handleUpdateProfile} className="space-y-4">
-                              {/* Read-only fields */}
-                              <div>
-                                <label className="block text-sm font-medium text-gray-300">Name</label>
-                                <input type="text" value={profileData.name} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-300">Username</label>
-                                <input type="text" value={profileData.username} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
-                              </div>
-                               <div>
-                                <label className="block text-sm font-medium text-gray-300">Email</label>
-                                <input type="email" value={profileData.email} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
-                              </div>
-                               <div>
-                                <label className="block text-sm font-medium text-gray-300">Role</label>
-                                <input type="text" value={profileData.role} readOnly className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-400 cursor-not-allowed" />
-                              </div>
-
-                              {/* Editable fields */}
-                               <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Last Name</label>
-                                <input
-                                  type="text"
-                                  name="lastName"
-                                  value={profileData.lastName}
-                                  onChange={handleProfileInputChange}
-                                  placeholder="Your last name"
-                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                                />
-                              </div>
-                               <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Address</label>
-                                <input
-                                  type="text"
-                                  name="address"
-                                  value={profileData.address}
-                                  onChange={handleProfileInputChange}
-                                  placeholder="Your address"
-                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                                />
-                              </div>
-                               <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Country</label>
-                                <input
-                                  type="text"
-                                  name="country"
-                                  value={profileData.country}
-                                  onChange={handleProfileInputChange}
-                                  placeholder="Your country"
-                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                                />
-                              </div>
-                               <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
-                                <input
-                                  type="tel"
-                                  name="phone"
-                                  value={profileData.phone}
-                                  onChange={handleProfileInputChange}
-                                  placeholder="Your phone number"
-                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                                />
-                              </div>
-                              <hr className="border-gray-600"/>
-                               <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">New Password (leave blank to keep current)</label>
-                                <input
-                                  type="password"
-                                  name="password"
-                                  value={profileData.password}
-                                  onChange={handleProfileInputChange}
-                                  placeholder="New Password"
-                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                                />
-                              </div>
-                               <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Confirm New Password</label>
-                                <input
-                                  type="password"
-                                  name="confirmPassword"
-                                  value={profileData.confirmPassword}
-                                  onChange={handleProfileInputChange}
-                                  placeholder="Confirm New Password"
-                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                                  disabled={!profileData.password} // Disable if new password is blank
-                                />
+                          {!profileLoading && (                            <form onSubmit={handleUpdateProfile} className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">                                <div>
+                                  <label htmlFor="username" className="block text-sm font-medium text-white">Username</label>
+                                  <input 
+                                    type="text" 
+                                    id="username"
+                                    value={profileData.username} 
+                                    readOnly 
+                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white cursor-not-allowed" 
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="email" className="block text-sm font-medium text-white">Email</label>
+                                  <input 
+                                    type="email" 
+                                    id="email"
+                                    value={profileData.email} 
+                                    readOnly 
+                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white cursor-not-allowed" 
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="role" className="block text-sm font-medium text-white">Role</label>
+                                  <input 
+                                    type="text" 
+                                    id="role"
+                                    value={profileData.role} 
+                                    readOnly 
+                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white cursor-not-allowed" 
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="position" className="block text-sm font-medium text-white">Position/Title</label>
+                                  <input
+                                    type="text"
+                                    id="position"
+                                    name="position"
+                                    value={profileData.position || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="Your position or title"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="birthDate" className="block text-sm font-medium text-white">Birth Date</label>
+                                  <input
+                                    type="date"
+                                    id="birthDate"
+                                    name="birthDate"
+                                    value={profileData.birthDate || ''}
+                                    onChange={handleProfileInputChange}
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="nationality" className="block text-sm font-medium text-white">Nationality</label>
+                                  <input
+                                    type="text"
+                                    id="nationality"
+                                    name="nationality"
+                                    value={profileData.nationality || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="Your nationality"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
                               </div>
 
-                              <button
-                                type="submit"
-                                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
-                                disabled={profileUpdating}
-                              >
-                                {profileUpdating ? 'Updating...' : 'Update Profile'}
-                              </button>
+                              <h4 className="text-lg text-orange-400 pt-4">Contact Information</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label htmlFor="phone" className="block text-sm font-medium text-white mb-1">Phone</label>
+                                  <input
+                                    type="tel"
+                                    id="phone"
+                                    name="phone"
+                                    value={profileData.phone || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="Your phone number"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="address" className="block text-sm font-medium text-white mb-1">Address</label>
+                                  <input
+                                    type="text"
+                                    id="address"
+                                    name="address"
+                                    value={profileData.address || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="Your address"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="city" className="block text-sm font-medium text-white mb-1">City</label>
+                                  <input
+                                    type="text"
+                                    id="city"
+                                    name="city"
+                                    value={profileData.city || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="Your city"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="country" className="block text-sm font-medium text-white mb-1">Country</label>
+                                  <input
+                                    type="text"
+                                    id="country"
+                                    name="country"
+                                    value={profileData.country || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="Your country"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="postalCode" className="block text-sm font-medium text-white mb-1">Postal/Zip Code</label>
+                                  <input
+                                    type="text"
+                                    id="postalCode"
+                                    name="postalCode"
+                                    value={profileData.postalCode || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="Your postal/zip code"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                              </div>
+                              
+                              <h4 className="text-lg text-orange-400 pt-4">Social Media & Online Presence</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label htmlFor="website" className="block text-sm font-medium text-white mb-1">Personal Website</label>
+                                  <input
+                                    type="url"
+                                    id="website"
+                                    name="website"
+                                    value={profileData.website || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="https://your-website.com"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="linkedin" className="block text-sm font-medium text-white mb-1">LinkedIn</label>
+                                  <input
+                                    type="url"
+                                    id="linkedin"
+                                    name="linkedin"
+                                    value={profileData.linkedin || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="https://linkedin.com/in/yourprofile"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="twitter" className="block text-sm font-medium text-white mb-1">Twitter</label>
+                                  <input
+                                    type="url"
+                                    id="twitter"
+                                    name="twitter"
+                                    value={profileData.twitter || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="https://twitter.com/youraccount"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="github" className="block text-sm font-medium text-white mb-1">GitHub</label>
+                                  <input
+                                    type="url"
+                                    id="github"
+                                    name="github"
+                                    value={profileData.github || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="https://github.com/youraccount"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <label htmlFor="biography" className="block text-sm font-medium text-white mb-1">Biography/About</label>
+                                <textarea
+                                  id="biography"
+                                  name="biography"
+                                  value={profileData.biography || ''}
+                                  onChange={handleProfileInputChange}
+                                  placeholder="Tell us about yourself..."
+                                  rows={4}
+                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                ></textarea>
+                              </div>
+                              
+                              <hr className="border-gray-600 my-6"/>
+                              <h4 className="text-lg text-orange-400">Change Password</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label htmlFor="password" className="block text-sm font-medium text-white mb-1">New Password (leave blank to keep current)</label>
+                                  <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    value={profileData.password}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="New Password"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-white mb-1">Confirm New Password</label>
+                                  <input
+                                    type="password"
+                                    id="confirmPassword"
+                                    name="confirmPassword"
+                                    value={profileData.confirmPassword}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="Confirm New Password"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    disabled={!profileData.password} // Disable if new password is blank
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="flex justify-end mt-6">
+                                <button
+                                  type="submit"
+                                  className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-medium"
+                                  disabled={profileUpdating}
+                                >
+                                  {profileUpdating ? 'Updating...' : 'Update Profile'}
+                                </button>
+                              </div>
                             </form>
                         )}
                         </div>
                       )}
-                      {activeSubTab === "adminTest" && (
-                        <div>
-                          <h3 className="text-xl text-orange-400 mb-4 text-left">Admin Notifications Test</h3>
-                          
-                          {role === "super_admin" ? (
-                            <div className="space-y-6">
-                              {/* Instructions for super_admin users */}
-                              <div className="bg-black/30 border border-gray-700 p-4 rounded-lg">
-                                <h4 className="font-semibold text-orange-300 mb-3">Super Admin Notifications</h4>
-                                <p className="text-gray-300 mb-4">
-                                  Como super_admin, você pode enviar e visualizar notificações compartilhadas por todos os super_admins. 
-                                  Essas notificações são visíveis apenas para usuários com a função super_admin.
-                                </p>
-                              </div>
-                              
-                              {/* Test for shared notifications */}
-                              <div className="bg-black/40 border border-gray-700 p-4 rounded-lg">
-                                <h4 className="font-semibold text-orange-300 mb-3">Enviar Notificação para Super Admins</h4>
-                                <p className="text-gray-300 mb-4">
-                                  Isso enviará uma notificação de teste para todos os super_admins.
-                                  A notificação aparecerá no painel de notificações deles.
-                                </p>
-                                
-                                <button
-                                  onClick={() => {
-                                    createSharedAdminNotification(
-                                      "Notificação de Teste para Super Admins", 
-                                      "Esta é uma notificação de teste compartilhada com todos os super_admins.", 
-                                      "test"
-                                    );
-                                    // Show a success message
-                                    alert("Notificação compartilhada enviada com sucesso!");
-                                  }}
-                                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
-                                >
-                                  Enviar Notificação de Teste
-                                </button>
-                              </div>
-                              
-                              {/* Example notifications */}
-                              <div className="bg-black/40 border border-gray-700 p-4 rounded-lg">
-                                <h4 className="font-semibold text-orange-300 mb-3">Exemplos de Notificações</h4>
-                                <p className="text-gray-300 mb-4">
-                                  Aqui estão alguns exemplos de notificações que podem ser úteis para comunicação entre super_admins:
-                                </p>
-                                
-                                <div className="space-y-2">
-                                  <button
-                                    onClick={() => {
-                                      createSharedAdminNotification(
-                                        "Manutenção do Sistema", 
-                                        "O sistema entrará em manutenção hoje às 23:00. Por favor, informe os usuários.", 
-                                        "system"
-                                      );
-                                      alert("Notificação de manutenção enviada!");
-                                    }}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full text-left"
-                                  >
-                                    Enviar Alerta de Manutenção
-                                  </button>
-                                  
-                                  <button
-                                    onClick={() => {
-                                      createSharedAdminNotification(
-                                        "Novo Admin Registrado", 
-                                        "Um novo administrador foi adicionado ao sistema. Por favor, verifique as permissões.", 
-                                        "admin"
-                                      );
-                                      alert("Notificação de novo admin enviada!");
-                                    }}
-                                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg w-full text-left"
-                                  >
-                                    Simular Notificação de Novo Admin
-                                  </button>
-                                  
-                                  <button
-                                    onClick={() => {
-                                      createSharedAdminNotification(
-                                        "Alerta de Segurança", 
-                                        "Detectamos atividades suspeitas no sistema. Por favor, verifique os logs de acesso.", 
-                                        "security"
-                                      );
-                                      alert("Alerta de segurança enviado!");
-                                    }}
-                                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg w-full text-left"
-                                  >
-                                    Simular Alerta de Segurança
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="bg-black/40 border border-red-900 p-4 rounded-lg">
-                              <h4 className="font-semibold text-red-400 mb-3">Acesso Restrito</h4>
-                              <p className="text-gray-300">
-                                As notificações de administrador estão disponíveis apenas para usuários Super Admin.
-                                Seu papel atual é: <span className="font-bold text-white">{role}</span>
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Existing permissions panel */}
                       {activeSubTab === "permissions" && hasPermission('canManageUsers') && (
                         <div className="space-y-8">
                           {/* Admin Creation Form */}

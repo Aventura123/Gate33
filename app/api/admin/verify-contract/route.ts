@@ -12,7 +12,7 @@ const ERC20_ABI = [
   "function transfer(address to, uint amount) returns (bool)"
 ];
 
-// ERC20 é o único tipo de contrato que precisamos validar
+// ERC20 is the only contract type we need to validate
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
     } catch (erc20Error) {
       console.log("Not an ERC20 token, checking for airdrop functions...");
     }
-      // Contract might still be valid but doesn't conform to our interfaces
+    
+    // Contract might still be valid but doesn't conform to our interfaces
     return NextResponse.json({
       valid: true,
       genericContract: true,

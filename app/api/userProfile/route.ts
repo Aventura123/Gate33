@@ -67,20 +67,18 @@ export async function GET(req: NextRequest) {
       
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        if (userData.photoURL) {
-          console.log(`Foto encontrada na coleção '${collection}':`, userData.photoURL);
-          return NextResponse.json({ 
-            photoUrl: userData.photoURL,
-            collection: collection,
-            userData: userData
-          });
-        }
+        // Always return userData, even if photoURL is missing
+        return NextResponse.json({ 
+          photoUrl: userData.photoURL || null,
+          collection: collection,
+          userData: userData
+        });
       }
     }
     
     // Se não encontrou em nenhuma coleção
-    console.log("Nenhuma foto encontrada para o usuário", userId);
-    return NextResponse.json({ photoUrl: null });
+    console.log("Nenhum usuário encontrado para o userId", userId);
+    return NextResponse.json({ photoUrl: null, userData: null });
   } catch (error: any) {
     console.error("Erro ao buscar foto do usuário:", error);
     return NextResponse.json(
