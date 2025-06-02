@@ -149,7 +149,8 @@ type Employer = {
   address?: string;
 };
 
-const AdminDashboard: React.FC = () => {  const router = useRouter();
+const AdminDashboard: React.FC = () => {
+  const router = useRouter();
   // Update the type declaration to include new tabs
   const [activeTab, setActiveTab] = useState<"nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "instantJobs" | "accounting" | "ads" | "newsletter" | "marketing" | "systemActivity">("nfts");
   const [activeSubTab, setActiveSubTab] = useState<string | null>("add");
@@ -226,12 +227,13 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
   const [deletingEmployerId, setDeletingEmployerId] = useState<string|null>(null);
   const [blockingEmployerId, setBlockingEmployerId] = useState<string|null>(null);
   // --- Seekers State and Handlers ---
-  const [seekers, setSeekers] = useState<Seeker[]>([]);
-  const [seekersLoading, setSeekersLoading] = useState(false);  const [seekersError, setSeekersError] = useState<string|null>(null);
+  const [seekers, setSeekers] = useState<Seeker[]>([]);  const [seekersLoading, setSeekersLoading] = useState(false);
+  const [seekersError, setSeekersError] = useState<string|null>(null);
   const [deletingSeekerId, setDeletingSeekerId] = useState<string|null>(null);
   const [blockingSeekerId, setBlockingSeekerId] = useState<string|null>(null);
 
   const [pendingCompanies, setPendingCompanies] = useState<any[]>([]);
+  
   // --- Profile State and Handlers ---
   const [profileData, setProfileData] = useState({
     name: '',
@@ -249,8 +251,6 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
     position: '',
     birthDate: '',
     nationality: '',
-    preferredLanguage: 'en',
-    mobilePhone: '',
     city: '',
     postalCode: '',
     emergencyContactName: '',
@@ -1062,117 +1062,149 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
   }, []);
 
   // Corrigindo o erro de "window is not defined" para a mensagem de boas-vindas
-  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;
-
-  // Substituir a lógica de buscar o ID do usuário no localStorage por uma chamada ao Firebase
-  const fetchUserIdFromFirebase = async () => {
+  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;  // Função centralizada para buscar dados completos do usuário logado
+  const fetchCurrentUserData = async () => {
     try {
-      const response = await fetch("/api/userProfile"); // Endpoint to fetch the user profile
-      if (!response.ok) {
-        throw new Error("Error fetching user ID from Firebase");
+      console.log("🔍 Fetching current user data...");
+      
+      const token = localStorage.getItem("token");
+      
+      // Se não temos token, não podemos continuar
+      if (!token) {
+        throw new Error("Authentication token not found. Please log in again.");
       }
-      const data = await response.json();
-      if (data.userId) {
-        return data.userId;
+      
+      // Sempre extrair o userId do token para garantir consistência
+      let userId: string;
+      try {
+        console.log("🔍 Extracting userId from token...");
+        const tokenData = JSON.parse(Buffer.from(token, 'base64').toString());
+        
+        // Verificar se o token não está expirado
+        const now = Date.now();
+        const tokenAge = now - tokenData.timestamp;
+        const maxAge = 24 * 60 * 60 * 1000; // 24 horas
+        
+        if (tokenAge > maxAge) {
+          throw new Error("Token expired. Please log in again.");
+        }
+        
+        userId = tokenData.id;
+        if (!userId) {
+          throw new Error("Invalid token: missing user ID");
+        }
+        
+        // Atualizar localStorage com o userId correto do token
+        const storedUserId = localStorage.getItem("userId");
+        if (storedUserId !== userId) {
+          console.log(`🔄 Updating userId in localStorage from ${storedUserId} to ${userId}`);
+          localStorage.setItem("userId", userId);
+        }
+        
+        console.log("✅ UserId extracted from token:", userId);
+        
+      } catch (tokenError) {
+        console.error("❌ Error decoding or validating token:", tokenError);
+        throw new Error("Invalid authentication token. Please log in again.");
+      }
+      
+      // Agora buscar os dados completos do perfil do usuário logado
+      console.log(`🔍 Fetching profile data for userId: ${userId}`);
+      const profileResponse = await fetch(`/api/userProfile?userId=${userId}&collection=admins`);
+      
+      if (!profileResponse.ok) {
+        throw new Error(`Error fetching user profile: ${profileResponse.statusText}`);
+      }
+      
+      const profileData = await profileResponse.json();
+      console.log("✅ Profile data received:", {
+        userId: userId,
+        hasPhotoUrl: !!profileData.photoUrl,
+        hasUserData: !!profileData.userData,
+        userName: profileData.userData?.name || profileData.userData?.username,
+        collection: profileData.collection
+      });
+      
+      // Verificar se encontramos dados do usuário
+      if (!profileData.userData) {
+        console.warn("⚠️ No user data found for this userId");
+        throw new Error("User profile not found. Please contact support.");
+      }
+      
+      // Atualizar estados e localStorage com os dados recebidos
+      const userData = profileData.userData;
+      
+      // Atualizar nome do usuário
+      if (userData.name) {
+        setUserName(userData.name);
+        localStorage.setItem("userName", userData.name);
+        console.log("✅ Username updated:", userData.name);
+      } else if (userData.username) {
+        setUserName(userData.username);
+        localStorage.setItem("userName", userData.username);
+        console.log("✅ Username updated (using username field):", userData.username);
+      }
+      
+      // Atualizar foto do usuário
+      const photoUrl = profileData.photoUrl || userData.photoURL || userData.photo;
+      if (photoUrl) {
+        setUserPhoto(photoUrl);
+        localStorage.setItem("userPhoto", photoUrl);
+        console.log("✅ User photo updated");
       } else {
-        throw new Error("User ID not found in Firebase");
+        console.log("ℹ️ No photo found for user");
       }
+      
+      // Atualizar role se disponível
+      if (userData.role) {
+        localStorage.setItem("userRole", userData.role);
+        console.log("✅ User role updated:", userData.role);
+      }
+      
+      return {
+        userId,
+        userData: profileData.userData,
+        photoUrl: profileData.photoUrl
+      };
+      
     } catch (error) {
-      console.error("Error fetching user ID from Firebase:", error);
+      console.error("❌ Error fetching current user data:", error);
+      
+      // Se o erro for de autenticação, redirecionar para login
+      if (error instanceof Error && (
+        error.message.includes("token") || 
+        error.message.includes("Authentication") ||
+        error.message.includes("Unauthorized") ||
+        error.message.includes("expired")
+      )) {
+        console.log("🔄 Authentication error, redirecting to login...");
+        handleLogout();
+      }
+      
       throw error;
     }
   };
 
-  // Atualizar o useEffect para usar o Firebase em vez do localStorage
+  // useEffect simplificado para carregar dados do usuário atual
   useEffect(() => {
-    const fetchUserPhoto = async () => {
+    const loadCurrentUserData = async () => {
       try {
-        const userId = await fetchUserIdFromFirebase();
-        console.log("Fetching user photo for ID:", userId);
-
-        const response = await fetch(`/api/userProfile?userId=${userId}`);
-        console.log("API response from userProfile:", response.status, response.statusText);
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.photoUrl) {
-            setUserPhoto(data.photoUrl);
-          } else {
-            console.warn("No photo found for user");
-          }
-        } else {
-          console.error("Error fetching user photo:", response.statusText);
-        }
+        await fetchCurrentUserData();
       } catch (error) {
-        console.error("Error fetching user photo:", error);
+        console.error("Failed to load user data:", error);
+        // Se falhar, usar dados padrão do localStorage se disponíveis
+        const storedName = localStorage.getItem("userName");
+        const storedPhoto = localStorage.getItem("userPhoto");
+        
+        if (storedName) setUserName(storedName);
+        if (storedPhoto) setUserPhoto(storedPhoto);
       }
     };
 
-    fetchUserPhoto();
-  }, []);
-
-  // useEffect para buscar a foto do usuário, buscando o ID diretamente do Firebase
-  useEffect(() => {
-    // Esta função usa diretamente a lista de administradores
-    const fetchAdminPhotoFromFirebase = async () => {
-      try {
-        console.log("Fetching admins directly from Firebase");
-        
-        // Buscar administradores diretamente do Firestore através da API
-        const adminResponse = await fetch("/api/admin");
-        if (!adminResponse.ok) {
-          throw new Error("Error fetching admins from Firebase");
-        }
-        
-        const admins = await adminResponse.json();
-        console.log("Admins found:", admins.length);
-        
-        if (!admins || admins.length === 0) {
-          console.error("No admins found in Firebase");
-          return;
-        }
-        
-        // Usar o ID do primeiro administrador encontrado
-        const adminId = admins[0].id;
-        console.log("Admin ID found in Firebase:", adminId);
-        
-        // Salvar no localStorage para uso futuro
-        localStorage.setItem("userId", adminId);
-        
-        // Agora buscar os dados de perfil incluindo a foto usando o ID do administrador
-        try {
-          const profileResponse = await fetch(`/api/userProfile?userId=${adminId}`);
-          
-          if (profileResponse.ok) {
-            const profileData = await profileResponse.json();
-            console.log("Profile data received from Firebase:", profileData);
-            
-            // Atualizar a foto do usuário se disponível
-            if (profileData.photoUrl) {
-              setUserPhoto(profileData.photoUrl);
-              localStorage.setItem("userPhoto", profileData.photoUrl);
-            } else if (profileData.userData?.photoURL) {
-              setUserPhoto(profileData.userData.photoURL);
-              localStorage.setItem("userPhoto", profileData.userData.photoURL);
-            }
-            
-            // Atualizar o nome se disponível
-            if (profileData.userData?.name) {
-              setUserName(profileData.userData.name);
-              localStorage.setItem("userName", profileData.userData.name);
-            }
-          } else {
-            console.error("Error fetching admin profile:", profileResponse.statusText);
-          }
-        } catch (profileError) {
-          console.error("Error fetching profile:", profileError);
-        }
-      } catch (error) {
-        console.error("Error fetching admin data from Firebase:", error);
-      }
-    };
-
-    fetchAdminPhotoFromFirebase();
+    // Só executar no lado do cliente
+    if (typeof window !== "undefined") {
+      loadCurrentUserData();
+    }
   }, []);
 
 const fetchEmployersList = async () => {
@@ -1345,10 +1377,9 @@ const fetchEmployersList = async () => {
             const errorData = await response.json();
             throw new Error(errorData.error || `Error fetching profile: ${response.statusText}`);
           }
-          const data = await response.json();
-          console.log("Admin profile data loaded:", data);
+          const data = await response.json();          console.log("Admin profile data loaded:", data);
 
-          // NUNCA use localStorage para username, email ou role
+          // Never use localStorage for username, email or role
           setProfileData({
             name: data.userData?.name || '',
             username: data.userData?.username || data.userData?.name || '',
@@ -1364,8 +1395,6 @@ const fetchEmployersList = async () => {
             position: data.userData?.position || '',
             birthDate: data.userData?.birthDate || '',
             nationality: data.userData?.nationality || '',
-            preferredLanguage: data.userData?.preferredLanguage || 'en',
-            mobilePhone: data.userData?.mobilePhone || '',
             city: data.userData?.city || '',
             postalCode: data.userData?.postalCode || '',
             emergencyContactName: data.userData?.emergencyContactName || '',
@@ -1423,15 +1452,30 @@ const fetchEmployersList = async () => {
       }
 
       console.log("Attempting to update profile for user ID:", userId);
-      console.log("Using collection: admins");
-
-      // Create update data object for both API and direct Firestore update
+      console.log("Using collection: admins");      // Create update data object for both API and direct Firestore update
       const updateData = {
         photoUrl: photoUrl,
+        // Basic profile fields
+        name: profileData.name || "",
+        username: profileData.username || "",
+        email: profileData.email || "",
+        role: profileData.role || "",
         lastName: profileData.lastName || "",
         address: profileData.address || "",
         country: profileData.country || "",
-        phone: profileData.phone || "",
+        phone: profileData.phone || "",        // Additional profile fields
+        position: profileData.position || "",
+        birthDate: profileData.birthDate || "",
+        nationality: profileData.nationality || "",
+        city: profileData.city || "",
+        postalCode: profileData.postalCode || "",
+        emergencyContactName: profileData.emergencyContactName || "",
+        emergencyContactPhone: profileData.emergencyContactPhone || "",
+        website: profileData.website || "",
+        linkedin: profileData.linkedin || "",
+        twitter: profileData.twitter || "",
+        github: profileData.github || "",
+        biography: profileData.biography || "",
         updatedAt: new Date().toISOString()
       };
 
@@ -3035,8 +3079,7 @@ const fetchEmployersList = async () => {
                                     onChange={handleProfileInputChange}
                                     className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
                                   />
-                                </div>
-                                <div>
+                                </div>                                <div>
                                   <label htmlFor="nationality" className="block text-sm font-medium text-white">Nationality</label>
                                   <input
                                     type="text"
@@ -3048,9 +3091,7 @@ const fetchEmployersList = async () => {
                                     className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
                                   />
                                 </div>
-                              </div>
-
-                              <h4 className="text-lg text-orange-400 pt-4">Contact Information</h4>
+                              </div>                              <h4 className="text-lg text-orange-400 pt-4">Contact Information</h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                   <label htmlFor="phone" className="block text-sm font-medium text-white mb-1">Phone</label>
@@ -3063,8 +3104,7 @@ const fetchEmployersList = async () => {
                                     placeholder="Your phone number"
                                     className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
                                   />
-                                </div>
-                                <div>
+                                </div>                                <div>
                                   <label htmlFor="address" className="block text-sm font-medium text-white mb-1">Address</label>
                                   <input
                                     type="text"
@@ -3099,8 +3139,7 @@ const fetchEmployersList = async () => {
                                     placeholder="Your country"
                                     className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
                                   />
-                                </div>
-                                <div>
+                                </div>                                <div>
                                   <label htmlFor="postalCode" className="block text-sm font-medium text-white mb-1">Postal/Zip Code</label>
                                   <input
                                     type="text"
@@ -3109,6 +3148,34 @@ const fetchEmployersList = async () => {
                                     value={profileData.postalCode || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="Your postal/zip code"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                              </div>
+
+                              <h4 className="text-lg text-orange-400 pt-4">Emergency Contact</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label htmlFor="emergencyContactName" className="block text-sm font-medium text-white mb-1">Emergency Contact Name</label>
+                                  <input
+                                    type="text"
+                                    id="emergencyContactName"
+                                    name="emergencyContactName"
+                                    value={profileData.emergencyContactName || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="Emergency contact full name"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="emergencyContactPhone" className="block text-sm font-medium text-white mb-1">Emergency Contact Phone</label>
+                                  <input
+                                    type="tel"
+                                    id="emergencyContactPhone"
+                                    name="emergencyContactPhone"
+                                    value={profileData.emergencyContactPhone || ''}
+                                    onChange={handleProfileInputChange}
+                                    placeholder="Emergency contact phone number"
                                     className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
                                   />
                                 </div>

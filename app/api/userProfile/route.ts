@@ -2,41 +2,41 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../lib/firebase";
 import { doc, getDoc, collection, getDocs, query, limit, updateDoc, setDoc } from "firebase/firestore";
 
-// GET: Buscar foto de perfil de um usuário com ou sem ID
+// GET: Fetch user profile data with or without ID
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const userId = url.searchParams.get("userId");
 
-    console.log("API userProfile GET - userId recebido:", userId);
+    console.log("API userProfile GET - userId received:", userId);
 
-    // Se não tiver userId, buscar o primeiro admin disponível
+    // If no userId provided, fetch the first available admin
     if (!userId) {
-      console.log("Nenhum userId fornecido, buscando o primeiro admin disponível");
+      console.log("No userId provided, fetching the first available admin");
       
       if (!db) {
-        throw new Error("Firestore não está inicializado");
+        throw new Error("Firestore is not initialized");
       }
       
-      // Buscar o primeiro admin disponível
+      // Find the first available admin
       try {
         const adminsCollection = collection(db, "admins");
         const adminsQuery = query(adminsCollection, limit(1));
         const adminsSnapshot = await getDocs(adminsQuery);
         
         if (adminsSnapshot.empty) {
-          console.log("Nenhum admin encontrado no banco de dados");
+          console.log("No admin found in the database");
           return NextResponse.json({ 
-            error: "Nenhum administrador encontrado" 
+            error: "No administrator found" 
           }, { status: 404 });
         }
         
-        // Pegar o primeiro admin
+        // Get the first admin
         const firstAdmin = adminsSnapshot.docs[0];
         const adminId = firstAdmin.id;
         const adminData = firstAdmin.data();
         
-        console.log("Admin encontrado:", adminId);
+        console.log("Admin found:", adminId);
         
         return NextResponse.json({ 
           userId: adminId,
@@ -44,21 +44,21 @@ export async function GET(req: NextRequest) {
           userData: adminData
         });
       } catch (error) {
-        console.error("Erro ao buscar admin:", error);
+        console.error("Error fetching admin:", error);
         return NextResponse.json({ 
-          error: "Erro ao buscar administrador" 
+          error: "Error fetching administrator" 
         }, { status: 500 });
       }
     }
 
-    // Caso tenha userId, buscar nas coleções normalmente
-    console.log("Buscando foto para userId:", userId);
+    // If userId is provided, search in collections normally
+    console.log("Searching for profile with userId:", userId);
 
     if (!db) {
-      throw new Error("Firestore não está inicializado");
+      throw new Error("Firestore is not initialized");
     }
 
-    // Verificar todas as coleções que podem conter o usuário
+    // Check all collections that might contain the user
     const collections = ["admins", "employers", "seekers", "users"];
     
     for (const collection of collections) {
@@ -76,73 +76,86 @@ export async function GET(req: NextRequest) {
       }
     }
     
-    // Se não encontrou em nenhuma coleção
-    console.log("Nenhum usuário encontrado para o userId", userId);
+    // If user not found in any collection
+    console.log("No user found for userId", userId);
     return NextResponse.json({ photoUrl: null, userData: null });
   } catch (error: any) {
-    console.error("Erro ao buscar foto do usuário:", error);
+    console.error("Error fetching user profile:", error);
     return NextResponse.json(
-      { error: "Erro ao buscar foto do usuário", message: error.message },
+      { error: "Error fetching user profile", message: error.message },
       { status: 500 }
     );
   }
 }
 
-// POST: Atualizar foto de perfil de um usuário
+// POST: Update user profile data
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, photoUrl, collection = "admins" } = body;
+    const { userId, photoUrl, collection = "admins", ...otherFields } = body;
 
-    if (!userId || !photoUrl) {
+    if (!userId) {
       return NextResponse.json({ 
-        error: "Parâmetros inválidos", 
-        message: "userId e photoUrl são obrigatórios" 
+        error: "Invalid parameters", 
+        message: "userId is required" 
       }, { status: 400 });
     }
 
-    console.log("Atualizando foto para usuário:", userId, "na coleção:", collection);
+    console.log("Updating user profile for:", userId, "in collection:", collection);
 
     if (!db) {
-      throw new Error("Firestore não está inicializado");
+      throw new Error("Firestore is not initialized");
     }
 
-    // Referência ao documento do usuário na coleção especificada
+    // Reference to the user document in the specified collection
     const userRef = doc(db, collection, userId);
     
-    // Verificar se o documento existe
+    // Check if the document exists
     const userDoc = await getDoc(userRef);
     
     if (userDoc.exists()) {
-      // Atualizar o documento existente
-      await updateDoc(userRef, {
-        photoURL: photoUrl,
+      // Update existing document with all fields from the request
+      const updateData = {
+        ...otherFields,
         updatedAt: new Date().toISOString()
-      });
+      };
       
-      console.log("Foto do usuário atualizada com sucesso");
+      // Only include photoUrl if it was provided
+      if (photoUrl) {
+        updateData.photoURL = photoUrl;
+      }
+      
+      await updateDoc(userRef, updateData);
+      
+      console.log("User profile updated successfully");
       return NextResponse.json({ 
         success: true,
-        message: "Foto atualizada com sucesso"
+        message: "Profile updated successfully"
       });
     } else {
-      // Criar um novo documento
-      await setDoc(userRef, {
-        photoURL: photoUrl,
+      // Create a new document with all fields from the request
+      const newData = {
+        ...otherFields,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      });
+      };
       
-      console.log("Novo documento de usuário criado com a foto");
+      // Only include photoUrl if it was provided
+      if (photoUrl) {
+        newData.photoURL = photoUrl;
+      }
+      
+      await setDoc(userRef, newData);
+      
+      console.log("New user document created with all profile data");
       return NextResponse.json({ 
         success: true,
-        message: "Novo perfil criado com a foto"
+        message: "New profile created successfully"
       });
-    }
-  } catch (error: any) {
-    console.error("Erro ao atualizar foto do usuário:", error);
+    }  } catch (error: any) {
+    console.error("Error updating user profile:", error);
     return NextResponse.json(
-      { error: "Erro ao atualizar foto do usuário", message: error.message },
+      { error: "Error updating user profile", message: error.message },
       { status: 500 }
     );
   }
