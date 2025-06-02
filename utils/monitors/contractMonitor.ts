@@ -366,10 +366,13 @@ async function createStableWebSocketProvider(): Promise<ethers.providers.WebSock
       reconnectionAttempts = 0;
       
       // Registrar no sistema
-      try {
-        await logSystem.info(`Conexão WebSocket estabelecida com: ${wsUrl}`);
-      } catch (logErr) {
-        console.error('Erro ao registrar sucesso de conexão:', logErr);
+      // Reduzir logs: só registrar conexões WebSocket se for nível debug
+      if (process.env.MONITOR_LOG_LEVEL === 'debug') {
+        try {
+          await logSystem.info(`Conexão WebSocket estabelecida com: ${wsUrl}`);
+        } catch (logErr) {
+          console.error('Erro ao registrar sucesso de conexão:', logErr);
+        }
       }
       
       return wsProvider;
