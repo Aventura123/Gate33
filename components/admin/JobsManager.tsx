@@ -123,7 +123,7 @@ const JobListItem: React.FC<{
             {job.sourceLink && (
               <div className="md:col-span-2">
                 <span className="text-gray-400 text-xs">Source:</span>
-                <a href={job.sourceLink} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-words block">
+                <a href={job.sourceLink} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline break-words block">
                   {job.sourceLink}
                 </a>
               </div>

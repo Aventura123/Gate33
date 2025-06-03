@@ -204,6 +204,18 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
     }
   }, [permissionsLoading, role]);
 
+  // Define the NFT type to include the 'image' property (and others as needed)
+  type NFT = {
+    id: string;
+    title: string;
+    description: string;
+    value: string;
+    link?: string;
+    image: string; // Add this line
+    imagePath?: string; // Add this if you use imagePath elsewhere
+    // Add other properties as needed
+  };
+
   const [nfts, setNFTs] = useState<NFT[]>([]);
   const [newNFT, setNewNFT] = useState({ title: "", description: "", value: "", link: "", image: null as File | null });
   const [userPhoto, setUserPhoto] = useState<string>("/images/logo2.png");
@@ -2155,29 +2167,34 @@ const fetchEmployersList = async () => {
                 {activeTab === "users" && (
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Users</h2>
-                    <p className="text-gray-300 text-left"></p>
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                    <div className="mt-6 bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700">
                       {/* Employer list is visible for all levels */}
                       {activeSubTab === "employers-list" && (
-                        <div>                          <div className="flex justify-between items-center mb-4">
+                        <div>                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
                             <div>
-                              <h3 className="text-xl text-orange-400">Companies List</h3>
+                              <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-2 md:mb-0">Companies List</h3>
                             </div>
-                            <input
-                              type="text"
-                              placeholder="Search companies..."
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-1/3"
-                            />                          </div>
+                            <div className="w-full md:w-auto">
+                              <label htmlFor="companySearch" className="sr-only">Search companies</label>
+                              <input
+                                id="companySearch"
+                                type="text"
+                                placeholder="Search companies..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                              />                            </div>
+                          </div>
                           {filteredEmployers.length === 0 ? (
-                            <p>No companies found.</p>
+                            <div className="bg-black/40 p-8 rounded-lg text-center">
+                              <p className="text-gray-400">No companies found.</p>
+                            </div>
                           ) : (
-                            <ul>                              {filteredEmployers.map((employer) => (                                <li 
+                            <ul className="space-y-4">                              {filteredEmployers.map((employer) => (                                <li 
                                   key={employer.id} 
-                                  className={`mb-4 p-4 border ${expandedEmployerId === employer.id ? 'border-orange-500' : 'border-gray-700'} rounded-lg cursor-pointer transition-all hover:shadow-md ${expandedEmployerId === employer.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
+                                  className={`bg-black/40 border ${expandedEmployerId === employer.id ? 'border-orange-500' : 'border-gray-700'} hover:border-orange-500 rounded-xl overflow-hidden transition-colors`}
                                   onClick={() => toggleEmployerDetails(employer.id)}
-                                >                                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4 relative">                                    {/* Expand/Collapse icon removed as requested */}
+                                ><div className="grid grid-cols-1 md:grid-cols-6 gap-4 relative">                                    {/* Expand/Collapse icon removed as requested */}
                                     
                                     {/* Column 1: Company Name */}
                                     <div className="md:col-span-1">
@@ -2212,13 +2229,12 @@ const fetchEmployersList = async () => {
 
                                     {/* Column 6: Action Buttons */}
                                     <div className="md:col-span-1 flex items-center justify-center">
-                                      <div className="flex space-x-2">
-                                        <button 
+                                      <div className="flex space-x-2">                                        <button 
                                           onClick={(e) => {
                                             e.stopPropagation(); 
                                             handleDeleteEmployer(employer.id);
                                           }} 
-                                          className="bg-red-600 px-3 py-1 rounded text-white"
+                                          className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
                                         >
                                           Delete
                                         </button>
@@ -2227,7 +2243,7 @@ const fetchEmployersList = async () => {
                                             e.stopPropagation(); 
                                             handleToggleBlockEmployer(employer.id, employer.blocked || false);
                                           }} 
-                                          className={`${employer.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} px-3 py-1 rounded text-white`} 
+                                          className={`${employer.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-800 hover:bg-gray-700'} text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold`} 
                                           disabled={blockingEmployerId === employer.id}
                                         >
                                           {blockingEmployerId === employer.id ? 'Processing...' : employer.blocked ? 'Unblock' : 'Block'}
@@ -2235,11 +2251,10 @@ const fetchEmployersList = async () => {
                                       </div>
                                     </div>
                                   </div>
-                                  
-                                  {/* Expanded Details Section */}
+                                    {/* Expanded Details Section */}
                                   {expandedEmployerId === employer.id && (
-                                    <div className="mt-4 bg-black/40 p-4 rounded text-sm text-gray-100">
-                                      <h4 className="text-lg font-bold text-orange-300 mb-3">Complete Company Information</h4>
+                                    <div className="mt-4 bg-black/40 p-4 md:p-6 rounded-lg text-sm text-gray-100 border-t border-gray-700">
+                                      <h4 className="text-base md:text-lg font-bold text-orange-400 mb-3">Complete Company Information</h4>
                                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         {/* Company Basic Information */}
                                         <div>
@@ -2276,14 +2291,13 @@ const fetchEmployersList = async () => {
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Username:</span> {employer.username || 'N/A'}</p>
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Country:</span> {employer.country || 'N/A'}</p>
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Address:</span> <span className="break-words">{employer.address || 'N/A'}</span></p>
-                                          <p className="mb-1">
-                                            <span className="font-semibold text-orange-300">Website:</span>{' '}
+                                          <p className="mb-1">                                            <span className="font-semibold text-orange-300">Website:</span>{' '}
                                             {employer.website ? (
                                               <a 
                                                 href={employer.website.startsWith('http') ? employer.website : `https://${employer.website}`} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
-                                                className="text-blue-400 hover:underline"
+                                                className="text-orange-400 hover:underline"
                                                 onClick={e => e.stopPropagation()}
                                               >
                                                 {employer.website}
@@ -2295,24 +2309,22 @@ const fetchEmployersList = async () => {
                                         {/* Responsible Person & Social Media */}                                        <div>
                                           <h5 className="font-bold text-white mb-2">Responsible Person</h5>
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Name:</span> {employer.responsibleName || employer.responsiblePerson || 'N/A'}</p>
-                                          <p className="mb-1">
-                                            <span className="font-semibold text-orange-300">Email:</span>{' '}
+                                          <p className="mb-1">                                            <span className="font-semibold text-orange-300">Email:</span>{' '}
                                             {employer.responsibleEmail ? (
                                               <a 
                                                 href={`mailto:${employer.responsibleEmail}`} 
-                                                className="text-blue-400 hover:underline"
+                                                className="text-orange-400 hover:underline"
                                                 onClick={e => e.stopPropagation()}
                                               >
                                                 {employer.responsibleEmail}
                                               </a>
                                             ) : 'N/A'}
                                           </p>
-                                          <p className="mb-1">
-                                            <span className="font-semibold text-orange-300">Phone:</span>{' '}
+                                          <p className="mb-1">                                            <span className="font-semibold text-orange-300">Phone:</span>{' '}
                                             {employer.responsiblePhone ? (
                                               <a 
                                                 href={`tel:${employer.responsiblePhone}`} 
-                                                className="text-blue-400 hover:underline"
+                                                className="text-orange-400 hover:underline"
                                                 onClick={e => e.stopPropagation()}
                                               >
                                                 {employer.responsiblePhone}
@@ -2384,65 +2396,70 @@ const fetchEmployersList = async () => {
                         </div>
                       )}                      {/* Pending company approvals */}
                       {activeSubTab === "employers-approve" && hasPermission('canApproveCompanies') && (
-                        <div>
-                          <h3 className="text-xl text-orange-400 mb-4">Pending Companies for Approval</h3>
+                        <div>                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
+                            <div>
+                              <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-2 md:mb-0">Pending Companies for Approval</h3>
+                            </div>
+                          </div>
+                          
                           {pendingCompanies.length === 0 ? (
-                            <p>No pending companies found.</p>
+                            <div className="bg-black/40 p-8 rounded-lg text-center">
+                              <p className="text-gray-400">No pending companies found.</p>
+                            </div>
                           ) : (
-                            <ul>
-                              {pendingCompanies.map((company) => (
-                                <li
+                            <ul className="space-y-4">
+                              {pendingCompanies.map((company) => (                                <li
                                   key={company.id}
-                                  className={`mb-4 p-4 border ${expandedPendingCompanyId === company.id ? 'border-orange-500' : 'border-gray-700'} rounded-lg cursor-pointer transition-all hover:shadow-md ${expandedPendingCompanyId === company.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
+                                  className={`bg-black/40 border ${expandedPendingCompanyId === company.id ? 'border-orange-500' : 'border-gray-700'} hover:border-orange-500 rounded-xl overflow-hidden transition-colors`}
                                   onClick={() => togglePendingCompanyDetails(company.id)}
                                   tabIndex={0}
-                                >
-                                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                                >                                  <div className="p-4 grid grid-cols-1 md:grid-cols-6 gap-4">
                                     <div className="md:col-span-1">
-                                      <p><strong>Company Name:</strong><br />{company.companyName}</p>
+                                      <p className="text-sm text-gray-400">Company Name</p>
+                                      <p className="text-white">{company.companyName}</p>
                                     </div>
                                     <div className="md:col-span-1">
-                                      <p><strong>Responsible Person:</strong><br />{company.responsibleName || 'N/A'}</p>
+                                      <p className="text-sm text-gray-400">Responsible Person</p>
+                                      <p className="text-white">{company.responsibleName || 'N/A'}</p>
                                     </div>
                                     <div className="md:col-span-1">
-                                      <p><strong>Industry:</strong><br />{company.industry}</p>
+                                      <p className="text-sm text-gray-400">Industry</p>
+                                      <p className="text-white">{company.industry}</p>
                                     </div>
                                     <div className="md:col-span-1">
-                                      <p><strong>Company Size:</strong><br />{company.employees}</p>
+                                      <p className="text-sm text-gray-400">Company Size</p>
+                                      <p className="text-white">{company.employees}</p>
                                     </div>                                    <div className="md:col-span-1">
-                                      <p>
-                                        <strong>Email:</strong><br />
-                                        <a 
-                                          href={`mailto:${company.email}`} 
-                                          className="text-blue-400 hover:underline"
-                                          onClick={e => e.stopPropagation()}
-                                        >
-                                          {company.email}
-                                        </a>
-                                      </p>
+                                      <p className="text-sm text-gray-400">Email</p>
+                                      <a 
+                                        href={`mailto:${company.email}`} 
+                                        className="text-orange-400 hover:underline"
+                                        onClick={e => e.stopPropagation()}
+                                      >
+                                        {company.email}
+                                      </a>
                                     </div>
-                                    <div className="md:col-span-1 flex items-center justify-center">
-                                      <div className="flex space-x-2">
-                                        <button
+                                    <div className="md:col-span-1 flex items-center justify-end">
+                                      <div className="flex space-x-2">                                        <button
                                           onClick={e => { e.stopPropagation(); handleApproveCompany(company.id); }}
-                                          className="bg-green-600 px-3 py-1 rounded text-white"
+                                          className="bg-green-600 hover:bg-green-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
                                         >
                                           Approve
                                         </button>
                                         {/* Block/Unblock button for company */}
                                         <button
                                           onClick={e => { e.stopPropagation(); handleToggleBlockEmployer(company.id, company.blocked || false); }}
-                                          className={`${company.blocked ? 'bg-gray-600 hover:bg-gray-700' : 'bg-orange-600 hover:bg-orange-700'} px-3 py-1 rounded text-white`}
+                                          className={`${company.blocked ? 'bg-gray-800 hover:bg-gray-700' : 'bg-orange-500 hover:bg-orange-600'} text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold`}
                                           disabled={blockingEmployerId === company.id}
                                         >
                                           {blockingEmployerId === company.id ? 'Processing...' : company.blocked ? 'Unblock' : 'Block'}
                                         </button>
                                       </div>
                                     </div>
-                                  </div>
-                                  {expandedPendingCompanyId === company.id && (
-                                    <div className="mt-4 bg-black/40 p-4 rounded text-sm text-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  </div>                                  {expandedPendingCompanyId === company.id && (
+                                    <div className="border-t border-gray-700 mt-0 p-4 md:p-6 bg-black/40 text-sm text-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
                                       {/* Column 1 */}                                      <div>
+                                        <h4 className="text-base font-bold text-orange-400 mb-3">Company Information</h4>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Company Name:</span> {company.companyName}</p>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Responsible:</span> {company.responsibleName || 'N/A'}</p>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Industry:</span> {company.industry || 'N/A'}</p>
@@ -2468,24 +2485,23 @@ const fetchEmployersList = async () => {
                                             </div>
                                           </>
                                         )}
-                                      </div>
-                                      {/* Column 2 */}                                      <div>
+                                      </div>                                      {/* Column 2 */}                                      <div>
+                                        <h4 className="text-base font-bold text-orange-400 mb-3">Contact Information</h4>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Email:</span> {company.email}</p>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Username:</span> {company.username || company.email}</p>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Status:</span> {company.status || 'pending'}</p>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Submitted:</span> {company.createdAt ? formatFirestoreTimestamp(company.createdAt) : 'N/A'}</p>
-                                      </div>
-                                      {/* Column 3 */}                                      <div>
+                                      </div>                                      {/* Column 3 */}                                      <div>
+                                        <h4 className="text-base font-bold text-orange-400 mb-3">Additional Details</h4>
                                         <p className="mb-1"><span className="font-semibold text-orange-300">ID:</span> <span className="break-all">{company.id}</span></p>
                                         
                                         {company.website && (
                                           <p className="mb-1">
                                             <span className="font-semibold text-orange-300">Website:</span>{' '}
-                                            <a 
-                                              href={company.website.startsWith('http') ? company.website : `https://${company.website}`} 
+                                            <a                                              href={company.website.startsWith('http') ? company.website : `https://${company.website}`} 
                                               target="_blank" 
                                               rel="noopener noreferrer"
-                                              className="text-blue-400 hover:underline"
+                                              className="text-orange-400 hover:underline"
                                               onClick={e => e.stopPropagation()}
                                             >
                                               {company.website}
@@ -2542,10 +2558,9 @@ const fetchEmployersList = async () => {
                                         )}
                                           {company.responsiblePhone && (
                                           <p className="mb-1">
-                                            <span className="font-semibold text-orange-300">Phone:</span>{' '}
-                                            <a 
+                                            <span className="font-semibold text-orange-300">Phone:</span>{' '}                                            <a 
                                               href={`tel:${company.responsiblePhone}`} 
-                                              className="text-blue-400 hover:underline"
+                                              className="text-orange-400 hover:underline"
                                               onClick={e => e.stopPropagation()}
                                             >
                                               {company.responsiblePhone}
@@ -2555,10 +2570,9 @@ const fetchEmployersList = async () => {
                                         
                                         {company.responsableEmail && (
                                           <p className="mb-1">
-                                            <span className="font-semibold text-orange-300">Responsible Email:</span>{' '}
-                                            <a 
+                                            <span className="font-semibold text-orange-300">Responsible Email:</span>{' '}                                            <a 
                                               href={`mailto:${company.responsableEmail}`} 
-                                              className="text-blue-400 hover:underline"
+                                              className="text-orange-400 hover:underline"
                                               onClick={e => e.stopPropagation()}
                                             >
                                               {company.responsableEmail}
@@ -2575,44 +2589,66 @@ const fetchEmployersList = async () => {
                             </ul>
                           )}
                         </div>
-                      )}                      {/* Show "seekers" subtab only if you have permission */}
-                      {activeSubTab === "seekers" && hasPermission('canEditContent') && (
+                      )}                      {/* Show "seekers" subtab only if you have permission */}                      {activeSubTab === "seekers" && hasPermission('canEditContent') && (
                         <div>
-                          <div className="flex justify-between items-center mb-4">
+                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
                             <div>
-                              <h3 className="text-xl text-orange-400">Seekers List</h3>
+                              <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-2 md:mb-0">Seekers List</h3>
                             </div>
-                            <input
-                              type="text"
-                              placeholder="Search seekers..."
-                              value={searchSeekersQuery}
-                              onChange={(e) => setSearchSeekersQuery(e.target.value)}
-                              className="border border-gray-300 rounded-lg px-3 py-1 text-black w-1/3"
-                            />
+                            <div className="w-full md:w-auto">
+                              <label htmlFor="seekerSearch" className="sr-only">Search seekers</label>
+                              <input
+                                id="seekerSearch"
+                                type="text"
+                                placeholder="Search seekers..."
+                                value={searchSeekersQuery}
+                                onChange={(e) => setSearchSeekersQuery(e.target.value)}
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                              />
+                            </div>
                           </div>
-                          {seekersLoading && <p className="text-gray-400">Loading seekers...</p>}
-                          {seekersError && <p className="text-red-400">{seekersError}</p>}<ul className="mb-4">
+                          {seekersLoading && <div className="bg-black/40 p-8 rounded-lg text-center"><p className="text-gray-400">Loading seekers...</p></div>}
+                          {seekersError && <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">{seekersError}</div>}
+                          
+                          {!seekersLoading && !seekersError && seekers.length === 0 ? (
+                            <div className="bg-black/40 p-8 rounded-lg text-center">
+                              <p className="text-gray-400">No seekers found.</p>
+                            </div>
+                          ) : (
+                            <ul className="space-y-4">
                             {seekers.map((seeker) => (
                               <li 
                                 key={seeker.id} 
-                                className={`mb-4 p-4 border ${expandedSeekerId === seeker.id ? 'border-orange-500' : 'border-gray-700'} rounded-lg cursor-pointer transition-all hover:shadow-md ${expandedSeekerId === seeker.id ? 'bg-black/60' : 'hover:bg-black/40'}`}
-                                onClick={() => toggleSeekerDetails(seeker.id)
-                                }
-                              >
-                                <div className="flex items-center justify-between">                                  <span className="text-left">
-                                    <strong>{(seeker.name || '') + ' ' + (seeker.surname || '')}</strong> <span className="text-gray-400">
-                                      (<a 
-                                        href={`mailto:${seeker.email}`} 
-                                        className="text-blue-400 hover:underline" 
-                                        onClick={e => e.stopPropagation()}
-                                      >
-                                        {seeker.email}
-                                      </a>)
-                                    </span>
-                                  </span>                                  <div className="flex space-x-2">
+                                className={`bg-black/40 border ${expandedSeekerId === seeker.id ? 'border-orange-500' : 'border-gray-700'} hover:border-orange-500 rounded-xl overflow-hidden transition-colors`}
+                                onClick={() => toggleSeekerDetails(seeker.id)}
+                              >                                <div className="flex items-center justify-between p-4">
+                                  <div className="text-left flex items-center gap-2">
+                                    <div>                                      <strong>{(seeker.name || '') + ' ' + (seeker.surname || '')}</strong> <span className="text-gray-400">
+                                        (<a 
+                                          href={`mailto:${seeker.email}`} 
+                                          className="text-orange-400 hover:underline" 
+                                          onClick={e => e.stopPropagation()}
+                                        >
+                                          {seeker.email}
+                                        </a>)
+                                      </span>
+                                      {seeker.blocked !== undefined && (
+                                        <div className="mt-1">
+                                          <span className={`inline-block px-1.5 md:px-2 py-0.5 rounded-full text-xs ${
+                                            seeker.blocked 
+                                              ? 'bg-gray-800 text-gray-400 border border-gray-700' 
+                                              : 'bg-orange-900/50 text-orange-300 border border-orange-700'
+                                          }`}>
+                                            {seeker.blocked ? 'Blocked' : 'Active'}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex space-x-2">
                                     <button 
                                       onClick={(e) => { e.stopPropagation(); handleDeleteSeeker(seeker.id); }}
-                                      className="bg-red-600 px-3 py-1 rounded text-white"
+                                      className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
                                       disabled={deletingSeekerId === seeker.id}
                                     >
                                       {deletingSeekerId === seeker.id ? 'Deleting...' : 'Delete'}
@@ -2622,20 +2658,18 @@ const fetchEmployersList = async () => {
                                         e.stopPropagation(); 
                                         handleToggleBlockSeeker(seeker.id, seeker.blocked || false);
                                       }} 
-                                      className={`${seeker.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} px-3 py-1 rounded text-white`} 
+                                      className={`${seeker.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-800 hover:bg-gray-700'} text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold`} 
                                       disabled={blockingSeekerId === seeker.id}
                                     >
                                       {blockingSeekerId === seeker.id ? 'Processing...' : seeker.blocked ? 'Unblock' : 'Block'}
                                     </button>
                                   </div>
-                                </div>
-
-                                {/* Expanded Seeker Details */}
+                                </div>                                {/* Expanded Seeker Details */}
                                 {expandedSeekerId === seeker.id && (
-                                  <div className="mt-4 bg-black/40 p-4 rounded text-sm text-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="border-t border-gray-700 mt-0 p-4 md:p-6 bg-black/40 text-sm text-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {/* Professional Information */}
-                                    <div className="col-span-1 md:col-span-2 border-b border-gray-700 mb-4 pb-2">
-                                      <h4 className="font-semibold text-orange-400 mb-2">Professional Information</h4>
+                                    <div className="col-span-1 md:col-span-2 border-b border-gray-700 mb-4 pb-4">
+                                      <h4 className="text-base md:text-lg font-bold text-orange-400 mb-3">Professional Information</h4>
                                       {seeker.title && (
                                         <p className="mb-1"><span className="font-semibold text-orange-300">Title:</span> {seeker.title}</p>
                                       )}
@@ -2676,16 +2710,14 @@ const fetchEmployersList = async () => {
                                         </p>
                                       )}
                                     </div>
-                                    
-                                    {/* Personal Information */}                                    <div>
-                                      <h4 className="font-semibold text-orange-400 mb-2">Personal Information</h4>
+                                      {/* Personal Information */}                                    <div>
+                                      <h4 className="text-base font-bold text-orange-400 mb-3">Personal Information</h4>
                                       <p className="mb-1"><span className="font-semibold text-orange-300">Full Name:</span> {(seeker.name || '') + ' ' + (seeker.surname || '')}</p>
                                       <p className="mb-1"><span className="font-semibold text-orange-300">Username:</span> {seeker.username}</p>
-                                      <p className="mb-1">
-                                        <span className="font-semibold text-orange-300">Email:</span>{' '}
+                                      <p className="mb-1">                                        <span className="font-semibold text-orange-300">Email:</span>{' '}
                                         <a 
                                           href={`mailto:${seeker.email}`} 
-                                          className="text-blue-400 hover:underline" 
+                                          className="text-orange-400 hover:underline" 
                                           onClick={e => e.stopPropagation()}
                                         >
                                           {seeker.email}
@@ -2711,10 +2743,9 @@ const fetchEmployersList = async () => {
                                       )}
                                       {(seeker.phoneCountryCode || seeker.phone) && (
                                         <p className="mb-1">
-                                          <span className="font-semibold text-orange-300">Phone:</span>{' '}
-                                          <a 
+                                          <span className="font-semibold text-orange-300">Phone:</span>{' '}                                          <a 
                                             href={`tel:${seeker.phoneCountryCode || ''}${seeker.phone || ''}`}
-                                            className="text-blue-400 hover:underline"
+                                            className="text-orange-400 hover:underline"
                                             onClick={e => e.stopPropagation()}
                                           >
                                             {seeker.phoneCountryCode || ''} {seeker.phone || ''}
@@ -2723,10 +2754,9 @@ const fetchEmployersList = async () => {
                                       )}
                                       {(seeker.altContactCountryCode || seeker.altContact) && (
                                         <p className="mb-1">
-                                          <span className="font-semibold text-orange-300">Alternative Contact:</span>{' '}
-                                          <a 
+                                          <span className="font-semibold text-orange-300">Alternative Contact:</span>{' '}                                          <a 
                                             href={`tel:${seeker.altContactCountryCode || ''}${seeker.altContact || ''}`}
-                                            className="text-blue-400 hover:underline"
+                                            className="text-orange-400 hover:underline"
                                             onClick={e => e.stopPropagation()}
                                           >
                                             {seeker.altContactCountryCode || ''} {seeker.altContact || ''}
@@ -2745,15 +2775,14 @@ const fetchEmployersList = async () => {
                                           {seeker.gender}
                                         </p>
                                       )}
-                                    </div>                                      {/* Social Networks */}
+                                    </div>                                    {/* Social Networks */}
                                     <div>
-                                      <h4 className="font-semibold text-orange-400 mb-2">Social Networks</h4>
-                                      {seeker.linkedinUrl && (
+                                      <h4 className="text-base font-bold text-orange-400 mb-3">Social Networks</h4>                                      {seeker.linkedinUrl && (
                                         <p className="mb-1">
                                           <span className="font-semibold text-orange-300">LinkedIn:</span>{' '}
                                           <a 
                                             href={seeker.linkedinUrl} 
-                                            className="text-blue-400 hover:underline"
+                                            className="text-orange-400 hover:underline"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={e => e.stopPropagation()}
@@ -2761,13 +2790,12 @@ const fetchEmployersList = async () => {
                                             {seeker.linkedinUrl}
                                           </a>
                                         </p>
-                                      )}
-                                      {seeker.twitterUrl && (
+                                      )}                                      {seeker.twitterUrl && (
                                         <p className="mb-1">
                                           <span className="font-semibold text-orange-300">Twitter:</span>{' '}
                                           <a 
                                             href={seeker.twitterUrl} 
-                                            className="text-blue-400 hover:underline"
+                                            className="text-orange-400 hover:underline"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={e => e.stopPropagation()}
@@ -2775,13 +2803,12 @@ const fetchEmployersList = async () => {
                                             {seeker.twitterUrl}
                                           </a>
                                         </p>
-                                      )}
-                                      {seeker.facebookUrl && (
+                                      )}                                      {seeker.facebookUrl && (
                                         <p className="mb-1">
                                           <span className="font-semibold text-orange-300">Facebook:</span>{' '}
                                           <a 
                                             href={seeker.facebookUrl} 
-                                            className="text-blue-400 hover:underline"
+                                            className="text-orange-400 hover:underline"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={e => e.stopPropagation()}
@@ -2789,13 +2816,12 @@ const fetchEmployersList = async () => {
                                             {seeker.facebookUrl}
                                           </a>
                                         </p>
-                                      )}
-                                      {seeker.instagramUrl && (
+                                      )}                                      {seeker.instagramUrl && (
                                         <p className="mb-1">
                                           <span className="font-semibold text-orange-300">Instagram:</span>{' '}
                                           <a 
                                             href={seeker.instagramUrl} 
-                                            className="text-blue-400 hover:underline"
+                                            className="text-orange-400 hover:underline"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={e => e.stopPropagation()}
@@ -2803,13 +2829,12 @@ const fetchEmployersList = async () => {
                                             {seeker.instagramUrl}
                                           </a>
                                         </p>
-                                      )}
-                                      {seeker.telegramUrl && (
+                                      )}                                      {seeker.telegramUrl && (
                                         <p className="mb-1">
                                           <span className="font-semibold text-orange-300">Telegram:</span>{' '}
                                           <a 
                                             href={seeker.telegramUrl} 
-                                            className="text-blue-400 hover:underline"
+                                            className="text-orange-400 hover:underline"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={e => e.stopPropagation()}
@@ -2817,13 +2842,12 @@ const fetchEmployersList = async () => {
                                             {seeker.telegramUrl}
                                           </a>
                                         </p>
-                                      )}
-                                      {seeker.websiteUrl && (
+                                      )}                                      {seeker.websiteUrl && (
                                         <p className="mb-1">
                                           <span className="font-semibold text-orange-300">Website:</span>{' '}
                                           <a 
                                             href={seeker.websiteUrl} 
-                                            className="text-blue-400 hover:underline"
+                                            className="text-orange-400 hover:underline"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={e => e.stopPropagation()}
@@ -2857,13 +2881,12 @@ const fetchEmployersList = async () => {
                                               ? seeker.updatedAt.toDate().toLocaleString() 
                                               : 'Unknown'}
                                         </p>
-                                      ) : null}
-                                      {seeker.resumeUrl && (
+                                      ) : null}                                      {seeker.resumeUrl && (
                                         <p className="mb-1">
                                           <span className="font-semibold text-orange-300">Resume:</span>{' '}
                                           <a 
                                             href={seeker.resumeUrl} 
-                                            className="text-blue-400 hover:underline"
+                                            className="text-orange-400 hover:underline"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={e => e.stopPropagation()}
@@ -2875,9 +2898,9 @@ const fetchEmployersList = async () => {
                                     </div>
                                   </div>
                                 )}
-                              </li>
-                            ))}
+                              </li>                            ))}
                           </ul>
+                          )}
                         </div>
                       )}
                       
@@ -3243,105 +3266,168 @@ const fetchEmployersList = async () => {
                       )}
                     </div>
                   </div>
-                )}
-
-                {/* Show "nfts" tab only if you have permission */}
+                )}                {/* Show "nfts" tab only if you have permission */}
                 {activeTab === "nfts" && hasPermission('canEditContent') && (
                   <div>
-                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage NFTs</h2>
-                    {activeSubTab === "add" && (
-                      <div className="mb-6">
-                        <div className="bg-black/30 p-4 rounded-lg">
-                          <form onSubmit={handleAddNFT} className="space-y-4">
-                            <input
-                              type="text"
-                              name="title"
-                              value={newNFT.title}
-                              onChange={handleInputChange}
-                              placeholder="NFT Title"
-                              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                              required
-                            />
-                            <input
-                              type="file"
-                              name="image"
-                              onChange={handleInputChange}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                              required
-                            />
-                            <textarea
-                              name="description"
-                              value={newNFT.description}
-                              onChange={handleInputChange}
-                              placeholder="Description"
-                              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                              required
-                            />
-                            <input
-                              type="text"
-                              name="value"
-                              value={newNFT.value}
-                              onChange={handleInputChange}
-                              placeholder="Value"
-                              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                              required
-                            />
-                            <input
-                              type="text"
-                              name="link"
-                              value={newNFT.link || ""}
-                              onChange={handleInputChange}
-                              placeholder="External Link"
-                              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-black"
-                            />
-                            <button
-                              type="submit"
-                              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
-                            >
-                              Add NFT
-                            </button>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage NFTs</h2>{activeSubTab === "add" && (
+                      <div className="mb-6 md:mb-10">
+                        <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700">
+                          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Add New NFT</h3>
+                          <form onSubmit={handleAddNFT} className="space-y-4 md:space-y-6">
+                            <div>
+                              <label htmlFor="nftTitle" className="block text-sm font-semibold text-gray-300 mb-1">
+                                NFT Title
+                              </label>
+                              <input
+                                id="nftTitle"
+                                type="text"
+                                name="title"
+                                value={newNFT.title}
+                                onChange={handleInputChange}
+                                placeholder="Enter NFT title"
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <label htmlFor="nftImage" className="block text-sm font-semibold text-gray-300 mb-1">
+                                NFT Image
+                              </label>
+                              <input
+                                id="nftImage"
+                                type="file"
+                                name="image"
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-orange-500 file:text-white file:text-sm hover:file:bg-orange-600"
+                                required
+                              />
+                              <p className="text-xs text-gray-400 mt-1">Upload an image file for your NFT</p>
+                            </div>
+                            
+                            <div>
+                              <label htmlFor="nftDescription" className="block text-sm font-semibold text-gray-300 mb-1">
+                                Description
+                              </label>
+                              <textarea
+                                id="nftDescription"
+                                name="description"
+                                value={newNFT.description}
+                                onChange={handleInputChange}
+                                placeholder="Enter a description for the NFT"
+                                rows={4}
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                                required
+                              ></textarea>
+                            </div>
+                            
+                            <div>
+                              <label htmlFor="nftValue" className="block text-sm font-semibold text-gray-300 mb-1">
+                                Value
+                              </label>
+                              <input
+                                id="nftValue"
+                                type="text"
+                                name="value"
+                                value={newNFT.value}
+                                onChange={handleInputChange}
+                                placeholder="Enter NFT value"
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <label htmlFor="nftLink" className="block text-sm font-semibold text-gray-300 mb-1">
+                                External Link (Optional)
+                              </label>
+                              <input
+                                id="nftLink"
+                                type="text"
+                                name="link"
+                                value={newNFT.link || ""}
+                                onChange={handleInputChange}
+                                placeholder="https://"
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                              />
+                              <p className="text-xs text-gray-400 mt-1">Link to an external resource for this NFT</p>
+                            </div>
+                            
+                            <div className="flex justify-end mt-6">
+                              <button
+                                type="submit"
+                                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm"
+                              >
+                                Add NFT
+                              </button>
+                            </div>
                           </form>
                         </div>
                       </div>
-                    )}
-                    {activeSubTab === "delete" && (
-                      <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                        <h3 className="text-xl text-orange-400 mb-4">Delete NFTs</h3>
+                    )}                    {activeSubTab === "delete" && (
+                      <div className="mt-6 bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700">
+                        <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Delete NFTs</h3>
+                        
+                        {isLoading && (
+                          <div className="flex justify-center py-8">
+                            <div className="w-10 h-10 border-4 border-orange-500 rounded-full animate-spin border-t-transparent"></div>
+                          </div>
+                        )}
+                        
+                        {error && (
+                          <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
+                            {error}
+                          </div>
+                        )}
+                        
                         {!isLoading && !error && nfts.length > 0 ? (
                           <ul className="space-y-4">
-                            {nfts.map((nft) => {
-                              // Log the ID being used as key
-                              console.log(`Rendering NFT item with key: ${nft.id}, Title: ${nft.title}`);
-                              return (
-                                <li key={nft.id} className="flex items-center justify-between p-3 bg-black/30 rounded-lg">
-                                  <div className="flex-1">
-                                    <p className="text-orange-500 font-bold">{nft.title}</p>
-                                    <p className="text-gray-300 text-sm">{nft.description}</p>
-                                    <p className="text-gray-300 text-sm">Value: {nft.value}</p>
-                                  </div>
-                                  <button
-                                    onClick={() => handleDeleteNFT(nft.id, nft.imagePath)}
-                                    className="ml-4 p-2 bg-red-500 rounded text-white hover:bg-red-600"
+                            {nfts.map((nft) => (
+                              <li key={nft.id} className="bg-black/40 border border-gray-700 hover:border-orange-500 rounded-xl overflow-hidden transition-colors">
+                                <div className="flex items-center justify-between p-4">
+                                  <div className="flex items-center space-x-4">
+                                    <div className="h-12 w-12 rounded-lg overflow-hidden bg-black/60">
+                                      <img 
+                                        src={nft.image} 
+                                        alt={nft.title} 
+                                        className="h-full w-full object-cover"
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <h4 className="text-orange-400 font-semibold">{nft.title}</h4>
+                                      <p className="text-gray-300 text-sm truncate max-w-md">{nft.description}</p>
+                                      <p className="text-gray-400 text-xs">Value: {nft.value}</p>
+                                    </div>
+                                  </div>                                  <button
+                                    onClick={() => handleDeleteNFT(nft.id, nft.imagePath || "")}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
                                     disabled={!nft.id}
                                   >
                                     Delete
                                   </button>
-                                </li>
-                              );
-                            })}
-                          </ul>                        ) : (
-                          !isLoading && !error && <p className="text-gray-400 text-center">No NFTs available yet.</p>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          !isLoading && !error && (
+                            <div className="bg-black/40 p-8 rounded-lg text-center">
+                              <p className="text-gray-400">No NFTs available yet.</p>
+                            </div>
+                          )
                         )}
                         
-                        {/* Delete All NFTs button moved here */}
-                        <div className="mt-6">
-                          <button
-                            onClick={handleDeleteAllNFTs}
-                            className="p-2 bg-red-500 rounded text-white hover:bg-red-600 w-auto"
-                          >
-                            Delete All NFTs
-                          </button>
-                        </div>
+                        {/* Delete All NFTs button */}
+                        {!isLoading && !error && nfts.length > 0 && (
+                          <div className="mt-6 flex justify-end">
+                            <button
+                              onClick={handleDeleteAllNFTs}
+                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm"
+                            >
+                              Delete All NFTs
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -3355,7 +3441,6 @@ const fetchEmployersList = async () => {
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Instant Jobs</h2>
                     <div className="mt-6 bg-black/50 p-6 rounded-lg">
                       <p className="text-gray-300 mb-4">
-                        Manage instant jobs and their associated settings.
                       </p>
                                             
                       {/* Main component loaded directly without checking subtab */}
@@ -3426,55 +3511,70 @@ const fetchEmployersList = async () => {
                       <PaymentSettings hasPermission={true} />
                     </div>
                   </div>
-                )}
-
-                {activeTab === "learn2earn" && activeSubTab === "list" && (
-                  <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                    <h3 className="text-xl text-orange-400 mb-4">Learn2Earn Opportunities</h3>
-                    {learn2earnLoading && <p className="text-gray-400">Loading opportunities...</p>}
-                    {learn2earnError && <p className="text-red-400">{learn2earnError}</p>}
-                    {!learn2earnLoading && !learn2earnError && learn2earns.length === 0 && <p className="text-gray-400">No Learn2Earn opportunities available.</p>}
-                    <ul className="space-y-4">
+                )}                {activeTab === "learn2earn" && activeSubTab === "list" && (
+                  <div className="bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700">
+                    <h3 className="text-base md:text-lg font-bold text-orange-400 mb-4 md:mb-6">Learn2Earn Opportunities</h3>
+                    {learn2earnLoading && <p className="text-gray-400 text-sm">Loading opportunities...</p>}
+                    {learn2earnError && (
+                      <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
+                        {learn2earnError}
+                      </div>
+                    )}
+                    {!learn2earnLoading && !learn2earnError && learn2earns.length === 0 && (
+                      <p className="text-gray-400 text-sm">No Learn2Earn opportunities available.</p>
+                    )}
+                    <div className="space-y-4 md:space-y-6">
                       {learn2earns.map((l2e) => (
-                        <li key={l2e.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-4 bg-black/30 rounded-lg border border-gray-700">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-orange-500 font-bold text-lg">{l2e.title}</span>
-                              <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${l2e.status === 'active' ? 'bg-green-700 text-green-300' : l2e.status === 'paused' ? 'bg-yellow-700 text-yellow-300' : 'bg-gray-700 text-gray-300'}`}>{l2e.status?.toUpperCase()}</span>
+                        <div key={l2e.id} className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl overflow-hidden transition-colors">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 md:p-6">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="text-sm md:text-base font-bold text-orange-400">{l2e.title}</h4>
+                                <span className={`px-1.5 md:px-2 py-0.5 rounded-full text-xs ${
+                                  l2e.status === 'active' ? 'bg-orange-900/50 text-orange-300 border border-orange-700' : 
+                                  l2e.status === 'paused' ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-700' : 
+                                  'bg-gray-800 text-gray-400 border border-gray-700'
+                                }`}>
+                                  {l2e.status?.toUpperCase()}
+                                </span>
+                              </div>
+                              <div className="text-gray-300 text-sm mb-3">{l2e.description}</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 text-xs text-gray-400 mb-2">
+                                <span>Network: <span className="text-white font-semibold">{l2e.network}</span></span>
+                                <span>Token: <span className="text-white font-semibold">{l2e.tokenSymbol}</span></span>
+                                <span>Amount: <span className="text-white font-semibold">{l2e.tokenAmount}</span></span>
+                                <span>Per User: <span className="text-white font-semibold">{l2e.tokenPerParticipant}</span></span>
+                                <span>Participants: <span className="text-white font-semibold">{l2e.totalParticipants || 0} / {l2e.maxParticipants || '∞'}</span></span>
+                                <span>Dates: <span className="text-white font-semibold">{formatFirestoreTimestamp(l2e.startDate)} - {formatFirestoreTimestamp(l2e.endDate)}</span></span>
+                              </div>
+                              <div className="text-xs text-gray-500">ID: {l2e.id}</div>
                             </div>
-                            <div className="text-gray-300 text-sm mb-1">{l2e.description}</div>
-                            <div className="flex flex-wrap gap-4 text-xs text-gray-400 mb-1">
-                              <span>Network: <b>{l2e.network}</b></span>
-                              <span>Token: <b>{l2e.tokenSymbol}</b></span>
-                              <span>Amount: <b>{l2e.tokenAmount}</b></span>
-                              <span>Per User: <b>{l2e.tokenPerParticipant}</b></span>
-                              <span>Participants: <b>{l2e.totalParticipants || 0} / {l2e.maxParticipants || '∞'}</b></span>
-                              <span>Start: {formatFirestoreTimestamp(l2e.startDate)}</span>
-                              <span>End: {formatFirestoreTimestamp(l2e.endDate)}</span>
+                            <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0 md:ml-6 min-w-[200px]">
+                              <button 
+                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                                  l2e.status === 'active' 
+                                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
+                                    : 'bg-orange-500 hover:bg-orange-600 text-white'
+                                }`}
+                                disabled={pausingLearn2EarnId === l2e.id}
+                                onClick={() => handleToggleLearn2EarnStatus(l2e.id, l2e.status)}
+                              >
+                                {pausingLearn2EarnId === l2e.id
+                                  ? (l2e.status === 'active' ? 'Pausing...' : 'Activating...')
+                                  : (l2e.status === 'active' ? 'Pause' : 'Activate')}
+                              </button>
+                              <button
+                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                                disabled={deletingLearn2EarnId === l2e.id}
+                                onClick={() => handleDeleteLearn2Earn(l2e.id)}
+                              >
+                                {deletingLearn2EarnId === l2e.id ? 'Deleting...' : 'Delete'}
+                              </button>
                             </div>
-                            <div className="text-xs text-gray-500">ID: {l2e.id}</div>
                           </div>
-                          <div className="flex flex-col gap-2 mt-4 md:mt-0 md:ml-6 min-w-[160px]">
-                            <button 
-                              className={`px-3 py-1 rounded ${l2e.status === 'active' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white`}
-                              disabled={pausingLearn2EarnId === l2e.id}
-                              onClick={() => handleToggleLearn2EarnStatus(l2e.id, l2e.status)}
-                            >
-                              {pausingLearn2EarnId === l2e.id
-                                ? (l2e.status === 'active' ? 'Pausing...' : 'Activating...')
-                                : (l2e.status === 'active' ? 'Pause' : 'Activate')}
-                            </button>
-                            <button
-                              className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white"
-                              disabled={deletingLearn2EarnId === l2e.id}
-                              onClick={() => handleDeleteLearn2Earn(l2e.id)}
-                            >
-                              {deletingLearn2EarnId === l2e.id ? 'Deleting...' : 'Delete'}
-                            </button>
-                          </div>
-                        </li>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>                )}
               </>
             )}
