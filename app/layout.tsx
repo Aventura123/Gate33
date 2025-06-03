@@ -10,9 +10,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {  return (
-    <html lang="en">      <head>
+    <html lang="en">
+      <head>
         <title>Gate33</title>
         <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="shortcut icon" href="/favicon.png" type="image/png" />
         <link rel="preload" href="/logo2.png" as="image" />
       </head>
       <body>
