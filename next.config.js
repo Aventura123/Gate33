@@ -7,8 +7,7 @@ const nextConfig = {
   
   // Configuração para gerenciamento de rotas
   trailingSlash: false,
-  
-  // Configurações para imagens
+    // Configurações para imagens
   images: {
     remotePatterns: [
       {
@@ -23,8 +22,15 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'coin-images.coingecko.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'assets.coingecko.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'miro.medium.com',
+      },
     ],
-    domains: ['assets.coingecko.com', 'miro.medium.com'],
   },
   
   distDir: '.next',
