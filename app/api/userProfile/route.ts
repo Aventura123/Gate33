@@ -8,51 +8,11 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const userId = url.searchParams.get("userId");
 
-    console.log("API userProfile GET - userId received:", userId);
-
-    // If no userId provided, fetch the first available admin
     if (!userId) {
-      console.log("No userId provided, fetching the first available admin");
-      
-      if (!db) {
-        throw new Error("Firestore is not initialized");
-      }
-      
-      // Find the first available admin
-      try {
-        const adminsCollection = collection(db, "admins");
-        const adminsQuery = query(adminsCollection, limit(1));
-        const adminsSnapshot = await getDocs(adminsQuery);
-        
-        if (adminsSnapshot.empty) {
-          console.log("No admin found in the database");
-          return NextResponse.json({ 
-            error: "No administrator found" 
-          }, { status: 404 });
-        }
-        
-        // Get the first admin
-        const firstAdmin = adminsSnapshot.docs[0];
-        const adminId = firstAdmin.id;
-        const adminData = firstAdmin.data();
-        
-        console.log("Admin found:", adminId);
-        
-        return NextResponse.json({ 
-          userId: adminId,
-          photoUrl: adminData.photoURL || null,
-          userData: adminData
-        });
-      } catch (error) {
-        console.error("Error fetching admin:", error);
-        return NextResponse.json({ 
-          error: "Error fetching administrator" 
-        }, { status: 500 });
-      }
+      return NextResponse.json({ 
+        error: "User ID is required" 
+      }, { status: 400 });
     }
-
-    // If userId is provided, search in collections normally
-    console.log("Searching for profile with userId:", userId);
 
     if (!db) {
       throw new Error("Firestore is not initialized");
@@ -67,7 +27,6 @@ export async function GET(req: NextRequest) {
       
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        // Always return userData, even if photoURL is missing
         return NextResponse.json({ 
           photoUrl: userData.photoURL || null,
           collection: collection,
@@ -77,7 +36,6 @@ export async function GET(req: NextRequest) {
     }
     
     // If user not found in any collection
-    console.log("No user found for userId", userId);
     return NextResponse.json({ photoUrl: null, userData: null });
   } catch (error: any) {
     console.error("Error fetching user profile:", error);

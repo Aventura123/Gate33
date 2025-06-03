@@ -149,8 +149,7 @@ type Employer = {
   address?: string;
 };
 
-const AdminDashboard: React.FC = () => {
-  const router = useRouter();
+const AdminDashboard: React.FC = () => {  const router = useRouter();
   // Update the type declaration to include new tabs
   const [activeTab, setActiveTab] = useState<"nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "instantJobs" | "accounting" | "ads" | "newsletter" | "marketing" | "systemActivity">("nfts");
   const [activeSubTab, setActiveSubTab] = useState<string | null>("add");
@@ -227,13 +226,12 @@ const AdminDashboard: React.FC = () => {
   const [deletingEmployerId, setDeletingEmployerId] = useState<string|null>(null);
   const [blockingEmployerId, setBlockingEmployerId] = useState<string|null>(null);
   // --- Seekers State and Handlers ---
-  const [seekers, setSeekers] = useState<Seeker[]>([]);  const [seekersLoading, setSeekersLoading] = useState(false);
-  const [seekersError, setSeekersError] = useState<string|null>(null);
+  const [seekers, setSeekers] = useState<Seeker[]>([]);
+  const [seekersLoading, setSeekersLoading] = useState(false);  const [seekersError, setSeekersError] = useState<string|null>(null);
   const [deletingSeekerId, setDeletingSeekerId] = useState<string|null>(null);
   const [blockingSeekerId, setBlockingSeekerId] = useState<string|null>(null);
 
   const [pendingCompanies, setPendingCompanies] = useState<any[]>([]);
-  
   // --- Profile State and Handlers ---
   const [profileData, setProfileData] = useState({
     name: '',
@@ -251,6 +249,8 @@ const AdminDashboard: React.FC = () => {
     position: '',
     birthDate: '',
     nationality: '',
+    preferredLanguage: 'en',
+    mobilePhone: '',
     city: '',
     postalCode: '',
     emergencyContactName: '',
@@ -726,8 +726,7 @@ const AdminDashboard: React.FC = () => {
         console.log("Photo loaded from localStorage:", storedPhoto);
         setUserPhoto(storedPhoto);
       }
-      
-      // Fetch the user photo from the userProfile endpoint anyway
+        // Fetch the user photo from the userProfile endpoint anyway
       const fetchUserPhoto = async () => {
         const userId = localStorage.getItem("userId");
         if (!userId) {
@@ -736,45 +735,25 @@ const AdminDashboard: React.FC = () => {
         }
   
         try {
-          console.log("Fetching user photo for ID:", userId);
-          
-          // First, let's do a debug test to directly check the data
-          const debugResponse = await fetch(`/api/admin/debug`);
-          if (debugResponse.ok) {
-            const debugData = await debugResponse.json();
-            console.log("Debug data from Firestore:", debugData);
-          }
-          
-          // Now fetch from the userProfile endpoint
           const response = await fetch(`/api/userProfile?userId=${userId}`);
-          console.log("API response from userProfile:", response.status, response.statusText);
           
           if (response.ok) {
             const data = await response.json();
-            console.log("Data received from userProfile:", data);
             
             if (data.photoUrl) {
-              console.log("Photo found in userProfile:", data.photoUrl);
               setUserPhoto(data.photoUrl);
               localStorage.setItem("userPhoto", data.photoUrl);
             } else if (data.userData?.photoURL) {
-              // Try to get from photoURL field
-              console.log("Photo found in userData.photoURL:", data.userData.photoURL);
               setUserPhoto(data.userData.photoURL);
               localStorage.setItem("userPhoto", data.userData.photoURL);
             } else if (data.userData?.photo) {
-              // Try to get from photo field in user data (alternative name)
-              console.log("Photo found in userData.photo:", data.userData.photo);
               setUserPhoto(data.userData.photo);
               localStorage.setItem("userPhoto", data.userData.photo);
-            } else {
-              console.log("No photo found in API response");
             }
             
             // If we received additional user information, we can use it
             if (data.userData?.name || data.userData?.user) {
               const name = data.userData.name || data.userData.user;
-              console.log("Name found in user data:", name);
               setUserName(name);
               localStorage.setItem("userName", name);
             }
@@ -1062,150 +1041,48 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   // Corrigindo o erro de "window is not defined" para a mensagem de boas-vindas
-  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;  // Função centralizada para buscar dados completos do usuário logado
-  const fetchCurrentUserData = async () => {
-    try {
-      console.log("🔍 Fetching current user data...");
-      
-      const token = localStorage.getItem("token");
-      
-      // Se não temos token, não podemos continuar
-      if (!token) {
-        throw new Error("Authentication token not found. Please log in again.");
-      }
-      
-      // Sempre extrair o userId do token para garantir consistência
-      let userId: string;
-      try {
-        console.log("🔍 Extracting userId from token...");
-        const tokenData = JSON.parse(Buffer.from(token, 'base64').toString());
-        
-        // Verificar se o token não está expirado
-        const now = Date.now();
-        const tokenAge = now - tokenData.timestamp;
-        const maxAge = 24 * 60 * 60 * 1000; // 24 horas
-        
-        if (tokenAge > maxAge) {
-          throw new Error("Token expired. Please log in again.");
-        }
-        
-        userId = tokenData.id;
-        if (!userId) {
-          throw new Error("Invalid token: missing user ID");
-        }
-        
-        // Atualizar localStorage com o userId correto do token
-        const storedUserId = localStorage.getItem("userId");
-        if (storedUserId !== userId) {
-          console.log(`🔄 Updating userId in localStorage from ${storedUserId} to ${userId}`);
-          localStorage.setItem("userId", userId);
-        }
-        
-        console.log("✅ UserId extracted from token:", userId);
-        
-      } catch (tokenError) {
-        console.error("❌ Error decoding or validating token:", tokenError);
-        throw new Error("Invalid authentication token. Please log in again.");
-      }
-      
-      // Agora buscar os dados completos do perfil do usuário logado
-      console.log(`🔍 Fetching profile data for userId: ${userId}`);
-      const profileResponse = await fetch(`/api/userProfile?userId=${userId}&collection=admins`);
-      
-      if (!profileResponse.ok) {
-        throw new Error(`Error fetching user profile: ${profileResponse.statusText}`);
-      }
-      
-      const profileData = await profileResponse.json();
-      console.log("✅ Profile data received:", {
-        userId: userId,
-        hasPhotoUrl: !!profileData.photoUrl,
-        hasUserData: !!profileData.userData,
-        userName: profileData.userData?.name || profileData.userData?.username,
-        collection: profileData.collection
-      });
-      
-      // Verificar se encontramos dados do usuário
-      if (!profileData.userData) {
-        console.warn("⚠️ No user data found for this userId");
-        throw new Error("User profile not found. Please contact support.");
-      }
-      
-      // Atualizar estados e localStorage com os dados recebidos
-      const userData = profileData.userData;
-      
-      // Atualizar nome do usuário
-      if (userData.name) {
-        setUserName(userData.name);
-        localStorage.setItem("userName", userData.name);
-        console.log("✅ Username updated:", userData.name);
-      } else if (userData.username) {
-        setUserName(userData.username);
-        localStorage.setItem("userName", userData.username);
-        console.log("✅ Username updated (using username field):", userData.username);
-      }
-      
-      // Atualizar foto do usuário
-      const photoUrl = profileData.photoUrl || userData.photoURL || userData.photo;
-      if (photoUrl) {
-        setUserPhoto(photoUrl);
-        localStorage.setItem("userPhoto", photoUrl);
-        console.log("✅ User photo updated");
-      } else {
-        console.log("ℹ️ No photo found for user");
-      }
-      
-      // Atualizar role se disponível
-      if (userData.role) {
-        localStorage.setItem("userRole", userData.role);
-        console.log("✅ User role updated:", userData.role);
-      }
-      
-      return {
-        userId,
-        userData: profileData.userData,
-        photoUrl: profileData.photoUrl
-      };
-      
-    } catch (error) {
-      console.error("❌ Error fetching current user data:", error);
-      
-      // Se o erro for de autenticação, redirecionar para login
-      if (error instanceof Error && (
-        error.message.includes("token") || 
-        error.message.includes("Authentication") ||
-        error.message.includes("Unauthorized") ||
-        error.message.includes("expired")
-      )) {
-        console.log("🔄 Authentication error, redirecting to login...");
-        handleLogout();
-      }
-      
-      throw error;
+  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;
+  // Get user ID from localStorage instead of making an API call without userId
+  const getUserIdFromLocalStorage = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("userId");
     }
+    return null;
   };
 
-  // useEffect simplificado para carregar dados do usuário atual
+  // Atualizar o useEffect para usar o localStorage em vez de uma chamada sem ID
   useEffect(() => {
-    const loadCurrentUserData = async () => {
+    const fetchUserPhoto = async () => {
       try {
-        await fetchCurrentUserData();
-      } catch (error) {
-        console.error("Failed to load user data:", error);
-        // Se falhar, usar dados padrão do localStorage se disponíveis
-        const storedName = localStorage.getItem("userName");
-        const storedPhoto = localStorage.getItem("userPhoto");
+        const userId = getUserIdFromLocalStorage();
+        console.log("Fetching user photo for ID:", userId);
         
-        if (storedName) setUserName(storedName);
-        if (storedPhoto) setUserPhoto(storedPhoto);
+        if (!userId) {
+          console.error("No userId found in localStorage");
+          return;
+        }
+
+        const response = await fetch(`/api/userProfile?userId=${userId}`);
+        console.log("API response from userProfile:", response.status, response.statusText);
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.photoUrl) {
+            setUserPhoto(data.photoUrl);
+          } else {
+            console.warn("No photo found for user");
+          }
+        } else {
+          console.error("Error fetching user photo:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching user photo:", error);
       }
     };
 
-    // Só executar no lado do cliente
-    if (typeof window !== "undefined") {
-      loadCurrentUserData();
-    }
+    fetchUserPhoto();
   }, []);
+  // This useEffect was removed because it was causing data mixing by using the first admin instead of the logged-in user
 
 const fetchEmployersList = async () => {
   try {
@@ -1377,9 +1254,10 @@ const fetchEmployersList = async () => {
             const errorData = await response.json();
             throw new Error(errorData.error || `Error fetching profile: ${response.statusText}`);
           }
-          const data = await response.json();          console.log("Admin profile data loaded:", data);
+          const data = await response.json();
+          console.log("Admin profile data loaded:", data);
 
-          // Never use localStorage for username, email or role
+          // NUNCA use localStorage para username, email ou role
           setProfileData({
             name: data.userData?.name || '',
             username: data.userData?.username || data.userData?.name || '',
@@ -1395,6 +1273,8 @@ const fetchEmployersList = async () => {
             position: data.userData?.position || '',
             birthDate: data.userData?.birthDate || '',
             nationality: data.userData?.nationality || '',
+            preferredLanguage: data.userData?.preferredLanguage || 'en',
+            mobilePhone: data.userData?.mobilePhone || '',
             city: data.userData?.city || '',
             postalCode: data.userData?.postalCode || '',
             emergencyContactName: data.userData?.emergencyContactName || '',
@@ -1452,30 +1332,15 @@ const fetchEmployersList = async () => {
       }
 
       console.log("Attempting to update profile for user ID:", userId);
-      console.log("Using collection: admins");      // Create update data object for both API and direct Firestore update
+      console.log("Using collection: admins");
+
+      // Create update data object for both API and direct Firestore update
       const updateData = {
         photoUrl: photoUrl,
-        // Basic profile fields
-        name: profileData.name || "",
-        username: profileData.username || "",
-        email: profileData.email || "",
-        role: profileData.role || "",
         lastName: profileData.lastName || "",
         address: profileData.address || "",
         country: profileData.country || "",
-        phone: profileData.phone || "",        // Additional profile fields
-        position: profileData.position || "",
-        birthDate: profileData.birthDate || "",
-        nationality: profileData.nationality || "",
-        city: profileData.city || "",
-        postalCode: profileData.postalCode || "",
-        emergencyContactName: profileData.emergencyContactName || "",
-        emergencyContactPhone: profileData.emergencyContactPhone || "",
-        website: profileData.website || "",
-        linkedin: profileData.linkedin || "",
-        twitter: profileData.twitter || "",
-        github: profileData.github || "",
-        biography: profileData.biography || "",
+        phone: profileData.phone || "",
         updatedAt: new Date().toISOString()
       };
 
@@ -1866,10 +1731,8 @@ const fetchEmployersList = async () => {
                 />
               </div>
             </div>
-          </div>
-          {/* Navigation - reduce button size and spacing on mobile */}
-          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>
-            {hasPermission('canEditContent') && (
+          </div>          {/* Navigation - reduce button size and spacing on mobile */}
+          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>            {hasPermission('canAccessNFTs') && (
               <li>
                 <button
                   className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "nfts" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
@@ -1916,9 +1779,7 @@ const fetchEmployersList = async () => {
                     </li>                  </ul>
                 )}
               </li>
-            )}
-
-            {(hasPermission('canManageUsers') || hasPermission('canApproveCompanies') || hasPermission('canEditContent')) && (
+            )}            {hasPermission('canAccessUsers') && (
               <li>
                 <button
                   className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "users" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
@@ -1983,22 +1844,24 @@ const fetchEmployersList = async () => {
                   </ul>
                 )}
               </li>
-            )}            <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "jobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  if (activeTab === "jobs") setNftsDropdownOpen((open: boolean) => !open);
-                  else {
-                    setActiveTab("jobs");
-                    setActiveSubTab("list");
-                    setNftsDropdownOpen(true);
-                  }
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                <span>Manage Jobs</span>
-                <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "jobs" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </button>
+            )}
+            {hasPermission('canAccessJobs') && (
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "jobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  onClick={() => {
+                    if (activeTab === "jobs") setNftsDropdownOpen((open: boolean) => !open);
+                    else {
+                      setActiveTab("jobs");
+                      setActiveSubTab("list");
+                      setNftsDropdownOpen(true);
+                    }
+                    if (isMobile) setMobileMenuOpen(false);
+                  }}
+                >
+                  <span>Manage Jobs</span>
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "jobs" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
               {activeTab === "jobs" && nftsDropdownOpen && (
                 <ul className="ml-6 mt-2 space-y-1">
                   <li>
@@ -2052,145 +1915,156 @@ const fetchEmployersList = async () => {
                     >
                       JobPost P. Manag.
                     </button>
-                  </li>
-                </ul>              )}
-            </li>
-            {/* Instant Jobs tab */}
-                                             <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  setActiveTab("instantJobs");
-                  setActiveSubTab(null);
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                Manage Instant Jobs
-              </button>
-            </li>{/* Learn2Earn tab */}
-            <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  if (activeTab === "learn2earn") setLearn2earnDropdownOpen((open) => !open);
-                  else {
-                    setActiveTab("learn2earn");
-                    setActiveSubTab("list");
-                    setLearn2earnDropdownOpen(true);
-                  }
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                <span>Learn2Earn</span>
-                <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "learn2earn" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </button>
-              {activeTab === "learn2earn" && learn2earnDropdownOpen && (
-                <ul className="ml-6 mt-2 space-y-1">
-                  <li>
-                    <button
-                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                        activeSubTab === "list" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("list");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Learn2Earn List
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
-                        activeSubTab === "contracts" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
-                      }`}
-                      onClick={() => {
-                        setActiveSubTab("contracts");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Smart Contracts
-                    </button>
-                  </li>
-                </ul>
-              )}            </li>
-
-            <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "ads" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  setActiveTab("ads");
-                  setActiveSubTab(null);
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                Ads Manager
-              </button>            </li>{/* --- MARKETING MENU --- */}
-            <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "marketing" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  if (activeTab === "marketing") setMarketingDropdownOpen((open) => !open);
-                  else {
-                    setActiveTab("marketing");
-                    setActiveSubTab("newsletter");
-                    setMarketingDropdownOpen(true);
-                  }
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                <span>Marketing</span>
-                <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "marketing" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </button>
-              {activeTab === "marketing" && marketingDropdownOpen && (
-                <ul className="ml-6 mt-2 space-y-1">
-                  <li>
-                    <button
-                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "newsletter" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
-                      onClick={() => {
-                        setActiveSubTab("newsletter");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Newsletter
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "socialmedia" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
-                      onClick={() => {
-                        setActiveSubTab("socialmedia");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                    >
-                      Social Media
-                    </button>
                   </li>                </ul>
               )}
             </li>
-            {/* --- END MARKETING MENU --- */}            <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  setActiveTab("accounting");
-                  setActiveSubTab(null);
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                Accounting Dashboard
-              </button>
-            </li>            <li>
-              <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "systemActivity" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => {
-                  setActiveTab("systemActivity");
-                  setActiveSubTab(null);
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-              >
-                System Activity
-              </button>
-            </li>
+            )}
+            {hasPermission('canAccessInstantJobs') && (
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  onClick={() => {
+                    setActiveTab("instantJobs");
+                    setActiveSubTab(null);
+                    if (isMobile) setMobileMenuOpen(false);
+                  }}
+                >
+                  Manage Instant Jobs
+                </button>
+              </li>
+            )}            {/* Learn2Earn tab */}
+            {hasPermission('canAccessLearn2Earn') && (
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "learn2earn" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  onClick={() => {
+                    if (activeTab === "learn2earn") setLearn2earnDropdownOpen((open) => !open);
+                    else {
+                      setActiveTab("learn2earn");
+                      setActiveSubTab("list");
+                      setLearn2earnDropdownOpen(true);
+                    }
+                    if (isMobile) setMobileMenuOpen(false);
+                  }}
+                >
+                  <span>Learn2Earn</span>
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "learn2earn" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+                {activeTab === "learn2earn" && learn2earnDropdownOpen && (
+                  <ul className="ml-6 mt-2 space-y-1">
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                          activeSubTab === "list" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                        }`}
+                        onClick={() => {
+                          setActiveSubTab("list");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Learn2Earn List
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                          activeSubTab === "contracts" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                        }`}
+                        onClick={() => {
+                          setActiveSubTab("contracts");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Smart Contracts
+                      </button>
+                    </li>
+                  </ul>
+                )}              </li>            )}
+
+            {hasPermission('canAccessAdsManager') && (
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "ads" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  onClick={() => {
+                    setActiveTab("ads");
+                    setActiveSubTab(null);
+                    if (isMobile) setMobileMenuOpen(false);
+                  }}
+                >
+                  Ads Manager
+                </button>
+              </li>            )}{/* --- MARKETING MENU --- */}
+            {hasPermission('canAccessMarketing') && (
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "marketing" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  onClick={() => {
+                    if (activeTab === "marketing") setMarketingDropdownOpen((open) => !open);
+                    else {
+                      setActiveTab("marketing");
+                      setActiveSubTab("newsletter");
+                      setMarketingDropdownOpen(true);
+                    }
+                    if (isMobile) setMobileMenuOpen(false);
+                  }}
+                >
+                  <span>Marketing</span>
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${activeTab === "marketing" ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+                {activeTab === "marketing" && marketingDropdownOpen && (
+                  <ul className="ml-6 mt-2 space-y-1">
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "newsletter" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        onClick={() => {
+                          setActiveSubTab("newsletter");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Newsletter
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "socialmedia" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        onClick={() => {
+                          setActiveSubTab("socialmedia");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Social Media
+                      </button>
+                    </li>                </ul>
+                )}
+              </li>
+            )}            {/* --- END MARKETING MENU --- */}
+            {hasPermission('canAccessAccounting') && (
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "accounting" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  onClick={() => {
+                    setActiveTab("accounting");
+                    setActiveSubTab(null);
+                    if (isMobile) setMobileMenuOpen(false);
+                  }}
+                >
+                  Accounting Dashboard
+                </button>
+              </li>            )}
+            {hasPermission('canAccessSystemActivity') && (
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "systemActivity" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  onClick={() => {
+                    setActiveTab("systemActivity");
+                    setActiveSubTab(null);
+                    if (isMobile) setMobileMenuOpen(false);
+                  }}
+                >
+                  System Activity
+                </button>
+              </li>
+            )}
             {hasPermission('canAccessSettings') && (
               <li>
                 <button
@@ -2667,16 +2541,15 @@ const fetchEmployersList = async () => {
                                         {company.notes && (
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Notes:</span> {company.notes}</p>
                                         )}
-                                        
-                                        {company.responsiblePhone && (
+                                          {company.responsiblePhone && (
                                           <p className="mb-1">
                                             <span className="font-semibold text-orange-300">Phone:</span>{' '}
                                             <a 
-                                              href={`tel:${company.responsablePhone}`} 
+                                              href={`tel:${company.responsiblePhone}`} 
                                               className="text-blue-400 hover:underline"
                                               onClick={e => e.stopPropagation()}
                                             >
-                                              {company.responsablePhone}
+                                              {company.responsiblePhone}
                                             </a>
                                           </p>
                                         )}
@@ -3079,7 +2952,8 @@ const fetchEmployersList = async () => {
                                     onChange={handleProfileInputChange}
                                     className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
                                   />
-                                </div>                                <div>
+                                </div>
+                                <div>
                                   <label htmlFor="nationality" className="block text-sm font-medium text-white">Nationality</label>
                                   <input
                                     type="text"
@@ -3091,7 +2965,9 @@ const fetchEmployersList = async () => {
                                     className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
                                   />
                                 </div>
-                              </div>                              <h4 className="text-lg text-orange-400 pt-4">Contact Information</h4>
+                              </div>
+
+                              <h4 className="text-lg text-orange-400 pt-4">Contact Information</h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                   <label htmlFor="phone" className="block text-sm font-medium text-white mb-1">Phone</label>
@@ -3104,7 +2980,8 @@ const fetchEmployersList = async () => {
                                     placeholder="Your phone number"
                                     className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
                                   />
-                                </div>                                <div>
+                                </div>
+                                <div>
                                   <label htmlFor="address" className="block text-sm font-medium text-white mb-1">Address</label>
                                   <input
                                     type="text"
@@ -3139,7 +3016,8 @@ const fetchEmployersList = async () => {
                                     placeholder="Your country"
                                     className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
                                   />
-                                </div>                                <div>
+                                </div>
+                                <div>
                                   <label htmlFor="postalCode" className="block text-sm font-medium text-white mb-1">Postal/Zip Code</label>
                                   <input
                                     type="text"
@@ -3148,34 +3026,6 @@ const fetchEmployersList = async () => {
                                     value={profileData.postalCode || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="Your postal/zip code"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                                  />
-                                </div>
-                              </div>
-
-                              <h4 className="text-lg text-orange-400 pt-4">Emergency Contact</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <label htmlFor="emergencyContactName" className="block text-sm font-medium text-white mb-1">Emergency Contact Name</label>
-                                  <input
-                                    type="text"
-                                    id="emergencyContactName"
-                                    name="emergencyContactName"
-                                    value={profileData.emergencyContactName || ''}
-                                    onChange={handleProfileInputChange}
-                                    placeholder="Emergency contact full name"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
-                                  />
-                                </div>
-                                <div>
-                                  <label htmlFor="emergencyContactPhone" className="block text-sm font-medium text-white mb-1">Emergency Contact Phone</label>
-                                  <input
-                                    type="tel"
-                                    id="emergencyContactPhone"
-                                    name="emergencyContactPhone"
-                                    value={profileData.emergencyContactPhone || ''}
-                                    onChange={handleProfileInputChange}
-                                    placeholder="Emergency contact phone number"
                                     className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
                                   />
                                 </div>
