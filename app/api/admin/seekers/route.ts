@@ -4,14 +4,14 @@ import { collection, getDocs, doc, getDoc, setDoc, deleteDoc, query, where, upda
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 
-// GET: Buscar todos os candidatos a emprego ou um candidato específico por ID
+// GET: Fetch all job seekers or a specific seeker by ID
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     
     if (id) {
-      // Buscar um candidato específico
+      // Fetch a specific seeker
       if (!db) {
         return NextResponse.json(
           { error: "Database connection is not initialized" },
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       
       if (!seekerSnapshot.exists()) {
         return NextResponse.json(
-          { error: "Candidato não encontrado" },
+          { error: "Seeker not found" },
           { status: 404 }
         );
       }
@@ -34,12 +34,12 @@ export async function GET(req: NextRequest) {
         ...seekerData
       };
       
-      // Remover dados sensíveis
+      // Remove sensitive data
       delete seeker.password;
       
       return NextResponse.json(seeker);
     } else {
-      // Buscar todos os candidatos
+      // Fetch all seekers
       if (!db) {
         return NextResponse.json(
           { error: "Database connection is not initialized" },
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       
       const seekers = seekersSnapshot.docs.map(doc => {
         const data = doc.data();
-        // Remover dados sensíveis
+        // Remove sensitive data
         delete data.password;
         
         return {
@@ -63,15 +63,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(seekers);
     }
   } catch (error: any) {
-    console.error("Erro ao buscar candidatos:", error);
+    console.error("Error fetching seekers:", error);
     return NextResponse.json(
-      { error: "Erro ao buscar candidatos", message: error.message },
+      { error: "Error fetching seekers", message: error.message },
       { status: 500 }
     );
   }
 }
 
-// POST: Criar um novo candidato a emprego
+// POST: Create a new job seeker
 export async function POST(req: NextRequest) {
   try {
     const { 
@@ -85,15 +85,15 @@ export async function POST(req: NextRequest) {
       resumeUrl = null
     } = await req.json();
     
-    // Validação básica
+    // Basic validation
     if (!name || !username || !password || !email) {
       return NextResponse.json(
-        { error: "Dados incompletos" },
+        { error: "Incomplete data" },
         { status: 400 }
       );
     }
     
-    // Verificar se username já existe
+    // Check if username already exists
     const usernameQuery = query(
       collection(db!, "seekers"),
       where("username", "==", username)
@@ -103,12 +103,12 @@ export async function POST(req: NextRequest) {
     
     if (!usernameSnapshot.empty) {
       return NextResponse.json(
-        { error: "Username já está em uso" },
+        { error: "Username is already in use" },
         { status: 400 }
       );
     }
     
-    // Verificar se email já existe
+    // Check if email already exists
     const emailQuery = query(
       collection(db, "seekers"),
       where("email", "==", email)
@@ -118,18 +118,18 @@ export async function POST(req: NextRequest) {
     
     if (!emailSnapshot.empty) {
       return NextResponse.json(
-        { error: "Email já está em uso" },
+        { error: "Email is already in use" },
         { status: 400 }
       );
     }
     
-    // Criptografar senha
+    // Encrypt password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Gerar ID único
+    // Generate unique ID
     const seekerId = uuidv4();
     
-    // Criar documento no Firestore
+    // Create document in Firestore
     const seekerRef = doc(db, "seekers", seekerId);
     
     await setDoc(seekerRef, {
@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { 
         success: true, 
-        message: "Candidato criado com sucesso",
+        message: "Seeker created successfully",
         seeker: {
           id: seekerId,
           name,
@@ -164,22 +164,22 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error("Erro ao criar candidato:", error);
+    console.error("Error creating seeker:", error);
     return NextResponse.json(
-      { error: "Erro ao criar candidato", message: error.message },
+      { error: "Error creating seeker", message: error.message },
       { status: 500 }
     );
   }
 }
 
-// DELETE: Remover um candidato a emprego
+// DELETE: Remove a job seeker
 export async function DELETE(req: NextRequest) {
   try {
     const { id } = await req.json();
     
     if (!id) {
       return NextResponse.json(
-        { error: "ID do candidato é obrigatório" },
+        { error: "Seeker ID is required" },
         { status: 400 }
       );
     }
@@ -188,33 +188,33 @@ export async function DELETE(req: NextRequest) {
     await deleteDoc(seekerRef);
     
     return NextResponse.json(
-      { success: true, message: "Candidato removido com sucesso" },
+      { success: true, message: "Seeker removed successfully" },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error("Erro ao remover candidato:", error);
+    console.error("Error removing seeker:", error);
     return NextResponse.json(
-      { error: "Erro ao remover candidato", message: error.message },
+      { error: "Error removing seeker", message: error.message },
       { status: 500 }
     );
   }
 }
 
-// PATCH: Atualizar o status de bloqueio de um candidato
+// PATCH: Update the block status of a seeker
 export async function PATCH(req: NextRequest) {
   try {
     const { id, blocked } = await req.json();
 
     if (!id) {
       return NextResponse.json(
-        { error: "ID do candidato é obrigatório" },
+        { error: "Seeker ID is required" },
         { status: 400 }
       );
     }
 
     if (blocked === undefined) {
       return NextResponse.json(
-        { error: "Campo 'blocked' é obrigatório" },
+        { error: "'blocked' field is required" },
         { status: 400 }
       );
     }
@@ -231,7 +231,7 @@ export async function PATCH(req: NextRequest) {
 
     if (!seekerSnapshot.exists()) {
       return NextResponse.json(
-        { error: "Candidato não encontrado" },
+        { error: "Seeker not found" },
         { status: 404 }
       );
     }
@@ -241,15 +241,15 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(
       { 
         success: true, 
-        message: `Candidato ${blocked ? 'bloqueado' : 'desbloqueado'} com sucesso`,
+        message: `Seeker ${blocked ? 'blocked' : 'unblocked'} successfully`,
         blocked
       },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error("Erro ao atualizar candidato:", error);
+    console.error("Error updating seeker:", error);
     return NextResponse.json(
-      { error: "Erro ao atualizar candidato", message: error.message },
+      { error: "Error updating seeker", message: error.message },
       { status: 500 }
     );
   }

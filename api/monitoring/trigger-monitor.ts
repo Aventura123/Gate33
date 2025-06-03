@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Adicione aqui as importações necessárias para seus serviços de monitoramento
+// Add necessary imports for your monitoring services
 // import { monitorContracts } from '../../services/contractMonitoringService';
 // import { checkBalances } from '../../services/walletMonitoringService';
 
@@ -9,14 +9,14 @@ export const config = {
 };
 
 /**
- * Este endpoint será chamado por um serviço externo de agendamento (como Uptime Robot, 
- * AWS EventBridge, ou Google Cloud Scheduler) para executar as verificações de monitoramento.
+ * This endpoint will be called by an external scheduling service (such as Uptime Robot, 
+ * AWS EventBridge, or Google Cloud Scheduler) to perform monitoring checks.
  * 
- * O serviço externo deve chamar este endpoint a cada poucos minutos, como um "heartbeat".
+ * The external service should call this endpoint every few minutes, like a "heartbeat".
  */
 export default async function handler(req: NextRequest) {
   try {
-    // Verifique a chave de API para segurança
+    // Check the API key for security
     const authHeader = req.headers.get('authorization');
     const apiKey = process.env.MONITORING_API_KEY;
     
@@ -24,23 +24,23 @@ export default async function handler(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Log da chamada para rastreamento de atividades
-    console.log(`[${new Date().toISOString()}] Monitoramento acionado externamente`);
+    // Log the call for activity tracking
+    console.log(`[${new Date().toISOString()}] Monitoring triggered externally`);
 
-    // Execute as verificações de monitoramento
+    // Perform monitoring checks
     const results = {
       contracts: await monitorContracts(),
       balances: await checkNativeTokenBalances(),
     };
 
-    // Retorne os resultados para o serviço de agendamento
+    // Return the results to the scheduling service
     return NextResponse.json({ 
       success: true, 
       timestamp: new Date().toISOString(),
       results
     });
   } catch (error: any) {
-    console.error('Erro durante o monitoramento:', error);
+    console.error('Error during monitoring:', error);
     return NextResponse.json({ 
       success: false, 
       error: error.message || 'Unknown error'
@@ -48,30 +48,30 @@ export default async function handler(req: NextRequest) {
   }
 }
 
-// Implemente funções que chamam seus serviços de monitoramento
+// Implement functions that call your monitoring services
 async function monitorContracts() {
   try {
-    // Aqui você implementaria a lógica de monitoramento de contratos
-    // Isso pode incluir verificar status, eventos pendentes, etc.
-    // Exemplo: const result = await monitorContractServices.check();
+    // Here you would implement the logic for monitoring contracts
+    // This could include checking status, pending events, etc.
+    // Example: const result = await monitorContractServices.check();
     
-    // Por enquanto, retornamos um placeholder
+    // For now, return a placeholder
     return { checked: true, status: 'success' };
   } catch (error) {
-    console.error('Erro ao monitorar contratos:', error);
+    console.error('Error monitoring contracts:', error);
     return { checked: false, error: error.message };
   }
 }
 
 async function checkNativeTokenBalances() {
   try {
-    // Aqui você implementaria a lógica de verificação de saldos
-    // Exemplo: const balances = await walletMonitoringService.getBalances();
+    // Here you would implement the logic for checking balances
+    // Example: const balances = await walletMonitoringService.getBalances();
     
-    // Por enquanto, retornamos um placeholder
+    // For now, return a placeholder
     return { checked: true, status: 'success' };
   } catch (error) {
-    console.error('Erro ao verificar saldos:', error);
+    console.error('Error checking balances:', error);
     return { checked: false, error: error.message };
   }
 }

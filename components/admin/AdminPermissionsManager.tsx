@@ -359,16 +359,9 @@ const AdminPermissionsManager: React.FC = () => {
   }
 
   return (
-    <div className="bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700 hover:border-orange-500 transition-colors">
-      <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">
+    <div className="bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700 hover:border-orange-500 transition-colors">      <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">
         Role Permissions Manager
       </h3>
-
-      {role === 'super_admin' && (
-        <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
-          Super Admin access confirmed. You can manage role permissions.
-        </div>
-      )}
 
       {error && (
         <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">

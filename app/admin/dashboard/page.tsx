@@ -1,6 +1,5 @@
 "use client";
 
-import MobileDetection from './mobile-detection';
 import React, { useState, useEffect, useCallback } from "react";
 import Layout from "../../../components/Layout";
 import { useRouter } from 'next/navigation';
