@@ -13,7 +13,7 @@ import { AdminRole, useAdminPermissions } from "../../../hooks/useAdminPermissio
 import { ethers } from "ethers";
 import NotificationsPanel, { NotificationBell } from '../../../components/ui/NotificationsPanel';
 import { createAdminNotification } from '../../../lib/notifications';
-import AdminPermissionsManager from "../../../app/components/AdminPermissionsManager";
+import AdminPermissionsManager from "../../../components/admin/AdminPermissionsManager";
 import InstantJobsManager from "../../../components/admin/InstantJobsManager";
 import JobsManager from "../../../components/admin/JobsManager";
 import PaymentSettings from "../../../components/admin/PaymentSettings";
@@ -1152,7 +1152,7 @@ const fetchEmployersList = async () => {
   const handleToggleBlockSeeker = async (seekerId: string, currentlyBlocked: boolean) => {
     setBlockingSeekerId(seekerId);
     try {
-      const response = await fetch('/api/admin/seekers/update', {
+      const response = await fetch('/api/admin/seekers', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
