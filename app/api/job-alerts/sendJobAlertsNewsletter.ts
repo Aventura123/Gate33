@@ -101,6 +101,20 @@ export async function sendJobAlertsNewsletter(intro?: string, selectedJobs?: any
     return;
   }
   
+  // Format intro text with paragraphs if needed (convert each \n to <p> tags)
+  if (intro) {
+    // Split each line (simple break) into a new paragraph
+    const paragraphs = intro.split(/\n/);
+    if (paragraphs.length > 0) {
+      intro = paragraphs.map(p => {
+        if (p.trim()) { // Only create paragraph for non-empty lines
+          return `<p style="font-size: 1.1rem; color: #FF6B00; margin-bottom: 16px;">${p.trim()}</p>`;
+        }
+        return ''; // For blank lines, return empty string
+      }).join('');
+    }
+  }
+  
   // Use selected jobs if provided, otherwise fetch highlighted jobs
   const jobs = selectedJobs || await getHighlightedJobs();
   if (!jobs.length) {

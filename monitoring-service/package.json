@@ -1,0 +1,24 @@
+{
+  "name": "gate33-monitoring-service",
+  "version": "1.0.0",
+  "description": "Serviço de monitoramento de contratos para Gate33",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.2",
+    "express": "^4.18.2",
+    "firebase-admin": "^11.5.0",
+    "node-fetch": "^2.6.7"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.21"
+  },
+  "private": true
+}

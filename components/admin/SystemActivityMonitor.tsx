@@ -50,8 +50,8 @@ const ContractMonitor: React.FC = () => {
     try {
       setLoading(true);
       
-      // Make a direct API call instead of using the local state
-      const response = await fetch("/api/diagnostics/monitoring-status");
+      // Make a direct API call to the Ocian server
+      const response = await fetch("http://159.65.92.60:3001/status");
       
       if (!response.ok) {
         throw new Error(`Server responded with status: ${response.status}`);
@@ -102,10 +102,11 @@ const ContractMonitor: React.FC = () => {
       setIsRestarting(true);
       setRestartMessage("Restarting monitoring...");
 
-      const response = await fetch("/api/diagnostics/restart-monitoring", {
+      const response = await fetch("http://159.65.92.60:3001/restart", {
         method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_MONITORING_API_KEY || ''}`
         },
       });
 

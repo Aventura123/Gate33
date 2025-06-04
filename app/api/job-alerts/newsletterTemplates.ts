@@ -25,7 +25,7 @@ export function jobAlertNewsletterHtml({ jobs, partners = [], email, intro }:{ j
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <title>Gate33 - Blockchain Jobs Newsletter</title>    <style type="text/css">
-        /* Estilos base */
+        /* Base styles */
         body, html {
           margin: 0;
           padding: 0;
@@ -35,7 +35,7 @@ export function jobAlertNewsletterHtml({ jobs, partners = [], email, intro }:{ j
         .ReadMsgBody {width: 100%;}
         .ExternalClass {width: 100%;}
         
-        /* Media queries para responsividade */
+        /* Media queries for responsiveness */
         @media screen and (max-width: 525px) {
           .container {
             width: 100% !important;
@@ -60,26 +60,24 @@ export function jobAlertNewsletterHtml({ jobs, partners = [], email, intro }:{ j
       </style>
     </head>
     <body style="margin: 0; padding: 0; background-color: #000000;">
-      <!-- Container principal - com largura máxima e centralizado -->
+      <!-- Main container - max width and centered -->
       <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
         <tr>
           <td align="center" bgcolor="#000000">
             <table border="0" cellpadding="0" cellspacing="0" width="100%" class="container" style="max-width: 600px; margin: 0 auto; background-color: rgba(0, 0, 0, 0.3); border: 1px solid #333; border-radius: 8px; overflow: hidden;">
               
-              <!-- Cabeçalho -->
+              <!-- Header -->
               <tr>
                 <td align="left" bgcolor="#FF6B00" class="mobile-padding" style="padding: 24px 24px 12px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
                   <h1 class="mobile-header" style="margin: 0; color: #fff; font-size: 2rem; font-family: Arial, sans-serif;">🚀 New Blockchain Jobs For You</h1>
                 </td>
-              </tr>
-              
-              <!-- Conteúdo -->
-              <tr>
-                <td align="left" class="mobile-padding" style="font-family: Arial, sans-serif; padding: 24px;">                  <p style="font-size: 1.1rem; color: #FF6B00; margin-top: 0;">${intro || 'Highlighted jobs this week:'}</p>
+              </tr>                <!-- Content -->
+              <tr>                <td align="left" class="mobile-padding" style="font-family: Arial, sans-serif; padding: 24px;">
+                  ${intro ? intro : `<p style="font-size: 1.1rem; color: #FF6B00; margin-top: 0;">Highlighted jobs this week:</p>`}
                   
                   <p style="font-size: 1.1rem; color: #FF6B00; margin-top: 24px; margin-bottom: 12px;">Highlighted Jobs:</p>
                   
-                  <!-- Lista de vagas -->
+                  <!-- Jobs list -->
                   <table border="0" cellpadding="0" cellspacing="0" width="100%">
                     ${jobs.map(job => {
                       const logo = job.companyPhotoURL || job.photoURL || 'https://gate33.net/logo.png';
@@ -145,7 +143,7 @@ export function jobAlertNewsletterHtml({ jobs, partners = [], email, intro }:{ j
                   </div>
                   ` : ''}
                   
-                  <!-- Rodapé -->
+                  <!-- Footer -->
                   <p style="font-size: 0.95rem; color: #aaa; margin-top: 32px; font-family: Arial, sans-serif;">
                     You are receiving this email because you subscribed to job alerts at Gate33.<br>
                     If you no longer wish to receive these emails, <a href="${unsubscribeUrl}" style="color: #FF6B00; text-decoration: underline;">unsubscribe here</a>.

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { jobAlertNewsletterHtml } from "../../app/api/job-alerts/newsletterTemplates";
 import { db } from "../../lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 
-const DEFAULT_INTRO = "Here are the top blockchain jobs highlighted for this week. Edit this text to customize the intro for your audience.";
+const DEFAULT_INTRO = "Here are the top blockchain jobs highlighted for this week.";
 
 interface Partner {
   id: string;
@@ -22,6 +22,20 @@ const AdminNewsletterManager: React.FC = () => {
   const [sendStatus, setSendStatus] = useState<string | null>(null);
   // Track which jobs are selected for the newsletter
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
+    // Load the introductory text saved in localStorage
+  useEffect(() => {
+    try {
+      const savedIntro = localStorage.getItem('newsletterIntroText');
+      if (savedIntro) {
+        setIntro(savedIntro);
+        console.log('Loaded saved intro text from localStorage:', savedIntro);
+      } else {
+        console.log('No saved intro text found in localStorage');
+      }
+    } catch (error) {
+      console.error('Error loading intro text from localStorage:', error);
+    }
+  }, []);
 
   useEffect(() => {
     // Fetch jobs highlighted for newsletter and partners
@@ -76,13 +90,28 @@ const AdminNewsletterManager: React.FC = () => {
   }, []);  useEffect(() => {
     // Only include selected jobs in the preview
     const selectedJobs = jobs.filter(job => selectedJobIds.includes(job.id));
+    
+    // Format intro text with paragraphs (same as in sendJobAlertsNewsletter.ts)
+    let formattedIntro = intro;
+    if (intro) {
+      const paragraphs = intro.split(/\n/);
+      if (paragraphs.length > 0) {
+        formattedIntro = paragraphs.map(p => {
+          if (p.trim()) { 
+            return `<p style="font-size: 1.1rem; color: #FF6B00; margin-bottom: 16px;">${p.trim()}</p>`;
+          }
+          return ''; 
+        }).join('');
+      }
+    }
+    
     // Include all partners
     setPreviewHtml(
       jobAlertNewsletterHtml({ 
         jobs: selectedJobs, 
         partners: partners, 
         email: "preview@gate33.net", 
-        intro: intro 
+        intro: formattedIntro 
       })
     );
   }, [jobs, partners, intro, selectedJobIds]);
@@ -91,11 +120,14 @@ const AdminNewsletterManager: React.FC = () => {
     setSelectedJobIds(ids =>
       ids.includes(jobId) ? ids.filter(id => id !== jobId) : [...ids, jobId]
     );
-  };
-    const handleSendNewsletter = async () => {
+  };    const handleSendNewsletter = async () => {
     if (!window.confirm("Are you sure you want to send the newsletter to all selected jobs subscribers?")) return;
     setSendStatus("Sending...");
     try {
+      // Save the current intro text before sending
+      localStorage.setItem('newsletterIntroText', intro);
+      localStorage.setItem('lastSentNewsletterText', intro);
+      
       // Only send selected jobs but include all partners
       const selectedJobs = jobs.filter(job => selectedJobIds.includes(job.id));
       const res = await fetch("/api/job-alerts/send-newsletter", {
@@ -107,7 +139,12 @@ const AdminNewsletterManager: React.FC = () => {
           partners: partners
         })
       });
-      if (res.ok) setSendStatus("Newsletter sent successfully!");
+      if (res.ok) {
+        setSendStatus("Newsletter sent successfully!");
+        
+        // Opcionalmente, pode salvar o último template enviado em um item separado
+        localStorage.setItem('lastSentNewsletterDate', new Date().toISOString());
+      }
       else setSendStatus("Failed to send newsletter.");
     } catch {
       setSendStatus("Failed to send newsletter.");
@@ -118,15 +155,26 @@ const AdminNewsletterManager: React.FC = () => {
     <div className="p-4 md:p-6">
       <h2 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Newsletter Preview &amp; Editor</h2>
       
-      <div className="space-y-4 md:space-y-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-300 mb-1">Intro Text</label>
-          <textarea
+      <div className="space-y-4 md:space-y-6">        <div>
+          <label className="block text-sm font-semibold text-gray-300 mb-1">Intro Text</label>          <textarea
             className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-            rows={3}
+            rows={4}
             value={intro}
-            onChange={e => setIntro(e.target.value)}
-          />
+            onChange={e => {
+              const newText = e.target.value;
+              setIntro(newText);
+              // Salvar no localStorage a cada mudança
+              try {
+                localStorage.setItem('newsletterIntroText', newText);
+                console.log('Saved intro text to localStorage:', newText);
+              } catch (error) {
+                console.error('Error saving intro text to localStorage:', error);
+              }
+            }}
+            placeholder="Type your text here. Press Enter to create a new paragraph."
+          /><p className="text-xs text-gray-400 mt-1">
+            Press Enter to start a new paragraph. Each line break will automatically be converted into a new paragraph in the newsletter. The text is automatically saved in your browser.
+          </p>
         </div>        <div className="border border-gray-700 rounded-lg bg-black/40 p-4 overflow-hidden">
           <div className="max-h-[500px] overflow-auto custom-scrollbar">
             <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
@@ -218,14 +266,25 @@ const AdminNewsletterManager: React.FC = () => {
           </div>
         </div>
       </div>
-      
-      <div className="mt-6 flex items-center">
+        <div className="mt-6 flex flex-wrap items-center gap-2">
         <button
           className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm"
           onClick={handleSendNewsletter}
           disabled={loading || selectedJobIds.length === 0}
         >
           Send Newsletter
+        </button>
+        
+        <button
+          className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 font-semibold shadow text-sm"
+          onClick={() => {
+            if (window.confirm('Tem certeza que deseja redefinir o texto da introdução para o padrão?')) {
+              setIntro(DEFAULT_INTRO);
+              localStorage.setItem('newsletterIntroText', DEFAULT_INTRO);
+            }
+          }}
+        >
+          Reset Text
         </button>
         
         {sendStatus && (
