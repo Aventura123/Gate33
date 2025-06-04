@@ -1,10 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ContactForm from '../components/ContactForm';
 import DevNoticePopup from '../components/DevNoticePopup';
+
+interface Partner {
+  id: string;
+  name: string;
+  logoUrl: string;
+  description: string;
+  website: string;
+  createdAt?: string;
+}
 
 interface FAQItemProps {
   question: string;
@@ -36,6 +45,28 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
 
 function Home() {
   const [showDevNotice, setShowDevNotice] = useState(true);
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchPartners();
+  }, []);
+
+  const fetchPartners = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/partners');
+      if (!response.ok) {
+        throw new Error('Failed to fetch partners');
+      }
+      const partnersData = await response.json();
+      setPartners(partnersData);
+    } catch (error) {
+      console.error('Error fetching partners:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -267,64 +298,40 @@ function Home() {
           </p>
           
           <div className="partners-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="partner-card bg-black/20 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all">
-              <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
-                <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" title="Visit CoinGecko">
-                  <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
-                    <Image 
-                      src="/images/1_M4pePOxyzZ5BfowWxLlsfg.webp"
-                      alt="CoinGecko Logo"
-                      width={90}
-                      height={90}
-                      style={{ width: '90px', height: '90px', objectFit: 'cover' }}
-                    />
-                  </div>
-                </a>
-              </div>
-              <h3 className="text-xl text-orange-500 mb-2">CoinGecko</h3>
-              <p className="text-gray-300 text-sm mb-4">
-                Our first official partner! CoinGecko is a leading cryptocurrency data aggregator, providing reliable market data and insights for the blockchain ecosystem.
-              </p>
-              <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="text-orange-400 text-sm hover:underline">Visit CoinGecko →</a>
-            </div>
-            
-            <div className="partner-card bg-black/20 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all">
-              <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
-                <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
-                  <Image 
-                    src="/logo2.png"
-                    alt="Partner Logo"
-                    width={90}
-                    height={90}
-                    style={{ width: '90px', height: '90px', objectFit: 'cover' }}
-                  />
+            {partners.length > 0 ? partners.map((partner) => (
+              <div key={partner.id} className="partner-card bg-black/20 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all">
+                <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
+                  <a href={partner.website || '#'} target="_blank" rel="noopener noreferrer" title={`Visit ${partner.name}`}>
+                    <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
+                      <Image 
+                        src={partner.logoUrl}
+                        alt={`${partner.name} Logo`}
+                        width={90}
+                        height={90}
+                        style={{ width: '90px', height: '90px', objectFit: 'cover' }}
+                      />
+                    </div>
+                  </a>
                 </div>
+                <h3 className="text-xl text-orange-500 mb-2">{partner.name}</h3>
+                <p className="text-gray-300 text-sm mb-4">
+                  {partner.description}
+                </p>
+                {partner.website && (
+                  <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-orange-400 text-sm hover:underline">Visit {partner.name} →</a>
+                )}
               </div>
-              <h3 className="text-xl text-orange-500 mb-2">CryptoVentures</h3>
-              <p className="text-gray-300 text-sm mb-4">
-                Investment partner connecting promising blockchain startups with capital and resources.
-              </p>
-              <Link href="#" className="text-orange-400 text-sm hover:underline">Learn more →</Link>
-            </div>
+            )) : (
+              <div className="col-span-1 md:col-span-3 text-center">
+                <p className="text-gray-400">Partners will be displayed here once added.</p>
+              </div>
+            )}
             
-            <div className="partner-card bg-black/20 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all">
-              <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
-                <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
-                  <Image 
-                    src="/logo2.png"
-                    alt="Partner Logo"
-                    width={90}
-                    height={90}
-                    style={{ width: '90px', height: '90px', objectFit: 'cover' }}
-                  />
-                </div>
+            {loading && (
+              <div className="col-span-1 md:col-span-3 text-center">
+                <p className="text-gray-400">Loading partners...</p>
               </div>
-              <h3 className="text-xl text-orange-500 mb-2">TechTalent Network</h3>
-              <p className="text-gray-300 text-sm mb-4">
-                Global recruitment network specializing in blockchain and emerging technology talent.
-              </p>
-              <Link href="#" className="text-orange-400 text-sm hover:underline">Learn more →</Link>
-            </div>
+            )}
           </div>
           
           <div className="mt-10">

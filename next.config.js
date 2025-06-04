@@ -4,10 +4,10 @@ const nextConfig = {
   
   // Disable source maps in production
   productionBrowserSourceMaps: false,
-  
-  // Configuração para gerenciamento de rotas
+    // Configuração para gerenciamento de rotas
   trailingSlash: false,
-    // Configurações para imagens
+  
+  // Configurações para imagens
   images: {
     remotePatterns: [
       {
@@ -29,6 +29,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'miro.medium.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'support.coingecko.com',
       },
     ],
   },
