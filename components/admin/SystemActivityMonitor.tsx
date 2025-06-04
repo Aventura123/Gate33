@@ -45,33 +45,47 @@ const ContractMonitor: React.FC = () => {
   const contracts = [
     { key: "isWalletMonitoring", label: "Wallet" },
     { key: "isTokenDistributionMonitoring", label: "Token Distribution" }
-  ];
-    async function fetchMonitoringState() {
+  ];    async function fetchMonitoringState() {
     try {
       setLoading(true);
       
-      // Make a direct API call to the Ocian server
-      const response = await fetch("http://159.65.92.60:3001/status");
+      // Make API call through the API proxy to the Ocian server
+      const response = await fetch("/api/monitoring");
       
       if (!response.ok) {
         throw new Error(`Server responded with status: ${response.status}`);
       }
-        const state = await response.json();
-        // Set all state properties at once to prevent double rendering
+        const state = await response.json();        // Set all state properties at once to prevent double rendering
       setMonitoringState({
-        // Consider both the specific monitors AND the initialized state
-        isRunning: (state.walletMonitoringActive || state.tokenDistributionActive) && state.initialized,
-        lastCheck: new Date().toISOString(),
+        // The Ocian server may return a different structure
+        isRunning: state.active || state.isRunning || false,
+        lastCheck: state.lastCheck || new Date().toISOString(),
         contractsCount: contracts.length + 
-                       (state.learn2EarnContracts?.length || 0) + 
-                       (state.instantJobsEscrowContracts?.length || 0),
+                       ((state.contracts && state.contracts.learn2earn) ? Object.keys(state.contracts.learn2earn).length : 0) +
+                       ((state.contracts && state.contracts.instantJobsEscrow) ? Object.keys(state.contracts.instantJobsEscrow).length : 0),
         errors: state.errors || [],
         fullState: {
-          isWalletMonitoring: state.walletMonitoringActive || false,
-          isTokenDistributionMonitoring: state.tokenDistributionActive || false
+          isWalletMonitoring: state.balancesActive || state.walletMonitoringActive || false,
+          isTokenDistributionMonitoring: state.contractsActive || state.tokenDistributionActive || false
         },
-        learn2EarnContracts: state.learn2EarnContracts || [],
-        instantJobsEscrowContracts: state.instantJobsEscrowContracts || []
+        learn2EarnContracts: state.learn2EarnContracts || 
+          (state.contracts && state.contracts.learn2earn 
+            ? Object.entries(state.contracts.learn2earn).map(([network, info]: [string, any]) => ({
+                address: info.address,
+                network: network,
+                active: info.active || false,
+                name: info.name || 'Learn2Earn',
+              }))
+            : []),
+        instantJobsEscrowContracts: state.instantJobsEscrowContracts || 
+          (state.contracts && state.contracts.instantJobsEscrow
+            ? Object.entries(state.contracts.instantJobsEscrow).map(([network, info]: [string, any]) => ({
+                address: info.address,
+                network: network,
+                active: info.active || false,
+                name: info.name || 'InstantJobs Escrow',
+              }))
+            : [])
       });
       
       // Update the lists of contracts
@@ -100,13 +114,10 @@ const ContractMonitor: React.FC = () => {
   const handleRestartMonitoring = async () => {
     try {
       setIsRestarting(true);
-      setRestartMessage("Restarting monitoring...");
-
-      const response = await fetch("http://159.65.92.60:3001/restart", {
+      setRestartMessage("Restarting monitoring...");      const response = await fetch("/api/monitoring/restart", {
         method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_MONITORING_API_KEY || ''}`
+          'Content-Type': 'application/json'
         },
       });
 
