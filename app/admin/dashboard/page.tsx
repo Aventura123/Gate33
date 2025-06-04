@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Layout from "../../../components/Layout";
 import { useRouter } from 'next/navigation';
 import { collection, addDoc, deleteDoc, doc, getDocs, updateDoc, getDoc, setDoc, query, where } from "firebase/firestore";
@@ -1466,14 +1466,29 @@ const fetchEmployersList = async () => {
   // Jobs state and handlers are now managed in the JobsManager component
   // Job-related functions have been moved to the JobsManager component
   // All job-related functions and useEffect handlers have been moved to the JobsManager component
-
-  // --- Airdrops State and Handlers ---
+  // --- Learn2Earn State and Handlers ---
   const [learn2earns, setLearn2Earns] = useState<any[]>([]);
   const [learn2earnLoading, setLearn2EarnLoading] = useState(false);
   const [learn2earnError, setLearn2EarnError] = useState<string | null>(null);
   const [deletingLearn2EarnId, setDeletingLearn2EarnId] = useState<string | null>(null);
   const [pausingLearn2EarnId, setPausingLearn2EarnId] = useState<string | null>(null);
+  const [learn2earnSearchTerm, setLearn2earnSearchTerm] = useState<string>('');
+  const [expandedLearn2EarnId, setExpandedLearn2EarnId] = useState<string | null>(null);
     // Contract management has been moved to Learn2EarnContractsPanel component
+
+  // Filter Learn2Earn opportunities based on search term
+  const filteredLearn2Earns = useMemo(() => {
+    if (!learn2earnSearchTerm.trim()) return learn2earns;
+    
+    const searchLower = learn2earnSearchTerm.toLowerCase();
+    return learn2earns.filter(l2e => 
+      l2e.title?.toLowerCase().includes(searchLower) ||
+      l2e.description?.toLowerCase().includes(searchLower) ||
+      l2e.tokenSymbol?.toLowerCase().includes(searchLower) ||
+      l2e.network?.toLowerCase().includes(searchLower) ||
+      l2e.id?.toLowerCase().includes(searchLower)
+    );
+  }, [learn2earns, learn2earnSearchTerm]);
 
   // Fetch airdrops from Firestore
   const fetchLearn2Earns = async () => {
@@ -3501,27 +3516,52 @@ const fetchEmployersList = async () => {
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Jobs</h2>
                     <PaymentSettings hasPermission={true} />
-                  </div>
-                )}{activeTab === "learn2earn" && activeSubTab === "list" && (
-                  <div className="bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700">
+                  </div>                )}{activeTab === "learn2earn" && activeSubTab === "list" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Learn2Earn</h2>
+                    <div className="bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700">
                     <h3 className="text-base md:text-lg font-bold text-orange-400 mb-4 md:mb-6">Learn2Earn Opportunities</h3>
+                    
+                    {/* Search Bar */}
+                    <div className="mb-4 md:mb-6">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Search Learn2Earn opportunities..."
+                          value={learn2earnSearchTerm}
+                          onChange={(e) => setLearn2earnSearchTerm(e.target.value)}
+                          className="w-full bg-black/50 border border-gray-600 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
+                        />
+                        <svg className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                    </div>
+
                     {learn2earnLoading && <p className="text-gray-400 text-sm">Loading opportunities...</p>}
                     {learn2earnError && (
                       <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
                         {learn2earnError}
                       </div>
                     )}
-                    {!learn2earnLoading && !learn2earnError && learn2earns.length === 0 && (
-                      <p className="text-gray-400 text-sm">No Learn2Earn opportunities available.</p>
+                    {!learn2earnLoading && !learn2earnError && filteredLearn2Earns.length === 0 && (
+                      <p className="text-gray-400 text-sm">
+                        {learn2earnSearchTerm ? 'No Learn2Earn opportunities match your search.' : 'No Learn2Earn opportunities available.'}
+                      </p>
                     )}
-                    <div className="space-y-4 md:space-y-6">
-                      {learn2earns.map((l2e) => (
-                        <div key={l2e.id} className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl overflow-hidden transition-colors">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 md:p-6">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h4 className="text-sm md:text-base font-bold text-orange-400">{l2e.title}</h4>
-                                <span className={`px-1.5 md:px-2 py-0.5 rounded-full text-xs ${
+                    
+                    <div className="space-y-2">
+                      {filteredLearn2Earns.map((l2e) => (
+                        <div key={l2e.id} className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-lg overflow-hidden transition-all duration-200">
+                          {/* Compact Header - Always Visible */}
+                          <div 
+                            className="flex items-center justify-between p-3 cursor-pointer hover:bg-black/20 transition-colors"
+                            onClick={() => setExpandedLearn2EarnId(expandedLearn2EarnId === l2e.id ? null : l2e.id)}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="text-sm font-semibold text-orange-400 truncate">{l2e.title}</h4>
+                                <span className={`px-2 py-0.5 rounded-full text-xs whitespace-nowrap ${
                                   l2e.status === 'active' ? 'bg-orange-900/50 text-orange-300 border border-orange-700' : 
                                   l2e.status === 'paused' ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-700' : 
                                   'bg-gray-800 text-gray-400 border border-gray-700'
@@ -3529,44 +3569,93 @@ const fetchEmployersList = async () => {
                                   {l2e.status?.toUpperCase()}
                                 </span>
                               </div>
-                              <div className="text-gray-300 text-sm mb-3">{l2e.description}</div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 text-xs text-gray-400 mb-2">
-                                <span>Network: <span className="text-white font-semibold">{l2e.network}</span></span>
-                                <span>Token: <span className="text-white font-semibold">{l2e.tokenSymbol}</span></span>
-                                <span>Amount: <span className="text-white font-semibold">{l2e.tokenAmount}</span></span>
-                                <span>Per User: <span className="text-white font-semibold">{l2e.tokenPerParticipant}</span></span>
-                                <span>Participants: <span className="text-white font-semibold">{l2e.totalParticipants || 0} / {l2e.maxParticipants || '∞'}</span></span>
-                                <span>Dates: <span className="text-white font-semibold">{formatFirestoreTimestamp(l2e.startDate)} - {formatFirestoreTimestamp(l2e.endDate)}</span></span>
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-1 md:gap-4 text-xs text-gray-400">
+                                <span>Token: <span className="text-white font-medium">{l2e.tokenSymbol}</span></span>
+                                <span>Per User: <span className="text-white font-medium">{l2e.tokenPerParticipant}</span></span>
+                                <span>Start: <span className="text-white font-medium">{formatFirestoreTimestamp(l2e.startDate)}</span></span>
+                                <span>End: <span className="text-white font-medium">{formatFirestoreTimestamp(l2e.endDate)}</span></span>
                               </div>
-                              <div className="text-xs text-gray-500">ID: {l2e.id}</div>
+                              <div className="text-xs text-gray-500 mt-1">ID: {l2e.id}</div>
                             </div>
-                            <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0 md:ml-6 min-w-[200px]">
-                              <button 
-                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                                  l2e.status === 'active' 
-                                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
-                                    : 'bg-orange-500 hover:bg-orange-600 text-white'
-                                }`}
-                                disabled={pausingLearn2EarnId === l2e.id}
-                                onClick={() => handleToggleLearn2EarnStatus(l2e.id, l2e.status)}
+                            <div className="flex items-center gap-2 ml-4">
+                              <svg 
+                                className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
+                                  expandedLearn2EarnId === l2e.id ? 'rotate-180' : ''
+                                }`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
                               >
-                                {pausingLearn2EarnId === l2e.id
-                                  ? (l2e.status === 'active' ? 'Pausing...' : 'Activating...')
-                                  : (l2e.status === 'active' ? 'Pause' : 'Activate')}
-                              </button>
-                              <button
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
-                                disabled={deletingLearn2EarnId === l2e.id}
-                                onClick={() => handleDeleteLearn2Earn(l2e.id)}
-                              >
-                                {deletingLearn2EarnId === l2e.id ? 'Deleting...' : 'Delete'}
-                              </button>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
                             </div>
                           </div>
-                        </div>
+
+                          {/* Expanded Details */}
+                          {expandedLearn2EarnId === l2e.id && (
+                            <div className="border-t border-gray-700 p-3 md:p-4 bg-black/20">
+                              <div className="mb-4">
+                                <h5 className="text-sm font-semibold text-orange-300 mb-2">Description</h5>
+                                <p className="text-gray-300 text-sm">{l2e.description}</p>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <h5 className="text-sm font-semibold text-orange-300 mb-2">Token Details</h5>
+                                  <div className="space-y-1 text-xs text-gray-400">
+                                    <div>Network: <span className="text-white font-medium">{l2e.network}</span></div>
+                                    <div>Token: <span className="text-white font-medium">{l2e.tokenSymbol}</span></div>
+                                    <div>Total Amount: <span className="text-white font-medium">{l2e.tokenAmount}</span></div>
+                                    <div>Per Participant: <span className="text-white font-medium">{l2e.tokenPerParticipant}</span></div>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <h5 className="text-sm font-semibold text-orange-300 mb-2">Participation</h5>
+                                  <div className="space-y-1 text-xs text-gray-400">
+                                    <div>Current: <span className="text-white font-medium">{l2e.totalParticipants || 0}</span></div>
+                                    <div>Maximum: <span className="text-white font-medium">{l2e.maxParticipants || '∞'}</span></div>
+                                    <div>Start Date: <span className="text-white font-medium">{formatFirestoreTimestamp(l2e.startDate)}</span></div>
+                                    <div>End Date: <span className="text-white font-medium">{formatFirestoreTimestamp(l2e.endDate)}</span></div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col md:flex-row gap-2 pt-3 border-t border-gray-700">
+                                <button 
+                                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                                    l2e.status === 'active' 
+                                      ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
+                                      : 'bg-orange-500 hover:bg-orange-600 text-white'
+                                  }`}
+                                  disabled={pausingLearn2EarnId === l2e.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleLearn2EarnStatus(l2e.id, l2e.status);
+                                  }}
+                                >
+                                  {pausingLearn2EarnId === l2e.id
+                                    ? (l2e.status === 'active' ? 'Pausing...' : 'Activating...')
+                                    : (l2e.status === 'active' ? 'Pause' : 'Activate')}
+                                </button>
+                                <button
+                                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                                  disabled={deletingLearn2EarnId === l2e.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteLearn2Earn(l2e.id);
+                                  }}
+                                >
+                                  {deletingLearn2EarnId === l2e.id ? 'Deleting...' : 'Delete'}
+                                </button>
+                              </div>
+                            </div>
+                          )}                        </div>
                       ))}
                     </div>
-                  </div>                )}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

@@ -207,8 +207,8 @@ const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
     }
   };
     return (
-    <div className="bg-black/60 border border-gray-700 rounded-xl shadow-lg flex flex-col gap-6 p-6">
-      <h3 className="font-bold text-orange-400 mb-4 text-xl">Learn2Earn Fee Management</h3>
+    <div className="bg-black/40 border border-gray-700 rounded-xl shadow-lg flex flex-col gap-6 p-6">
+      <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Taxa Learn2Earn</h3>
       <form onSubmit={handleSave} className="space-y-5">
         <div>
           <label className="block text-sm font-semibold text-gray-300 mb-1">Fee Collector Wallet Address</label>
@@ -254,7 +254,7 @@ interface Learn2EarnContractsPanelProps {
   isMobile: boolean; // Mantemos o prop para compatibilidade com chamadas existentes
 }
 
-const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db }) => { // Não usaremos mais isMobile
+const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db }) => {
   // State for learn2earn contract management
   const [networkContract, setNetworkContract] = useState({
     network: "sepolia",
@@ -425,162 +425,174 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db 
   };
   const isOwner = contractInfo.contractOwner && walletAddress && contractInfo.contractOwner.toLowerCase() === walletAddress.toLowerCase();
   return (
-    <div>      <h2 className="font-bold text-3xl mb-6 text-left text-orange-500">Smart Contracts Management</h2>
-      {/* Status Panel - moved below the title */}
-      <div className="bg-black/70 border border-orange-700 rounded-xl shadow-lg p-6 mb-8">        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
-          {/* Network Status */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="h-3 w-3 rounded-full bg-green-500 inline-block"></span>
-              <span className="text-lg font-semibold text-orange-300">Current Blockchain Network</span>
+    <>
+      <h2 className="font-bold text-3xl mb-8 text-left text-orange-500">Learn2Earn</h2>
+      <div className="bg-black/30 border border-gray-700 rounded-2xl shadow-2xl p-4 md:p-6 mt-6 md:mt-8">
+        <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-6">L2L Smart Contracts</h3>
+        {/* Status Panel - moved below the title */}
+        <div className="bg-black/40 border border-orange-700 rounded-xl shadow-lg p-6 mb-8">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
+            {/* Network Status */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="h-3 w-3 rounded-full bg-green-500 inline-block"></span>
+                <span className="text-lg font-semibold text-orange-300">Current Blockchain Network</span>
+              </div>
+              <div className="text-white font-medium mb-1 text-base">{currentNetwork}</div>
+              <div className="text-xs text-gray-400 break-all">Your wallet: {walletAddress}</div>
             </div>
-            <div className="text-white font-medium mb-1 text-base">{currentNetwork}</div>
-            <div className="text-xs text-gray-400 break-all">Your wallet: {walletAddress}</div>
-          </div>
-          {/* Contract Info */}
-          <div className="flex-1 bg-black/40 rounded-lg border border-gray-700 p-4">
-            <div className="font-bold text-orange-400 mb-2 text-lg">Contract Information</div>
-            {mainContract && mainContract.contractAddress ? (
-              <>
-                <div className="text-sm text-gray-300 break-all mb-1">
-                  <span className="font-semibold">Contract Address:</span> {contractInfo.contractAddress}
-                </div>
-                <div className="text-sm text-gray-300 break-all mb-1 flex items-center gap-2">
-                  <span className="font-semibold">Contract Owner:</span> {contractInfo.contractOwner}
-                  {isOwner && <span className="bg-green-700 text-green-100 px-2 py-0.5 rounded text-xs font-bold">You are the owner</span>}
-                </div>
-                <div className="text-sm text-gray-300 break-all mb-1">
-                  <span className="font-semibold">Fee Collector Address:</span> {contractInfo.feeCollector}
-                </div>
-                <div className="text-sm text-gray-300 mb-1">
-                  <span className="font-semibold">Platform Fee:</span> {contractInfo.platformFee}%
-                </div>
-              </>
-            ) : (
-              <div className="text-sm text-red-400 font-semibold">No contract configured for this network.</div>
-            )}
+            {/* Contract Info */}
+            <div className="flex-1 bg-black/30 rounded-lg border border-gray-700 p-4">
+              <div className="font-bold text-orange-400 mb-2 text-lg">Contract Information</div>
+              {mainContract && mainContract.contractAddress ? (
+                <>
+                  <div className="text-sm text-gray-300 break-all mb-1">
+                    <span className="font-semibold">Contract Address:</span> {contractInfo.contractAddress}
+                  </div>
+                  <div className="text-sm text-gray-300 break-all mb-1 flex items-center gap-2">
+                    <span className="font-semibold">Contract Owner:</span> {contractInfo.contractOwner}
+                    {isOwner && <span className="bg-green-700 text-green-100 px-2 py-0.5 rounded text-xs font-bold">You are the owner</span>}
+                  </div>
+                  <div className="text-sm text-gray-300 break-all mb-1">
+                    <span className="font-semibold">Fee Collector Address:</span> {contractInfo.feeCollector}
+                  </div>
+                  <div className="text-sm text-gray-300 mb-1">
+                    <span className="font-semibold">Platform Fee:</span> {contractInfo.platformFee}%
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-red-400 font-semibold">No contract configured for this network.</div>
+              )}
+            </div>
           </div>
         </div>
-      </div>      {/* Main content grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Fee Management Panel - directly using the panel component */}
-        <Learn2EarnFeePanel db={db} />
-        {/* Add/Update Network Contract - visually improved */}
-        <div className="bg-black/60 border border-gray-700 rounded-xl shadow-lg flex flex-col gap-6 p-6"> 
-          <h3 className="font-bold text-orange-400 mb-4 text-xl">Add/Update Network Contract</h3>
-          <form onSubmit={handleAddNetworkContract} className="space-y-5">
-            {/* Network (now using currentNetwork) */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-300 mb-1">Network</label>
-              <div className="w-full px-3 py-2 rounded-lg bg-black/70 text-white border border-gray-600 text-sm">{currentNetwork || 'No network detected'}</div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-300 mb-1">Contract Address</label>
-              <input
-                type="text"
-                name="contractAddress"
-                value={networkContract.contractAddress}
-                onChange={handleNetworkContractChange}
-                placeholder="0x..."
-                className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/70 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-300 mb-1">Type</label>
-              <select
-                name="type"
-                value={networkContract.type}
-                onChange={handleNetworkContractChange}
-                className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/70 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                required
+        {/* Main content grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Fee Management Panel - directly using the panel component */}
+          <Learn2EarnFeePanel db={db} />
+          {/* Add/Update Network Contract - visually improved */}
+          <div className="bg-black/40 border border-gray-700 rounded-xl shadow-lg flex flex-col gap-6 p-6">
+            <h3 className="font-bold text-orange-400 mb-4 text-xl">Add/Update Network Contract</h3>
+            <form onSubmit={handleAddNetworkContract} className="space-y-5">
+              {/* Network (now using currentNetwork) */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-1">Network</label>
+                <div className="w-full px-3 py-2 rounded-lg bg-black/80 text-white border border-gray-600 text-sm">{currentNetwork || 'No network detected'}</div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-1">Contract Address</label>
+                <input
+                  type="text"
+                  name="contractAddress"
+                  value={networkContract.contractAddress}
+                  onChange={handleNetworkContractChange}
+                  placeholder="0x..."
+                  className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/80 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-1">Type</label>
+                <select
+                  name="type"
+                  value={networkContract.type}
+                  onChange={handleNetworkContractChange}
+                  className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/80 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  required
+                >
+                  <option value="">Select type</option>
+                  <option value="Mainnet">Mainnet</option>
+                  <option value="Testnet">Testnet</option>
+                </select>
+              </div>
+              {contractActionError && (
+                <p className="bg-red-800/50 text-red-200 p-2 rounded-md text-sm">{contractActionError}</p>
+              )}
+              <button
+                type="submit"
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-full font-semibold shadow text-sm"
+                disabled={isAddingContract}
               >
-                <option value="">Select type</option>
-                <option value="Mainnet">Mainnet</option>
-                <option value="Testnet">Testnet</option>
-              </select>
-            </div>
-            {contractActionError && (
-              <p className="text-red-500 text-sm">{contractActionError}</p>
-            )}
-            <button
-              type="submit"
-              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-full font-semibold shadow text-sm"
-              disabled={isAddingContract}
-            >
-              {isAddingContract ? 'Processing...' : 'Add/Update Contract'}
-            </button>
-          </form>
-        </div>      </div>      {/* List of existing contracts - keeps previous look */}
-      <div className="mt-10">
-        <h3 className="text-orange-400 mb-4 text-xl">Current Smart Contracts</h3>
-        {networkContracts.length === 0 ? (
-          <p className="text-gray-400">No contract configurations found. Add one above.</p>
-        ) : (
-          <div className="space-y-2">
-            {networkContracts.map((contract, index) => {
-              const expanded = expandedContracts.includes(contract.id || `${contract.network}-${index}`);
-              const toggleExpand = () => {
-                const id = contract.id || `${contract.network}-${index}`;
-                setExpandedContracts(prev =>
-                  prev.includes(id)
-                    ? prev.filter(eid => eid !== id)
-                    : [...prev, id]
-                );
-              };
-              // Ensure networkKey is the technical key (e.g., 'bsc', 'ethereum')
-              let networkKey = contract.network;
-              if (networkKey && NETWORK_CONFIG[networkKey.toLowerCase()]) {
-                networkKey = networkKey.toLowerCase();
-              } else {
-                const mapping: Record<string, string> = {
-                  'binance': 'bsc',
-                  'binance smart chain': 'bsc',
-                  'ethereum mainnet': 'ethereum',
-                  'optimism': 'optimism',
-                  'avalanche': 'avalanche',
-                  'bsc testnet': 'bsctestnet',
-                  'polygon': 'polygon',
-                };
-                const lower = (contract.network || '').toLowerCase();
-                networkKey = mapping[lower] || lower;
-              }
-              const displayName = NETWORK_CONFIG[networkKey]?.chainName || contract.network;
-              return (                <div
-                  key={contract.id || `${contract.network}-${index}`}
-                  className="bg-black/30 rounded-lg border border-gray-700 hover:border-orange-500 shadow transition-all mb-1 cursor-pointer"
-                >                  <div
-                    className="flex items-center justify-between px-3 py-2 select-none"
-                    onClick={toggleExpand}
-                  >
-                    <span className="font-semibold text-orange-300 truncate max-w-[60vw]">{displayName}</span>
-                    <span className="text-xs text-orange-200">{expanded ? '▲' : '▼'}</span>
-                  </div>{expanded && (
-                    <div className="mt-2 px-3 pb-3 pt-1 text-xs text-gray-300">
-                      <div className="mb-1 break-all">
-                        <span className="font-semibold">Address:</span> {contract.contractAddress}
-                      </div>
-                      <div className="mb-1">
-                        <span className="font-semibold">Type:</span> {contract.type}
-                      </div>                      <div className="mb-2 text-xs text-gray-400">
-                        Added: {formatFirestoreTimestamp(contract.createdAt)}
-                        {contract.updatedAt && ` (Updated: ${formatFirestoreTimestamp(contract.updatedAt)})`}
-                      </div>
-                      <div className="flex min-w-[120px]">
-                        <Learn2EarnTestButton 
-                          network={networkKey}
-                          contractAddress={contract.contractAddress}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                {isAddingContract ? 'Processing...' : 'Add/Update Contract'}
+              </button>
+            </form>
           </div>
-        )}
+        </div>
+        {/* List of existing contracts - keeps previous look */}
+        <div className="mt-10">
+          <h3 className="text-orange-400 mb-4 text-xl">Current Smart Contracts</h3>
+          {networkContracts.length === 0 ? (
+            <p className="text-gray-400">No contract configurations found. Add one above.</p>
+          ) : (
+            <div className="space-y-2">
+              {networkContracts.map((contract, index) => {
+                const expanded = expandedContracts.includes(contract.id || `${contract.network}-${index}`);
+                const toggleExpand = () => {
+                  const id = contract.id || `${contract.network}-${index}`;
+                  setExpandedContracts(prev =>
+                    prev.includes(id)
+                      ? prev.filter(eid => eid !== id)
+                      : [...prev, id]
+                  );
+                };
+                // Ensure networkKey is the technical key (e.g., 'bsc', 'ethereum')
+                let networkKey = contract.network;
+                if (networkKey && NETWORK_CONFIG[networkKey.toLowerCase()]) {
+                  networkKey = networkKey.toLowerCase();
+                } else {
+                  const mapping: Record<string, string> = {
+                    'binance': 'bsc',
+                    'binance smart chain': 'bsc',
+                    'ethereum mainnet': 'ethereum',
+                    'optimism': 'optimism',
+                    'avalanche': 'avalanche',
+                    'bsc testnet': 'bsctestnet',
+                    'polygon': 'polygon',
+                  };
+                  const lower = (contract.network || '').toLowerCase();
+                  networkKey = mapping[lower] || lower;
+                }
+                const displayName = NETWORK_CONFIG[networkKey]?.chainName || contract.network;
+                return (
+                  <div
+                    key={contract.id || `${contract.network}-${index}`}
+                    className="bg-black/40 rounded-lg border border-gray-700 hover:border-orange-500 shadow transition-all mb-1 cursor-pointer"
+                  >
+                    <div
+                      className="flex items-center justify-between px-3 py-2 select-none"
+                      onClick={toggleExpand}
+                    >
+                      <span className="font-semibold text-orange-300 truncate max-w-[60vw]">{displayName}</span>
+                      <span className="text-xs text-orange-200">{expanded ? '▲' : '▼'}</span>
+                    </div>
+                    {expanded && (
+                      <div className="mt-2 px-3 pb-3 pt-1 text-xs text-gray-300">
+                        <div className="mb-1 break-all">
+                          <span className="font-semibold">Address:</span> {contract.contractAddress}
+                        </div>
+                        <div className="mb-1">
+                          <span className="font-semibold">Type:</span> {contract.type}
+                        </div>
+                        <div className="mb-2 text-xs text-gray-400">
+                          Added: {formatFirestoreTimestamp(contract.createdAt)}
+                          {contract.updatedAt && ` (Updated: ${formatFirestoreTimestamp(contract.updatedAt)})`}
+                        </div>
+                        <div className="flex min-w-[120px]">
+                          <Learn2EarnTestButton 
+                            network={networkKey}
+                            contractAddress={contract.contractAddress}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
