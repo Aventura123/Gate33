@@ -15,8 +15,8 @@ if (typeof window === 'undefined') {
   }
 }
 
-// Token conversion rate: 1 G33 token for each 1 USD donated
-const TOKEN_RATE = 1;
+// Token conversion rate: 20 G33 tokens for each 1 USD donated (1 token per $0.05 USD)
+const TOKEN_RATE = 20;
 
 // Token distribution information
 const TOKEN_INFO = {

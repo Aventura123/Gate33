@@ -757,23 +757,22 @@ class G33TokenDistributorService {
       }
       
       // Check if there are available tokens
-      const availableTokensWei = await this.contract!.getAvailableTokens();
-      const availableTokens = parseFloat(ethers.utils.formatEther(availableTokensWei));
-      const tokensNeeded = usdValue; // 1 token per 1 USD
+      const availableTokensWei = await this.contract!.getAvailableTokens();      const availableTokens = parseFloat(ethers.utils.formatEther(availableTokensWei));
+      const tokensNeeded = usdValue * 20; // 20 tokens per 1 USD
       
       console.log(`Token distribution: ${tokensNeeded} tokens needed, ${availableTokens} tokens available`);
       
       if (availableTokens < tokensNeeded) {
         throw new Error(`Insufficient tokens in the distributor contract. Available: ${availableTokens}, Needed: ${tokensNeeded}`);
       }
-      
-      // Scale USD value to the format expected by the G33TokenDistributorV2 contract
+        // Scale USD value to the format expected by the G33TokenDistributorV2 contract
       // The contract expects the value in cents (x100) for 2 decimal places precision
-      const usdValueScaled = Math.round(usdValue * 100); // Use Math.round to avoid rounding issues
+      // MULTIPLY by 20 to get 20 tokens per $1 USD (since contract gives 1 token per $1)
+      const usdValueScaled = Math.round(usdValue * 100 * 20); // Multiply by 20 for new rate
 
       console.log(`Original USD value: ${usdValue}`);
-      console.log(`Scaled value for the contract (x100): ${usdValueScaled}`);
-      console.log(`The donor will receive ${usdValue} full G33 tokens`);
+      console.log(`Scaled value for the contract (x100 x20): ${usdValueScaled}`);
+      console.log(`The donor will receive ${usdValue * 20} G33 tokens`);
       
       // NEW: Validate donor address
       if (!ethers.utils.isAddress(donorAddress)) {

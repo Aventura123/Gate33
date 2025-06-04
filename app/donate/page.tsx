@@ -172,10 +172,10 @@ export default function DonatePage() {
   const [donationStep, setDonationStep] = useState<'select_crypto' | 'select_network' | 'enter_amount' | 'confirmation' | 'processing' | 'success' | 'error'>('select_crypto');
   const [isProcessing, setIsProcessing] = useState(false);
   const [donationHash, setDonationHash] = useState<string | null>(null);
-  const [transactionHash, setTransactionHash] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [estimatedTokens, setEstimatedTokens] = useState<number | null>(null);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);  const [error, setError] = useState<string | null>(null);  const [estimatedTokens, setEstimatedTokens] = useState<number | null>(null);
   const [usdValue, setUsdValue] = useState<number | null>(null);
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   // Use global wallet context
   const {
@@ -187,11 +187,11 @@ export default function DonatePage() {
     switchNetwork: contextSwitchNetwork,
     isUsingWalletConnect,
   } = useWallet();
-
   // Recalcular o valor estimado quando a criptomoeda ou a rede mudar
   useEffect(() => {
     if (donationStep === 'enter_amount' && selectedCrypto && donationAmount && parseFloat(donationAmount) > 0) {
       console.log(`Recalculando estimativa para ${donationAmount} ${selectedCrypto.symbol}`);
+      setIsCalculating(true);
       calculateEstimatedTokens(donationAmount, selectedCrypto.symbol);
     }
   }, [selectedCrypto, selectedNetwork, donationStep]);
@@ -214,7 +214,6 @@ export default function DonatePage() {
     setSelectedNetwork(network);
     setDonationStep('enter_amount');
   };
-
   // Handle donation amount input
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Allow only numbers and decimals
@@ -223,27 +222,31 @@ export default function DonatePage() {
     
     // Calculate estimated tokens if the value is valid
     if (value && parseFloat(value) > 0 && selectedCrypto) {
+      setIsCalculating(true);
       calculateEstimatedTokens(value, selectedCrypto.symbol);
     } else {
       setEstimatedTokens(null);
       setUsdValue(null);
+      setIsCalculating(false);
     }
   };
-  
-  // Calculate estimated G33 tokens based on donation amount
+    // Calculate estimated G33 tokens based on donation amount
   const calculateEstimatedTokens = async (amount: string, cryptoSymbol: string) => {
     try {
+      setIsCalculating(true);
       // Use tokenService to calculate USD value
       const usdAmount = await tokenService.calculateUSDValue(amount, cryptoSymbol);
       setUsdValue(usdAmount);
       
-      // Calculate token amount (1 token per $1 USD)
+      // Calculate token amount (20 tokens per $1 USD)
       const tokenAmount = tokenService.calculateG33TokenAmount(usdAmount);
       setEstimatedTokens(tokenAmount);
     } catch (error) {
       console.error("Error calculating tokens:", error);
       setEstimatedTokens(null);
       setUsdValue(null);
+    } finally {
+      setIsCalculating(false);
     }
   };
 
@@ -589,7 +592,7 @@ export default function DonatePage() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="min-h-screen bg-gradient-to-br from-orange-900/10 to-black text-white">
         {/* Hero Section */}
         <section className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
           <div className="absolute inset-0 z-0 opacity-20">
@@ -606,23 +609,21 @@ export default function DonatePage() {
               </p>
             </div>
           </div>
-        </section>
-
-        {/* Project Description */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-900">
+        </section>        {/* Project Description */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-black/30">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8 text-center">Our Mission</h2>
+            <h2 className="text-3xl font-bold mb-8 text-center text-orange-400">Our Mission</h2>
             <div className="prose prose-lg prose-invert max-w-none">
-              <p className="mb-6">
+              <p className="mb-6 text-gray-300">
                 Gate33 was created with a clear purpose: to establish a secure environment for Web3 job seekers. Through rigorous manual validation of companies using our platform, we prevent fraud that often turns dream job opportunities into nightmares.
               </p>
-              <p className="mb-6">
+              <p className="mb-6 text-gray-300">
                 Our platform goes beyond traditional job boards by incorporating innovative features like our InstantJobs system, which provides a competitive edge over other solutions in the market. This feature allows professionals to take on small tasks and projects, creating additional income streams while building their portfolios.
               </p>
-              <p className="mb-6">
+              <p className="mb-6 text-gray-300">
                 At Gate33, we prioritize security over profit. Every company undergoes a thorough verification process before they can post jobs, and we continuously monitor the quality of published opportunities. Our blockchain-based infrastructure ensures data integrity while our Learn2Earn system rewards candidates for improving their professional skills.
               </p>
-              <p>
+              <p className="text-gray-300">
                 Your donations will directly support the continued development of Gate33, helping us create more tools and features to protect and empower job seekers in the Web3 space.
               </p>
             </div>
@@ -630,29 +631,26 @@ export default function DonatePage() {
         </section>
 
         {/* Donation Form */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-800">
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-orange-900/10 to-black">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8 text-center">Make a Donation</h2>
+            <h2 className="text-3xl font-bold mb-8 text-center text-orange-400">Make a Donation</h2>
             
             <div className="mb-8 flex justify-center">
               <div className="inline-flex rounded-md shadow">
                 <WalletButton className="px-8 py-3" availableNetworks={["ethereum", "polygon", "binance", "avalanche", "optimism"]} />
               </div>
             </div>
-            
-            {/* Token reward explanation */}
-            <div className="bg-gray-900 p-6 rounded-lg shadow-lg mb-8">
-              <h3 className="text-xl font-semibold mb-4">Souvenir Token</h3>
+              {/* Token reward explanation */}            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 p-6 rounded-lg shadow-lg mb-8 transition-colors duration-200">
+              <h3 className="text-xl font-semibold mb-4 text-orange-400">Souvenir Token</h3>
               <p className="text-gray-300 mb-4">
-                As a thank you for your donation, you will receive G33 tokens as a memento. These tokens serve as a digital souvenir of your contribution to the Gate33 project.
+                As a thank you for your donation, you will receive G33 tokens as a memento. These souvenir tokens serve as a digital certificate of your contribution to the Gate33 project.
               </p>
               <p className="text-gray-300">
-                While we currently don't have specific plans for the utility of these tokens, they may eventually bring advantages on the platform as a form of recognition for your early support.
+                In the future, we plan to exchange these souvenir tokens for real G33 tokens as a way to thank our early supporters, though no launch date has been set yet. Your early support is deeply appreciated and will be remembered.
               </p>
             </div>
-            
-            {/* Donation Flow */}
-            <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
+              {/* Donation Flow */}
+            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 p-6 rounded-lg shadow-lg transition-colors duration-200">
               {donationStep === 'select_crypto' && (
                 <div>
                   <h3 className="text-xl font-semibold mb-4">1. Select Cryptocurrency</h3>
@@ -661,7 +659,7 @@ export default function DonatePage() {
                     {cryptocurrencies.map((crypto) => (
                       <div 
                         key={crypto.symbol}
-                        className="p-4 rounded-lg cursor-pointer border border-gray-700 hover:border-orange-500 hover:bg-gray-800 transition duration-200"
+                        className="p-4 rounded-lg cursor-pointer border border-gray-700 hover:border-orange-500 hover:bg-black/50 transition duration-200"
                         onClick={() => handleCryptoSelect(crypto)}
                       >
                         <div className="flex items-center">
@@ -695,9 +693,8 @@ export default function DonatePage() {
                   </button>
                   
                   <h3 className="text-xl font-semibold mb-4">2. Enter Donation Amount</h3>
-                  
-                  <div className="mb-6">
-                    <div className="flex items-center bg-gray-800 rounded-lg p-3 border border-gray-700">
+                    <div className="mb-6">
+                    <div className="flex items-center bg-black/30 border border-gray-700 rounded-lg p-3">
                       <div className="mr-3">
                         <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
                           {selectedCrypto?.symbol}
@@ -718,7 +715,7 @@ export default function DonatePage() {
                       <input
                         type="text"
                         id="amount"
-                        className="bg-gray-800 focus:ring-orange-500 focus:border-orange-500 block w-full pr-12 sm:text-sm border-gray-700 rounded-md p-3"
+                        className="bg-black/30 border border-gray-700 focus:ring-orange-500 focus:border-orange-500 block w-full pr-12 sm:text-sm rounded-md p-3"
                         placeholder="0.00"
                         value={donationAmount}
                         onChange={handleAmountChange}
@@ -730,12 +727,16 @@ export default function DonatePage() {
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Display USD value and estimated tokens */}
-                  {usdValue !== null && estimatedTokens !== null && (
+                    {/* Display USD value and estimated tokens */}                  {/* Display USD value and estimated tokens */}
+                  {(usdValue !== null && estimatedTokens !== null) || isCalculating ? (
                     <div className="mt-4 p-4 bg-gray-800/60 border border-orange-500/20 rounded-lg text-center">
                       <p className="text-sm text-gray-300 mb-2">Estimated value of your donation:</p>
-                      {usdValue !== null ? (
+                      {isCalculating ? (
+                        <div className="flex items-center justify-center mb-1">
+                          <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-orange-500 mr-2"></div>
+                          <p className="text-xl font-bold text-white">Calculating... <span className="text-gray-400">USD</span></p>
+                        </div>
+                      ) : usdValue !== null ? (
                         <p className="text-xl font-bold text-white mb-1">
                           ${usdValue.toFixed(2)} <span className="text-gray-400">USD</span>
                         </p>
@@ -743,16 +744,21 @@ export default function DonatePage() {
                         <p className="text-xl font-bold text-white mb-1">- <span className="text-gray-400">USD</span></p>
                       )}
                       <p className="text-sm text-gray-400 mb-2">You will receive approximately:</p>
-                      {estimatedTokens !== null ? (
+                      {isCalculating ? (
+                        <div className="flex items-center justify-center mb-1">
+                          <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-orange-500 mr-2"></div>
+                          <p className="text-2xl font-bold text-orange-500">Calculating... <span className="text-gray-300">G33 Tokens</span></p>
+                        </div>
+                      ) : estimatedTokens !== null ? (
                         <p className="text-2xl font-bold text-orange-500 mb-1">
                           {Math.floor(estimatedTokens)} <span className="text-gray-300">G33 Tokens</span>
                         </p>
                       ) : (
                         <p className="text-2xl font-bold text-orange-500 mb-1">- <span className="text-gray-300">G33 Tokens</span></p>
                       )}
-                      <p className="text-xs text-gray-400 mt-2">1 G33 Token for each $1 USD donated</p>
+                      <p className="text-xs text-gray-400 mt-2">20 G33 Tokens for each $1 USD donated</p>
                     </div>
-                  )}
+                  ) : null}
                   
                   <div className="flex justify-center">
                     <button
@@ -781,7 +787,7 @@ export default function DonatePage() {
                   
                   <h3 className="text-xl font-semibold mb-4">3. Confirm Your Donation</h3>
                   
-                  <div className="bg-gray-800 rounded-lg p-6 mb-6">
+                  <div className="bg-black/30 border border-gray-700 rounded-lg p-6 mb-6">
                     <div className="flex justify-between mb-4">
                       <span className="text-gray-400">Amount:</span>
                       <span className="font-medium">
@@ -877,48 +883,61 @@ export default function DonatePage() {
               )}
             </div>
           </div>
-        </section>
-
-        {/* FAQ Section */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-900">
+        </section>        {/* FAQ Section */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-orange-900/20 to-black">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
+            <h2 className="text-3xl font-bold mb-8 text-center text-orange-400">Frequently Asked Questions</h2>
             
-            <div className="space-y-6">
-              <div className="bg-gray-800 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-2">How are donations used?</h3>
-                <p className="text-gray-400">
-                  All donations go directly toward developing and maintaining the Gate33 platform. This includes improving security features, expanding our verification processes, and building new tools to protect job seekers in the Web3 space.
-                </p>
-              </div>
-              
-              <div className="bg-gray-800 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-2">What are the G33 tokens I'll receive?</h3>
-                <p className="text-gray-400">
-                  The G33 tokens you receive are digital souvenirs as a thank you for your contribution. While they don't currently have specific functionality, they serve as a memento of your early support for Gate33. In the future, these tokens may offer benefits within our platform as a way to show appreciation to our early supporters.
-                </p>
-              </div>
-              
-              <div className="bg-gray-800 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-2">Can I donate using a non-crypto payment method?</h3>
-                <p className="text-gray-400">
-                  Currently, we only accept cryptocurrency donations. This aligns with our focus on Web3 technologies and provides greater transparency regarding how funds are utilized.
-                </p>
-              </div>
-              
-              <div className="bg-gray-800 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-2">Is my donation tax-deductible?</h3>
-                <p className="text-gray-400">
-                  Gate33 is not a registered charitable organization, so donations are not tax-deductible. Please consult with a tax professional regarding the tax implications of cryptocurrency donations in your jurisdiction.
-                </p>
-              </div>
-              
-              <div className="bg-gray-800 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-2">What makes Gate33 different from other job platforms?</h3>
-                <p className="text-gray-400">
-                  Gate33 differentiates itself through three main factors: (1) Rigorous company verification to prevent fraud; (2) Use of blockchain technology to ensure data security; (3) Learn2Earn system that allows candidates to earn tokens while improving their professional skills. Additionally, our InstantJobs feature provides flexible work opportunities beyond traditional employment models.
-                </p>
-              </div>
+            <div className="space-y-4">
+              {[
+                {
+                  question: "How are donations used?",
+                  answer: "All donations go directly towards the development and maintenance of the Gate33 platform. This includes improving security features, expanding our verification processes, and creating new tools to protect job seekers in the Web3 environment."
+                },
+                {
+                  question: "What are the G33 tokens I will receive?",
+                  answer: "The G33 tokens you receive are digital mementos to thank you for your contribution. These souvenir tokens serve as a certificate of your early support for Gate33. We plan to exchange these souvenir tokens for real G33 tokens in the future as a way to thank our early supporters, though no launch date has been set yet. Your early support is deeply appreciated and will be remembered."
+                },
+                {
+                  question: "Can I donate using a non-cryptocurrency payment method?",
+                  answer: "Currently, we only accept donations in cryptocurrency. This aligns with our focus on Web3 technologies and provides greater transparency on how funds are used."
+                },
+                {
+                  question: "Is my donation tax deductible?",
+                  answer: "Gate33 is not a registered charitable organization, so donations are not tax deductible. Please consult with a tax professional about the tax implications of cryptocurrency donations in your jurisdiction."
+                },
+                {
+                  question: "What makes Gate33 different from other job platforms?",
+                  answer: "Gate33 differentiates itself through three main factors: (1) Rigorous verification of companies to prevent fraud; (2) Use of blockchain technology to ensure data security; (3) Learn2Earn system that allows candidates to earn tokens while improving their professional skills. Additionally, our InstantJobs feature offers flexible work opportunities beyond traditional employment models."
+                }
+              ].map((faq, index) => (
+                <div key={index} className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl overflow-hidden transition-colors duration-200">
+                  <button
+                    className="w-full p-6 text-left flex justify-between items-center hover:bg-black/50 transition-colors duration-200"
+                    onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
+                  >
+                    <h3 className="text-xl font-semibold pr-4 text-white">{faq.question}</h3>
+                    <svg
+                      className={`w-6 h-6 text-orange-500 transform transition-transform duration-200 flex-shrink-0 ${
+                        expandedFaq === index ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  {expandedFaq === index && (
+                    <div className="px-6 pb-6 pt-0 border-t border-gray-700">
+                      <div className="pt-4">
+                        <p className="text-gray-300 leading-relaxed">{faq.answer}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </section>
