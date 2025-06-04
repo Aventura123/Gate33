@@ -34,25 +34,25 @@ const cryptocurrencies: CryptoCurrency[] = [
     name: "Ethereum",
     symbol: "ETH",
     icon: "/images/crypto/eth.svg", // Will be replaced by text
-    networks: ["ethereum", "polygon", "bsc", "optimism", "avalanche"]
+    networks: ["ethereum", "polygon", "bsc", "avalanche"] // Remove optimism
   },
   {
     name: "Avalanche",
     symbol: "AVAX",
     icon: "/images/crypto/avax.svg", // Will be replaced by text
-    networks: ["ethereum", "polygon", "bsc", "optimism", "avalanche"]
+    networks: ["ethereum", "polygon", "bsc", "avalanche"] // Remove optimism
   },
   {
     name: "BNB",
     symbol: "BNB",
     icon: "/images/crypto/bnb.svg", // Will be replaced by text
-    networks: ["ethereum", "polygon", "bsc", "optimism", "avalanche"]
+    networks: ["ethereum", "polygon", "bsc", "avalanche"] // Remove optimism
   },
   {
     name: "Tether",
     symbol: "USDT",
     icon: "/images/crypto/usdt.svg", // Will be replaced by text
-    networks: ["ethereum", "polygon", "bsc", "optimism", "avalanche"]
+    networks: ["ethereum", "polygon", "bsc", "avalanche"] // Remove optimism
   }
 ];
 
@@ -80,16 +80,11 @@ const networks: Network[] = [
     name: "Avalanche C-Chain",
     icon: "/images/networks/avalanche.svg",
     supportedTokens: ["AVAX", "ETH", "BNB", "USDT"]
-  },
-  {
-    id: "optimism",
-    name: "Optimism",
-    icon: "/images/networks/optimism.svg",
-    supportedTokens: ["ETH", "AVAX", "BNB", "USDT"]
   }
+  // Remove optimism network completely
 ];
 
-// Definir tipos mais precisos para os objetos de endereços
+// Define more precise types for address objects
 interface DonationAddresses {
   [network: string]: {
     [crypto: string]: string;
@@ -102,67 +97,58 @@ interface TokenContractAddresses {
   };
 }
 
-// Converter os objetos existentes para usar os novos tipos
+// Convert existing objects to use the new types
 const DONATION_ADDRESSES: DonationAddresses = {
   ethereum: {
-    ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382", 
-    AVAX: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    BNB: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382" 
+    ETH: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B", 
+    AVAX: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B",
+    BNB: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B",
+    USDT: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B" 
   },
   polygon: {
-    ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    AVAX: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    BNB: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382"
+    ETH: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B",
+    AVAX: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B",
+    BNB: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B",
+    USDT: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B"
   },
   bsc: {
-    BNB: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    AVAX: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382"
+    BNB: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B",
+    ETH: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B",
+    AVAX: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B",
+    USDT: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B"
   },
   avalanche: {
-    AVAX: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    BNB: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382"
-  },
-  optimism: {
-    ETH: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    AVAX: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    BNB: "0x3805FF925B6B0126849BD260A338391DF5F6E382",
-    USDT: "0x3805FF925B6B0126849BD260A338391DF5F6E382"
+    AVAX: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B",
+    ETH: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B",
+    BNB: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B",
+    USDT: "0xE48be7EEAa2bA576108876eA222ba3AD599d792B"
   }
+  // Remove optimism addresses
 };
 
-// Token contract addresses para tokens ERC20
+// Token contract addresses for ERC20 tokens
 const TOKEN_ADDRESSES: TokenContractAddresses = {
   ethereum: {
     USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-    AVAX: "0x85f138bfEE4ef8e540890CFb48F620571d67Eda3", // WAVAX em Ethereum
-    BNB: "0xB8c77482e45F1F44dE1745F52C74426C631bDD52"  // BNB em Ethereum (BEP-20)
+    AVAX: "0x85f138bfEE4ef8e540890CFb48F620571d67Eda3", // WAVAX on Ethereum
+    BNB: "0xB8c77482e45F1F44dE1745F52C74426C631bDD52"  // BNB on Ethereum (BEP-20)
   },
   polygon: {
     USDT: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
-    AVAX: "0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b", // WAVAX em Polygon
-    BNB: "0x3BA4c387f786bFEE076A58914F5Bd38d668B42c3"  // BNB em Polygon
+    AVAX: "0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b", // WAVAX on Polygon
+    BNB: "0x3BA4c387f786bFEE076A58914F5Bd38d668B42c3"  // BNB on Polygon
   },
   bsc: {
     USDT: "0x55d398326f99059fF775485246999027B3197955",
-    AVAX: "0x1CE0c2827e2eF14D5C4f29a091d735A204794041", // WAVAX em BSC
-    ETH: "0x2170Ed0880ac9A755fd29B2688956BD959F933F8"  // WETH em BSC
+    AVAX: "0x1CE0c2827e2eF14D5C4f29a091d735A204794041", // WAVAX on BSC
+    ETH: "0x2170Ed0880ac9A755fd29B2688956BD959F933F8"  // WETH on BSC
   },
   avalanche: {
-    USDT: "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7", // USDT no Avalanche C-Chain
-    ETH: "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB", // WETH em Avalanche
-    BNB: "0x264c1383EA520f73dd837F915ef3a732e204a493"  // BNB em Avalanche
-  },
-  optimism: {
-    USDT: "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58", // USDT no Optimism
-    AVAX: "0x420000000000000000000000000000000000000A", // WAVAX em Optimism (se disponível)
-    BNB: "0x4200000000000000000000000000000000000006"   // BNB em Optimism (se disponível)
+    USDT: "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7", // USDT on Avalanche C-Chain
+    ETH: "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB", // WETH on Avalanche
+    BNB: "0x264c1383EA520f73dd837F915ef3a732e204a493"  // BNB on Avalanche
   }
+  // Remove optimism token addresses
 };
 
 export default function DonatePage() {
@@ -187,10 +173,10 @@ export default function DonatePage() {
     switchNetwork: contextSwitchNetwork,
     isUsingWalletConnect,
   } = useWallet();
-  // Recalcular o valor estimado quando a criptomoeda ou a rede mudar
+  // Recalculate estimated value when cryptocurrency or network changes
   useEffect(() => {
     if (donationStep === 'enter_amount' && selectedCrypto && donationAmount && parseFloat(donationAmount) > 0) {
-      console.log(`Recalculando estimativa para ${donationAmount} ${selectedCrypto.symbol}`);
+      console.log(`Recalculating estimate for ${donationAmount} ${selectedCrypto.symbol}`);
       setIsCalculating(true);
       calculateEstimatedTokens(donationAmount, selectedCrypto.symbol);
     }
@@ -199,11 +185,11 @@ export default function DonatePage() {
   // Handle cryptocurrency selection
   const handleCryptoSelect = (crypto: CryptoCurrency) => {
     setSelectedCrypto(crypto);
-    // Seleciona automaticamente a primeira rede disponível para a moeda
+    // Automatically select the first available network for the currency
     const defaultNetwork = networks.find(n => crypto.networks.includes(n.id)) || null;
     setSelectedNetwork(defaultNetwork);
     setDonationStep('enter_amount');
-    // Quando mudar diretamente para enter_amount, garantir que o valor seja recalculado
+    // When changing directly to enter_amount, ensure the value is recalculated
     if (donationAmount && parseFloat(donationAmount) > 0) {
       setTimeout(() => calculateEstimatedTokens(donationAmount, crypto.symbol), 100);
     }
@@ -271,15 +257,15 @@ export default function DonatePage() {
       }
       setError(null); // Clear any previous error
 
-      // Corrige o nome da rede para buscar o RPC correto
+      // Fix network name to search for correct RPC
       const rpcNetworkId = networkId === 'binance' ? 'bsc' : networkId;
       const rpcUrls = getHttpRpcUrls(rpcNetworkId);
       if (!rpcUrls.length) {
         throw new Error(`No RPC URLs configured for network ${networkId}`);
       }
 
-      // Configurações específicas para doações (usando mainnet para todas as redes)
-      // Agora centralizado em config/rpcConfig.ts, não precisa mais de rpcUrl/currencySymbol duplicados
+      // Specific configurations for donations (using mainnet for all networks)
+      // Now centralized in config/rpcConfig.ts, no need for duplicate rpcUrl/currencySymbol
       const networkConfigs: Record<string, { chainId: number; name: string; blockExplorer: string; currencySymbol: string }> = {
         'ethereum': {
           chainId: 1,
@@ -304,13 +290,8 @@ export default function DonatePage() {
           name: 'Avalanche C-Chain',
           blockExplorer: 'https://snowtrace.io',
           currencySymbol: 'AVAX',
-        },
-        'optimism': {
-          chainId: 10,
-          name: 'Optimism',
-          blockExplorer: 'https://optimistic.etherscan.io',
-          currencySymbol: 'ETH',
-        },
+        }
+        // Remove optimism configuration
       };
 
       if (!networkConfigs[networkId]) {
@@ -347,7 +328,7 @@ export default function DonatePage() {
                 },
               ],
             });
-            return await switchNetwork(networkId); // Tenta novamente após adicionar
+            return await switchNetwork(networkId); // Try again after adding
           } catch (addError: any) {
             console.error("Error adding network:", addError);
             setError(`Unable to add ${selectedNetwork?.name || networkId}: ${addError.message}`);
@@ -407,24 +388,24 @@ export default function DonatePage() {
       let txHash = "transaction-hash-placeholder";
       let tokenTxSuccess = false;
       
-      // Verificar se o token é nativo da rede ou se é um token ERC-20
+      // Check if the token is native to the network or if it's an ERC-20 token
       const isNativeToken = (
         (selectedCrypto.symbol === "ETH" && selectedNetwork.id === "ethereum") || 
         (selectedCrypto.symbol === "AVAX" && selectedNetwork.id === "avalanche") || 
         (selectedCrypto.symbol === "BNB" && selectedNetwork.id === "bsc")
       );
       
-      // Validar que a carteira está na rede correta antes de prosseguir
+      // Validate that the wallet is on the correct network before proceeding
       const provider = await web3Service.getWeb3Provider();
       if (!provider) {
         throw new Error("Unable to connect to your wallet. Please check your connection and try again.");
       }
       
-      // Abrir a MetaMask diretamente sem verificações prévias de saldo
-      // para permitir que a própria carteira mostre erros de forma amigável
+      // Open MetaMask directly without prior balance checks
+      // to allow the wallet itself to show errors in a user-friendly way
       try {
         if (isNativeToken) {
-          // Processamento para tokens nativos (ETH na Ethereum, BNB na BSC, AVAX na Avalanche)
+          // Processing for native tokens (ETH on Ethereum, BNB on BSC, AVAX on Avalanche)
           console.log(`Processing native ${selectedCrypto.symbol} transaction on ${selectedNetwork.name}...`);
           const recipientAddress = DONATION_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
           if (!recipientAddress) {
@@ -433,7 +414,7 @@ export default function DonatePage() {
 
           const signer = provider.getSigner();
           
-          // Criar a transação nativa e enviar diretamente para a MetaMask processar
+          // Create native transaction and send directly to MetaMask for processing
           const tx = await signer.sendTransaction({
             to: recipientAddress,
             value: ethers.utils.parseEther(donationAmount),
@@ -446,7 +427,7 @@ export default function DonatePage() {
           tokenTxSuccess = true;
           console.log(`${selectedCrypto.symbol} transaction sent successfully! Hash: ${txHash}`);
         } else {
-          // Processamento para tokens não-nativos (todos tratados como ERC-20)
+          // Processing for non-native tokens (all treated as ERC-20)
           console.log(`Processing token ${selectedCrypto.symbol} as ERC-20 on ${selectedNetwork.name}...`);
           
           const recipientAddress = DONATION_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
@@ -454,7 +435,7 @@ export default function DonatePage() {
             throw new Error(`Donation address not found for ${selectedCrypto.symbol} on ${selectedNetwork.name}`);
           }
 
-          // Verificar se há um endereço de contrato para o token na rede atual
+          // Check if there's a contract address for the token on the current network
           const tokenAddress = TOKEN_ADDRESSES[selectedNetwork.id]?.[selectedCrypto.symbol];
           if (!tokenAddress) {
             throw new Error(`Token ${selectedCrypto.symbol} is not currently supported on ${selectedNetwork.name}.`);
@@ -473,18 +454,18 @@ export default function DonatePage() {
             signer
           );
 
-          // Verificar decimais do token
+          // Check token decimals
           let decimals;
           try {
             decimals = await tokenContract.decimals();
             console.log(`Token decimals: ${decimals}`);
           } catch (error) {
-            decimals = 18; // Fallback para o valor padrão
+            decimals = 18; // Fallback to default value
           }
           
           const amount = ethers.utils.parseUnits(donationAmount, decimals);
           
-          // Enviar a transação do token ERC-20 diretamente para a MetaMask processar
+          // Send ERC-20 token transaction directly to MetaMask for processing
           const tx = await tokenContract.transfer(recipientAddress, amount);
 
           console.log(`Waiting for ${selectedCrypto.symbol} transaction confirmation...`);
@@ -497,38 +478,38 @@ export default function DonatePage() {
       } catch (txError: any) {
         console.error("Error sending transaction:", txError);
         
-        // Traduzir mensagens de erro comuns para formato mais amigável
+        // Translate common error messages to more user-friendly format
         if (txError.message) {
-          // Verificar saldo insuficiente
+          // Check insufficient balance
           if (txError.message.includes("insufficient funds") || 
               txError.message.includes("insufficient balance") ||
               txError.message.includes("exceeds balance")) {
             throw new Error(`You don't have enough ${selectedCrypto.symbol} in your wallet to complete this donation.`);
           }
           
-          // Erro de rejeição pelo usuário
+          // User rejection error
           if (txError.message.includes("user rejected") || 
               txError.message.includes("User denied") ||
               txError.message.includes("user cancelled")) {
             throw new Error(`Transaction cancelled. You can try again when you're ready.`);
           }
           
-          // Erro de gas 
+          // Gas error
           if (txError.message.includes("gas required exceeds")) {
             throw new Error(`The network is congested right now. Please try again with a higher gas limit.`);
           }
           
-          // Erro de nonce
+          // Nonce error
           if (txError.message.includes("nonce")) {
             throw new Error(`Transaction sequence error. Please reset your MetaMask account or try again later.`);
           }
         }
         
-        // Mensagem de erro padrão mais amigável se não encaixar em nenhum caso específico
+        // More user-friendly default error message if it doesn't fit any specific case
         throw new Error(`There was a problem processing your ${selectedCrypto.symbol} transaction. Please check your wallet and try again.`);
       }
 
-      // Continue com a distribuição de tokens G33
+      // Continue with G33 token distribution
       console.log("Starting G33 token distribution...");
 
       try {
@@ -538,7 +519,7 @@ export default function DonatePage() {
           selectedCrypto.symbol,
           txHash,
           selectedNetwork.id,
-          false // Não esperar pela confirmação da blockchain
+          false // Don't wait for blockchain confirmation
         );
 
         if (!result.success) {
@@ -546,8 +527,8 @@ export default function DonatePage() {
           throw new Error(result.error || "Failed to distribute G33 tokens. The donation was completed successfully, but there was an issue with token distribution.");
         }
 
-        console.log("Resultado completo da distribuição de tokens:", result);
-        console.log("Hash de distribuição recebido:", result.distributionTxHash);
+        console.log("Complete token distribution result:", result);
+        console.log("Distribution hash received:", result.distributionTxHash);
         
         setTransactionHash(result.distributionTxHash || null);
         setDonationStep('success');
@@ -560,9 +541,9 @@ export default function DonatePage() {
         }
         
         if (tokenTxSuccess) {
-          // Se a doação foi bem-sucedida mas a distribuição de tokens falhou
+          // If donation was successful but token distribution failed
           setError("Your donation was successful, but there was an issue distributing your G33 tokens. Our team will ensure you receive them shortly.");
-          setDonationStep('success'); // Ainda mostra o sucesso já que a doação foi completada
+          setDonationStep('success'); // Still show success since donation was completed
         } else {
           setError(error instanceof Error ? error.message : "Error distributing G33 tokens. Please try again.");
           setDonationStep('error');
@@ -637,7 +618,7 @@ export default function DonatePage() {
             
             <div className="mb-8 flex justify-center">
               <div className="inline-flex rounded-md shadow">
-                <WalletButton className="px-8 py-3" availableNetworks={["ethereum", "polygon", "binance", "avalanche", "optimism"]} />
+                <WalletButton className="px-8 py-3" availableNetworks={["ethereum", "polygon", "binance", "avalanche"]} />
               </div>
             </div>
               {/* Token reward explanation */}            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 p-6 rounded-lg shadow-lg mb-8 transition-colors duration-200">
