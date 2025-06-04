@@ -24,7 +24,7 @@ interface InstantJob {
   requiredSkills?: string[];
 }
 
-const InstantJobsManager = () => {
+const InstantJobsManager: React.FC = () => {
   // Use global wallet state
   const { walletAddress, currentNetwork, connectWallet: globalConnectWallet } = useWallet();
   
@@ -348,18 +348,20 @@ const InstantJobsManager = () => {
     };
     updateNetworkInfo();
   }, [currentNetwork]);
-  
-  // Refresh jobs list button
+    // Refresh jobs list button
   const handleRefreshJobs = () => {
     if (currentNetwork) {
       const normalizedNetwork = instantJobsEscrowService.normalizeNetworkNamePublic(currentNetwork);
       loadJobsWithNetwork(normalizedNetwork);
     }
-  };  // Render component
+  };
+  
+  // Render component
   return (
-    <div className="space-y-6 md:space-y-8">
-      <h2 className="text-lg md:text-xl font-bold text-orange-400 mb-4 md:mb-6">Instant Jobs Management</h2>
-      
+    <div className="space-y-4 md:space-y-6">
+      <h1 className="text-lg md:text-xl font-bold text-orange-400 mb-6 md:mb-10">Instant Jobs Management</h1>
+        
+      {/* Error and Success Messages */}
       {error && (
         <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
           <strong>Error:</strong> {error}
@@ -371,16 +373,16 @@ const InstantJobsManager = () => {
           <strong>Success:</strong> {success}
         </div>
       )}
-      
-      {/* Status Panel - Network Information */}
-      <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
+        {/* Status Panel - Network Information */}
+      <div className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl p-4 md:p-6 mb-6 md:mb-10 transition-colors">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           {/* Network Status */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <span className="h-3 w-3 rounded-full bg-green-500 inline-block"></span>
-              <h3 className="text-base font-bold text-orange-400">Current Blockchain Network</h3>
-            </div>            <div className="text-white font-medium mb-1 text-sm">
+              <h3 className="text-lg md:text-xl font-bold text-orange-400">Current Blockchain Network</h3>
+            </div>
+            <div className="text-white font-medium mb-1 text-sm">
               {walletAddress ? 
                 (networkInfo ? `${networkInfo.name} (Chain ID: ${networkInfo.chainId})` : "Unknown network") : 
                 "Wallet not connected"
@@ -393,13 +395,13 @@ const InstantJobsManager = () => {
         </div>
       </div>      {/* Contract Configuration (if not configured yet) */}
       {(!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') && (
-        <div className="bg-black/30 border border-gray-700 rounded-xl p-4 md:p-6 mb-6">
-          <h3 className="text-base font-bold text-orange-400 mb-4">Configure Contract</h3>
+        <div className="bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700 hover:border-orange-500 transition-colors">
+          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Configure Contract</h3>
           <p className="text-gray-300 mb-4 text-sm">
             There's no contract configured for the {networkInfo?.name} network yet. Configure the contract address below:
           </p>
           
-          <div className="space-y-4">
+          <div className="space-y-4 md:space-y-6">
             <div>
               <label htmlFor="contractAddress" className="block text-sm font-semibold text-gray-300 mb-1">Contract Address</label>
               <input
@@ -411,26 +413,26 @@ const InstantJobsManager = () => {
                 className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
               />
             </div>
+            
             <button
               onClick={setupContractAddress}
               disabled={settingContractAddress || !newContractAddress}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg disabled:opacity-60 w-full font-semibold text-sm"
+              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm w-full md:w-auto"
             >
               {settingContractAddress ? "Configuring..." : "Configure Contract"}
             </button>
           </div>
         </div>
-      )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-6">
+      )}<div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-10">
         {/* Contract Information */}
-        <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700">
-          <h3 className="text-base font-bold text-orange-400 mb-4">Contract Information</h3>
-            {isLoading ? (
+        <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">
+          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Contract Information</h3>
+          {isLoading ? (
             <p className="text-gray-400 text-sm">
               {walletAddress ? "Loading contract data..." : "Connect your wallet to view contract information"}
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 md:space-y-6">
               {contractAddress && contractAddress !== '0x0000000000000000000000000000000000000000' && (
                 <div>
                   <p className="text-sm font-semibold text-gray-300 mb-1">Contract Address:</p>
@@ -442,7 +444,7 @@ const InstantJobsManager = () => {
                 <p className="text-sm font-semibold text-gray-300 mb-1">Contract Owner:</p>
                 <p className="text-white font-mono text-xs bg-black/40 p-2 rounded-lg border border-gray-600 break-all">{contractOwner || "Not available"}</p>
                 {contractOwner && walletAddress && walletAddress.toLowerCase() === contractOwner.toLowerCase() && (
-                  <span className="inline-block bg-green-900/50 text-green-300 text-xs px-2 py-1 rounded-full mt-1 border border-green-700">
+                  <span className="px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-orange-900/50 text-orange-300 border border-orange-700 mt-1 inline-block">
                     You are the owner
                   </span>
                 )}
@@ -459,10 +461,10 @@ const InstantJobsManager = () => {
               </div>
             </div>
           )}
-        </div>        {/* Settings */}
-        <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700">
-          <h3 className="text-base font-bold text-orange-400 mb-4">Settings</h3>
-            {isLoading ? (
+        </div>{/* Settings */}
+        <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">
+          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Settings</h3>
+          {isLoading ? (
             <p className="text-gray-400 text-sm">
               {walletAddress ? "Loading settings..." : "Connect your wallet to view settings"}
             </p>
@@ -482,7 +484,7 @@ const InstantJobsManager = () => {
                     max="100"
                     value={newFeePercentage}
                     onChange={(e) => setNewFeePercentage(parseInt(e.target.value))}
-                    className="bg-transparent appearance-none rounded mr-2 text-white leading-tight focus:outline-none focus:ring-1 focus:ring-orange-400 w-24 text-sm"
+                    className="bg-transparent appearance-none rounded mr-2 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-orange-400 w-24 text-sm"
                   />
                   <span className="text-gray-400 text-xs">(Base 1000: {newFeePercentage} = {(newFeePercentage / 10).toFixed(1)}%)</span>
                 </div>
@@ -492,7 +494,7 @@ const InstantJobsManager = () => {
                 <button
                   onClick={updateFeePercentage}
                   disabled={isUpdatingFee || newFeePercentage === platformFeePercentage || !instantJobsEscrowService.isContractInitialized()}
-                  className={`mt-3 py-2 px-4 rounded-lg text-sm font-semibold ${
+                  className={`mt-3 px-4 py-2 rounded-lg text-sm font-semibold ${
                     isUpdatingFee || newFeePercentage === platformFeePercentage || !instantJobsEscrowService.isContractInitialized()
                       ? "bg-gray-800 text-gray-400 cursor-not-allowed"
                       : "bg-orange-500 hover:bg-orange-600 text-white"
@@ -512,7 +514,7 @@ const InstantJobsManager = () => {
                     type="text"
                     value={newFeeCollector}
                     onChange={(e) => setNewFeeCollector(e.target.value)}
-                    className="bg-transparent w-full appearance-none text-white leading-tight focus:outline-none focus:ring-1 focus:ring-orange-400 text-sm"
+                    className="bg-transparent w-full appearance-none text-white leading-tight focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm"
                     placeholder="0x..."
                   />
                 </div>
@@ -522,7 +524,7 @@ const InstantJobsManager = () => {
                 <button
                   onClick={updateFeeCollector}
                   disabled={isUpdatingCollector || newFeeCollector === feeCollector || !instantJobsEscrowService.isContractInitialized()}
-                  className={`mt-3 py-2 px-4 rounded-lg text-sm font-semibold ${
+                  className={`mt-3 px-4 py-2 rounded-lg text-sm font-semibold ${
                     isUpdatingCollector || newFeeCollector === feeCollector || !instantJobsEscrowService.isContractInitialized()
                       ? "bg-gray-800 text-gray-400 cursor-not-allowed"
                       : "bg-orange-500 hover:bg-orange-600 text-white"
@@ -534,9 +536,8 @@ const InstantJobsManager = () => {
             </div>
           )}
         </div>
-      </div>      {/* Jobs List */}
-      <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700">
-        <h3 className="text-base font-bold text-orange-400 mb-4">Instant Jobs</h3>
+      </div>      {/* Jobs List - Using Card Component */}      <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">
+        <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Instant Jobs</h3>
           {isLoadingJobs ? (
           <p className="text-gray-400 text-sm">
             {walletAddress ? "Loading jobs..." : "Connect your wallet to view jobs"}
@@ -546,14 +547,12 @@ const InstantJobsManager = () => {
             <p className="text-gray-300 mb-4 text-sm">No Instant Jobs found for this network ({networkInfo?.name}).</p>
             <button
               onClick={handleRefreshJobs}
-              className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg text-sm font-semibold"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow"
             >
               Refresh List
             </button>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto bg-black/40 rounded-lg border border-gray-600 p-2">
+          </div>        ) : (
+          <>            <div className="overflow-x-auto bg-black/30 rounded-lg border border-gray-600 p-2">
               <table className="min-w-full text-white">
                 <thead className="border-b border-gray-600">
                   <tr>
@@ -562,18 +561,16 @@ const InstantJobsManager = () => {
                     <th className="text-left py-3 px-2 text-orange-400 text-sm font-semibold">Employer</th>
                     <th className="text-left py-3 px-2 text-orange-400 text-sm font-semibold">Status</th>
                     <th className="text-left py-3 px-2 text-orange-400 text-sm font-semibold">Payment</th>
-                    <th className="text-left py-3 px-2 text-orange-400 text-sm font-semibold">Fee</th>
+                    <th className="text-left py-3 px-2 text-orange-400 text-sm font-semibold">Platform Fee</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {instantJobs.map((job) => (
-                    <tr key={job.id} className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors">
-                      <td className="py-3 px-2 text-xs font-mono text-gray-300">{job.id.substring(0, 8)}...</td>
-                      <td className="py-3 px-2 text-sm text-gray-300">{job.title}</td>
-                      <td className="py-3 px-2 text-xs font-mono text-gray-300">
+                <tbody>                  {instantJobs.map((job) => (
+                    <tr key={job.id} className="border-b border-gray-700 hover:bg-black/30 transition-colors">
+                      <td className="py-2 px-2 text-xs text-gray-300 font-mono">{job.id.substring(0, 8)}...</td>
+                      <td className="py-2 px-2 text-sm text-white">{job.title}</td>
+                      <td className="py-2 px-2 text-xs text-gray-300 font-mono">
                         {job.employer.substring(0, 6)}...{job.employer.substring(job.employer.length - 4)}
-                      </td>
-                      <td className="py-3 px-2">
+                      </td><td className="py-2 px-2">
                         <span className={`px-1.5 md:px-2 py-0.5 rounded-full text-xs border ${
                           job.status === 'completed' ? 'bg-green-900/50 text-green-300 border-green-700' :
                           job.status === 'approved' ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700' : 
@@ -583,19 +580,18 @@ const InstantJobsManager = () => {
                         }`}>
                           {job.status}
                         </span>
-                      </td>
-                      <td className="py-3 px-2 text-sm text-gray-300">{job.payment.toFixed(2)} {job.currency}</td>
-                      <td className="py-3 px-2 text-sm text-gray-300">{(job.payment * platformFeePercentage / 1000).toFixed(4)} {job.currency}</td>
+                      </td><td className="py-2 px-2 text-sm text-white">{job.payment.toFixed(2)} {job.currency}</td>
+                      <td className="py-2 px-2 text-sm text-gray-300">{(job.payment * platformFeePercentage / 1000).toFixed(4)} {job.currency}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             
-            <div className="mt-4 md:mt-6 flex justify-between items-center">
+            <div className="mt-4 md:mt-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <button
                 onClick={handleRefreshJobs}
-                className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg text-sm font-semibold"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"
               >
                 Refresh List
               </button>

@@ -2911,9 +2911,8 @@ const fetchEmployersList = async () => {
 
                 {/* Show "settings" tab only if you have permission */}
                 {activeTab === "settings" && settingsDropdownOpen && hasPermission('canAccessSettings') && (
-                  <div>
-                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Settings</h2>
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                  <div>                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Settings</h2>
+                    <div className="mt-6 bg-black/30 p-6 rounded-lg border border-gray-700 hover:border-orange-500 transition-colors">
 
                       {/* Render My Profile Form */}
                       {activeSubTab === "profile" && (
@@ -3438,8 +3437,7 @@ const fetchEmployersList = async () => {
                 {/* Rendering of InstantJobsManager when the Instant Jobs tab is active */}
                 {activeTab === "instantJobs" && (
                   <div>
-                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Instant Jobs</h2>
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Instant Jobs</h2>                    <div className="mt-6 bg-black/30 p-6 rounded-lg border border-gray-700 hover:border-orange-500 transition-colors">
                       <p className="text-gray-300 mb-4">
                       </p>
                                             
@@ -3452,8 +3450,7 @@ const fetchEmployersList = async () => {
                 {/* Ads Manager Tab Content */}
                 {activeTab === "ads" && (
                   <div>
-                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Ads Manager</h2>
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Ads Manager</h2>                    <div className="mt-6 bg-black/30 p-6 rounded-lg border border-gray-700 hover:border-orange-500 transition-colors">
                       {/* Main component for ad management */}
                       <AdManager />
                     </div>
@@ -3485,8 +3482,7 @@ const fetchEmployersList = async () => {
                 {/* Newsletter Section */}
                 {activeTab === "marketing" && activeSubTab === "newsletter" && (
                   <div>
-                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Newsletter Manager</h2>
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Newsletter Manager</h2>                    <div className="mt-6 bg-black/30 p-6 rounded-lg border border-gray-700 hover:border-orange-500 transition-colors">
                       <AdminNewsletterManager />
                     </div>
                   </div>
@@ -3495,8 +3491,7 @@ const fetchEmployersList = async () => {
                 {/* Social Media Section */}
                 {activeTab === "marketing" && activeSubTab === "socialmedia" && (
                   <div>
-                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Social Media Promotion</h2>
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Social Media Promotion</h2>                    <div className="mt-6 bg-black/30 p-6 rounded-lg border border-gray-700 hover:border-orange-500 transition-colors">
                       <AdminSocialMediaManager />
                     </div>
                   </div>
