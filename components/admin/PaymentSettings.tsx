@@ -4,7 +4,6 @@ import { collection, query, getDocs, addDoc, updateDoc, doc, deleteDoc, where, s
 import { getAuth } from "firebase/auth";
 import { web3Service } from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
-import InstantJobsManager from "./InstantJobsManager";
 import { NETWORK_CONFIG, CONTRACT_ADDRESSES } from "../../config/paymentConfig";
 import { useWallet } from "../WalletProvider";
 
@@ -1004,32 +1003,33 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       </div>
     );
   }
-
   return (
-    <div className="space-y-6 md:space-y-8">
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
-          <p>{error}</p>
-        </div>
-      )}
+    <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">
+      <h2 className="text-xl md:text-2xl font-bold text-orange-400 mb-6">Payment System Configuration</h2>
+      
+      <div className="space-y-6 md:space-y-8">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
+            <p>{error}</p>
+          </div>
+        )}
 
-      {/* Success Message */}
-      {updateSuccess && (
-        <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
-          <p>Payment settings updated successfully!</p>
-        </div>
-      )}
+        {/* Success Message */}
+        {updateSuccess && (
+          <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
+            <p>Payment settings updated successfully!</p>
+          </div>
+        )}
 
-      {/* Owner Success Message */}
-      {localStorage.getItem('ownerSuccessMessage') && (
-        <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
-          <p>{localStorage.getItem('ownerSuccessMessage')}</p>
-        </div>
-      )}
+        {/* Owner Success Message */}
+        {localStorage.getItem('ownerSuccessMessage') && (
+          <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
+            <p>{localStorage.getItem('ownerSuccessMessage')}</p>
+          </div>
+        )}
 
-      {/* Main wallet configuration section (70% of payments) */}
-      <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">        <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Primary Payment Wallet (70%)</h3>
+        {/* Main wallet configuration section (70% of payments) */}        <div className="bg-black/20 p-4 md:p-6 rounded-lg border border-gray-600">        <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Primary Payment Wallet (70%)</h3>
         
         {/* Main Wallet Error Message */}
         {mainWalletUpdateError && (
@@ -1081,7 +1081,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       </div>
 
       {/* Fee distribution section (30% split across wallets) */}
-      <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">        <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Fee Distribution Wallets ({totalPercentage.toFixed(1)}%)</h3>
+      <div className="bg-black/20 p-4 md:p-6 rounded-lg border border-gray-600">        <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Fee Distribution Wallets ({totalPercentage.toFixed(1)}%)</h3>
         
         {/* Info Message */}
         <div className="bg-orange-900/20 border border-orange-800/50 rounded-lg p-3 mb-4">
@@ -1399,7 +1399,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       {/* System Settings Form */}
       <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
         {/* Contract Addresses Section */}
-        <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Contract Addresses</h3>
+        <div className="bg-black/20 p-4 md:p-6 rounded-lg border border-gray-600">          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Contract Addresses</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {/* Ethereum Contract */}
@@ -1478,8 +1478,7 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             </div>
           </div>
         </div>
-        
-        {/* Save System Settings Button */}
+          {/* Save System Settings Button */}
         <div className="flex items-center justify-between">
           <button
             type="submit"
@@ -1491,25 +1490,23 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             {isUpdating ? 'Updating...' : 'Save System Settings'}
           </button>
         </div>
+      </form>      {/* Current Configuration Information */}
+      <div className="bg-black/20 p-4 md:p-6 rounded-lg border border-gray-600">
+        <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Current System Configuration</h3>
         
-        {/* Current Configuration Information */}
-        <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">
-          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Current System Configuration</h3>
-          
-          <div className="bg-black/40 p-3 rounded-lg overflow-auto">
-            <pre className="text-sm text-gray-400 whitespace-pre-wrap">
-              {JSON.stringify(currentSystemConfig, null, 2)}
-            </pre>
-          </div>
-          
-          <p className="text-xs text-gray-400 mt-2">
-            These are the current system settings. Values saved in Firestore take precedence over values defined in the paymentConfig.ts file.
-            {currentSystemConfig && currentSystemConfig.updatedAt && (
-              <span> Last update: {currentSystemConfig.updatedAt}</span>
-            )}
-          </p>
-        </div>
-      </form>
+        <div className="bg-black/40 p-3 rounded-lg overflow-auto">
+          <pre className="text-sm text-gray-400 whitespace-pre-wrap">
+            {JSON.stringify(currentSystemConfig, null, 2)}
+          </pre>        </div>
+        
+        <p className="text-xs text-gray-400 mt-2">
+          These are the current system settings. Values saved in Firestore take precedence over values defined in the paymentConfig.ts file.
+          {currentSystemConfig && currentSystemConfig.updatedAt && (
+            <span> Last update: {currentSystemConfig.updatedAt}</span>
+          )}
+        </p>
+      </div>
+      </div>
     </div>
   );
 };

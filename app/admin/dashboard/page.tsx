@@ -3504,7 +3504,7 @@ const fetchEmployersList = async () => {
                 {activeTab === "payments" && activeSubTab === "config" && (
 
                   <div>
-                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Payment Configuration</h2>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Jobs</h2>
                     <PaymentSettings hasPermission={true} />
                   </div>
                 )}{activeTab === "learn2earn" && activeSubTab === "list" && (
