@@ -7,6 +7,9 @@ import smartContractService from "../../services/smartContractService";
 import InstantJobsManager from "../admin/InstantJobsManager";
 import { NETWORK_CONFIG, CONTRACT_ADDRESSES } from "../../config/paymentConfig";
 import { useWallet } from "../../components/WalletProvider";
+import { Button } from "./button";
+import { Input } from "./input";
+import { Label } from "./label";
 
 interface PaymentConfigProps {
   hasPermission: boolean;
@@ -997,49 +1000,63 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
       );
     }
     return null;
-  };
-  if (!hasPermission) {
+  };  if (!hasPermission) {
     return (
-      <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg">
+      <div className="bg-red-900/50 border border-red-500 text-white p-4 md:p-6 rounded-xl">
         <p className="text-sm">You do not have permission to access this section.</p>
       </div>
     );
-  }  return (
-    <div>
+  }
+
+  return (
+    <div className="space-y-6 md:space-y-8">
+      {/* Error Message */}
       {error && (
         <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
           <p>{error}</p>
         </div>
       )}
+
+      {/* Success Message */}
       {updateSuccess && (
         <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
           <p>Payment settings updated successfully!</p>
         </div>
       )}
-        {/* Display the owner success message if it exists in localStorage */}
+
+      {/* Owner Success Message */}
       {localStorage.getItem('ownerSuccessMessage') && (
         <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
           <p>{localStorage.getItem('ownerSuccessMessage')}</p>
         </div>
-      )}        {/* Main wallet configuration section (70% of payments) */}      <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-3 backdrop-blur-sm">
-        <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Primary Payment Wallet (70%)</h3>
+      )}
+
+      {/* Main wallet configuration section (70% of payments) */}
+      <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">        <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Primary Payment Wallet (70%)</h3>
         
+        {/* Main Wallet Error Message */}
         {mainWalletUpdateError && (
           <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>{mainWalletUpdateError}</p>
           </div>
         )}
         
+        {/* Main Wallet Success Message */}
         {mainWalletUpdateSuccess && (
           <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>Main wallet updated successfully!</p>
           </div>
-        )}          <div className="p-2 mb-3 bg-green-900/20 border border-green-800/50 rounded">
+        )}
+
+        {/* Info Message */}
+        <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-3 mb-4">
           <p className="text-sm text-gray-300">
             This wallet will receive <span className="font-bold text-green-400">{mainWalletPercentage.toFixed(1)}%</span> of all job posting payments. 
             This is separate from the fee distribution wallets below.
           </p>
-        </div><form onSubmit={handleUpdateMainWallet} className="flex flex-col space-y-1">
+        </div>
+
+        <form onSubmit={handleUpdateMainWallet} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="mainWallet">
               Main Recipient Wallet Address
@@ -1057,42 +1074,48 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
             </p>
           </div>
           
-          <div>
-            <button
-              type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline text-sm"
-            >
-              Update Main Wallet
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm w-full md:w-auto"
+          >
+            Update Main Wallet
+          </button>
         </form>
-      </div>      {/* Fee distribution section (30% split across wallets) */}
-      <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
-        <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Fee Distribution Wallets ({totalPercentage.toFixed(1)}%)</h3>
-          <div className="p-2 mb-3 bg-orange-900/20 border border-orange-800/50 rounded-lg">
+      </div>
+
+      {/* Fee distribution section (30% split across wallets) */}
+      <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">        <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Fee Distribution Wallets ({totalPercentage.toFixed(1)}%)</h3>
+        
+        {/* Info Message */}
+        <div className="bg-orange-900/20 border border-orange-800/50 rounded-lg p-3 mb-4">
           <p className="text-sm text-gray-300">
             The remaining <span className="font-bold text-orange-400">{totalPercentage.toFixed(1)}%</span> of each payment is distributed
             among the following wallets according to the percentages you set. 
             <span className="block mt-1 font-bold">These settings are stored in the smart contract and require wallet connection to update.</span>
           </p>
-        </div>          {walletUpdateError && (
-          <div className="bg-red-900/50 border border-red-500 text-white p-2 md:p-3 rounded-lg mb-3 text-sm">
+        </div>
+
+        {/* Error Messages */}
+        {walletUpdateError && (
+          <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>{walletUpdateError}</p>
           </div>
         )}
         
+        {/* Success Messages */}
         {walletUpdateSuccess && (
-          <div className="bg-green-900/50 border border-green-500 text-white p-2 md:p-3 rounded-lg mb-3 text-sm">
+          <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>Fee distribution wallets successfully updated in the contract!</p>
           </div>
         )}
         
         {percentageUpdateSuccess && (
-          <div className="bg-green-900/50 border border-green-500 text-white p-2 md:p-3 rounded-lg mb-3 text-sm">
+          <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>Percentages successfully updated on the blockchain!</p>
           </div>
         )}
         
+        {/* Contract Owner Info */}
         {contractOwner && (
           <div className="bg-black/40 border border-gray-700 text-white p-3 md:p-4 rounded-lg mb-4 text-sm">
             <p>
@@ -1104,209 +1127,233 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
               )}
             </p>
           </div>
-        )}          <div className="mb-4 md:mb-6">
-            <div className="space-y-3">
-              <div className="mb-1 flex justify-between items-center">
-                <p className="text-gray-300 text-sm">
-                  {walletConnected ? (
-                    <>
-                      <span className="inline-block px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-orange-900/50 text-orange-300 border border-orange-700 mr-2">Connected</span>
-                      Wallet connected - you can configure fee distribution
-                    </>
-                  ) : (
-                    <>
-                      <span className="inline-block px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-gray-700 text-gray-300 border border-gray-600 mr-2">Not Connected</span>
-                      Wallet not connected - connect to configure settings
-                    </>
-                  )}
-                </p>
-                
-                <button
-                  type="button"
-                  onClick={checkContractOwner}
-                  disabled={isCheckingOwner}
-                  className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
-                >
-                  {isCheckingOwner ? 'Checking...' : 'Verify Contract Owner'}
-                </button>              </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-3">
-                {/* Main Fee Collector */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="feeCollectorAddress">
-                    Fee Collector Wallet
-                  </label>
-                  <input
-                    id="feeCollectorAddress"
-                    type="text"
-                    value={feeCollectorAddress}
-                    onChange={(e) => setFeeCollectorAddress(e.target.value)}
-                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                    placeholder="0x..."
-                  />
-                  {currentFeeCollector && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      Current address: <span className="font-mono">{currentFeeCollector}</span>
-                    </p>
-                  )}
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="feePercentage">
-                    Fee Collector (%)
-                  </label>                  <input                    id="feePercentage"
-                    type="number"
-                    min="0"
-                    max="30"
-                    step="0.1"
-                    value={feePercentage || ''}
-                    onChange={(e) => setFeePercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Contract value (base 1000): {displayToContractPercentage(feePercentage)}
-                  </p>
-                </div>
-                
-                {/* Development Wallet */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="developmentWalletAddress">
-                    Development Wallet
-                  </label>
-                  <input
-                    id="developmentWalletAddress"
-                    type="text"
-                    value={developmentWalletAddress}
-                    onChange={(e) => setDevelopmentWalletAddress(e.target.value)}
-                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                    placeholder="0x..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="developmentPercentage">
-                    Development Percentage (%)
-                  </label>                  <input                    id="developmentPercentage"
-                    type="number"
-                    min="0"
-                    max="30"
-                    step="0.1"
-                    value={developmentPercentage || ''}
-                    onChange={(e) => setDevelopmentPercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Contract value (base 1000): {displayToContractPercentage(developmentPercentage)}
-                  </p>
-                </div>
-                
-                {/* Charity Wallet */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="charityWalletAddress">
-                    Charity Wallet
-                  </label>
-                  <input
-                    id="charityWalletAddress"
-                    type="text"
-                    value={charityWalletAddress}
-                    onChange={(e) => setCharityWalletAddress(e.target.value)}
-                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                    placeholder="0x..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="charityPercentage">
-                    Charity Percentage (%)
-                  </label>                  <input                    id="charityPercentage"
-                    type="number"
-                    min="0"
-                    max="30"
-                    step="0.1"
-                    value={charityPercentage || ''}
-                    onChange={(e) => setCharityPercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                  />
-                  <p className="text-gray-400 text-xs mt-1">
-                    Contract value (base 1000): {displayToContractPercentage(charityPercentage)}
-                  </p>
-                </div>
-                  {/* Evolution Wallet */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="evolutionWalletAddress">
-                    Evolution Wallet
-                  </label>
-                  <input
-                    id="evolutionWalletAddress"
-                    type="text"
-                    value={evolutionWalletAddress}
-                    onChange={(e) => setEvolutionWalletAddress(e.target.value)}
-                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                    placeholder="0x..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="evolutionPercentage">
-                    Evolution Percentage (%)
-                  </label>                  <input                    id="evolutionPercentage"
-                    type="number"
-                    min="0"
-                    max="30"
-                    step="0.1"
-                    value={evolutionPercentage || ''}
-                    onChange={(e) => setEvolutionPercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-                  />
-                  <p className="text-gray-400 text-xs mt-1">
-                    Contract value (base 1000): {displayToContractPercentage(evolutionPercentage)}
-                  </p>
-                </div>
-              </div>                <div className="mt-3 p-2 md:p-3 bg-black/40 border border-gray-700 rounded-lg">
-                <p className="text-white font-semibold text-sm">Total fees: {totalPercentage.toFixed(1)}%</p>
-                <div className="w-full bg-black/50 h-2 mt-2 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${totalPercentage > 30 ? 'bg-red-500' : 'bg-orange-500'} progress-bar dynamic-width`} 
-                    data-width={`${Math.min((totalPercentage / 30) * 100, 100)}%`}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  The total sum must not exceed 30%
-                </p>
-              </div>
-                <div className="flex gap-4 mt-4">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleUpdateAdditionalWallets(e as any);
-                  }}
-                  disabled={updatingWallets}
-                  className={`bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg disabled:opacity-60 font-semibold shadow text-sm ${
-                    updatingWallets ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {updatingWallets ? 'Updating Wallets...' : 'Update Wallets'}
-                </button>
+        )}
 
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleUpdatePercentages(e as any);
-                  }}
-                  disabled={updatingPercentages}
-                  className={`bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-2 rounded-lg text-sm font-semibold ${
-                    updatingPercentages ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {updatingPercentages ? 'Updating Percentages...' : 'Update Percentages'}
-                </button>              </div>
+        <div className="space-y-4 md:space-y-6">
+          {/* Wallet Connection Status */}
+          <div className="flex justify-between items-center">
+            <p className="text-gray-300 text-sm">
+              {walletConnected ? (
+                <>
+                  <span className="px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-orange-900/50 text-orange-300 border border-orange-700 mr-2">Connected</span>
+                  Wallet connected - you can configure fee distribution
+                </>
+              ) : (
+                <>
+                  <span className="px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-gray-800 text-gray-400 border border-gray-700 mr-2">Not Connected</span>
+                  Wallet not connected - connect to configure settings
+                </>
+              )}
+            </p>
+            
+            <button
+              type="button"
+              onClick={checkContractOwner}
+              disabled={isCheckingOwner}
+              className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
+            >
+              {isCheckingOwner ? 'Checking...' : 'Verify Contract Owner'}
+            </button>
+          </div>
+
+          {/* Form Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">            {/* Fee Collector Wallet */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="feeCollectorAddress">
+                Fee Collector Wallet
+              </label>
+              <input
+                id="feeCollectorAddress"
+                type="text"
+                value={feeCollectorAddress}
+                onChange={(e) => setFeeCollectorAddress(e.target.value)}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                placeholder="0x..."
+              />
+              {currentFeeCollector && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Current address: <span className="font-mono">{currentFeeCollector}</span>
+                </p>
+              )}
             </div>
-          </div>        {/* Payment Distribution Overview */}
-        <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
-          <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Payment Distribution Overview</h3>          <div className="bg-black/40 p-2 rounded-lg">
-            <div className="flex flex-col space-y-1">
-              <div className="flex justify-between items-center">
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="feePercentage">
+                Fee Collector (%)
+              </label>
+              <input
+                id="feePercentage"
+                type="number"
+                min="0"
+                max="30"
+                step="0.1"
+                value={feePercentage || ''}
+                onChange={(e) => setFeePercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Contract value (base 1000): {displayToContractPercentage(feePercentage)}
+              </p>
+            </div>
+            
+            {/* Development Wallet */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="developmentWalletAddress">
+                Development Wallet
+              </label>
+              <input
+                id="developmentWalletAddress"
+                type="text"
+                value={developmentWalletAddress}
+                onChange={(e) => setDevelopmentWalletAddress(e.target.value)}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                placeholder="0x..."
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="developmentPercentage">
+                Development Percentage (%)
+              </label>
+              <input
+                id="developmentPercentage"
+                type="number"
+                min="0"
+                max="30"
+                step="0.1"
+                value={developmentPercentage || ''}
+                onChange={(e) => setDevelopmentPercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Contract value (base 1000): {displayToContractPercentage(developmentPercentage)}
+              </p>
+            </div>
+            
+            {/* Charity Wallet */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="charityWalletAddress">
+                Charity Wallet
+              </label>
+              <input
+                id="charityWalletAddress"
+                type="text"
+                value={charityWalletAddress}
+                onChange={(e) => setCharityWalletAddress(e.target.value)}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                placeholder="0x..."
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="charityPercentage">
+                Charity Percentage (%)
+              </label>
+              <input
+                id="charityPercentage"
+                type="number"
+                min="0"
+                max="30"
+                step="0.1"
+                value={charityPercentage || ''}
+                onChange={(e) => setCharityPercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Contract value (base 1000): {displayToContractPercentage(charityPercentage)}
+              </p>
+            </div>
+
+            {/* Evolution Wallet */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="evolutionWalletAddress">
+                Evolution Wallet
+              </label>
+              <input
+                id="evolutionWalletAddress"
+                type="text"
+                value={evolutionWalletAddress}
+                onChange={(e) => setEvolutionWalletAddress(e.target.value)}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                placeholder="0x..."
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="evolutionPercentage">
+                Evolution Percentage (%)
+              </label>
+              <input
+                id="evolutionPercentage"
+                type="number"
+                min="0"
+                max="30"
+                step="0.1"
+                value={evolutionPercentage || ''}
+                onChange={(e) => setEvolutionPercentage(e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Contract value (base 1000): {displayToContractPercentage(evolutionPercentage)}
+              </p>
+            </div>
+          </div>
+
+          {/* Total Fees Summary */}
+          <div className="bg-black/40 border border-gray-700 rounded-lg p-3">
+            <p className="text-white font-semibold text-sm">Total fees: {totalPercentage.toFixed(1)}%</p>
+            <div className="w-full bg-black/50 h-2 mt-2 rounded-full overflow-hidden">
+              <div 
+                className={`h-full ${totalPercentage > 30 ? 'bg-red-500' : 'bg-orange-500'} progress-bar dynamic-width`} 
+                data-width={`${Math.min((totalPercentage / 30) * 100, 100)}%`}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              The total sum must not exceed 30%
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                handleUpdateAdditionalWallets(e as any);
+              }}
+              disabled={updatingWallets}
+              className={`bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm ${
+                updatingWallets ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {updatingWallets ? 'Updating Wallets...' : 'Update Wallets'}
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                handleUpdatePercentages(e as any);
+              }}
+              disabled={updatingPercentages}
+              className={`bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-2 rounded-lg text-sm font-semibold ${
+                updatingPercentages ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {updatingPercentages ? 'Updating Percentages...' : 'Update Percentages'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Distribution Overview */}
+      <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">        <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Payment Distribution Overview</h3>
+        
+        <div className="bg-black/40 p-3 rounded-lg">
+          <div className="space-y-4">
+            {/* Main Recipient Bar */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-300 text-sm">Main Recipient:</span>
                 <span className="text-orange-400 font-bold">{mainWalletPercentage.toFixed(1)}%</span>
               </div>
@@ -1316,117 +1363,131 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
                   data-width={`${mainWalletPercentage}%`}
                 ></div>
               </div>
-                <div className="flex justify-between items-center mt-1">
+            </div>
+
+            {/* Fee Distribution Bar */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-300 text-sm">Fee Distribution (total):</span>
                 <span className="text-orange-400 font-bold">{totalPercentage.toFixed(1)}%</span>
               </div>
               <div className="w-full bg-black/50 h-4 rounded-lg overflow-hidden">
                 <div className="h-full bg-orange-500 fee-distribution-bar" data-width={`${totalPercentage}%`}></div>
-              </div><div className="grid grid-cols-4 gap-1 mt-1">
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Fee Collector</div>
-                  <div className="text-sm text-gray-300">{feePercentage.toFixed(1)}%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Development</div>
-                  <div className="text-sm text-gray-300">{developmentPercentage.toFixed(1)}%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Charity</div>
-                  <div className="text-sm text-gray-300">{charityPercentage.toFixed(1)}%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-400">Evolution</div>
-                  <div className="text-sm text-gray-300">{evolutionPercentage.toFixed(1)}%</div>
-                </div>
+              </div>
+            </div>
+
+            {/* Individual Distribution Grid */}
+            <div className="grid grid-cols-4 gap-2">
+              <div className="text-center">
+                <div className="text-xs text-gray-400 mb-1">Fee Collector</div>
+                <div className="text-sm text-gray-300 font-medium">{feePercentage.toFixed(1)}%</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-400 mb-1">Development</div>
+                <div className="text-sm text-gray-300 font-medium">{developmentPercentage.toFixed(1)}%</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-400 mb-1">Charity</div>
+                <div className="text-sm text-gray-300 font-medium">{charityPercentage.toFixed(1)}%</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-400 mb-1">Evolution</div>
+                <div className="text-sm text-gray-300 font-medium">{evolutionPercentage.toFixed(1)}%</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-        <form onSubmit={handleSubmit} className="space-y-4">        {/* Contract Section */}        <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
-          <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Contract Addresses</h3>
+
+      {/* System Settings Form */}
+      <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
+        {/* Contract Addresses Section */}
+        <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Contract Addresses</h3>
           
-          {/* Ethereum Contract */}
-          <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="ethContract">
-              Ethereum Contract
-            </label>
-            <input
-              id="ethContract"
-              type="text"
-              value={ethContract}
-              onChange={(e) => setEthContract(e.target.value)}
-              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-              placeholder="0x..."
-            />
-          </div>
-          
-          {/* Polygon Contract */}
-          <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="polygonContract">
-              Polygon Contract
-            </label>
-            <input
-              id="polygonContract"
-              type="text"
-              value={polygonContract}
-              onChange={(e) => setPolygonContract(e.target.value)}
-              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-              placeholder="0x..."
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Ethereum Contract */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="ethContract">
+                Ethereum Contract
+              </label>
+              <input
+                id="ethContract"
+                type="text"
+                value={ethContract}
+                onChange={(e) => setEthContract(e.target.value)}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                placeholder="0x..."
+              />
+            </div>
+            
+            {/* Polygon Contract */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="polygonContract">
+                Polygon Contract
+              </label>
+              <input
+                id="polygonContract"
+                type="text"
+                value={polygonContract}
+                onChange={(e) => setPolygonContract(e.target.value)}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                placeholder="0x..."
+              />
+            </div>
+
             {/* Binance Smart Chain Contract */}
-          <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="binanceContract">
-              Binance Smart Chain Contract
-            </label>
-            <input
-              id="binanceContract"
-              type="text"
-              value={binanceContract}
-              onChange={(e) => setBinanceContract(e.target.value)}
-              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-              placeholder="0x..."
-            />
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="binanceContract">
+                Binance Smart Chain Contract
+              </label>
+              <input
+                id="binanceContract"
+                type="text"
+                value={binanceContract}
+                onChange={(e) => setBinanceContract(e.target.value)}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                placeholder="0x..."
+              />
+            </div>
+            
+            {/* Optimism Contract */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="optimismContract">
+                Optimism Contract
+              </label>
+              <input
+                id="optimismContract"
+                type="text"
+                value={optimismContract}
+                onChange={(e) => setOptimismContract(e.target.value)}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                placeholder="0x..."
+              />
+            </div>
+            
+            {/* Avalanche Contract */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="avalancheContract">
+                Avalanche Contract
+              </label>
+              <input
+                id="avalancheContract"
+                type="text"
+                value={avalancheContract}
+                onChange={(e) => setAvalancheContract(e.target.value)}
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                placeholder="0x..."
+              />
+            </div>
           </div>
-          
-          {/* Optimism Contract */}
-          <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="optimismContract">
-              Optimism Contract
-            </label>
-            <input
-              id="optimismContract"
-              type="text"
-              value={optimismContract}
-              onChange={(e) => setOptimismContract(e.target.value)}
-              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-              placeholder="0x..."
-            />
-          </div>
-          
-          {/* Avalanche Contract */}
-          <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-300 mb-1" htmlFor="avalancheContract">
-              Avalanche Contract
-            </label>
-            <input
-              id="avalancheContract"
-              type="text"
-              value={avalancheContract}
-              onChange={(e) => setAvalancheContract(e.target.value)}
-              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
-              placeholder="0x..."
-            />          </div>
         </div>
         
         {/* Save System Settings Button */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between">
           <button
             type="submit"
             disabled={isUpdating}
-            className={`bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg disabled:opacity-60 font-semibold shadow text-sm ${
+            className={`bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm ${
               isUpdating ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
@@ -1435,12 +1496,15 @@ const PaymentSettings: React.FC<PaymentConfigProps> = ({ hasPermission }) => {
         </div>
         
         {/* Current Configuration Information */}
-        <div className="bg-black/70 border border-orange-700 rounded-xl p-3 md:p-4 mb-4 backdrop-blur-sm">
-          <h3 className="text-lg md:text-xl font-bold mb-2 text-orange-400">Current System Configuration</h3>          <div className="bg-black/40 p-2 md:p-3 rounded-lg overflow-auto">
+        <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">
+          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Current System Configuration</h3>
+          
+          <div className="bg-black/40 p-3 rounded-lg overflow-auto">
             <pre className="text-sm text-gray-400 whitespace-pre-wrap">
               {JSON.stringify(currentSystemConfig, null, 2)}
             </pre>
           </div>
+          
           <p className="text-xs text-gray-400 mt-2">
             These are the current system settings. Values saved in Firestore take precedence over values defined in the paymentConfig.ts file.
             {currentSystemConfig && currentSystemConfig.updatedAt && (

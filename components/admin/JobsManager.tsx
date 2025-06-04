@@ -45,29 +45,32 @@ const JobListItem: React.FC<{
   const [expanded, setExpanded] = useState(false);
   
   return (
-    <li 
-      className={`bg-black/30 rounded-lg overflow-hidden transition-all duration-200 ${expanded ? 'border-orange-500' : job.disabled ? 'border-gray-500' : 'border-gray-700'} border ${job.disabled ? 'opacity-70' : ''}`}
+    <li      className={`bg-black/30 rounded-xl overflow-hidden transition-all duration-200 ${expanded ? 'border-orange-500' : job.disabled ? 'border-gray-500' : 'border-gray-700'} border ${job.disabled ? 'opacity-70' : ''}`}
     >
       <div 
-        className="flex justify-between items-center p-3 cursor-pointer hover:bg-black/40"
+        className="flex justify-between items-center p-2 md:p-3 cursor-pointer hover:bg-black/40"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex-1">          <div className="flex items-center gap-2">
-            <p className={`font-bold truncate ${job.disabled ? 'text-gray-400' : 'text-orange-500'}`}>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <p className={`font-bold truncate ${job.disabled ? 'text-gray-400' : 'text-orange-400'}`}>
               {job.title}
             </p>
             {job.disabled && (
-              <span className="bg-gray-700 text-gray-300 text-xs px-1.5 py-0.5 rounded">Disabled</span>
+              <span className="px-1 md:px-1.5 py-0.5 rounded-full text-xs bg-gray-800 text-gray-400 border border-gray-700">
+                Disabled
+              </span>
             )}
             {job.TP && (
-              <span className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded animate-pulse">TP</span>
+              <span className="px-1 md:px-1.5 py-0.5 rounded-full text-xs bg-green-900/50 text-green-300 border border-green-700 animate-pulse">
+                TP
+              </span>
             )}
           </div>
-          <p className="text-gray-300 text-sm">{job.companyName}</p>
-        </div>
-        <div className="flex items-center gap-2">
+          <p className="text-gray-300 text-xs">{job.companyName}</p>
+        </div>        <div className="flex items-center gap-1 md:gap-2">
           {job.location && (
-            <span className="hidden sm:inline-block bg-black/40 px-2 py-0.5 text-xs text-orange-200 rounded-full">
+            <span className="hidden sm:inline-block px-1 md:px-1.5 py-0.5 rounded-full text-xs bg-black/40 text-orange-300 border border-orange-700/50">
               {job.location}
             </span>
           )}
@@ -76,7 +79,7 @@ const JobListItem: React.FC<{
               e.stopPropagation(); // Prevent expansion toggle
               onToggleDisable();
             }}
-            className={`${job.disabled ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-600 hover:bg-yellow-700'} text-white px-2 py-1 rounded text-xs`}
+            className={`${job.disabled ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-600 hover:bg-yellow-700'} text-white px-1.5 md:px-2 py-1 rounded-md text-xs font-semibold`}
             disabled={isDisabling}
           >
             {isDisabling ? "..." : job.disabled ? "Enable" : "Disable"}
@@ -86,13 +89,13 @@ const JobListItem: React.FC<{
               e.stopPropagation(); // Prevent expansion toggle
               onDelete();
             }}
-            className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-sm"
+            className="bg-red-600 hover:bg-red-700 text-white px-1.5 md:px-2 py-1 rounded-md text-xs font-semibold"
             disabled={isDeleting}
           >
             {isDeleting ? "..." : "Delete"}
           </button>
           <svg 
-            className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${expanded ? 'transform rotate-180' : ''}`} 
+            className={`w-4 h-4 md:w-5 md:h-5 text-orange-500 transition-transform duration-200 ${expanded ? 'transform rotate-180' : ''}`} 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -100,59 +103,61 @@ const JobListItem: React.FC<{
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
-      </div>
-        {expanded && (
-        <div className="p-4 border-t border-gray-700 bg-black/20">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      </div>        {expanded && (
+        <div className="p-3 md:p-4 border-t border-gray-700 bg-black/20">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 md:mb-4">
             <div>
               <span className="text-gray-400 text-xs">Job ID:</span>
-              <p className="text-gray-300 text-sm font-mono break-all select-all">{job.id}</p>
+              <p className="text-gray-300 text-xs font-mono break-all select-all">{job.id}</p>
             </div>
             {job.salary && (
               <div>
                 <span className="text-gray-400 text-xs">Salary:</span>
-                <p className="text-orange-300">{job.salary}</p>
+                <p className="text-orange-300 text-xs">{job.salary}</p>
               </div>
             )}
             {job.location && (
               <div>
                 <span className="text-gray-400 text-xs">Location:</span>
-                <p className="text-orange-300">{job.location}</p>
+                <p className="text-orange-300 text-xs">{job.location}</p>
               </div>
             )}
             {job.sourceLink && (
               <div className="md:col-span-2">
                 <span className="text-gray-400 text-xs">Source:</span>
-                <a href={job.sourceLink} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline break-words block">
+                <a href={job.sourceLink} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline break-words block text-xs">
                   {job.sourceLink}
                 </a>
               </div>
             )}
-          </div>          <div className="mb-3">
-            <span className="text-gray-400 text-xs">Description:</span>
-            <p className="text-white text-sm whitespace-pre-wrap mt-1">{job.description}</p>
           </div>
-          
-          {job.responsibilities && (
-            <div className="mb-3">
-              <span className="text-gray-400 text-xs">Responsibilities:</span>
-              <p className="text-white text-sm whitespace-pre-wrap mt-1">{job.responsibilities}</p>
-            </div>
-          )}
-          
-          {job.idealCandidate && (
-            <div className="mb-3">
-              <span className="text-gray-400 text-xs">Ideal Candidate:</span>
-              <p className="text-white text-sm whitespace-pre-wrap mt-1">{job.idealCandidate}</p>
-            </div>
-          )}
-          
-          {job.benefits && (
+          <div className="space-y-2 md:space-y-3">
             <div>
-              <span className="text-gray-400 text-xs">Benefits:</span>
-              <p className="text-white text-sm whitespace-pre-wrap mt-1">{job.benefits}</p>
+              <span className="text-gray-400 text-xs">Description:</span>
+              <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.description}</p>
             </div>
-          )}
+            
+            {job.responsibilities && (
+              <div>
+                <span className="text-gray-400 text-xs">Responsibilities:</span>
+                <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.responsibilities}</p>
+              </div>
+            )}
+            
+            {job.idealCandidate && (
+              <div>
+                <span className="text-gray-400 text-xs">Ideal Candidate:</span>
+                <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.idealCandidate}</p>
+              </div>
+            )}
+            
+            {job.benefits && (
+              <div>
+                <span className="text-gray-400 text-xs">Benefits:</span>
+                <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.benefits}</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </li>
@@ -614,16 +619,17 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
   return (
     <div>
       <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Jobs</h2>      {activeSubTab === "list" && (
-        <div className="mt-6 bg-black/50 p-6 rounded-lg">
-          <h3 className="text-xl text-orange-400 mb-4">Jobs List</h3>
-            {/* Search bar */}
-          <div className="mb-4">
+        <div className="mt-6 bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700">
+          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4 md:mb-6">Jobs List</h3>
+          
+          {/* Search bar */}
+          <div className="mb-4 md:mb-6">
             <div className="relative">
               <input
                 type="text"
                 value={searchTerm}
                 placeholder="Search jobs by title, company or description..."
-                className="w-full px-4 py-2 pr-10 rounded-lg bg-black/40 border border-orange-500/30 text-white focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                 onChange={(e) => {
                   const value = e.target.value.toLowerCase();
                   setSearchTerm(value);
@@ -649,8 +655,16 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
             </div>
           </div>
           
-          {jobsLoading && <p className="text-gray-400">Loading jobs...</p>}
-          {jobsError && <p className="text-red-400">{jobsError}</p>}          <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
+          {jobsLoading && <div className="flex justify-center py-8">
+            <div className="w-10 h-10 border-4 border-orange-500 rounded-full animate-spin border-t-transparent"></div>
+          </div>}
+          
+          {jobsError && (
+            <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
+              {jobsError}
+            </div>
+          )}
+            <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
             <ul className="space-y-2">
               {jobs.map((job) => (
                 <JobListItem 
@@ -662,47 +676,57 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                   isDisabling={disablingJobId === job.id}
                 />
               ))}
+              {jobs.length === 0 && !jobsLoading && !jobsError && (
+                <li>
+                  <div className="bg-black/40 p-8 rounded-lg text-center">
+                    <p className="text-gray-400">No jobs found.</p>
+                  </div>
+                </li>
+              )}
             </ul>
           </div>
         </div>
       )}      {activeSubTab === "create" && (
-        <div className="mt-6 bg-black/50 p-6 rounded-lg">
-          <h3 className="text-xl text-orange-400 mb-4">Create Job</h3>
-          <form onSubmit={handleCreateJob} className="space-y-6">
+        <div className="mt-6 bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700">
+          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4 md:mb-6">Create Job</h3>
+          <form onSubmit={handleCreateJob} className="space-y-4 md:space-y-6">
             {/* --- Job Basic Info --- */}
             <div>
-              <label className="block text-orange-400 font-semibold mb-1">Job Title *</label>
+              <label htmlFor="jobTitle" className="block text-sm font-semibold text-gray-300 mb-1">Job Title *</label>
               <input 
+                id="jobTitle"
                 type="text" 
                 name="title" 
                 value={newJob.title} 
                 onChange={(e) => setNewJob({ ...newJob, title: e.target.value })} 
                 placeholder="Job Title" 
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
                 required 
               />
             </div>
             
             <div>
-              <label className="block text-orange-400 font-semibold mb-1">Company Name *</label>
+              <label htmlFor="companyName" className="block text-sm font-semibold text-gray-300 mb-1">Company Name *</label>
               <input 
+                id="companyName"
                 type="text" 
                 name="companyName" 
                 placeholder="Company Name" 
                 value={newJob.companyName} 
                 onChange={(e) => setNewJob({ ...newJob, companyName: e.target.value })} 
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
                 required 
               />
             </div>
             
             <div>
-              <label className="block text-orange-400 font-semibold mb-1">Job Category</label>
+              <label htmlFor="jobCategory" className="block text-sm font-semibold text-gray-300 mb-1">Job Category</label>
               <select
+                id="jobCategory"
                 name="category"
                 value={newJob.category}
                 onChange={(e) => setNewJob({ ...newJob, category: e.target.value })}
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
               >
                 <option value="">Select Category</option>
                 <option value="Engineering">Engineering</option>
@@ -718,15 +742,15 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                 <option value="Other">Other</option>
               </select>
             </div>
-            
-            <div>
-              <label className="block text-orange-400 font-semibold mb-1">Job Description *</label>
+              <div>
+              <label htmlFor="jobDescription" className="block text-sm font-semibold text-gray-300 mb-1">Job Description *</label>
               <textarea 
+                id="jobDescription"
                 name="description" 
                 value={newJob.description} 
                 onChange={(e) => setNewJob({ ...newJob, description: e.target.value })} 
                 placeholder="Enter a complete job description" 
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
                 required 
                 rows={10} 
               />
@@ -734,54 +758,57 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
             </div>
             
             <div>
-              <label className="block text-orange-400 font-semibold mb-1">Responsibilities</label>
+              <label htmlFor="responsibilities" className="block text-sm font-semibold text-gray-300 mb-1">Responsibilities</label>
               <textarea 
+                id="responsibilities"
                 name="responsibilities" 
                 value={newJob.responsibilities} 
                 onChange={(e) => setNewJob({ ...newJob, responsibilities: e.target.value })} 
                 placeholder="List key responsibilities for this role. Use bullet points (•) for better readability." 
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
                 rows={6} 
               />
               <p className="text-xs text-gray-400 mt-1">Describe the main tasks and responsibilities of the position.</p>
             </div>
             
             <div>
-              <label className="block text-orange-400 font-semibold mb-1">Ideal Candidate</label>
+              <label htmlFor="idealCandidate" className="block text-sm font-semibold text-gray-300 mb-1">Ideal Candidate</label>
               <textarea 
+                id="idealCandidate"
                 name="idealCandidate" 
                 value={newJob.idealCandidate} 
                 onChange={(e) => setNewJob({ ...newJob, idealCandidate: e.target.value })} 
                 placeholder="Describe your ideal candidate's profile, including soft skills and cultural fit" 
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
                 rows={6} 
               />
               <p className="text-xs text-gray-400 mt-1">Describe the ideal candidate profile, including soft skills and cultural fit.</p>
             </div>
             
             <div>
-              <label className="block text-orange-400 font-semibold mb-1">Benefits</label>
+              <label htmlFor="benefits" className="block text-sm font-semibold text-gray-300 mb-1">Benefits</label>
               <textarea 
+                id="benefits"
                 name="benefits" 
                 value={newJob.benefits} 
                 onChange={(e) => setNewJob({ ...newJob, benefits: e.target.value })} 
                 placeholder="List the benefits and perks offered with this position" 
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"  
                 rows={6} 
               />
               <p className="text-xs text-gray-400 mt-1">Describe compensation benefits, perks, and any other incentives offered with this position.</p>
             </div>
-            
-            {/* Required Skills Section */}
+              {/* Required Skills Section */}
             <div>
-              <label className="block text-orange-400 font-semibold mb-1">Required Skills</label>
+              <label htmlFor="requiredSkills" className="block text-sm font-semibold text-gray-300 mb-1">Required Skills</label>
               <div className="mb-2">
                 <input 
+                  id="requiredSkills"
                   name="requiredSkills"
                   type="text"
                   value={newJob.requiredSkills} 
                   onChange={(e) => setNewJob({ ...newJob, requiredSkills: e.target.value })} 
-                  className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                  className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                   placeholder="Enter skills separated by commas or select from below"
                 />
                 <p className="text-xs text-gray-400 mt-1">Click on tags below to add or remove skills, or type custom skills above.</p>
@@ -819,8 +846,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                 </div>
               )}
 
-              {/* Common Skill Tags */}
-              <div className="flex flex-wrap gap-2">
+              {/* Common Skill Tags */}              <div className="flex flex-wrap gap-2">
                 {['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Human Resources','C++','Full-stack Developer','Developer Relations','iOS','Android Developer','Node.js','SEO','AI'].map(tag => (
                   <button 
                     type="button" 
@@ -839,35 +865,36 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                       
                       setNewJob(prev => ({ ...prev, requiredSkills: newSkills }));
                     }} 
-                    className={`px-3 py-1 rounded-full border text-sm ${newJob.requiredSkills.includes(tag) ? 'bg-orange-500 text-white border-orange-500' : 'bg-black/50 text-gray-300 border-gray-700'}`}
+                    className={`px-3 py-1 rounded-full border text-xs ${newJob.requiredSkills.includes(tag) ? 'bg-orange-500 text-white border-orange-500' : 'bg-black/40 text-gray-300 border-gray-600'}`}
                   >
                     {tag}
                   </button>
                 ))}
               </div>
             </div>
-            
-            {/* Job Details */}
+              {/* Job Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-orange-400 font-semibold mb-1">Job Location</label>
+                <label htmlFor="jobLocation" className="block text-sm font-semibold text-gray-300 mb-1">Job Location</label>
                 <input 
+                  id="jobLocation"
                   type="text"
                   name="location" 
                   value={newJob.location} 
                   onChange={(e) => setNewJob({ ...newJob, location: e.target.value })} 
                   placeholder="Leave blank if 100% Remote" 
-                  className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                  className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
                 />
               </div>
               
               <div>
-                <label className="block text-orange-400 font-semibold mb-1">Employment Type</label>
+                <label htmlFor="employmentType" className="block text-sm font-semibold text-gray-300 mb-1">Employment Type</label>
                 <select
+                  id="employmentType"
                   name="employmentType"
                   value={newJob.employmentType}
                   onChange={(e) => setNewJob({ ...newJob, employmentType: e.target.value })}
-                  className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                  className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                 >
                   <option value="">Select Type</option>
                   <option value="Full-Time">Full-Time</option>
@@ -879,26 +906,28 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
             </div>
             
             <div>
-              <label className="block text-orange-400 font-semibold mb-1">Salary Range</label>
+              <label htmlFor="salaryRange" className="block text-sm font-semibold text-gray-300 mb-1">Salary Range</label>
               <div className="flex gap-2">
                 <input 
+                  id="salaryRange"
                   type="text" 
                   name="salaryRange" 
                   value={newJob.salaryRange} 
                   onChange={(e) => setNewJob({ ...newJob, salaryRange: e.target.value })} 
                   placeholder="e.g. $60,000-$90,000/year" 
-                  className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white" 
+                  className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
                 />
               </div>
             </div>
             
             <div>
-              <label className="block text-orange-400 font-semibold mb-1">Experience Level</label>
+              <label htmlFor="experienceLevel" className="block text-sm font-semibold text-gray-300 mb-1">Experience Level</label>
               <select
+                id="experienceLevel"
                 name="experienceLevel"
                 value={newJob.experienceLevel}
                 onChange={(e) => setNewJob({ ...newJob, experienceLevel: e.target.value })}
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
               >
                 <option value="">Select Experience Level</option>
                 <option value="Junior">Junior</option>
@@ -909,16 +938,16 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
             </div>
             
             {/* Application Methods */}            {/* Removed Application Link and Contact Email fields as requested */}
-            
-            <div>
-              <label className="block text-orange-400 font-semibold mb-1">Source Link (Admin Only) *</label>
+              <div>
+              <label htmlFor="sourceLink" className="block text-sm font-semibold text-gray-300 mb-1">Source Link (Admin Only) *</label>
               <input 
+                id="sourceLink"
                 type="text" 
                 name="sourceLink" 
                 value={newJob.sourceLink} 
                 onChange={(e) => setNewJob({ ...newJob, sourceLink: e.target.value })} 
                 placeholder="Original job posting URL" 
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                 required 
               />
               <p className="text-xs text-gray-400 mt-1">This is only for admin reference and not shown to users.</p>
@@ -927,26 +956,32 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
             <div className="pt-4">
               <button
                 type="submit"
-                className="w-full bg-orange-500 text-white py-3 rounded-full font-semibold text-lg hover:bg-orange-600"
+                disabled={creatingJob}
+                className="w-full bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm"
               >
-                Create Job
+                {creatingJob ? "Creating..." : "Create Job"}
               </button>
             </div>
           </form>
         </div>
-      )}
-
-      {activeSubTab === "prices" && (
-        <div className="mt-6 bg-black/50 p-6 rounded-lg">
-          <h3 className="text-xl text-orange-400 mb-4">Job Post Pricing Plans</h3>
-          {jobPlansLoading && <p className="text-gray-400">Loading plans...</p>}
-          {jobPlansError && <p className="text-red-400">{jobPlansError}</p>}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {jobPlans.map((plan) => (
-              <div key={plan.id} className="bg-black/30 p-4 rounded-lg border border-gray-700 hover:border-orange-500 transition-all">
+      )}      {activeSubTab === "prices" && (
+        <div className="mt-6 bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700">
+          <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4 md:mb-6">Job Post Pricing Plans</h3>
+          {jobPlansLoading && (
+            <div className="flex justify-center py-8">
+              <div className="w-10 h-10 border-4 border-orange-500 rounded-full animate-spin border-t-transparent"></div>
+            </div>
+          )}
+          {jobPlansError && (
+            <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
+              {jobPlansError}
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">            {jobPlans.map((plan) => (
+              <div key={plan.id} className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="text-lg font-semibold text-orange-400">{plan.name}</h4>
-                  <span className="text-xl font-bold text-white">{plan.price} USDT</span>
+                  <h4 className="text-sm md:text-base font-bold text-orange-400">{plan.name}</h4>
+                  <span className="text-lg md:text-xl font-bold text-white">{plan.price} USDT</span>
                 </div>
                 <p className="text-gray-300 mb-3 text-sm break-words">{plan.description}</p>
                 {plan.features.length > 0 && (
@@ -961,71 +996,73 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                 )}
                 <div className="flex gap-2 mb-2">
                   {plan.isPremium && (
-                    <span className="bg-yellow-500/20 text-yellow-300 text-xs px-2 py-1 rounded-full">Premium</span>
+                    <span className="px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-yellow-900/50 text-yellow-300 border border-yellow-700">
+                      Premium
+                    </span>
                   )}
                   {plan.isTopListed && (
-                    <span className="bg-green-500/20 text-green-300 text-xs px-2 py-1 rounded-full">Top Listed</span>
+                    <span className="px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-green-900/50 text-green-300 border border-green-700">
+                      Top Listed
+                    </span>
                   )}
                 </div>
                 <p className="text-gray-400 text-xs mb-3">Duration: {plan.duration} days</p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEditPlan(plan)}
-                    className="bg-orange-500 text-white px-3 py-1 rounded-lg hover:bg-orange-600 text-sm flex-1"
+                    className="bg-orange-500 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold flex-1"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDeleteJobPlan(plan.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 text-sm flex-1"
+                    className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold flex-1"
                   >
                     Delete
                   </button>
                 </div>
               </div>
-            ))}
-            {jobPlans.length < 5 && (
+            ))}            {jobPlans.length < 5 && (
               <div 
-                className="bg-black/20 p-4 rounded-lg border border-dashed border-gray-600 hover:border-orange-500 transition-all flex flex-col items-center justify-center cursor-pointer"
+                className="bg-black/20 p-4 md:p-6 rounded-xl border border-dashed border-gray-600 hover:border-orange-500 transition-all flex flex-col items-center justify-center cursor-pointer"
                 onClick={() => setIsEditingPlan(true)}
               >
-                <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center mb-2">
+                <div className="w-12 h-12 rounded-full bg-black/40 flex items-center justify-center mb-2">
                   <span className="text-2xl font-bold text-orange-400">+</span>
                 </div>
-                <span className="text-gray-300">Add New Plan</span>
+                <span className="text-gray-300 text-sm">Add New Plan</span>
               </div>
             )}
-          </div>
-
-          {/* Form for creating or editing plans */}
+          </div>          {/* Form for creating or editing plans */}
           {isEditingPlan && (
-            <div className="bg-black/40 p-6 rounded-lg border border-gray-700 mb-8">
-              <h4 className="text-lg font-semibold text-orange-400 mb-4">
+            <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 mb-6 md:mb-10">
+              <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4 md:mb-6">
                 {selectedPlanForEdit ? `Edit Plan: ${selectedPlanForEdit.name}` : "Create New Plan"}
-              </h4>
-              <form onSubmit={selectedPlanForEdit ? handleUpdateJobPlan : handleCreateJobPlan} className="space-y-4">
+              </h3>
+              <form onSubmit={selectedPlanForEdit ? handleUpdateJobPlan : handleCreateJobPlan} className="space-y-4 md:space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Plan Name</label>
+                  <label htmlFor="planName" className="block text-sm font-semibold text-gray-300 mb-1">Plan Name</label>
                   <input
+                    id="planName"
                     type="text"
                     name="name"
                     value={selectedPlanForEdit ? selectedPlanForEdit.name : newJobPlan.name}
                     onChange={handleJobPlanInputChange}
                     placeholder="Basic Plan, Premium Plan, etc."
-                    className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                     required
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Price</label>
+                </div>                <div>
+                  <label htmlFor="planPrice" className="block text-sm font-semibold text-gray-300 mb-1">Price</label>
                   <div className="flex">
                     <input
+                      id="planPrice"
                       type="number"
                       name="price"
                       value={selectedPlanForEdit ? selectedPlanForEdit.price : newJobPlan.price}
                       onChange={handleJobPlanInputChange}
                       placeholder="70"
-                      className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                      className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-l-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                       required
                       min="0"
                       step="any"
@@ -1034,40 +1071,41 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                       name="currency"
                       value={selectedPlanForEdit ? selectedPlanForEdit.currency : newJobPlan.currency}
                       onChange={handleJobPlanInputChange}
-                      className="border border-gray-600 border-l-0 rounded-r-lg px-3 py-2 bg-black/50 text-white"
+                      className="border border-gray-600 border-l-0 rounded-r-lg px-3 py-2 bg-black/40 text-white"
                       disabled
                     >
                       <option value="USDT">USDT</option>
                     </select>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                </div>                <div>
+                  <label htmlFor="planDescription" className="block text-sm font-semibold text-gray-300 mb-1">Description</label>
                   <textarea
+                    id="planDescription"
                     name="description"
                     value={selectedPlanForEdit ? selectedPlanForEdit.description : newJobPlan.description}
                     onChange={handleJobPlanInputChange}
                     placeholder="Short description of what this plan includes"
-                    className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                     rows={3}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Duration (days)</label>
+                  <label htmlFor="planDuration" className="block text-sm font-semibold text-gray-300 mb-1">Duration (days)</label>
                   <input
+                    id="planDuration"
                     type="number"
                     name="duration"
                     value={selectedPlanForEdit ? selectedPlanForEdit.duration : newJobPlan.duration}
                     onChange={handleJobPlanInputChange}
                     placeholder="30"
-                    className="w-full border border-gray-600 rounded-lg px-3 py-2 bg-black/50 text-white"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                     required
                     min="1"
                   />
                 </div>                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Features</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <label className="block text-sm font-semibold text-gray-300 mb-1">Features</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {predefinedFeatures.map((feature) => (
                       <div key={feature} className="flex items-center">
                         <input
@@ -1079,17 +1117,16 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                               : newJobPlan.features.includes(feature)
                           }
                           onChange={() => handleToggleFeature(feature)}
-                          className="mr-2 h-4 w-4"
+                          className="mr-2 h-5 w-5 accent-orange-500"
                         />
-                        <label htmlFor={`feature-${feature.replace(/\s+/g, '-').toLowerCase()}`} className="text-gray-300">
+                        <label htmlFor={`feature-${feature.replace(/\s+/g, '-').toLowerCase()}`} className="text-gray-300 text-sm font-medium">
                           {feature}
                         </label>
                       </div>
                     ))}
-                  </div>
-                  {(isEditingPlan && selectedPlanForEdit && selectedPlanForEdit.features.length > 0) || (!isEditingPlan && newJobPlan.features.length > 0) ? (
+                  </div>                  {(isEditingPlan && selectedPlanForEdit && selectedPlanForEdit.features.length > 0) || (!isEditingPlan && newJobPlan.features.length > 0) ? (
                     <div className="mt-3">
-                      <p className="text-sm font-medium text-gray-300 mb-1">Selected Features:</p>
+                      <p className="text-sm font-semibold text-gray-300 mb-1">Selected Features:</p>
                       <ul className="list-disc pl-5 text-sm text-orange-400">
                         {(isEditingPlan && selectedPlanForEdit 
                           ? selectedPlanForEdit.features 
@@ -1100,33 +1137,31 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                     </div>
                   ) : null}
                 </div>
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex justify-end gap-2 pt-4">
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                    className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm"
                   >
                     {selectedPlanForEdit ? "Update Plan" : "Create Plan"}
                   </button>
                 </div>
               </form>
             </div>
-          )}
-
-          {/* Help information */}
+          )}          {/* Help information */}
           {!isEditingPlan && (
-            <div className="bg-black/20 p-4 rounded-lg border border-gray-700 mb-8">
-              <h4 className="text-md font-semibold text-orange-400 mb-2">Job Posting Plans Information</h4>
-              <p className="text-gray-300 text-sm mb-2">
+            <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 mb-6 md:mb-10">
+              <h3 className="text-base md:text-lg font-bold text-orange-400 mb-4">Job Posting Plans Information</h3>
+              <p className="text-gray-300 text-sm mb-4">
                 These plans will be offered to employers when they want to post a new job.
               </p>
-              <ul className="list-disc pl-5 text-sm text-gray-400">
+              <ul className="list-disc pl-5 text-sm text-gray-400 space-y-2">
                 <li>Set different pricing tiers based on features and duration</li>
                 <li>Mark premium plans to highlight them to users</li>
                 <li>Use "Top Listed" for plans that place jobs at the top of search results</li>
