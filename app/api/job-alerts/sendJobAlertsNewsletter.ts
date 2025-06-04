@@ -44,7 +44,7 @@ async function getHighlightedJobs() {
   ));
   const jobs = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...(docSnap.data() as any) }));
 
-  // Buscar o logo real da empresa para cada job (sempre pelo companyId)
+  // Search for the actual company logo for each job (always by companyId)
   for (const job of jobs) {
     const j = job as any;
     if (j.companyId) {
@@ -72,15 +72,15 @@ async function getHighlightedJobs() {
 // Mark jobs as sent
 async function markJobsAsSent(jobIds: string[]) {
   for (const id of jobIds) {
-    // Atualiza todos os campos para garantir consistência e compatibilidade
+    // Updates all fields to ensure consistency and compatibility
     const updateData = { 
       sentInNewsletter: true,
       newsletterSent: true,
-      ' newsletterSent': true // Também atualiza o campo com espaço, se existir
+      ' newsletterSent': true // Also updates the field with space, if it exists
     };
     
     await updateDoc(doc(db, 'jobs', id), updateData);
-    console.log(`Job ${id} marcado como enviado em todos os campos.`);
+    console.log(`Job ${id} marked as sent in all fields.`);
   }
 }
 
