@@ -3500,18 +3500,14 @@ const fetchEmployersList = async () => {
                       <AdminSocialMediaManager />
                     </div>
                   </div>
-                )}
-
-                {/* Payment Settings Section */}
+                )}                {/* Payment Settings Section */}
                 {activeTab === "payments" && activeSubTab === "config" && (
 
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Payment Configuration</h2>
-                    <div className="mt-6 bg-black/50 p-6 rounded-lg">
-                      <PaymentSettings hasPermission={true} />
-                    </div>
+                    <PaymentSettings hasPermission={true} />
                   </div>
-                )}                {activeTab === "learn2earn" && activeSubTab === "list" && (
+                )}{activeTab === "learn2earn" && activeSubTab === "list" && (
                   <div className="bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700">
                     <h3 className="text-base md:text-lg font-bold text-orange-400 mb-4 md:mb-6">Learn2Earn Opportunities</h3>
                     {learn2earnLoading && <p className="text-gray-400 text-sm">Loading opportunities...</p>}
