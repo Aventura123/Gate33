@@ -84,20 +84,35 @@ async function markJobsAsSent(jobIds: string[]) {
   }
 }
 
+// Interface for partner data
+interface Partner {
+  id: string;
+  name: string;
+  logoUrl: string;
+  description: string;
+  website: string;
+}
+
 // Send the newsletter to all emails
-export async function sendJobAlertsNewsletter(intro?: string) {
+export async function sendJobAlertsNewsletter(intro?: string, selectedJobs?: any[], selectedPartners?: Partner[]) {
   const emails = await getAllNewsletterEmails();
   if (!emails.length) {
     console.log('No active subscribers.');
     return;
   }
-  const jobs = await getHighlightedJobs();
+  
+  // Use selected jobs if provided, otherwise fetch highlighted jobs
+  const jobs = selectedJobs || await getHighlightedJobs();
   if (!jobs.length) {
-    console.log('No highlighted jobs to send.');
+    console.log('No jobs to send.');
     return;
   }
+  
+  // Get partners if not provided
+  const partners = selectedPartners || [];
+  
   for (const email of emails) {
-    const html = jobAlertNewsletterHtml({ jobs, email, intro });
+    const html = jobAlertNewsletterHtml({ jobs, partners, email, intro });
     await sendEmail({
       to: email,
       subject: '🚀 New Blockchain Jobs for You – Gate33',
@@ -107,7 +122,11 @@ export async function sendJobAlertsNewsletter(intro?: string) {
     });
     console.log(`Newsletter sent to ${email}`);
   }
-  await markJobsAsSent(jobs.map(j => j.id));
+  
+  // Only mark jobs as sent if they were automatically selected (not manually provided)
+  if (!selectedJobs) {
+    await markJobsAsSent(jobs.map(j => j.id));
+  }
   console.log('All newsletters sent and jobs marked as sent.');
 }
 

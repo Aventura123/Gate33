@@ -6,35 +6,157 @@ export function generateUnsubscribeLink(email: string): string {
   return `${baseUrl}/api/job-alerts/unsubscribe?email=${encodeURIComponent(email)}`;
 }
 
-export function jobAlertNewsletterHtml({ jobs, email, intro }:{ jobs: any[], email: string, intro?: string }): string {
+// Define Partner interface
+interface Partner {
+  id: string;
+  name: string;
+  logoUrl: string;
+  description: string;
+  website: string;
+}
+
+export function jobAlertNewsletterHtml({ jobs, partners = [], email, intro }:{ jobs: any[], partners?: Partner[], email: string, intro?: string }): string {
   const unsubscribeUrl = generateUnsubscribeLink(email);
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #18181b; color: #fff; border-radius: 8px; overflow: hidden;">
-      <div style="background: #FF6B00; padding: 24px 24px 12px 24px;">
-        <h1 style="margin: 0; color: #fff; font-size: 2rem;">🚀 New Blockchain Jobs for You</h1>
-      </div>
-      <div style="padding: 24px;">
-        <p style="font-size: 1.1rem; color: #ffb97a;">${intro || 'Highlighted jobs this week:'}</p>
-        <ul style="padding: 0; list-style: none;">
-          ${jobs.map(job => {
-            const logo = job.companyPhotoURL || job.photoURL || 'https://gate33.net/logo.png';
-            const jobUrl = `https://gate33.net/jobs/${job.id}`;
-            return `
-              <li style="margin-bottom: 12px; padding: 0;">
-                <a href="${jobUrl}" target="_blank" style="display: flex; align-items: center; text-decoration: none; background: #23232a; border-radius: 6px; padding: 12px 16px; color: #fff; max-width: 520px; margin: 0 auto; min-width:0;">
-                  <img src='${logo}' alt='Logo' style='width:32px;height:32px;margin-right:14px;border-radius:4px;background:#18181b;flex-shrink:0;'>
-                  <div style="display: flex; flex-direction: column; min-width:0; overflow-wrap:break-word; word-break:break-word;">
-                    <span style="font-size: 1.08rem; font-weight: bold; color: #FF6B00; min-width:0; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${job.title}</span>
-                    <span style="font-size: 0.98rem; color: #ffb97a; min-width:0; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${job.company}</span>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <title>Gate33 - Blockchain Jobs Newsletter</title>    <style type="text/css">
+        /* Estilos base */
+        body, html {
+          margin: 0;
+          padding: 0;
+          width: 100% !important;
+          background-color: #000000;
+        }
+        .ReadMsgBody {width: 100%;}
+        .ExternalClass {width: 100%;}
+        
+        /* Media queries para responsividade */
+        @media screen and (max-width: 525px) {
+          .container {
+            width: 100% !important;
+          }
+          .mobile-padding {
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+          }
+          .mobile-header {
+            font-size: 1.5rem !important;
+          }
+          .job-item {
+            padding: 10px !important;
+          }
+          .job-title {
+            font-size: 1rem !important;
+          }
+          .job-company {
+            font-size: 0.9rem !important;
+          }
+        }
+      </style>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #000000;">
+      <!-- Container principal - com largura máxima e centralizado -->
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
+        <tr>
+          <td align="center" bgcolor="#000000">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" class="container" style="max-width: 600px; margin: 0 auto; background-color: rgba(0, 0, 0, 0.3); border: 1px solid #333; border-radius: 8px; overflow: hidden;">
+              
+              <!-- Cabeçalho -->
+              <tr>
+                <td align="left" bgcolor="#FF6B00" class="mobile-padding" style="padding: 24px 24px 12px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                  <h1 class="mobile-header" style="margin: 0; color: #fff; font-size: 2rem; font-family: Arial, sans-serif;">🚀 New Blockchain Jobs For You</h1>
+                </td>
+              </tr>
+              
+              <!-- Conteúdo -->
+              <tr>
+                <td align="left" class="mobile-padding" style="font-family: Arial, sans-serif; padding: 24px;">                  <p style="font-size: 1.1rem; color: #FF6B00; margin-top: 0;">${intro || 'Highlighted jobs this week:'}</p>
+                  
+                  <p style="font-size: 1.1rem; color: #FF6B00; margin-top: 24px; margin-bottom: 12px;">Highlighted Jobs:</p>
+                  
+                  <!-- Lista de vagas -->
+                  <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                    ${jobs.map(job => {
+                      const logo = job.companyPhotoURL || job.photoURL || 'https://gate33.net/logo.png';
+                      const jobUrl = `https://gate33.net/jobs/${job.id}`;
+                      return `
+                        <tr>
+                          <td style="padding-bottom: 12px;">
+                            <a href="${jobUrl}" target="_blank" style="text-decoration: none; color: inherit; display: block;">
+                              <table border="0" cellpadding="0" cellspacing="0" width="100%" class="job-item" style="background: rgba(0,0,0,0.4); border: 1px solid #333; border-radius: 8px; max-width: 520px; margin: 0 auto; transition: all 0.3s;">
+                                <tr>
+                                  <td style="padding: 16px;">
+                                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                      <tr>
+                                        <td width="40">
+                                          <img src="${logo}" alt="Logo" width="40" height="40" style="display: block; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid #444;">
+                                        </td>
+                                        <td width="14" style="font-size: 1px;">&nbsp;</td>
+                                        <td>
+                                          <span class="job-title" style="display: block; font-size: 1.08rem; font-weight: bold; color: #FF6B00; font-family: Arial, sans-serif;">${job.title}</span>
+                                          <span class="job-company" style="display: block; font-size: 0.98rem; color: #fff; font-family: Arial, sans-serif;">${job.company}</span>
+                                        </td>
+                                      </tr>
+                                    </table>
+                                  </td>
+                                </tr>
+                              </table>
+                            </a>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}</table>                  ${partners.length > 0 ? `
+                  <!-- Partners Section -->
+                  <div style="margin-top: 36px; border-top: 1px solid rgba(255, 107, 0, 0.3); padding-top: 24px;">
+                    <p style="font-size: 1rem; color: #FF6B00; text-align: center; margin-bottom: 20px; font-family: Arial, sans-serif; font-weight: bold;">Backed by</p>
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 24px;">
+                      <tr>
+                        <td align="center">
+                          <table border="0" cellpadding="0" cellspacing="0" style="max-width: 500px;">
+                            <tr>
+                              <td>
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                  <tr style="display: flex; flex-wrap: wrap; justify-content: center;">
+                                    ${partners.map(partner => {
+                                      return `
+                                        <td style="display: inline-block; padding: 10px; width: 80px; text-align: center;">
+                                          <a href="${partner.website || '#'}" target="_blank" style="text-decoration: none; display: block;">
+                                            <div style="width: 64px; height: 64px; margin: 0 auto 8px; border-radius: 8px; background: rgba(0,0,0,0.4); border: 1px solid #333; padding: 6px; display: flex; align-items: center; justify-content: center;">
+                                              <img src="${partner.logoUrl}" alt="${partner.name}" style="max-width: 100%; max-height: 100%; display: block;">
+                                            </div>
+                                            <span style="display: block; color: #fff; font-size: 0.8rem; font-family: Arial, sans-serif; text-align: center;">${partner.name}</span>
+                                          </a>
+                                        </td>
+                                      `;
+                                    }).join('')}
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
                   </div>
-                </a>
-              </li>
-            `;
-          }).join('')}
-        </ul>
-        <p style="font-size: 0.95rem; color: #aaa; margin-top: 32px;">You are receiving this email because you subscribed to job alerts at Gate33.<br>
-        If you no longer wish to receive these emails, <a href="${unsubscribeUrl}" style="color: #FF6B00; text-decoration: underline;">unsubscribe here</a>.</p>
-      </div>
-    </div>
+                  ` : ''}
+                  
+                  <!-- Rodapé -->
+                  <p style="font-size: 0.95rem; color: #aaa; margin-top: 32px; font-family: Arial, sans-serif;">
+                    You are receiving this email because you subscribed to job alerts at Gate33.<br>
+                    If you no longer wish to receive these emails, <a href="${unsubscribeUrl}" style="color: #FF6B00; text-decoration: underline;">unsubscribe here</a>.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
   `;
 }

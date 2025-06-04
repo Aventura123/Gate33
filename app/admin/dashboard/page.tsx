@@ -21,6 +21,7 @@ import AdManager from "../../../components/admin/AdManager";
 import WalletButton from '../../../components/WalletButton';
 import AdminNewsletterManager from "../../../components/admin/AdminNewsletterManager";
 import AdminSocialMediaManager from "../../../components/admin/AdminSocialMediaManager";
+import AdminPartnersManager from "../../../components/admin/AdminPartnersManager";
 import Learn2EarnContractsPanel from "../../../components/ui/Learn2EarnContractsPanel";
 import SystemActivityMonitor from "../../../components/admin/SystemActivityMonitor";
 
@@ -2049,8 +2050,7 @@ const fetchEmployersList = async () => {
                       >
                         Newsletter
                       </button>
-                    </li>
-                    <li>
+                    </li>                    <li>
                       <button
                         className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "socialmedia" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
                         onClick={() => {
@@ -2059,6 +2059,17 @@ const fetchEmployersList = async () => {
                         }}
                       >
                         Social Media
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${activeSubTab === "partners" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        onClick={() => {
+                          setActiveSubTab("partners");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Partners
                       </button>
                     </li>                </ul>
                 )}
@@ -3501,16 +3512,23 @@ const fetchEmployersList = async () => {
                       <AdminNewsletterManager />
                     </div>
                   </div>
-                )}
-
-                {/* Social Media Section */}
+                )}                {/* Social Media Section */}
                 {activeTab === "marketing" && activeSubTab === "socialmedia" && (
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Social Media Promotion</h2>                    <div className="mt-6 bg-black/30 p-6 rounded-lg border border-gray-700 hover:border-orange-500 transition-colors">
                       <AdminSocialMediaManager />
                     </div>
                   </div>
-                )}                {/* Payment Settings Section */}
+                )}
+                
+                {/* Partners Section */}
+                {activeTab === "marketing" && activeSubTab === "partners" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Partners Manager</h2>                    <div className="mt-6 bg-black/30 p-6 rounded-lg border border-gray-700 hover:border-orange-500 transition-colors">
+                      <AdminPartnersManager />
+                    </div>
+                  </div>
+                )}{/* Payment Settings Section */}
                 {activeTab === "payments" && activeSubTab === "config" && (
 
                   <div>

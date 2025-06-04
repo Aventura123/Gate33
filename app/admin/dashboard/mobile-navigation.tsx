@@ -281,9 +281,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
         >
           System Activity
         </div>
-      </li>
-
-      {/* Notifications Tab */}
+      </li>      {/* Notifications Tab */}
       <li>
         <div
           className={`cursor-pointer p-2 rounded-lg text-center md:text-left text-sm ${
@@ -293,6 +291,46 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
         >
           Notifications
         </div>
+      </li>
+
+      {/* Marketing Tab */}
+      <li>
+        <div
+          className={`cursor-pointer p-2 rounded-lg text-center md:text-left text-sm ${
+            activeTab === "marketing" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
+          }`}
+          onClick={() => handleMobileMenuOptionClick("marketing")}
+        >
+          Marketing
+        </div>
+        {activeTab === "marketing" && (
+          <ul className="ml-4 mt-2 space-y-1 flex flex-col items-center">
+            <li
+              className={`cursor-pointer p-1 rounded-lg text-center md:text-left text-sm w-3/4 ${
+                activeSubTab === "newsletter" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
+              }`}
+              onClick={() => handleMobileMenuOptionClick("marketing", "newsletter")}
+            >
+              Newsletter
+            </li>
+            <li
+              className={`cursor-pointer p-1 rounded-lg text-center md:text-left text-sm w-3/4 ${
+                activeSubTab === "socialmedia" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
+              }`}
+              onClick={() => handleMobileMenuOptionClick("marketing", "socialmedia")}
+            >
+              Social Media
+            </li>
+            <li
+              className={`cursor-pointer p-1 rounded-lg text-center md:text-left text-sm w-3/4 ${
+                activeSubTab === "partners" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300"
+              }`}
+              onClick={() => handleMobileMenuOptionClick("marketing", "partners")}
+            >
+              Partners
+            </li>
+          </ul>
+        )}
       </li>
     </ul>
   );
