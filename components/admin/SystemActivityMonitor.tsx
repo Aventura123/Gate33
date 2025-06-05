@@ -202,16 +202,15 @@ const ContractMonitor: React.FC = () => {  const [monitoringState, setMonitoring
         )}
         
         <div className="mt-4">
-          <h4 className="text-orange-300 text-sm mb-2">Tracked Contracts:</h4>
-          <table className="w-full text-sm">            <thead>
-              <tr>
-                <th className="text-left text-gray-400 pb-1">Contract</th>
-                <th className="text-left text-gray-400 pb-1">Monitored</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Service Wallet Native Balances row (replaces Wallet) */}
-              <tr>
+          <h4 className="text-orange-300 text-sm mb-2">Tracked Contracts:</h4>                <table className="w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th className="text-left text-gray-400 pb-1">Contract</th>
+                      <th className="text-left text-gray-400 pb-1">Monitored</th>
+                    </tr>                  </thead>
+                  <tbody>
+                    {/* Service Wallet Native Balances row (replaces Wallet) */}
+                    <tr>
                 <td className="py-1 text-gray-200 font-semibold">Service Wallet Native Balances</td>
                 <td className="py-1">
                   <span className={
@@ -263,16 +262,15 @@ const ContractMonitor: React.FC = () => {  const [monitoringState, setMonitoring
                       : "text-red-400"
                   }>
                     {(monitoringState?.fullState && monitoringState.fullState['isTokenDistributionMonitoring']) ? "Yes" : "No"}
-                  </span>
-                </td>
-              </tr>
-              {/* ...existing Learn2Earn and InstantJobsEscrow contracts... */}
-              {learn2EarnContracts && learn2EarnContracts.length > 0 && (
+                  </span>                    </td>
+                  </tr>
+                  {/* ...existing Learn2Earn and InstantJobsEscrow contracts... */}
+                  {learn2EarnContracts && learn2EarnContracts.length > 0 && (
                 <>
-                  <tr>
-                    <td colSpan={2} className="pt-3 pb-1">
+                  <tr>                    <td colSpan={2} className="pt-3 pb-1">
                       <span className="font-semibold text-orange-200">Learn2Earn</span>
-                    </td>                  </tr>
+                    </td>
+                  </tr>
                   {learn2EarnContracts.map((contract, idx) => (
                     <tr key={`learn2earn-${contract.network}-${idx}`}>
                       <td className="py-1 pl-4 text-gray-200">
@@ -298,10 +296,10 @@ const ContractMonitor: React.FC = () => {  const [monitoringState, setMonitoring
               {/* InstantJobsEscrow contracts monitoring */}
               {instantJobsEscrowContracts && instantJobsEscrowContracts.length > 0 && (
                 <>
-                  <tr>
-                    <td colSpan={2} className="pt-3 pb-1">
+                  <tr>                    <td colSpan={2} className="pt-3 pb-1">
                       <span className="font-semibold text-orange-200">Instant Jobs Escrow</span>
-                    </td>                  </tr>
+                    </td>
+                  </tr>
                   {instantJobsEscrowContracts.map((contract, idx) => (
                     <tr key={`instantjobs-${contract.network}-${idx}`}>
                       <td className="py-1 pl-4 text-gray-200">
@@ -318,10 +316,10 @@ const ContractMonitor: React.FC = () => {  const [monitoringState, setMonitoring
                         <span className={contract.active ? "text-green-400" : "text-red-400"}>
                           {contract.active ? "Yes" : "No"}
                         </span>
-                      </td>
-                    </tr>
+                      </td>                    </tr>
                   ))}
-                </>              )}
+                </>
+              )}
             </tbody>
           </table>
         </div>
