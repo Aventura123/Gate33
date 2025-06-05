@@ -135,14 +135,11 @@ async function monitorBalances(db) {
       if (!urls || !urls.length) {
         console.warn(`⚠️ RPC URL não configurada para rede ${network}`);
         results.errors.push(`RPC URL não configurada para rede ${network}`);
-        continue;
-      }
-
-      // Tentar conectar com o primeiro URL disponível
+        continue;      }      // Tentar conectar com o primeiro URL disponível
       let connected = false;
       for (const url of urls) {
         try {
-          providers[network] = new ethers.providers.JsonRpcProvider(url);
+          providers[network] = new ethers.JsonRpcProvider(url);
           await providers[network].getBlockNumber();
           console.log(`✅ Conexão de saldos estabelecida com ${network} via ${url}`);
           connected = true;
@@ -166,9 +163,8 @@ async function monitorBalances(db) {
   // Verificar saldos para cada combinação de carteira e rede
   for (const wallet of wallets) {
     for (const [network, provider] of Object.entries(providers)) {
-      try {
-        const balance = await provider.getBalance(wallet.address);
-        const balanceEth = parseFloat(ethers.utils.formatEther(balance));
+      try {        const balance = await provider.getBalance(wallet.address);
+        const balanceEth = parseFloat(ethers.formatEther(balance));
         const currency = getNativeCurrency(network);
         
         console.log(`💰 ${wallet.name} - ${network}: ${balanceEth} ${currency}`);
@@ -184,10 +180,9 @@ async function monitorBalances(db) {
         };
         
         results.balances.push(balanceDoc);
-        
-        // Registrar no Firestore
+          // Registrar no Firestore
         balanceDocs.push({
-          collection: 'monitoring/balances',
+          collection: 'monitoring/data/balances', // Corrigido para a estrutura recomendada (3 componentes)
           id: `${wallet.type}_${network}_${wallet.address.slice(-8)}`,
           data: balanceDoc
         });
@@ -197,10 +192,9 @@ async function monitorBalances(db) {
           const alertMessage = `⚠️ Alerta: Saldo baixo em ${wallet.name} na rede ${network}: ${balanceEth} ${currency}`;
           console.warn(alertMessage);
           results.errors.push(alertMessage);
-          
-          // Registro adicional para alertas
+            // Registro adicional para alertas
           balanceDocs.push({
-            collection: 'monitoring/alerts',
+            collection: 'monitoring/data/alerts',
             id: `balance_low_${wallet.type}_${network}_${Date.now()}`,
             data: {
               type: 'wallet_balance',
@@ -230,7 +224,8 @@ async function monitorBalances(db) {
       const batch = db.batch();
       
       for (const doc of balanceDocs) {
-        const docRef = db.collection(doc.collection).doc(doc.id);
+        // Corrigir para subcoleção correta
+        const docRef = db.collection('monitoring').doc('balances').collection('items').doc(doc.id);
         batch.set(docRef, doc.data, { merge: true });
       }
       

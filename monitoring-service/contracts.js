@@ -92,7 +92,6 @@ const getTokenDistributor = () => process.env.TOKEN_DISTRIBUTOR_ADDRESS || proce
 
 // Learn2Earn contracts addresses
 const getLearn2EarnContracts = () => ({
-  'bsc-testnet': process.env.LEARN2EARN_BSC_TESTNET_ADDRESS || '',
   'avalanche': process.env.LEARN2EARN_AVALANCHE_ADDRESS || '',
   'bsc': process.env.LEARN2EARN_BSC_ADDRESS || '',
   'optimism': process.env.LEARN2EARN_OPTIMISM_ADDRESS || '',
@@ -102,7 +101,6 @@ const getLearn2EarnContracts = () => ({
 
 // InstantJobsEscrow contract addresses
 const getInstantJobsEscrowContracts = () => ({
-  'bsc-testnet': process.env.INSTANT_JOBS_ESCROW_BSC_TESTNET_ADDRESS || '',
   'avalanche': process.env.INSTANT_JOBS_ESCROW_AVALANCHE_ADDRESS || '',
   'bsc': process.env.INSTANT_JOBS_ESCROW_BSC_ADDRESS || '',
   'optimism': process.env.INSTANT_JOBS_ESCROW_OPTIMISM_ADDRESS || '',
@@ -130,10 +128,8 @@ async function monitorContracts(db) {
       if (!urls || !urls.length) {
         results.errors.push(`RPC URL não configurada para rede ${network}`);
         continue;
-      }
-
-      // Usar o primeiro URL disponível
-      providers[network] = new ethers.providers.JsonRpcProvider(urls[0]);
+      }      // Usar o primeiro URL disponível
+      providers[network] = new ethers.JsonRpcProvider(urls[0]);
       
       // Verificar conexão
       await providers[network].getBlockNumber();
@@ -149,10 +145,9 @@ async function monitorContracts(db) {
   const monitDocs = [];
 
   if (serviceWalletAddress) {
-    for (const [network, provider] of Object.entries(providers)) {
-      try {
+    for (const [network, provider] of Object.entries(providers)) {      try {
         const balance = await provider.getBalance(serviceWalletAddress);
-        const balanceEth = parseFloat(ethers.utils.formatEther(balance));
+        const balanceEth = parseFloat(ethers.formatEther(balance));
         
         console.log(`💰 Saldo na ${network}: ${balanceEth} ETH`);
         
@@ -166,7 +161,7 @@ async function monitorContracts(db) {
         };
         
         monitDocs.push({
-          collection: 'monitoring/contracts',
+          collection: 'monitoring',
           id: `wallet_${network}`,
           data: walletDoc
         });
@@ -176,10 +171,9 @@ async function monitorContracts(db) {
           const message = `⚠️ Alerta: Saldo baixo na carteira de serviço na rede ${network}: ${balanceEth} ETH`;
           console.warn(message);
           results.errors.push(message);
-          
-          // Registro adicional para alertas
+            // Registro adicional para alertas
           monitDocs.push({
-            collection: 'monitoring/alerts',
+            collection: 'monitoring/data/alerts',
             id: `wallet_low_${network}_${Date.now()}`,
             data: {
               type: 'wallet_balance',
@@ -203,16 +197,15 @@ async function monitorContracts(db) {
   const learn2EarnContracts = getLearn2EarnContracts();
   for (const [network, address] of Object.entries(learn2EarnContracts)) {
     if (!address) continue;
-    
-    try {
+      try {
       // Verificar se temos um provider para esta rede
-      if (!providers[network] && !providers[network.replace('-testnet', '')]) {
+      if (!providers[network]) {
         console.warn(`⚠️ Provider não disponível para Learn2Earn em ${network}`);
         continue;
       }
       
       // Usar o provider correto
-      const provider = providers[network] || providers[network.replace('-testnet', '')];
+      const provider = providers[network];
       
       // ABI mínimo para Learn2Earn
       const minimalAbi = [
@@ -243,7 +236,7 @@ async function monitorContracts(db) {
       };
       
       monitDocs.push({
-        collection: 'monitoring/contracts',
+        collection: 'monitoring',
         id: `learn2earn_${network}`,
         data: contractDoc
       });
@@ -260,16 +253,15 @@ async function monitorContracts(db) {
   const instantJobsContracts = getInstantJobsEscrowContracts();
   for (const [network, address] of Object.entries(instantJobsContracts)) {
     if (!address) continue;
-    
-    try {
+      try {
       // Verificar se temos um provider para esta rede
-      if (!providers[network] && !providers[network.replace('-testnet', '')]) {
+      if (!providers[network]) {
         console.warn(`⚠️ Provider não disponível para InstantJobsEscrow em ${network}`);
         continue;
       }
       
       // Usar o provider correto
-      const provider = providers[network] || providers[network.replace('-testnet', '')];
+      const provider = providers[network];
       
       // ABI mínimo para InstantJobsEscrow
       const minimalAbi = [
@@ -304,7 +296,7 @@ async function monitorContracts(db) {
       };
       
       monitDocs.push({
-        collection: 'monitoring/contracts',
+        collection: 'monitoring',
         id: `instantjobs_${network}`,
         data: contractDoc
       });
@@ -333,14 +325,13 @@ async function monitorContracts(db) {
         // Criar instância do contrato
         const contract = new ethers.Contract(tokenDistributorAddress, minimalAbi, providers[network]);
         
-        // Verificar status
-        const totalDistributed = await contract.totalDistributed();
-        const formattedTotal = ethers.utils.formatEther(totalDistributed);
+        // Verificar status        const totalDistributed = await contract.totalDistributed();
+        const formattedTotal = ethers.formatEther(totalDistributed);
         
         let availableTokens = '0';
         try {
           const available = await contract.availableTokensForDistribution();
-          availableTokens = ethers.utils.formatEther(available);
+          availableTokens = ethers.formatEther(available);
         } catch (availErr) {
           console.warn("⚠️ Não foi possível obter tokens disponíveis:", availErr.message);
         }
@@ -357,7 +348,7 @@ async function monitorContracts(db) {
         };
         
         monitDocs.push({
-          collection: 'monitoring/contracts',
+          collection: 'monitoring',
           id: 'tokendistributor',
           data: contractDoc
         });
@@ -383,13 +374,13 @@ async function monitorContracts(db) {
       const batch = db.batch();
       
       for (const doc of monitDocs) {
-        const docRef = db.collection(doc.collection).doc(doc.id);
+        // Corrigir para subcoleção correta
+        const docRef = db.collection('monitoring').doc('contracts').collection('items').doc(doc.id);
         batch.set(docRef, doc.data, { merge: true });
       }
       
       await batch.commit();
       console.log(`✅ ${monitDocs.length} documentos atualizados no Firestore`);
-      
     } catch (firestoreError) {
       console.error(`❌ Erro ao atualizar Firestore:`, firestoreError);
       results.errors.push(`Falha ao atualizar Firestore: ${firestoreError.message}`);

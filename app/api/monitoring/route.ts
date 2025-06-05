@@ -3,6 +3,7 @@
  * This route forwards requests to the Ocian server to avoid CORS issues
  */
 import { NextRequest, NextResponse } from "next/server";
+import { sendEmail } from '../../../utils/emailService';
 
 // Ocean monitoring server URL from environment variable
 const OCIAN_URL = process.env.OCIAN_URL || 'http://159.65.92.60:3001';
@@ -28,6 +29,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error: any) {
     console.error("Error proxying request to Ocian server:", error);
+    // Enviar alerta por e-mail
+    await sendEmail({
+      to: process.env.SUPPORT_EMAIL || 'info@gate33.net',
+      from: process.env.EMAIL_FROM || 'noreply@gate33.net',
+      subject: '[ALERTA] Falha ao conectar ao servidor de monitoramento',
+      text: `Erro ao conectar ao servidor Ocian: ${error.message || error}`,
+    });
     return NextResponse.json(
       { error: error.message || "Error connecting to monitoring server" },
       { status: 500 }
@@ -60,6 +68,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error: any) {
     console.error("Error proxying request to Ocian server:", error);
+    // Enviar alerta por e-mail
+    await sendEmail({
+      to: process.env.SUPPORT_EMAIL || 'info@gate33.net',
+      from: process.env.EMAIL_FROM || 'noreply@gate33.net',
+      subject: '[ALERTA] Falha ao conectar ao servidor de monitoramento',
+      text: `Erro ao conectar ao servidor Ocian: ${error.message || error}`,
+    });
     return NextResponse.json(
       { error: error.message || "Error connecting to monitoring server" },
       { status: 500 }

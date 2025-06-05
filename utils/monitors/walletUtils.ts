@@ -40,46 +40,52 @@ export function getCachedWalletBalance(): { balance: string; timestamp: string }
  * Gets the wallet balance, either from the API or from cache if API fails
  * @returns A promise that resolves to the wallet balance string
  */
-export async function getWalletBalanceWithFallback(): Promise<string> {  try {
+export async function getWalletBalanceWithFallback(): Promise<string> {
+  try {
     // Try to get the current balance through the API proxy
     const response = await fetch('/api/monitoring/wallet-balance');
-    
+
     if (response.ok) {
       const data = await response.json();
-      
+
       if (data.balance) {
         // Cache the new balance for future use
         cacheWalletBalance(data.balance);
+        console.log('[WalletUtils] API balance fetched:', data.balance);
         return data.balance;
       }
-      
+
       // If we have a connection issue but we have cache data
       if (data.errors?.length > 0) {
         const cachedData = getCachedWalletBalance();
         if (cachedData) {
+          console.log('[WalletUtils] API error, using cached balance:', cachedData.balance);
           // Return the cached balance with a note that it's cached
           return `${cachedData.balance} (cached)`;
         }
       }
     }
-    
+
     // If API call fails, try to get cached data
     const cachedData = getCachedWalletBalance();
     if (cachedData) {
+      console.log('[WalletUtils] API failed, using cached balance:', cachedData.balance);
       return `${cachedData.balance} (cached)`;
     }
-    
+
     // If all else fails, return a default message
-    return 'Connection issue - can\'t fetch balance';
+    console.log('[WalletUtils] Connection issue - can\'t fetch balance');
+    return "Connection issue - can't fetch balance";
   } catch (error) {
-    console.error('Error fetching wallet balance:', error);
-    
+    console.error('[WalletUtils] Error fetching wallet balance:', error);
+
     // Try to get cached data in case of error
     const cachedData = getCachedWalletBalance();
     if (cachedData) {
+      console.log('[WalletUtils] Exception, using cached balance:', cachedData.balance);
       return `${cachedData.balance} (cached)`;
     }
-    
+
     return 'Error fetching balance data';
   }
 }
