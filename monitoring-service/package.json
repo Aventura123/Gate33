@@ -2,10 +2,9 @@
   "name": "gate33-monitoring-service",
   "version": "1.0.0",
   "description": "Serviço de monitoramento de contratos para Gate33",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+  "main": "index-new.js",  "scripts": {
+    "start": "node index-new.js",
+    "dev": "nodemon index-new.js"
   },
   "engines": {
     "node": ">=16.0.0"
