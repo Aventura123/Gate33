@@ -151,7 +151,7 @@ type Employer = {
 
 const AdminDashboard: React.FC = () => {  const router = useRouter();
   // Update the type declaration to include new tabs
-  const [activeTab, setActiveTab] = useState<"nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "instantJobs" | "accounting" | "ads" | "newsletter" | "marketing" | "systemActivity">("nfts");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "nfts" | "users" | "jobs" | "settings" | "payments" | "learn2earn" | "instantJobs" | "accounting" | "ads" | "newsletter" | "marketing" | "systemActivity" | "tokenDistribution">("dashboard");
   const [activeSubTab, setActiveSubTab] = useState<string | null>("add");
   
   // Use the permissions hook
@@ -1759,7 +1759,19 @@ const fetchEmployersList = async () => {
               </div>
             </div>
           </div>          {/* Navigation - reduce button size and spacing on mobile */}
-          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>            {hasPermission('canAccessNFTs') && (
+          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>            <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "dashboard" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  onClick={() => {
+                    setActiveTab("dashboard");
+                    setActiveSubTab(null);
+                    if (isMobile) setMobileMenuOpen(false);
+                  }}
+                >
+                  Dashboard
+                </button>
+              </li>
+            {hasPermission('canAccessNFTs') && (
               <li>
                 <button
                   className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "nfts" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
@@ -2072,9 +2084,22 @@ const fetchEmployersList = async () => {
                         Partners
                       </button>
                     </li>                </ul>
-                )}
-              </li>
+                )}              </li>
             )}            {/* --- END MARKETING MENU --- */}
+            {hasPermission('canAccessAccounting') && (
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "tokenDistribution" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  onClick={() => {
+                    setActiveTab("tokenDistribution");
+                    setActiveSubTab(null);
+                    if (isMobile) setMobileMenuOpen(false);
+                  }}
+                >
+                  Token Distribution
+                </button>
+              </li>
+            )}
             {hasPermission('canAccessAccounting') && (
               <li>
                 <button
