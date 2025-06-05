@@ -203,12 +203,12 @@ const ContractMonitor: React.FC = () => {  const [monitoringState, setMonitoring
         
         <div className="mt-4">
           <h4 className="text-orange-300 text-sm mb-2">Tracked Contracts:</h4>
-          <table className="w-full text-sm">
-            <thead>
+          <table className="w-full text-sm">            <thead>
               <tr>
                 <th className="text-left text-gray-400 pb-1">Contract</th>
                 <th className="text-left text-gray-400 pb-1">Monitored</th>
-              </tr>            </thead>
+              </tr>
+            </thead>
             <tbody>
               {/* Service Wallet Native Balances row (replaces Wallet) */}
               <tr>
@@ -272,9 +272,9 @@ const ContractMonitor: React.FC = () => {  const [monitoringState, setMonitoring
                   <tr>
                     <td colSpan={2} className="pt-3 pb-1">
                       <span className="font-semibold text-orange-200">Learn2Earn</span>
-                    </td>
-                  </tr>
-                  {learn2EarnContracts.map((contract, idx) => (                    <tr key={`learn2earn-${contract.network}-${idx}`}>
+                    </td>                  </tr>
+                  {learn2EarnContracts.map((contract, idx) => (
+                    <tr key={`learn2earn-${contract.network}-${idx}`}>
                       <td className="py-1 pl-4 text-gray-200">
                         <div className="flex items-center">
                           <span className="text-xs text-gray-400 mr-2">[{contract.network}]</span>
@@ -301,9 +301,9 @@ const ContractMonitor: React.FC = () => {  const [monitoringState, setMonitoring
                   <tr>
                     <td colSpan={2} className="pt-3 pb-1">
                       <span className="font-semibold text-orange-200">Instant Jobs Escrow</span>
-                    </td>
-                  </tr>
-                  {instantJobsEscrowContracts.map((contract, idx) => (                    <tr key={`instantjobs-${contract.network}-${idx}`}>
+                    </td>                  </tr>
+                  {instantJobsEscrowContracts.map((contract, idx) => (
+                    <tr key={`instantjobs-${contract.network}-${idx}`}>
                       <td className="py-1 pl-4 text-gray-200">
                         <div className="flex items-center">
                           <span className="text-xs text-gray-400 mr-2">[{contract.network}]</span>
@@ -321,10 +321,10 @@ const ContractMonitor: React.FC = () => {  const [monitoringState, setMonitoring
                       </td>
                     </tr>
                   ))}
-                </>
-              )}
+                </>              )}
             </tbody>
-          </table>        </div>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -372,11 +372,13 @@ const SystemActivityMonitor: React.FC = () => {
       if (!token) {
         throw new Error("You need to be authenticated to view system logs.");
       }
-      
-      const response = await fetch('/api/support/logs', {
+        const response = await fetch('/api/support/logs', {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        cache: 'no-store'
       });
       
       if (!response.ok) {
@@ -536,11 +538,13 @@ const SystemActivityMonitor: React.FC = () => {
       if (!clearResponse.ok) {
         const errorData = await clearResponse.json();
         throw new Error(errorData.message || errorData.error || 'Error clearing logs.');
-      }
-
-      setOperationMessage({ type: 'success', text: 'Logs successfully cleared!' });
+      }      setOperationMessage({ type: 'success', text: 'Logs successfully cleared!' });
       setClearConfirmation(false);
-      fetchLogs();
+      setLogs([]); // Limpa os logs imediatamente na interface
+      // Wait a moment before fetching logs to ensure database consistency
+      setTimeout(() => {
+        fetchLogs();
+      }, 1500);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error clearing logs.';
       setOperationMessage({ type: 'error', text: errorMessage });

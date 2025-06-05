@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, limit, where, deleteDoc, Timestamp, doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, limit, where, deleteDoc, Timestamp, doc, getDoc, setDoc, addDoc } from "firebase/firestore";
 
 export async function GET(request: Request) {
   try {
@@ -65,20 +65,27 @@ export async function DELETE(request: Request) {
     
     if (!startDate || !endDate) {
       return NextResponse.json({ error: "Start and end dates are required" }, { status: 400 });
-    }
-
-    const startDateTime = new Date(startDate);
+    }    const startDateTime = new Date(startDate);
+    startDateTime.setHours(0, 0, 0, 0); // Set to start of the day
     const endDateTime = new Date(endDate);
     endDateTime.setHours(23, 59, 59, 999); // Set to end of the day
+    
+    console.log(`Clearing logs from ${startDateTime.toISOString()} to ${endDateTime.toISOString()}`);
+    
+    // Converting to Firestore Timestamps
     const startTimestamp = Timestamp.fromDate(startDateTime);
     const endTimestamp = Timestamp.fromDate(endDateTime);
-
-    const logsCollection = collection(db, "systemLogs");
+    
+    console.log(`Start timestamp: ${JSON.stringify(startTimestamp)}, End timestamp: ${JSON.stringify(endTimestamp)}`);    const logsCollection = collection(db, "systemLogs");
+    
+    // Create a proper query with date filters
     const logsQuery = query(
       logsCollection,
       where("timestamp", ">=", startTimestamp),
       where("timestamp", "<=", endTimestamp)
     );
+    
+    // This will now only return logs within the date range
 
     const logsSnapshot = await getDocs(logsQuery);
 
@@ -97,9 +104,7 @@ export async function DELETE(request: Request) {
 
     await Promise.all(deletePromises);
 
-    const logsCount = logsSnapshot.size;
-
-    try {
+    const logsCount = logsSnapshot.size;    try {
       const systemLogsCollection = collection(db, "systemLogs");
       const newLogData = {
         timestamp: Timestamp.now(),
@@ -112,7 +117,7 @@ export async function DELETE(request: Request) {
           cleanedAt: new Date().toISOString()
         }
       };
-      await setDoc(doc(systemLogsCollection), newLogData);
+      await addDoc(systemLogsCollection, newLogData);
     } catch (logError) {
       console.error("Error logging clearance action:", logError);
       // Do not interrupt flow due to audit log failure
