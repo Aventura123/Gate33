@@ -24,6 +24,7 @@ import AdminSocialMediaManager from "../../../components/admin/AdminSocialMediaM
 import AdminPartnersManager from "../../../components/admin/AdminPartnersManager";
 import Learn2EarnContractsPanel from "../../../components/ui/Learn2EarnContractsPanel";
 import SystemActivityMonitor from "../../../components/admin/SystemActivityMonitor";
+import StatsDashboard from "@/components/admin/StatsDashboard";
 
 interface NFT {
   id: string;
@@ -2084,22 +2085,9 @@ const fetchEmployersList = async () => {
                         Partners
                       </button>
                     </li>                </ul>
-                )}              </li>
-            )}            {/* --- END MARKETING MENU --- */}
-            {hasPermission('canAccessAccounting') && (
-              <li>
-                <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "tokenDistribution" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                  onClick={() => {
-                    setActiveTab("tokenDistribution");
-                    setActiveSubTab(null);
-                    if (isMobile) setMobileMenuOpen(false);
-                  }}
-                >
-                  Token Distribution
-                </button>
+                )}
               </li>
-            )}
+            )}            {/* --- END MARKETING MENU --- */}
             {hasPermission('canAccessAccounting') && (
               <li>
                 <button
@@ -2214,6 +2202,16 @@ const fetchEmployersList = async () => {
                 {/* Add Loading and Error states display */}
                 {isLoading && <p className="text-center">Loading...</p>}
                 {error && <p className="text-center text-red-500">Error: {error}</p>}
+
+                {/* Render StatsDashboard on main dashboard tab */}
+                {activeTab === "dashboard" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Admin Statistics Dashboard</h2>
+                    <div className="mt-6">
+                      <StatsDashboard />
+                    </div>
+                  </div>
+                )}
 
                 {activeTab === "users" && (
                   <div>
@@ -2518,7 +2516,8 @@ const fetchEmployersList = async () => {
                                         {company.description && (
                                           <>
                                             <p className="mb-1"><span className="font-semibold text-orange-300">Description:</span></p>
-                                            <div className="relative">                                              <div className="break-words whitespace-pre-wrap text-xs mt-1 bg-black/30 p-2 rounded max-h-32 overflow-y-auto">
+                                            <div className="relative">
+                                              <div className="break-words whitespace-pre-wrap text-xs mt-1 bg-black/30 p-2 rounded max-h-32 overflow-y-auto">
                                                 {company.description ? 
                                                   company.description.split('\n').map((line: string, i: number, arr: string[]) => (
                                                     <React.Fragment key={i}>
@@ -2671,7 +2670,8 @@ const fetchEmployersList = async () => {
                               <li 
                                 key={seeker.id} 
                                 className={`bg-black/40 border ${expandedSeekerId === seeker.id ? 'border-orange-500' : 'border-gray-700'} hover:border-orange-500 rounded-xl overflow-hidden transition-colors`}
-                                onClick={() => toggleSeekerDetails(seeker.id)}
+                                onClick={() => toggleSeekerDetails(seeker.id)
+                                }
                               >                                <div className="flex items-center justify-between p-4">
                                   <div className="text-left flex items-center gap-2">
                                     <div>                                      <strong>{(seeker.name || '') + ' ' + (seeker.surname || '')}</strong> <span className="text-gray-400">
@@ -3201,7 +3201,7 @@ const fetchEmployersList = async () => {
                               <div className="flex justify-end mt-6">
                                 <button
                                   type="submit"
-                                  className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-medium"
+                                  className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-medium"
                                   disabled={profileUpdating}
                                 >
                                   {profileUpdating ? 'Updating...' : 'Update Profile'}
@@ -3316,7 +3316,8 @@ const fetchEmployersList = async () => {
                       )}
                     </div>
                   </div>
-                )}                {/* Show "nfts" tab only if you have permission */}
+                )}
+                {/* Show "nfts" tab only if you have permission */}
                 {activeTab === "nfts" && hasPermission('canEditContent') && (
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage NFTs</h2>{activeSubTab === "add" && (
@@ -3458,6 +3459,19 @@ const fetchEmployersList = async () => {
                                 </div>
                               </li>
                             ))}
+
+                            {/* Delete All NFTs button */}
+                            <li>
+                              <button
+                                onClick={handleDeleteAllNFTs}
+                                className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center justify-center"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1h4a1 1 0 011 1v1H4V5a1 1 0 011-1h4V3a1 1 0 011-1zm6 6H4a1 1 0 00-1 1v1h14v-1a1 1 0 00-1-1zm0 4H4a1 1 0 00-1 1v1h14v-1a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                Delete All NFTs
+                              </button>
+                            </li>
                           </ul>
                         ) : (
                           !isLoading && !error && (
@@ -3465,18 +3479,6 @@ const fetchEmployersList = async () => {
                               <p className="text-gray-400">No NFTs available yet.</p>
                             </div>
                           )
-                        )}
-                        
-                        {/* Delete All NFTs button */}
-                        {!isLoading && !error && nfts.length > 0 && (
-                          <div className="mt-6 flex justify-end">
-                            <button
-                              onClick={handleDeleteAllNFTs}
-                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm"
-                            >
-                              Delete All NFTs
-                            </button>
-                          </div>
                         )}
                       </div>
                     )}
