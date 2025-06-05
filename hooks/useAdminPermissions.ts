@@ -8,6 +8,7 @@ export type AdminRole = 'super_admin' | 'admin' | 'support';
 
 export interface AdminPermissions {
   // Tab-level visibility permissions (if you can see the tab, you have full access to it)
+  canAccessDashboard: boolean;
   canAccessNFTs: boolean;
   canAccessNFTsAdd: boolean;
   canAccessNFTsDelete: boolean;
@@ -29,8 +30,8 @@ export interface AdminPermissions {
   canAccessAdsManager: boolean;
   canAccessMarketing: boolean;
   canAccessMarketingNewsletter: boolean;
-  canAccessMarketingSocialMedia: boolean;
-  canAccessAccounting: boolean;
+  canAccessMarketingSocialMedia: boolean;  canAccessAccounting: boolean;
+  canAccessTokenDistribution: boolean;
   canAccessSystemActivity: boolean;
   canAccessSettings: boolean;
   canAccessSettingsProfile: boolean;
@@ -46,8 +47,8 @@ export interface AdminPermissions {
 }
 
 // Default role to permissions mapping
-const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
-  super_admin: {
+const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {  super_admin: {
+    canAccessDashboard: true,
     canAccessNFTs: true,
     canAccessNFTsAdd: true,
     canAccessNFTsDelete: true,
@@ -69,9 +70,9 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
     canAccessLearn2EarnContracts: true,
     canAccessAdsManager: true,
     canAccessMarketing: true,
-    canAccessMarketingNewsletter: true,
-    canAccessMarketingSocialMedia: true,
+    canAccessMarketingNewsletter: true,    canAccessMarketingSocialMedia: true,
     canAccessAccounting: true,
+    canAccessTokenDistribution: true,
     canAccessSystemActivity: true,
     canAccessSettings: true,
     canAccessSettingsProfile: true,
@@ -82,8 +83,8 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
     canManageUsers: true,
     canApproveCompanies: true,
     canEditContent: true,
-  },
-  admin: {
+  },  admin: {
+    canAccessDashboard: true,
     canAccessNFTs: true,
     canAccessNFTsAdd: true,
     canAccessNFTsDelete: true,
@@ -105,9 +106,9 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
     canAccessLearn2EarnContracts: false,
     canAccessAdsManager: false,
     canAccessMarketing: false,
-    canAccessMarketingNewsletter: false,
-    canAccessMarketingSocialMedia: false,
+    canAccessMarketingNewsletter: false,    canAccessMarketingSocialMedia: false,
     canAccessAccounting: false,
+    canAccessTokenDistribution: false,
     canAccessSystemActivity: false,
     canAccessSettings: false,
     canAccessSettingsProfile: false,
@@ -117,8 +118,8 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
     canViewAnalytics: true,
     canManageUsers: true,
     canApproveCompanies: false,
-    canEditContent: true,  },
-  support: {
+    canEditContent: true,  },  support: {
+    canAccessDashboard: true,
     canAccessNFTs: false,
     canAccessNFTsAdd: false,
     canAccessNFTsDelete: false,
@@ -140,9 +141,9 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
     canAccessLearn2EarnContracts: false,
     canAccessAdsManager: false,
     canAccessMarketing: false,
-    canAccessMarketingNewsletter: false,
-    canAccessMarketingSocialMedia: false,
+    canAccessMarketingNewsletter: false,    canAccessMarketingSocialMedia: false,
     canAccessAccounting: false,
+    canAccessTokenDistribution: false,
     canAccessSystemActivity: false,
     canAccessSettings: false,
     canAccessSettingsProfile: false,
@@ -201,9 +202,9 @@ export const useAdminPermissions = (options: UseAdminPermissionsOptions = {}) =>
           const superAdminRole: AdminRole = 'super_admin';
           if (typeof window !== 'undefined') {
             localStorage.setItem("userRole", superAdminRole);
-          }
-          // Set all permissions to true (expanded)
+          }          // Set all permissions to true (expanded)
           const fullPermissions: AdminPermissions = {
+            canAccessDashboard: true,
             canAccessNFTs: true,
             canAccessNFTsAdd: true,
             canAccessNFTsDelete: true,
@@ -225,9 +226,9 @@ export const useAdminPermissions = (options: UseAdminPermissionsOptions = {}) =>
             canAccessLearn2EarnContracts: true,
             canAccessAdsManager: true,
             canAccessMarketing: true,
-            canAccessMarketingNewsletter: true,
-            canAccessMarketingSocialMedia: true,
+            canAccessMarketingNewsletter: true,            canAccessMarketingSocialMedia: true,
             canAccessAccounting: true,
+            canAccessTokenDistribution: true,
             canAccessSystemActivity: true,
             canAccessSettings: true,
             canAccessSettingsProfile: true,

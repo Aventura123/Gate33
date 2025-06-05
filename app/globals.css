@@ -67,3 +67,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 0.65rem;
   line-height: 0.85rem;
 }
+
+/* Progress bar styles for token distribution components */
+.progress-bar {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}

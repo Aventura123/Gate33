@@ -1315,11 +1315,11 @@ class G33TokenDistributorService {
         this.contract!.totalDonationsUsd(),
         this.contract!.getAvailableTokens()
       ]);
-      
-      return {
+        return {
         totalDistributed: ethers.utils.formatEther(totalDistributed),
         // totalDonationsUsd is stored with 2 extra decimal places (x100)
-        totalDonationsUsd: (Number(totalDonationsUsd) / 100).toString(),
+        // Subtract $27.51 test value (2751 when stored as x100)
+        totalDonationsUsd: ((Number(totalDonationsUsd) - 2751) / 100).toString(),
         availableTokens: ethers.utils.formatEther(availableTokens)
       };
     } catch (error) {

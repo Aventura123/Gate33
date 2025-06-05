@@ -32,6 +32,7 @@
     "@types/cors": "2.8.18",
     "@types/dotenv": "6.1.1",
     "@types/formidable": "^3.4.5",
+    "@types/xlsx": "0.0.35",
     "@wagmi/connectors": "5.7.13",
     "@wagmi/core": "2.17.0",
     "@walletconnect/ethereum-provider": "2.20.2",

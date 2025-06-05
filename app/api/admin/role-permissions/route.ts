@@ -4,8 +4,8 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { AdminRole, AdminPermissions } from '../../../../hooks/useAdminPermissions';
 
 // Default permissions for each role
-const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
-  super_admin: {
+const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {  super_admin: {
+    canAccessDashboard: true,
     canAccessNFTs: true,
     canAccessNFTsAdd: true,
     canAccessNFTsDelete: true,
@@ -27,9 +27,9 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
     canAccessLearn2EarnContracts: true,
     canAccessAdsManager: true,
     canAccessMarketing: true,
-    canAccessMarketingNewsletter: true,
-    canAccessMarketingSocialMedia: true,
+    canAccessMarketingNewsletter: true,    canAccessMarketingSocialMedia: true,
     canAccessAccounting: true,
+    canAccessTokenDistribution: true,
     canAccessSystemActivity: true,
     canAccessSettings: true,
     canAccessSettingsProfile: true,
@@ -41,6 +41,7 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
     canApproveCompanies: true, // Added missing property
     canEditContent: true,
   },  admin: {
+    canAccessDashboard: true,
     canAccessNFTs: true,
     canAccessNFTsAdd: true,
     canAccessNFTsDelete: true,
@@ -63,8 +64,8 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
     canAccessAdsManager: false,
     canAccessMarketing: false,
     canAccessMarketingNewsletter: false,
-    canAccessMarketingSocialMedia: false,
-    canAccessAccounting: false,
+    canAccessMarketingSocialMedia: false,    canAccessAccounting: false,
+    canAccessTokenDistribution: false,
     canAccessSystemActivity: false,
     canAccessSettings: false,
     canAccessSettingsProfile: false,
@@ -76,6 +77,7 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
     canApproveCompanies: false, // Added missing property
     canEditContent: true,
   },  support: {
+    canAccessDashboard: true,
     canAccessNFTs: false,
     canAccessNFTsAdd: false,
     canAccessNFTsDelete: false,
@@ -98,8 +100,8 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {
     canAccessAdsManager: false,
     canAccessMarketing: false,
     canAccessMarketingNewsletter: false,
-    canAccessMarketingSocialMedia: false,
-    canAccessAccounting: false,
+    canAccessMarketingSocialMedia: false,    canAccessAccounting: false,
+    canAccessTokenDistribution: false,
     canAccessSystemActivity: false,
     canAccessSettings: false,
     canAccessSettingsProfile: false,

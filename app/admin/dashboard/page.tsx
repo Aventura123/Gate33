@@ -24,6 +24,7 @@ import AdminSocialMediaManager from "../../../components/admin/AdminSocialMediaM
 import AdminPartnersManager from "../../../components/admin/AdminPartnersManager";
 import Learn2EarnContractsPanel from "../../../components/ui/Learn2EarnContractsPanel";
 import SystemActivityMonitor from "../../../components/admin/SystemActivityMonitor";
+import TokenDistribution from "../../../components/admin/TokenDistribution";
 import StatsDashboard from "@/components/admin/StatsDashboard";
 
 interface NFT {
@@ -1760,7 +1761,9 @@ const fetchEmployersList = async () => {
               </div>
             </div>
           </div>          {/* Navigation - reduce button size and spacing on mobile */}
-          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>            <li>
+          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>
+            {hasPermission('canAccessDashboard') && (
+              <li>
                 <button
                   className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "dashboard" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
                   onClick={() => {
@@ -1772,6 +1775,7 @@ const fetchEmployersList = async () => {
                   Dashboard
                 </button>
               </li>
+            )}
             {hasPermission('canAccessNFTs') && (
               <li>
                 <button
@@ -2086,8 +2090,21 @@ const fetchEmployersList = async () => {
                       </button>
                     </li>                </ul>
                 )}
+              </li>            )}            {/* --- END MARKETING MENU --- */}
+            {hasPermission('canAccessTokenDistribution') && (
+              <li>
+                <button
+                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "tokenDistribution" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                  onClick={() => {
+                    setActiveTab("tokenDistribution");
+                    setActiveSubTab(null);
+                    if (isMobile) setMobileMenuOpen(false);
+                  }}
+                >
+                  Token Distribution
+                </button>
               </li>
-            )}            {/* --- END MARKETING MENU --- */}
+            )}
             {hasPermission('canAccessAccounting') && (
               <li>
                 <button
@@ -3519,6 +3536,13 @@ const fetchEmployersList = async () => {
                 {activeTab === "systemActivity" && (
                   <div>
                     <SystemActivityMonitor />
+                  </div>
+                )}                {/* Token Distribution Section */}
+                {activeTab === "tokenDistribution" && (
+                  <div>
+                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Token Distribution</h2>                <div className="space-y-8">
+                      <TokenDistribution />
+                    </div>
                   </div>
                 )}
 

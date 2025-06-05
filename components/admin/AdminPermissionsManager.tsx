@@ -21,6 +21,7 @@ const availableRoles: AdminRole[] = ['super_admin', 'admin', 'support'];
 // Default permissions for each role
 const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {  super_admin: {
     // Main tabs
+    canAccessDashboard: true,
     canAccessNFTs: true,
     canAccessNFTsAdd: true,
     canAccessNFTsDelete: true,
@@ -50,13 +51,14 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {  super_adm
     canAccessSettingsPermissions: true,
     canAccessPayments: true,
     canAccessPaymentsConfig: true,
+    canAccessTokenDistribution: true,
     // Legacy/additional permissions
     canViewAnalytics: true,
     canManageUsers: true,
     canApproveCompanies: true,
     canEditContent: true,
-  },
-  admin: {
+  },  admin: {
+    canAccessDashboard: true,
     canAccessNFTs: true,
     canAccessNFTsAdd: true,
     canAccessNFTsDelete: true,
@@ -85,12 +87,13 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {  super_adm
     canAccessSettingsPermissions: false,
     canAccessPayments: false,
     canAccessPaymentsConfig: false,
+    canAccessTokenDistribution: false,
     canViewAnalytics: true,
     canManageUsers: true,
     canApproveCompanies: false,
     canEditContent: true,
-  },
-  support: {
+  },  support: {
+    canAccessDashboard: true,
     canAccessNFTs: false,
     canAccessNFTsAdd: false,
     canAccessNFTsDelete: false,
@@ -119,6 +122,7 @@ const defaultRolePermissions: Record<AdminRole, AdminPermissions> = {  super_adm
     canAccessSettingsPermissions: false,
     canAccessPayments: false,
     canAccessPaymentsConfig: false,
+    canAccessTokenDistribution: false,
     canViewAnalytics: false,
     canManageUsers: false,
     canApproveCompanies: false,
@@ -137,9 +141,9 @@ const getRoleDisplayName = (role: string): string => {
 };
 
 // Function to get friendly permission names
-const getPermissionDisplayName = (permissionKey: string): string => {
-  const permissionNames: Record<string, string> = {
+const getPermissionDisplayName = (permissionKey: string): string => {  const permissionNames: Record<string, string> = {
     // Tabs principais
+    canAccessDashboard: 'Dashboard',
     canAccessNFTs: 'Manage NFTs',
     canAccessNFTsAdd: 'Add NFT',
     canAccessNFTsDelete: 'Delete NFT',
@@ -167,6 +171,9 @@ const getPermissionDisplayName = (permissionKey: string): string => {
     canAccessSettings: 'System Settings',
     canAccessSettingsProfile: 'My Profile',
     canAccessSettingsPermissions: 'Manage Admins & Permissions',
+    canAccessPayments: 'Payments',
+    canAccessPaymentsConfig: 'Payment Configuration',
+    canAccessTokenDistribution: 'Token Distribution',
     // Legacy/additional permissions
     canViewAnalytics: 'View Analytics',
     canManageUsers: 'Manage Admin Users',
@@ -178,6 +185,11 @@ const getPermissionDisplayName = (permissionKey: string): string => {
 
 // Agrupamento de permissões por tab e subtab
 const permissionGroups = [
+  {
+    label: 'Dashboard',
+    main: 'canAccessDashboard',
+    children: [],
+  },
   {
     label: 'NFTs',
     main: 'canAccessNFTs',
@@ -242,6 +254,14 @@ const permissionGroups = [
     label: 'System Activity',
     main: 'canAccessSystemActivity',
     children: [],
+  },
+  {
+    label: 'Payments',
+    main: 'canAccessPayments',
+    children: [
+      'canAccessPaymentsConfig',
+      'canAccessTokenDistribution',
+    ],
   },
   {
     label: 'System Settings',
