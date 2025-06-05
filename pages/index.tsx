@@ -47,6 +47,10 @@ function Home() {
   const [showDevNotice, setShowDevNotice] = useState(true);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
+  const [waitlistSuccess, setWaitlistSuccess] = useState(false);
+  const [waitlistError, setWaitlistError] = useState("");
 
   useEffect(() => {
     fetchPartners();
@@ -65,6 +69,41 @@ function Home() {
       console.error('Error fetching partners:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleWaitlistSubscribe = async () => {
+    setWaitlistLoading(true);
+    setWaitlistError("");
+    setWaitlistSuccess(false);
+    try {
+      if (!waitlistEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(waitlistEmail)) {
+        setWaitlistError("Please enter a valid email address.");
+        setWaitlistLoading(false);
+        return;
+      }
+      // Import Firestore methods dynamically (for SSR safety)
+      const { getDocs, collection, addDoc, serverTimestamp } = await import("firebase/firestore");
+      const { db } = await import("../lib/firebase");
+      // Check for duplicates
+      const snapshot = await getDocs(collection(db, "jobAlertSubscribers"));
+      const exists = snapshot.docs.some(doc => doc.data().email === waitlistEmail);
+      if (exists) {
+        setWaitlistError("This email is already subscribed.");
+        setWaitlistLoading(false);
+        return;
+      }
+      await addDoc(collection(db, "jobAlertSubscribers"), {
+        email: waitlistEmail,
+        createdAt: serverTimestamp(),
+        active: true
+      });
+      setWaitlistSuccess(true);
+      setWaitlistEmail("");
+    } catch (err) {
+      setWaitlistError("Failed to subscribe. Please try again later.");
+    } finally {
+      setWaitlistLoading(false);
     }
   };
 
@@ -169,10 +208,28 @@ function Home() {
                 <p className="text-gray-300 text-sm">Guaranteed compensation for your time and expertise.</p>
               </div>
             </div>
-            <div className="mt-8">
-              <Link href="/waitlist" className="bg-orange-500/80 text-white py-2 px-6 rounded-lg hover:bg-orange-500 transition-colors">
-                Join the Waitlist
-              </Link>
+            {/* Waitlist Email Field */}
+            <div className="mt-8 flex flex-col items-center">
+              <div className="w-full max-w-xs mx-auto flex flex-col items-center">
+                <input
+                  type="email"
+                  value={waitlistEmail || ''}
+                  onChange={e => setWaitlistEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="waitlist-input bg-black/40 text-orange-100 text-sm px-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-400 w-full mb-2 shadow-sm placeholder:text-orange-300 border-0 text-center"
+                  disabled={waitlistLoading || waitlistSuccess}
+                />
+                <button
+                  className="waitlist-btn bg-orange-500/90 text-white py-2 px-4 rounded-full hover:bg-orange-400 transition-colors font-semibold text-sm shadow-md border border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-300 w-full"
+                  onClick={handleWaitlistSubscribe}
+                  disabled={waitlistLoading || waitlistSuccess}
+                  style={{ maxWidth: '180px' }}
+                >
+                  {waitlistLoading ? 'Sending...' : waitlistSuccess ? 'Subscribed!' : 'Join the Waitlist'}
+                </button>
+              </div>
+              {waitlistError && <div className="text-red-400 text-xs mt-2 text-center">{waitlistError === 'Please enter a valid email address.' ? 'Please enter a valid email address.' : 'Failed to subscribe. Please try again later.'}</div>}
+              {waitlistSuccess && <div className="text-green-400 text-xs mt-2 text-center">You have joined the waitlist!</div>}
             </div>
           </div>
         </section>
