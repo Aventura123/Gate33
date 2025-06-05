@@ -1,18 +1,18 @@
 /**
- * Módulo para monitoramento de contratos blockchain
- * Este script é responsável por verificar e monitorar os contratos nas diferentes redes
+ * Module for blockchain contract monitoring
+ * This script is responsible for checking and monitoring contracts on different networks
  */
 const ethers = require('ethers');
 const fetch = require('node-fetch');
 const path = require('path');
 
-// Importar configuração RPC do projeto principal
+// Import RPC config from main project
 const rpcConfigPath = path.join(__dirname, '..', 'config', 'rpcConfig.ts');
 let getHttpRpcUrls, getWsRpcUrls;
 
 try {
-  // Para usar TypeScript no Node.js, precisamos compilar ou usar ts-node
-  // Como alternativa, vamos definir a configuração aqui baseada no arquivo existente
+  // To use TypeScript in Node.js, we need to compile or use ts-node
+  // Alternatively, let's define the config here based on the existing file
   const INFURA_KEY = process.env.INFURA_KEY || process.env.NEXT_PUBLIC_INFURA_KEY || '7b71460a7cfd447295a93a1d76a71ed6';
   
   const CUSTOM_RPC = {
@@ -60,20 +60,20 @@ try {
   };
 
 } catch (err) {
-  console.warn('⚠️ Não foi possível carregar rpcConfig, usando configuração de fallback');
+  console.warn('⚠️ Could not load rpcConfig, using fallback configuration');
   getHttpRpcUrls = () => [];
 }
 
-// Configurações e constantes
-const ALERT_THRESHOLD_ETH = 0.1;  // Alerta se gasto for maior que este valor em ETH
-const ALERT_THRESHOLD_TOKENS = 5000; // Alerta se mais de 5000 tokens forem distribuídos numa operação
+// Configurations and constants
+const ALERT_THRESHOLD_ETH = 0.1;  // Alert if spend is greater than this value in ETH
+const ALERT_THRESHOLD_TOKENS = 5000; // Alert if more than 5000 tokens are distributed in one operation
 
-// Redes para monitorar
+// Networks to monitor
 const getNetworks = () => {
   return (process.env.MONITOR_NETWORKS || 'polygon,ethereum,binance').split(',').map(n => n.trim().toLowerCase());
 };
 
-// URLs RPC por rede - usando configuração do rpcConfig.ts
+// RPC URLs per network - using config from rpcConfig.ts
 const getRpcUrls = () => {
   return {
     ethereum: getHttpRpcUrls('ethereum'),
@@ -84,16 +84,16 @@ const getRpcUrls = () => {
   };
 };
 
-// Endereço da carteira de serviço
+// Service wallet address
 const getServiceWallet = () => process.env.SERVICE_WALLET_ADDRESS || '0xDdbC4f514019d835Dd9Ac6198fDa45c39512552C';
 
-// Endereços dos contratos
+// Contract addresses
 const getTokenDistributor = () => process.env.TOKEN_DISTRIBUTOR_ADDRESS || process.env.G33_TOKEN_DISTRIBUTOR_ADDRESS || '';
 
 // Learn2Earn contracts addresses
 const getLearn2EarnContracts = () => ({
   'avalanche': process.env.LEARN2EARN_AVALANCHE_ADDRESS || '',
-  'bsc': process.env.LEARN2EARN_BSC_ADDRESS || '',
+  'binance': process.env.LEARN2EARN_BSC_ADDRESS || '',
   'optimism': process.env.LEARN2EARN_OPTIMISM_ADDRESS || '',
   'polygon': process.env.LEARN2EARN_POLYGON_ADDRESS || '',
   'ethereum': process.env.LEARN2EARN_ETHEREUM_ADDRESS || ''
@@ -102,45 +102,45 @@ const getLearn2EarnContracts = () => ({
 // InstantJobsEscrow contract addresses
 const getInstantJobsEscrowContracts = () => ({
   'avalanche': process.env.INSTANT_JOBS_ESCROW_AVALANCHE_ADDRESS || '',
-  'bsc': process.env.INSTANT_JOBS_ESCROW_BSC_ADDRESS || '',
+  'binance': process.env.INSTANT_JOBS_ESCROW_BSC_ADDRESS || '',
   'optimism': process.env.INSTANT_JOBS_ESCROW_OPTIMISM_ADDRESS || '',
   'polygon': process.env.INSTANT_JOBS_ESCROW_POLYGON_ADDRESS || '',
   'ethereum': process.env.INSTANT_JOBS_ESCROW_ETHEREUM_ADDRESS || ''
 });
 
-// Função principal para monitorar contratos
+// Main function to monitor contracts
 async function monitorContracts(db) {
-  console.log('🔍 Verificando contratos blockchain...');
+  console.log('🔍 Checking blockchain contracts...');
   const results = {
     timestamp: new Date().toISOString(),
     errors: []
   };
 
-  // Criar providers para cada rede
+  // Create providers for each network
   const networks = getNetworks();
   const rpcUrls = getRpcUrls();
   const providers = {};
 
-  // Inicializar providers para cada rede configurada
+  // Initialize providers for each configured network
   for (const network of networks) {
     try {
       const urls = rpcUrls[network];
       if (!urls || !urls.length) {
-        results.errors.push(`RPC URL não configurada para rede ${network}`);
+        results.errors.push(`RPC URL not configured for network ${network}`);
         continue;
-      }      // Usar o primeiro URL disponível
-      providers[network] = new ethers.JsonRpcProvider(urls[0]);
+      }      // Use the first available URL
+      providers[network] = new ethers.providers.JsonRpcProvider(urls[0]);
       
-      // Verificar conexão
+      // Check connection
       await providers[network].getBlockNumber();
-      console.log(`✅ Conexão estabelecida com ${network}`);
+      console.log(`✅ Connection established with ${network}`);
     } catch (error) {
-      console.error(`❌ Erro conectando à rede ${network}:`, error);
-      results.errors.push(`Falha ao conectar à rede ${network}: ${error.message}`);
+      console.error(`❌ Error connecting to network ${network}:`, error);
+      results.errors.push(`Failed to connect to network ${network}: ${error.message}`);
     }
   }
 
-  // Verificar carteira de serviço
+  // Check service wallet
   const serviceWalletAddress = getServiceWallet();
   const monitDocs = [];
 
@@ -149,9 +149,9 @@ async function monitorContracts(db) {
         const balance = await provider.getBalance(serviceWalletAddress);
         const balanceEth = parseFloat(ethers.formatEther(balance));
         
-        console.log(`💰 Saldo na ${network}: ${balanceEth} ETH`);
+        console.log(`💰 Balance on ${network}: ${balanceEth} ETH`);
         
-        // Registrar no Firestore
+        // Register in Firestore
         const walletDoc = {
           network,
           address: serviceWalletAddress,
@@ -166,12 +166,12 @@ async function monitorContracts(db) {
           data: walletDoc
         });
 
-        // Verificar se o saldo está baixo
+        // Check if balance is low
         if (balanceEth < 0.01) {
-          const message = `⚠️ Alerta: Saldo baixo na carteira de serviço na rede ${network}: ${balanceEth} ETH`;
+          const message = `⚠️ Alert: Low balance in service wallet on network ${network}: ${balanceEth} ETH`;
           console.warn(message);
           results.errors.push(message);
-            // Registro adicional para alertas
+            // Additional record for alerts
           monitDocs.push({
             collection: 'monitoring/data/alerts',
             id: `wallet_low_${network}_${Date.now()}`,
@@ -184,49 +184,49 @@ async function monitorContracts(db) {
           });
         }
       } catch (error) {
-        console.error(`❌ Erro verificando carteira em ${network}:`, error);
-        results.errors.push(`Falha ao verificar carteira em ${network}: ${error.message}`);
+        console.error(`❌ Error checking wallet on ${network}:`, error);
+        results.errors.push(`Failed to check wallet on ${network}: ${error.message}`);
       }
     }
   } else {
-    console.warn('⚠️ Endereço da carteira de serviço não configurado');
-    results.errors.push('Endereço da carteira de serviço não configurado');
+    console.warn('⚠️ Service wallet address not configured');
+    results.errors.push('Service wallet address not configured');
   }
 
-  // Verificar contratos Learn2Earn
+  // Check Learn2Earn contracts
   const learn2EarnContracts = getLearn2EarnContracts();
   for (const [network, address] of Object.entries(learn2EarnContracts)) {
     if (!address) continue;
       try {
-      // Verificar se temos um provider para esta rede
+      // Check if we have a provider for this network
       if (!providers[network]) {
-        console.warn(`⚠️ Provider não disponível para Learn2Earn em ${network}`);
+        console.warn(`⚠️ Provider not available for Learn2Earn on ${network}`);
         continue;
       }
       
-      // Usar o provider correto
+      // Use the correct provider
       const provider = providers[network];
       
-      // ABI mínimo para Learn2Earn
+      // Minimal ABI for Learn2Earn
       const minimalAbi = [
         "function name() view returns (string)",
         "function totalClaims() view returns (uint256)",
         "function isActive() view returns (bool)"
       ];
       
-      // Criar instância do contrato
+      // Create contract instance
       const contract = new ethers.Contract(address, minimalAbi, provider);
       
-      // Verificar status
+      // Check status
       let active = false;
       try {
         active = await contract.isActive();
       } catch (statusErr) {
-        // Função pode não existir em todas versões
-        active = true; // Assumir ativo se não conseguir verificar
+        // Function may not exist in all versions
+        active = true; // Assume active if unable to check
       }
       
-      // Registrar no Firestore
+      // Register in Firestore
       const contractDoc = {
         network,
         address,
@@ -241,48 +241,48 @@ async function monitorContracts(db) {
         data: contractDoc
       });
       
-      console.log(`📘 Learn2Earn em ${network}: ${active ? 'Ativo' : 'Inativo'}`);
+      console.log(`📘 Learn2Earn on ${network}: ${active ? 'Active' : 'Inactive'}`);
       
     } catch (error) {
-      console.error(`❌ Erro verificando Learn2Earn em ${network}:`, error);
-      results.errors.push(`Falha ao verificar Learn2Earn em ${network}: ${error.message}`);
+      console.error(`❌ Error checking Learn2Earn on ${network}:`, error);
+      results.errors.push(`Failed to check Learn2Earn on ${network}: ${error.message}`);
     }
   }
   
-  // Verificar contratos InstantJobsEscrow
+  // Check InstantJobsEscrow contracts
   const instantJobsContracts = getInstantJobsEscrowContracts();
   for (const [network, address] of Object.entries(instantJobsContracts)) {
     if (!address) continue;
       try {
-      // Verificar se temos um provider para esta rede
+      // Check if we have a provider for this network
       if (!providers[network]) {
-        console.warn(`⚠️ Provider não disponível para InstantJobsEscrow em ${network}`);
+        console.warn(`⚠️ Provider not available for InstantJobsEscrow on ${network}`);
         continue;
       }
       
-      // Usar o provider correto
+      // Use the correct provider
       const provider = providers[network];
       
-      // ABI mínimo para InstantJobsEscrow
+      // Minimal ABI for InstantJobsEscrow
       const minimalAbi = [
         "function getEscrowStats() view returns (uint256, uint256, uint256, uint256)"
       ];
       
-      // Criar instância do contrato
+      // Create contract instance
       const contract = new ethers.Contract(address, minimalAbi, provider);
       
-      // Verificar status
-      let active = true;  // Assumir ativo por padrão
+      // Check status
+      let active = true;  // Assume active by default
       let stats = [0, 0, 0, 0];
       
       try {
         stats = await contract.getEscrowStats();
       } catch (statusErr) {
-        // Função pode não existir em todas versões
-        console.warn(`⚠️ Não foi possível obter estatísticas de ${network}:`, statusErr.message);
+        // Function may not exist in all versions
+        console.warn(`⚠️ Could not get stats from ${network}:`, statusErr.message);
       }
       
-      // Registrar no Firestore
+      // Register in Firestore
       const contractDoc = {
         network,
         address,
@@ -301,31 +301,32 @@ async function monitorContracts(db) {
         data: contractDoc
       });
       
-      console.log(`🔄 InstantJobsEscrow em ${network}: Ativo`);
+      console.log(`🔄 InstantJobsEscrow on ${network}: Active`);
       
     } catch (error) {
-      console.error(`❌ Erro verificando InstantJobsEscrow em ${network}:`, error);
-      results.errors.push(`Falha ao verificar InstantJobsEscrow em ${network}: ${error.message}`);
+      console.error(`❌ Error checking InstantJobsEscrow on ${network}:`, error);
+      results.errors.push(`Failed to check InstantJobsEscrow on ${network}: ${error.message}`);
     }
   }
   
-  // Verificar Token Distributor
+  // Check Token Distributor
   const tokenDistributorAddress = getTokenDistributor();
   if (tokenDistributorAddress) {
-    // Assumir que o Token Distributor está na rede Polygon
+    // Assume Token Distributor is on Polygon network
     const network = 'polygon';
     if (providers[network]) {
       try {
-        // ABI mínimo para TokenDistributor
+        // Minimal ABI for TokenDistributor
         const minimalAbi = [
           "function totalDistributed() view returns (uint256)",
           "function availableTokensForDistribution() view returns (uint256)"
         ];
         
-        // Criar instância do contrato
+        // Create contract instance
         const contract = new ethers.Contract(tokenDistributorAddress, minimalAbi, providers[network]);
         
-        // Verificar status        const totalDistributed = await contract.totalDistributed();
+        // Check status
+        const totalDistributed = await contract.totalDistributed();
         const formattedTotal = ethers.formatEther(totalDistributed);
         
         let availableTokens = '0';
@@ -333,10 +334,10 @@ async function monitorContracts(db) {
           const available = await contract.availableTokensForDistribution();
           availableTokens = ethers.formatEther(available);
         } catch (availErr) {
-          console.warn("⚠️ Não foi possível obter tokens disponíveis:", availErr.message);
+          console.warn("⚠️ Could not get available tokens:", availErr.message);
         }
         
-        // Registrar no Firestore
+        // Register in Firestore
         const contractDoc = {
           network,
           address: tokenDistributorAddress,
@@ -353,41 +354,41 @@ async function monitorContracts(db) {
           data: contractDoc
         });
         
-        console.log(`🪙 Token Distributor: ${formattedTotal} tokens distribuídos`);
+        console.log(`🪙 Token Distributor: ${formattedTotal} tokens distributed`);
         
       } catch (error) {
-        console.error(`❌ Erro verificando Token Distributor:`, error);
-        results.errors.push(`Falha ao verificar Token Distributor: ${error.message}`);
+        console.error(`❌ Error checking Token Distributor:`, error);
+        results.errors.push(`Failed to check Token Distributor: ${error.message}`);
       }
     } else {
-      console.warn(`⚠️ Provider não disponível para Token Distributor em ${network}`);
-      results.errors.push(`Provider não disponível para Token Distributor`);
+      console.warn(`⚠️ Provider not available for Token Distributor on ${network}`);
+      results.errors.push(`Provider not available for Token Distributor`);
     }
   } else {
-    console.warn('⚠️ Endereço do Token Distributor não configurado');
-    results.errors.push('Endereço do Token Distributor não configurado');
+    console.warn('⚠️ Token Distributor address not configured');
+    results.errors.push('Token Distributor address not configured');
   }
   
-  // Registrar documentos no Firestore
+  // Register documents in Firestore
   if (monitDocs.length > 0) {
     try {
       const batch = db.batch();
       
       for (const doc of monitDocs) {
-        // Corrigir para subcoleção correta
+        // Correct for the right subcollection
         const docRef = db.collection('monitoring').doc('contracts').collection('items').doc(doc.id);
         batch.set(docRef, doc.data, { merge: true });
       }
       
       await batch.commit();
-      console.log(`✅ ${monitDocs.length} documentos atualizados no Firestore`);
+      console.log(`✅ ${monitDocs.length} documents updated in Firestore`);
     } catch (firestoreError) {
-      console.error(`❌ Erro ao atualizar Firestore:`, firestoreError);
-      results.errors.push(`Falha ao atualizar Firestore: ${firestoreError.message}`);
+      console.error(`❌ Error updating Firestore:`, firestoreError);
+      results.errors.push(`Failed to update Firestore: ${firestoreError.message}`);
     }
   }
   
-  // Atualizar status de monitoramento
+  // Update monitoring status
   const active = Object.keys(providers).length > 0;
   
   try {
@@ -398,8 +399,8 @@ async function monitorContracts(db) {
       contractsErrors: results.errors
     }, { merge: true });
   } catch (statusErr) {
-    console.error(`❌ Erro ao atualizar status:`, statusErr);
-    results.errors.push(`Falha ao atualizar status: ${statusErr.message}`);
+    console.error(`❌ Error updating status:`, statusErr);
+    results.errors.push(`Failed to update status: ${statusErr.message}`);
   }
 
   return results;

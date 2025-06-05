@@ -29,12 +29,9 @@ interface MonitoringState {
 }
 
 // Integrated contract monitoring component
-const ContractMonitor: React.FC = () => {
-  const [monitoringState, setMonitoringState] = useState<MonitoringState | null>(null);
+const ContractMonitor: React.FC = () => {  const [monitoringState, setMonitoringState] = useState<MonitoringState | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isRestarting, setIsRestarting] = useState<boolean>(false);
-  const [restartMessage, setRestartMessage] = useState<string | null>(null);
   const [learn2EarnContracts, setLearn2EarnContracts] = useState<MonitoringState["learn2EarnContracts"]>([]);
   const [instantJobsEscrowContracts, setInstantJobsEscrowContracts] = useState<MonitoringState["instantJobsEscrowContracts"]>([]);
   const [nativeBalances, setNativeBalances] = useState<NativeTokenBalance[] | null>(null);
@@ -45,17 +42,19 @@ const ContractMonitor: React.FC = () => {
   const contracts = [
     { key: "isWalletMonitoring", label: "Wallet" },
     { key: "isTokenDistributionMonitoring", label: "Token Distribution" }
-  ];    async function fetchMonitoringState() {
+  ];
+
+  async function fetchMonitoringState() {
     try {
       setLoading(true);
-      
       // Make API call through the API proxy to the Ocian server
       const response = await fetch("/api/monitoring");
       
       if (!response.ok) {
         throw new Error(`Server responded with status: ${response.status}`);
       }
-        const state = await response.json();        // Set all state properties at once to prevent double rendering
+      const state = await response.json();
+      // Set all state properties at once to prevent double rendering
       setMonitoringState({
         // The Ocian server may return a different structure
         isRunning: state.active || state.isRunning || false,
@@ -101,7 +100,6 @@ const ContractMonitor: React.FC = () => {
       setLoading(false);
     }
   }
-  
     // Only need to fetch monitoring state now
   useEffect(() => {
     fetchMonitoringState();
@@ -110,74 +108,6 @@ const ContractMonitor: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Function to restart contract monitoring
-  const handleRestartMonitoring = async () => {
-    try {
-      setIsRestarting(true);
-      setRestartMessage("Restarting monitoring...");      const response = await fetch("/api/monitoring/restart", {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
-
-      const result = await response.json();      if (result.success) {
-        setRestartMessage("✅ Monitoring restarted successfully! Updating status...");
-        
-        // Immediately fetch the status to update UI faster
-        try {
-          // Short delay to allow the server to update its status
-          setTimeout(async () => {
-            await fetchMonitoringState();
-          }, 500);
-        } catch (err) {
-          console.error("Error on immediate status update:", err);
-        }
-        
-        // Poll for status updates a few times after restart
-        let attempts = 0;
-        const maxAttempts = 10; // Increase attempts to ensure we catch the status change
-        const statusCheck = setInterval(async () => {
-          try {
-            await fetchMonitoringState();
-            attempts++;
-            
-            // If monitoring is confirmed active, we can stop polling early
-            if (monitoringState?.isRunning) {
-              clearInterval(statusCheck);
-              setRestartMessage("✅ Monitoring active!");
-              setIsRestarting(false);
-              return;
-            }
-            
-            if (attempts >= maxAttempts) {
-              clearInterval(statusCheck);
-              setRestartMessage(null);
-              setIsRestarting(false);
-            }
-          } catch (err) {
-            console.error("Error checking monitoring status:", err);
-            if (attempts >= maxAttempts) {
-              clearInterval(statusCheck);
-              setRestartMessage("⚠️ Monitoring restarted but status check timed out");
-              setIsRestarting(false);
-            }
-          }
-        }, 1000); // Check more frequently (every 1 second)
-      } else {
-        setRestartMessage(`❌ Error restarting: ${result.error || "Unknown error"}`);
-        setIsRestarting(false);
-      }
-    } catch (error: any) {
-      console.error("Failed to restart monitoring:", error);
-      setRestartMessage(`❌ Error restarting monitoring: ${error.message || "Unknown error"}`);
-      setIsRestarting(false);
-    }
-  };
   useEffect(() => {
     // Fetch native token balances
     async function fetchBalances() {
@@ -204,6 +134,7 @@ const ContractMonitor: React.FC = () => {
     const interval = setInterval(fetchBalances, 60000); // Refresh every 60s
     return () => clearInterval(interval);
   }, []);
+
   if (loading) {
     return (
       <div className="p-6 bg-black/30 rounded-lg">
@@ -234,31 +165,17 @@ const ContractMonitor: React.FC = () => {
         </div>
       </div>
     );
-  }
-  return (
+  }  return (
     <div className="bg-black/30 p-6 rounded-lg">
       <h3 className="text-xl text-orange-400 mb-4">Contract Monitoring Status</h3>
       
-      {restartMessage && (
-        <div className="bg-orange-900/30 p-3 rounded-lg mb-4 text-sm">
-          {restartMessage}
-        </div>
-      )}
-      
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-gray-300">Status:</span>          <span className={`px-3 py-1 rounded-full text-sm ${
-            isRestarting ? 'bg-yellow-900 text-yellow-300' : 
+      <div className="mb-4">        <div className="flex items-center justify-between mb-2">
+          <span className="text-gray-300">Status:</span>
+          <span className={`px-3 py-1 rounded-full text-sm ${
             monitoringState?.isRunning ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
           }`}>
-            {isRestarting ? 'Restarting' : monitoringState?.isRunning ? 'Running' : 'Stopped'}
+            {monitoringState?.isRunning ? 'Running' : 'Stopped'}
           </span>
-          {isRestarting && (
-            <svg className="animate-spin ml-2 inline-block h-4 w-4 text-yellow-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          )}
         </div>
         
         <div className="flex items-center justify-between mb-2">
@@ -291,21 +208,18 @@ const ContractMonitor: React.FC = () => {
               <tr>
                 <th className="text-left text-gray-400 pb-1">Contract</th>
                 <th className="text-left text-gray-400 pb-1">Monitored</th>
-              </tr>
-            </thead>
+              </tr>            </thead>
             <tbody>
               {/* Service Wallet Native Balances row (replaces Wallet) */}
               <tr>
                 <td className="py-1 text-gray-200 font-semibold">Service Wallet Native Balances</td>
                 <td className="py-1">
                   <span className={
-                    isRestarting ? "text-yellow-400" :
                     (monitoringState?.fullState && monitoringState.fullState['isWalletMonitoring'])
                       ? "text-green-400"
                       : "text-red-400"
                   }>
-                    {isRestarting ? "Restarting..." :
-                      (monitoringState?.fullState && monitoringState.fullState['isWalletMonitoring']) ? "Yes" : "No"}
+                    {(monitoringState?.fullState && monitoringState.fullState['isWalletMonitoring']) ? "Yes" : "No"}
                   </span>
                 </td>
               </tr>
@@ -340,18 +254,15 @@ const ContractMonitor: React.FC = () => {
                   )}
                 </td>
               </tr>
-              {/* Token Distribution row - after balances */}
-              <tr>
+              {/* Token Distribution row - after balances */}              <tr>
                 <td className="py-1 text-gray-200">Token Distribution</td>
                 <td className="py-1">
                   <span className={
-                    isRestarting ? "text-yellow-400" :
                     (monitoringState?.fullState && monitoringState.fullState['isTokenDistributionMonitoring'])
                       ? "text-green-400"
                       : "text-red-400"
                   }>
-                    {isRestarting ? "Restarting..." :
-                      (monitoringState?.fullState && monitoringState.fullState['isTokenDistributionMonitoring']) ? "Yes" : "No"}
+                    {(monitoringState?.fullState && monitoringState.fullState['isTokenDistributionMonitoring']) ? "Yes" : "No"}
                   </span>
                 </td>
               </tr>
@@ -363,8 +274,7 @@ const ContractMonitor: React.FC = () => {
                       <span className="font-semibold text-orange-200">Learn2Earn</span>
                     </td>
                   </tr>
-                  {learn2EarnContracts.map((contract, idx) => (
-                    <tr key={`learn2earn-${contract.network}-${idx}`}>
+                  {learn2EarnContracts.map((contract, idx) => (                    <tr key={`learn2earn-${contract.network}-${idx}`}>
                       <td className="py-1 pl-4 text-gray-200">
                         <div className="flex items-center">
                           <span className="text-xs text-gray-400 mr-2">[{contract.network}]</span>
@@ -376,8 +286,8 @@ const ContractMonitor: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-1">
-                        <span className={isRestarting ? "text-yellow-400" : contract.active ? "text-green-400" : "text-red-400"}>
-                          {isRestarting ? "Restarting..." : contract.active ? "Yes" : "No"}
+                        <span className={contract.active ? "text-green-400" : "text-red-400"}>
+                          {contract.active ? "Yes" : "No"}
                         </span>
                       </td>
                     </tr>
@@ -393,8 +303,7 @@ const ContractMonitor: React.FC = () => {
                       <span className="font-semibold text-orange-200">Instant Jobs Escrow</span>
                     </td>
                   </tr>
-                  {instantJobsEscrowContracts.map((contract, idx) => (
-                    <tr key={`instantjobs-${contract.network}-${idx}`}>
+                  {instantJobsEscrowContracts.map((contract, idx) => (                    <tr key={`instantjobs-${contract.network}-${idx}`}>
                       <td className="py-1 pl-4 text-gray-200">
                         <div className="flex items-center">
                           <span className="text-xs text-gray-400 mr-2">[{contract.network}]</span>
@@ -406,8 +315,8 @@ const ContractMonitor: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-1">
-                        <span className={isRestarting ? "text-yellow-400" : contract.active ? "text-green-400" : "text-red-400"}>
-                          {isRestarting ? "Restarting..." : contract.active ? "Yes" : "No"}
+                        <span className={contract.active ? "text-green-400" : "text-red-400"}>
+                          {contract.active ? "Yes" : "No"}
                         </span>
                       </td>
                     </tr>
@@ -415,43 +324,7 @@ const ContractMonitor: React.FC = () => {
                 </>
               )}
             </tbody>
-          </table>
-        </div>
-      </div>      <div className="flex flex-col gap-2">
-        {!monitoringState?.isRunning && (
-          <button
-            className="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center justify-center"
-            onClick={fetchMonitoringState}
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Refresh Status
-          </button>
-        )}
-        
-        <button
-          className={`w-full ${isRestarting ? 'bg-gray-600 cursor-wait' : 'bg-orange-600 hover:bg-orange-700'} px-4 py-2 rounded-lg flex items-center justify-center`}
-          onClick={handleRestartMonitoring}
-          disabled={isRestarting}
-        >
-          {isRestarting ? (
-            <>
-              <svg className="animate-spin w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Restarting...
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Restart Monitoring
-            </>
-          )}
-        </button>
+          </table>        </div>
       </div>
     </div>
   );

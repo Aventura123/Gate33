@@ -206,7 +206,8 @@ const AdminSocialMediaManager: React.FC = () => {
                 <th className="p-3 text-left">Last Sent</th>
                 <th className="p-3 text-left">Actions</th>
               </tr>
-            </thead>            <tbody>
+            </thead>
+            <tbody>
               {jobs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-6 text-center text-gray-400">

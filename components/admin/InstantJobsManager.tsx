@@ -562,9 +562,9 @@ const InstantJobsManager: React.FC = () => {
                     <th className="text-left py-3 px-2 text-orange-400 text-sm font-semibold">Status</th>
                     <th className="text-left py-3 px-2 text-orange-400 text-sm font-semibold">Payment</th>
                     <th className="text-left py-3 px-2 text-orange-400 text-sm font-semibold">Platform Fee</th>
-                  </tr>
-                </thead>
-                <tbody>                  {instantJobs.map((job) => (
+                  </tr>                </thead>
+                <tbody>
+                  {instantJobs.map((job) => (
                     <tr key={job.id} className="border-b border-gray-700 hover:bg-black/30 transition-colors">
                       <td className="py-2 px-2 text-xs text-gray-300 font-mono">{job.id.substring(0, 8)}...</td>
                       <td className="py-2 px-2 text-sm text-white">{job.title}</td>

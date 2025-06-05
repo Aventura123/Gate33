@@ -29,12 +29,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error: any) {
     console.error("Error proxying request to Ocian server:", error);
-    // Enviar alerta por e-mail
+    // Send alert by email
     await sendEmail({
       to: process.env.SUPPORT_EMAIL || 'info@gate33.net',
       from: process.env.EMAIL_FROM || 'noreply@gate33.net',
-      subject: '[ALERTA] Falha ao conectar ao servidor de monitoramento',
-      text: `Erro ao conectar ao servidor Ocian: ${error.message || error}`,
+      subject: '[ALERT] Failed to connect to monitoring server',
+      text: `Error connecting to Ocian server: ${error.message || error}`,
     });
     return NextResponse.json(
       { error: error.message || "Error connecting to monitoring server" },
@@ -68,12 +68,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error: any) {
     console.error("Error proxying request to Ocian server:", error);
-    // Enviar alerta por e-mail
+    // Send alert by email
     await sendEmail({
       to: process.env.SUPPORT_EMAIL || 'info@gate33.net',
       from: process.env.EMAIL_FROM || 'noreply@gate33.net',
-      subject: '[ALERTA] Falha ao conectar ao servidor de monitoramento',
-      text: `Erro ao conectar ao servidor Ocian: ${error.message || error}`,
+      subject: '[ALERT] Failed to connect to monitoring server',
+      text: `Error connecting to Ocian server: ${error.message || error}`,
     });
     return NextResponse.json(
       { error: error.message || "Error connecting to monitoring server" },

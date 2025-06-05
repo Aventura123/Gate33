@@ -139,7 +139,7 @@ async function monitorBalances(db) {
       let connected = false;
       for (const url of urls) {
         try {
-          providers[network] = new ethers.JsonRpcProvider(url);
+          providers[network] = new ethers.providers.JsonRpcProvider(url);
           await providers[network].getBlockNumber();
           console.log(`✅ Conexão de saldos estabelecida com ${network} via ${url}`);
           connected = true;
