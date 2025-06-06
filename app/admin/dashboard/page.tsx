@@ -3000,29 +3000,26 @@ const fetchEmployersList = async () => {
                                 className={`bg-black/40 border ${expandedSeekerId === seeker.id ? 'border-orange-500' : 'border-gray-700'} hover:border-orange-500 rounded-xl overflow-hidden transition-colors`}
                                 onClick={() => toggleSeekerDetails(seeker.id)
                                 }
-                              >                                <div className="p-4">
-                                  {/* Mobile view */}
+                              >                                <div className="p-4">                                  {/* Mobile view */}
                                   <div className="flex flex-col md:hidden">
                                     <div className="mb-2">
                                       <p className="text-xs text-gray-400 mb-1">Name</p>
-                                      <p className="text-white font-medium text-base">
-                                        {(seeker.name || '') + ' ' + (seeker.surname || '')}
-                                      </p>
+                                      <div className="flex items-center justify-between">
+                                        <p className="text-white font-medium text-base">
+                                          {(seeker.name || '') + ' ' + (seeker.surname || '')}
+                                        </p>
+                                        {seeker.blocked !== undefined && (
+                                          <span className={`inline-block px-1.5 py-0.5 rounded-full text-xs ml-2 ${
+                                            seeker.blocked 
+                                              ? 'bg-gray-800 text-gray-400 border border-gray-700' 
+                                              : 'bg-orange-900/50 text-orange-300 border border-orange-700'
+                                          }`}>
+                                            {seeker.blocked ? 'Blocked' : 'Active'}
+                                          </span>
+                                        )}                                      </div>
                                     </div>
                                     
-                                    {seeker.blocked !== undefined && (
-                                      <div className="mb-2">
-                                        <span className={`inline-block px-1.5 py-0.5 rounded-full text-xs ${
-                                          seeker.blocked 
-                                            ? 'bg-gray-800 text-gray-400 border border-gray-700' 
-                                            : 'bg-orange-900/50 text-orange-300 border border-orange-700'
-                                        }`}>
-                                          {seeker.blocked ? 'Blocked' : 'Active'}
-                                        </span>
-                                      </div>
-                                    )}
-                                    
-                                    <div className="flex space-x-2 mt-3">
+                                    <div className="flex space-x-2 mt-2">
                                       <button 
                                         onClick={(e) => { e.stopPropagation(); handleDeleteSeeker(seeker.id); }}
                                         className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-md text-xs font-semibold"
