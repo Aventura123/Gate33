@@ -248,6 +248,11 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
   const [rejectedCompanies, setRejectedCompanies] = useState<any[]>([]);
   const [rejectedCompaniesLoading, setRejectedCompaniesLoading] = useState(false);
   const [expandedRejectedCompanyId, setExpandedRejectedCompanyId] = useState<string | null>(null);
+  
+  // Add missing state variables for approval/rejection loading states
+  const [approving, setApproving] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState<string | null>(null);
+  
   // --- Profile State and Handlers ---
   const [profileData, setProfileData] = useState({
     name: '',
@@ -325,8 +330,8 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
   }, []);
 
   const auth = getAuth();
-
   const handleApproveCompany = async (companyId: string) => {
+    setApproving(companyId);
     try {
       if (!db) {
         throw new Error("Firestore is not initialized.");
@@ -394,15 +399,15 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
       await setDoc(approvedCompanyRef, approvedCompanyData);
 
       // Remove from the pendingCompanies collection
-      await deleteDoc(companyRef);
-
-      // Update the list of pending companies
+      await deleteDoc(companyRef);      // Update the list of pending companies
       setPendingCompanies(prev => prev.filter(company => company.id !== companyId));
       
       alert(`Company approved successfully! Username for login: ${username}`);
     } catch (error) {
       console.error("Error approving company:", error);
       alert("Failed to approve company.");
+    } finally {
+      setApproving(null);
     }
   };
 
@@ -411,10 +416,10 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
   const [rejectingCompanyId, setRejectingCompanyId] = useState<string|null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectingCompanyName, setRejectingCompanyName] = useState('');
-
   // Função para rejeitar empresa
   const handleRejectCompany = async () => {
     if (!rejectingCompanyId || !rejectionReason.trim()) return;
+    setRejecting(rejectingCompanyId);
     try {
       if (!db) throw new Error("Firestore is not initialized");
       const company = pendingCompanies.find(c => c.id === rejectingCompanyId);
@@ -435,6 +440,18 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
       alert("Company rejected successfully.");
     } catch (err) {
       alert("Failed to reject company.");
+    } finally {
+      setRejecting(null);
+    }
+  };
+
+  // Add missing handleRejectClick function
+  const handleRejectClick = (companyId: string) => {
+    const company = pendingCompanies.find(c => c.id === companyId);
+    if (company) {
+      setRejectingCompanyId(companyId);
+      setRejectingCompanyName(company.companyName || company.name || '');
+      setShowRejectModal(true);
     }
   };
 
@@ -2316,7 +2333,7 @@ const fetchEmployersList = async () => {
                 {activeTab === "users" && (
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage Users</h2>
-                    <div className="mt-6 bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700">
+                    <div className="mt-6 bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-colors">
                       {/* Employer list is visible for all levels */}
                       {activeSubTab === "employers-list" && (
                         <div>                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
@@ -2338,52 +2355,26 @@ const fetchEmployersList = async () => {
                             <div className="bg-black/40 p-8 rounded-lg text-center">
                               <p className="text-gray-400">No companies found.</p>
                             </div>
-                          ) : (
-                            <ul className="space-y-4">                              {filteredEmployers.map((employer) => (                                <li 
+                          ) : (                            <ul className="space-y-4">                              {filteredEmployers.map((employer) => (                                <li 
                                   key={employer.id} 
                                   className={`bg-black/40 border ${expandedEmployerId === employer.id ? 'border-orange-500' : 'border-gray-700'} hover:border-orange-500 rounded-xl overflow-hidden transition-colors`}
                                   onClick={() => toggleEmployerDetails(employer.id)}
-                                ><div className="grid grid-cols-1 md:grid-cols-6 gap-4 relative">                                    {/* Expand/Collapse icon removed as requested */}
-                                    
-                                    {/* Column 1: Company Name */}
-                                    <div className="md:col-span-1">
-                                      <p><strong>Company Name:</strong></p>
-                                      <p>{employer.name || employer.companyName}</p>
-                                    </div>
-
-                                    {/* Column 2: Responsible Person */}
-                                    {/* Column 2: Responsible Person */}
-                                    <div className="md:col-span-1">
-                                      <p><strong>Responsible Person:</strong></p>
-                                      <p>{employer.responsiblePerson || employer.responsibleName || "N/A"}</p>
-                                    </div>
-
-                                    {/* Column 3: Industry */}
-                                    <div className="md:col-span-1">
-                                      <p><strong>Industry:</strong></p>
-                                      <p>{employer.industry || "N/A"}</p>
-                                    </div>
-
-                                    {/* Column 4: Company Size */}
-                                    <div className="md:col-span-1">
-                                      <p><strong>Company Size:</strong></p>
-                                      <p>{employer.companySize || employer.employees || "N/A"}</p>
-                                    </div>
-
-                                    {/* Column 5: Email */}
-                                    <div className="md:col-span-1">
-                                      <p><strong>Email:</strong></p>
-                                      <p>{employer.email || "N/A"}</p>
-                                    </div>
-
-                                    {/* Column 6: Action Buttons */}
-                                    <div className="md:col-span-1 flex items-center justify-center">
-                                      <div className="flex space-x-2">                                        <button 
+                                >                                  {/* Responsive card - Optimized for mobile view */}
+                                  <div className="p-4">
+                                    {/* Mobile View - Only company name and buttons */}
+                                    <div className="block md:hidden">
+                                      <div className="mb-2">
+                                        <p className="text-xs text-gray-400 mb-1">Company Name</p>
+                                        <p className="text-white font-medium text-base">{employer.name || employer.companyName}</p>
+                                      </div>
+                                      <div className="flex space-x-2 mt-3">
+                                        <button 
                                           onClick={(e) => {
                                             e.stopPropagation(); 
                                             handleDeleteEmployer(employer.id);
                                           }} 
-                                          className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
+                                          className="flex-1 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white py-2 rounded-md text-xs font-semibold transition-colors"
+                                          aria-label="Delete company"
                                         >
                                           Delete
                                         </button>
@@ -2392,45 +2383,113 @@ const fetchEmployersList = async () => {
                                             e.stopPropagation(); 
                                             handleToggleBlockEmployer(employer.id, employer.blocked || false);
                                           }} 
-                                          className={`${employer.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-800 hover:bg-gray-700'} text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold`} 
+                                          className={`flex-1 ${employer.blocked ? 'bg-green-600 hover:bg-green-700 active:bg-green-800' : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-900'} text-white py-2 rounded-md text-xs font-semibold`} 
                                           disabled={blockingEmployerId === employer.id}
+                                          aria-label={employer.blocked ? "Unblock company" : "Block company"}
                                         >
                                           {blockingEmployerId === employer.id ? 'Processing...' : employer.blocked ? 'Unblock' : 'Block'}
                                         </button>
                                       </div>
                                     </div>
-                                  </div>
-                                    {/* Expanded Details Section */}
-                                  {expandedEmployerId === employer.id && (
-                                    <div className="mt-4 bg-black/40 p-4 md:p-6 rounded-lg text-sm text-gray-100 border-t border-gray-700">
-                                      <h4 className="text-base md:text-lg font-bold text-orange-400 mb-3">Complete Company Information</h4>
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {/* Company Basic Information */}
-                                        <div>
-                                          <h5 className="font-bold text-white mb-2">Company Details</h5>
-                                          <p className="mb-1"><span className="font-semibold text-orange-300">Company Name:</span> {employer.companyName || employer.name || 'N/A'}</p>
-                                          <p className="mb-1"><span className="font-semibold text-orange-300">Industry:</span> {employer.industry || 'N/A'}</p>
-                                          <p className="mb-1"><span className="font-semibold text-orange-300">Company Size:</span> {employer.employees || employer.companySize || 'N/A'}</p>
-                                          <p className="mb-1"><span className="font-semibold text-orange-300">Years Active:</span> {employer.yearsActive || 'N/A'}</p>
-                                          <p className="mb-1"><span className="font-semibold text-orange-300">Tax ID:</span> {employer.taxId || 'N/A'}</p>
-                                          <p className="mb-1"><span className="font-semibold text-orange-300">Registration Number:</span> {employer.registrationNumber || 'N/A'}</p>                                          <p className="mb-1"><span className="font-semibold text-orange-300">Description:</span></p>
-                                  <div className="relative">
-                                    <div className="break-words whitespace-pre-wrap text-xs mt-1 bg-black/30 p-2 rounded max-h-32 overflow-y-auto">
-                                      {employer.description ? 
-                                        employer.description.split('\n').map((line: string, i: number, arr: string[]) => (
-                                          <React.Fragment key={i}>
-                                            {line}
-                                            {i < arr.length - 1 && <br />}
-                                          </React.Fragment>
-                                        )) 
-                                        : 'N/A'}
-                                    </div>
-                                    {employer.description && employer.description.length > 100 && (
-                                      <div className="absolute bottom-0 right-0 bg-gradient-to-l from-black/60 to-transparent px-2 text-xs text-orange-300">
-                                        Scroll para ver mais
+                                    
+                                    {/* Desktop View - Full information */}
+                                    <div className="hidden md:grid grid-cols-6 gap-6">
+                                      {/* Column 1: Company Name */}
+                                      <div className="col-span-1">
+                                        <p className="text-xs text-gray-400 mb-1">Company Name</p>
+                                        <p className="text-white font-medium text-base">{employer.name || employer.companyName}</p>
                                       </div>
-                                    )}
-                                  </div>
+
+                                      {/* Column 2: Responsible Person */}
+                                      <div className="col-span-1">
+                                        <p className="text-xs text-gray-400 mb-1">Responsible Person</p>
+                                        <p className="text-white font-medium text-base">{employer.responsiblePerson || employer.responsibleName || "N/A"}</p>
+                                      </div>
+
+                                      {/* Column 3: Industry */}
+                                      <div className="col-span-1">
+                                        <p className="text-xs text-gray-400 mb-1">Industry</p>
+                                        <p className="text-white font-medium text-base">{employer.industry || "N/A"}</p>
+                                      </div>
+
+                                      {/* Column 4: Company Size */}
+                                      <div className="col-span-1">
+                                        <p className="text-xs text-gray-400 mb-1">Company Size</p>
+                                        <p className="text-white font-medium text-base">{employer.companySize || employer.employees || "N/A"}</p>
+                                      </div>
+
+                                      {/* Column 5: Email */}
+                                      <div className="col-span-1">
+                                        <p className="text-xs text-gray-400 mb-1">Email</p>
+                                        <p className="text-white font-medium text-base">{employer.email || "N/A"}</p>
+                                      </div>
+
+                                      {/* Column 6: Action Buttons */}
+                                      <div className="col-span-1 flex justify-end items-center">
+                                        <div className="flex space-x-2">
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation(); 
+                                              handleDeleteEmployer(employer.id);
+                                            }} 
+                                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold"
+                                            aria-label="Delete company"
+                                          >
+                                            Delete
+                                          </button>
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation(); 
+                                              handleToggleBlockEmployer(employer.id, employer.blocked || false);
+                                            }} 
+                                            className={`${employer.blocked ? 'bg-green-600 hover:bg-green-700 active:bg-green-800' : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-900'} text-white px-3 py-1.5 rounded-md text-xs font-semibold`} 
+                                            disabled={blockingEmployerId === employer.id}
+                                            aria-label={employer.blocked ? "Unblock company" : "Block company"}
+                                          >
+                                            {blockingEmployerId === employer.id ? 'Processing...' : employer.blocked ? 'Unblock' : 'Block'}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>{/* Expanded Details Section - Improved for mobile */}
+                                  {expandedEmployerId === employer.id && (
+                                    <div className="bg-black/40 p-4 md:p-6 rounded-b-lg text-sm text-gray-100 border-t border-gray-700">
+                                      <h4 className="text-base md:text-lg font-bold text-orange-400 mb-3 flex items-center">
+                                        <span>Complete Company Information</span>
+                                        <span className="ml-2 text-xs text-gray-400">(Tap anywhere to collapse)</span>
+                                      </h4>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 md:gap-6">
+                                        {/* Company Basic Information */}
+                                        <div className="bg-black/20 p-3 rounded-lg">
+                                          <h5 className="font-bold text-white mb-3 text-sm md:text-base border-b border-gray-700 pb-2">Company Details</h5>
+                                          <p className="mb-2"><span className="font-semibold text-orange-300 text-xs md:text-sm block md:inline">Company Name:</span> <span className="ml-0 md:ml-1 text-sm">{employer.companyName || employer.name || 'N/A'}</span></p>
+                                          <p className="mb-2"><span className="font-semibold text-orange-300 text-xs md:text-sm block md:inline">Industry:</span> <span className="ml-0 md:ml-1 text-sm">{employer.industry || 'N/A'}</span></p>
+                                          <p className="mb-2"><span className="font-semibold text-orange-300 text-xs md:text-sm block md:inline">Company Size:</span> <span className="ml-0 md:ml-1 text-sm">{employer.employees || employer.companySize || 'N/A'}</span></p>
+                                          <p className="mb-2"><span className="font-semibold text-orange-300 text-xs md:text-sm block md:inline">Years Active:</span> <span className="ml-0 md:ml-1 text-sm">{employer.yearsActive || 'N/A'}</span></p>
+                                          <p className="mb-2"><span className="font-semibold text-orange-300 text-xs md:text-sm block md:inline">Tax ID:</span> <span className="ml-0 md:ml-1 text-sm">{employer.taxId || 'N/A'}</span></p>
+                                          <p className="mb-2"><span className="font-semibold text-orange-300 text-xs md:text-sm block md:inline">Registration Number:</span> <span className="ml-0 md:ml-1 text-sm">{employer.registrationNumber || 'N/A'}</span></p>
+                                          {employer.description && (
+                                            <div className="mt-3">
+                                              <p className="mb-1"><span className="font-semibold text-orange-300 text-xs md:text-sm block md:inline">Description:</span></p>
+                                              <div className="relative">
+                                                <div className="break-words whitespace-pre-wrap text-xs mt-1 bg-black/30 p-3 rounded max-h-32 overflow-y-auto">
+                                                  {employer.description ? 
+                                                    employer.description.split('\n').map((line: string, i: number, arr: string[]) => (
+                                                      <React.Fragment key={i}>
+                                                        {line}
+                                                        {i < arr.length - 1 && <br />}
+                                                      </React.Fragment>
+                                                    )) 
+                                                    : 'N/A'}
+                                                </div>
+                                                {employer.description && employer.description.length > 100 && (
+                                                  <div className="absolute bottom-0 right-0 bg-gradient-to-l from-black/60 to-transparent px-2 text-xs text-orange-300">
+                                                    Scroll para ver mais
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          )}
                                         </div>
                                         
                                         {/* Contact Information */}
@@ -2542,8 +2601,8 @@ const fetchEmployersList = async () => {
                               ))}
                             </ul>
                           )}
-                        </div>                      )}                      
-                      {/* Rejected companies list */}
+                        </div>
+                      )}                      {/* Rejected companies list */}
                       {activeSubTab === "employers-rejected" && (
                         <div>                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
                             <div>
@@ -2580,33 +2639,53 @@ const fetchEmployersList = async () => {
                                   className={`bg-black/40 border ${expandedRejectedCompanyId === company.id ? 'border-orange-500' : 'border-gray-700'} hover:border-orange-500 rounded-xl overflow-hidden transition-colors`}
                                   onClick={() => toggleRejectedCompanyDetails(company.id)}
                                   tabIndex={0}
-                                >
-                                  <div className="p-4 grid grid-cols-1 md:grid-cols-6 gap-4">
-                                    <div className="md:col-span-1">
-                                      <p className="text-sm text-gray-400">Company Name</p>
-                                      <p className="text-white">{company.companyName || company.name || 'N/A'}</p>
-                                    </div>
-                                    <div className="md:col-span-1">
-                                      <p className="text-sm text-gray-400">Responsible Person</p>
-                                      <p className="text-white">{company.responsibleName || company.responsiblePerson || 'N/A'}</p>
-                                    </div>
-                                    <div className="md:col-span-1">
-                                      <p className="text-sm text-gray-400">Industry</p>
-                                      <p className="text-white">{company.industry || 'N/A'}</p>
-                                    </div>
-                                    <div className="md:col-span-1">
-                                      <p className="text-sm text-gray-400">Email</p>
-                                      <p className="text-white">{company.email || 'N/A'}</p>
-                                    </div>
-                                    <div className="md:col-span-1">
-                                      <p className="text-sm text-gray-400">Rejected At</p>
-                                      <p className="text-white">{company.rejectedAt ? new Date(company.rejectedAt).toLocaleDateString() : 'N/A'}</p>
-                                    </div>
-                                    <div className="md:col-span-1">
-                                      <div className="flex justify-end">
-                                        <button className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-md text-xs">
+                                >                                  <div className="p-4">
+                                    {/* Mobile View - Only company name and Show Details button */}
+                                    <div className="block md:hidden">
+                                      <div className="mb-2">
+                                        <p className="text-xs text-gray-400 mb-1">Company Name</p>
+                                        <p className="text-white font-medium text-base">{company.companyName || company.name || 'N/A'}</p>
+                                      </div>                                      <div className="flex justify-end mt-3">
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleRejectedCompanyDetails(company.id);
+                                          }}
+                                          className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-xs w-full"
+                                        >
                                           {expandedRejectedCompanyId === company.id ? 'Hide Details' : 'Show Details'}
                                         </button>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Desktop View - Full information */}
+                                    <div className="hidden md:grid grid-cols-6 gap-4">
+                                      <div className="col-span-1">
+                                        <p className="text-sm text-gray-400">Company Name</p>
+                                        <p className="text-white">{company.companyName || company.name || 'N/A'}</p>
+                                      </div>
+                                      <div className="col-span-1">
+                                        <p className="text-sm text-gray-400">Responsible Person</p>
+                                        <p className="text-white">{company.responsibleName || 'N/A'}</p>
+                                      </div>
+                                      <div className="col-span-1">
+                                        <p className="text-sm text-gray-400">Industry</p>
+                                        <p className="text-white">{company.industry || 'N/A'}</p>
+                                      </div>
+                                      <div className="col-span-1">
+                                        <p className="text-sm text-gray-400">Email</p>
+                                        <p className="text-white">{company.email || 'N/A'}</p>
+                                      </div>
+                                      <div className="col-span-1">
+                                        <p className="text-sm text-gray-400">Rejected At</p>
+                                        <p className="text-white">{company.rejectedAt ? new Date(company.rejectedAt).toLocaleDateString() : 'N/A'}</p>
+                                      </div>
+                                      <div className="col-span-1">
+                                        <div className="flex justify-end">
+                                          <button className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-md text-xs">
+                                            {expandedRejectedCompanyId === company.id ? 'Hide Details' : 'Show Details'}
+                                          </button>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -2620,10 +2699,12 @@ const fetchEmployersList = async () => {
                                         </div>
                                       </div>
                                       
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                         {/* Company Basic Information */}
                                         <div>
-                                          <h5 className="font-bold text-white mb-2">Company Details</h5>
+                                          <h5 className="font-bold text-white mb-3">Company Details</h5>
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Company Name:</span> {company.companyName || company.name || 'N/A'}</p>
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Industry:</span> {company.industry || 'N/A'}</p>
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Company Size:</span> {company.employees || company.companySize || 'N/A'}</p>
@@ -2671,50 +2752,84 @@ const fetchEmployersList = async () => {
                                   className={`bg-black/40 border ${expandedPendingCompanyId === company.id ? 'border-orange-500' : 'border-gray-700'} hover:border-orange-500 rounded-xl overflow-hidden transition-colors`}
                                   onClick={() => togglePendingCompanyDetails(company.id)}
                                   tabIndex={0}
-                                >                                  <div className="p-4 grid grid-cols-1 md:grid-cols-6 gap-4">
-                                    <div className="md:col-span-1">
-                                      <p className="text-sm text-gray-400">Company Name</p>
-                                      <p className="text-white">{company.companyName}</p>
-                                    </div>
-                                    <div className="md:col-span-1">
-                                      <p className="text-sm text-gray-400">Responsible Person</p>
-                                      <p className="text-white">{company.responsibleName || 'N/A'}</p>
-                                    </div>
-                                    <div className="md:col-span-1">
-                                      <p className="text-sm text-gray-400">Industry</p>
-                                      <p className="text-white">{company.industry}</p>
-                                    </div>
-                                    <div className="md:col-span-1">
-                                      <p className="text-sm text-gray-400">Company Size</p>
-                                      <p className="text-white">{company.employees}</p>
-                                    </div>                                    <div className="md:col-span-1">
-                                      <p className="text-sm text-gray-400">Email</p>
-                                      <a 
-                                        href={`mailto:${company.email}`} 
-                                        className="text-orange-400 hover:underline"
-                                        onClick={e => e.stopPropagation()}
-                                      >
-                                        {company.email}
-                                      </a>
-                                    </div>
-                                    <div className="md:col-span-1 flex items-center justify-end">
-                                      <div className="flex space-x-2">                                        <button
-                                          onClick={e => { e.stopPropagation(); handleApproveCompany(company.id); }}
-                                          className="bg-green-600 hover:bg-green-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
+                                >                                  <div className="p-4">
+                                    {/* Mobile View - Only company name and approval buttons */}
+                                    <div className="block md:hidden">
+                                      <div className="mb-2">
+                                        <p className="text-xs text-gray-400 mb-1">Company Name</p>
+                                        <p className="text-white font-medium text-base">{company.companyName}</p>
+                                      </div>
+                                      <div className="flex space-x-2 mt-3">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleApproveCompany(company.id);
+                                          }}
+                                          disabled={approving === company.id || !!rejecting}
+                                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-xs font-semibold flex-1"
                                         >
-                                          Approve
+                                          {approving === company.id ? 'Approving...' : 'Approve'}
                                         </button>
                                         <button
-                                          onClick={e => {
+                                          onClick={(e) => {
                                             e.stopPropagation();
-                                            setRejectingCompanyId(company.id);
-                                            setRejectingCompanyName(company.companyName || company.name || '');
-                                            setShowRejectModal(true);
+                                            handleRejectClick(company.id);
                                           }}
-                                          className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold ml-2"
+                                          disabled={!!approving || rejecting === company.id}
+                                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-xs font-semibold flex-1"
                                         >
-                                          Reject
+                                          {rejecting === company.id ? 'Rejecting...' : 'Reject'}
                                         </button>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Desktop View - Full information */}
+                                    <div className="hidden md:grid grid-cols-6 gap-4">
+                                      <div className="col-span-1">
+                                        <p className="text-sm text-gray-400">Company Name</p>
+                                        <p className="text-white">{company.companyName}</p>
+                                      </div>
+                                      <div className="col-span-1">
+                                        <p className="text-sm text-gray-400">Responsible Person</p>
+                                        <p className="text-white">{company.responsibleName || 'N/A'}</p>
+                                      </div>
+                                      <div className="col-span-1">
+                                        <p className="text-sm text-gray-400">Industry</p>
+                                        <p className="text-white">{company.industry}</p>
+                                      </div>
+                                      <div className="col-span-1">
+                                        <p className="text-sm text-gray-400">Company Size</p>
+                                        <p className="text-white">{company.employees}</p>
+                                      </div>
+                                      <div className="col-span-1">
+                                        <p className="text-sm text-gray-400">Email</p>
+                                        <a 
+                                          href={`mailto:${company.email}`} 
+                                          className="text-orange-400 hover:underline"
+                                          onClick={e => e.stopPropagation()}
+                                        >
+                                          {company.email}
+                                        </a>
+                                      </div>                                      <div className="col-span-1 flex items-center justify-end">
+                                        <div className="flex space-x-2">
+                                          <button
+                                            onClick={e => { e.stopPropagation(); handleApproveCompany(company.id); }}
+                                            className="bg-green-600 hover:bg-green-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
+                                          >
+                                            Approve
+                                          </button>
+                                          <button
+                                            onClick={e => {
+                                              e.stopPropagation();
+                                              setRejectingCompanyId(company.id);
+                                              setRejectingCompanyName(company.companyName || company.name || '');
+                                              setShowRejectModal(true);
+                                            }}
+                                            className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold ml-2"
+                                          >
+                                            Reject
+                                          </button>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>                                  {expandedPendingCompanyId === company.id && (
@@ -2760,7 +2875,8 @@ const fetchEmployersList = async () => {
                                         {company.website && (
                                           <p className="mb-1">
                                             <span className="font-semibold text-orange-300">Website:</span>{' '}
-                                            <a                                              href={company.website.startsWith('http') ? company.website : `https://${company.website}`} 
+                                            <a 
+                                              href={company.website.startsWith('http') ? company.website : `https://${company.website}`} 
                                               target="_blank" 
                                               rel="noopener noreferrer"
                                               className="text-orange-400 hover:underline"
@@ -2884,50 +3000,96 @@ const fetchEmployersList = async () => {
                                 className={`bg-black/40 border ${expandedSeekerId === seeker.id ? 'border-orange-500' : 'border-gray-700'} hover:border-orange-500 rounded-xl overflow-hidden transition-colors`}
                                 onClick={() => toggleSeekerDetails(seeker.id)
                                 }
-                              >                                <div className="flex items-center justify-between p-4">
-                                  <div className="text-left flex items-center gap-2">
-                                    <div>                                      <strong>{(seeker.name || '') + ' ' + (seeker.surname || '')}</strong> <span className="text-gray-400">
-                                        (<a 
-                                          href={`mailto:${seeker.email}`} 
-                                          className="text-orange-400 hover:underline" 
-                                          onClick={e => e.stopPropagation()}
-                                        >
-                                          {seeker.email}
-                                        </a>)
-                                      </span>
-                                      {seeker.blocked !== undefined && (
-                                        <div className="mt-1">
-                                          <span className={`inline-block px-1.5 md:px-2 py-0.5 rounded-full text-xs ${
-                                            seeker.blocked 
-                                              ? 'bg-gray-800 text-gray-400 border border-gray-700' 
-                                              : 'bg-orange-900/50 text-orange-300 border border-orange-700'
-                                          }`}>
-                                            {seeker.blocked ? 'Blocked' : 'Active'}
-                                          </span>
-                                        </div>
-                                      )}
+                              >                                <div className="p-4">
+                                  {/* Mobile view */}
+                                  <div className="flex flex-col md:hidden">
+                                    <div className="mb-2">
+                                      <p className="text-xs text-gray-400 mb-1">Name</p>
+                                      <p className="text-white font-medium text-base">
+                                        {(seeker.name || '') + ' ' + (seeker.surname || '')}
+                                      </p>
+                                    </div>
+                                    
+                                    {seeker.blocked !== undefined && (
+                                      <div className="mb-2">
+                                        <span className={`inline-block px-1.5 py-0.5 rounded-full text-xs ${
+                                          seeker.blocked 
+                                            ? 'bg-gray-800 text-gray-400 border border-gray-700' 
+                                            : 'bg-orange-900/50 text-orange-300 border border-orange-700'
+                                        }`}>
+                                          {seeker.blocked ? 'Blocked' : 'Active'}
+                                        </span>
+                                      </div>
+                                    )}
+                                    
+                                    <div className="flex space-x-2 mt-3">
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteSeeker(seeker.id); }}
+                                        className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-md text-xs font-semibold"
+                                        disabled={deletingSeekerId === seeker.id}
+                                      >
+                                        {deletingSeekerId === seeker.id ? 'Deleting...' : 'Delete'}
+                                      </button>
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation(); 
+                                          handleToggleBlockSeeker(seeker.id, seeker.blocked || false);
+                                        }} 
+                                        className={`flex-1 ${seeker.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-800 hover:bg-gray-700'} text-white py-2 rounded-md text-xs font-semibold`} 
+                                        disabled={blockingSeekerId === seeker.id}
+                                      >
+                                        {blockingSeekerId === seeker.id ? 'Processing...' : seeker.blocked ? 'Unblock' : 'Block'}
+                                      </button>
                                     </div>
                                   </div>
-                                  <div className="flex space-x-2">
-                                    <button 
-                                      onClick={(e) => { e.stopPropagation(); handleDeleteSeeker(seeker.id); }}
-                                      className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
-                                      disabled={deletingSeekerId === seeker.id}
-                                    >
-                                      {deletingSeekerId === seeker.id ? 'Deleting...' : 'Delete'}
-                                    </button>
-                                    <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation(); 
-                                        handleToggleBlockSeeker(seeker.id, seeker.blocked || false);
-                                      }} 
-                                      className={`${seeker.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-800 hover:bg-gray-700'} text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold`} 
-                                      disabled={blockingSeekerId === seeker.id}
-                                    >
-                                      {blockingSeekerId === seeker.id ? 'Processing...' : seeker.blocked ? 'Unblock' : 'Block'}
-                                    </button>
+                                  
+                                  {/* Desktop view */}
+                                  <div className="hidden md:flex items-center justify-between">
+                                    <div className="text-left flex items-center gap-2">
+                                      <div>
+                                        <strong>{(seeker.name || '') + ' ' + (seeker.surname || '')}</strong> <span className="text-gray-400">
+                                          (<a
+                                            href={`mailto:${seeker.email}`} 
+                                            className="text-orange-400 hover:underline" 
+                                            onClick={e => e.stopPropagation()}
+                                          >
+                                            {seeker.email}
+                                          </a>)
+                                        </span>
+                                        {seeker.blocked !== undefined && (
+                                          <div className="mt-1">
+                                            <span className={`inline-block px-2 py-0.5 rounded-full text-xs ${
+                                              seeker.blocked 
+                                                ? 'bg-gray-800 text-gray-400 border border-gray-700' 
+                                                : 'bg-orange-900/50 text-orange-300 border border-orange-700'
+                                            }`}>
+                                              {seeker.blocked ? 'Blocked' : 'Active'}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteSeeker(seeker.id); }}
+                                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold"
+                                        disabled={deletingSeekerId === seeker.id}
+                                      >
+                                        {deletingSeekerId === seeker.id ? 'Deleting...' : 'Delete'}
+                                      </button>
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation(); 
+                                          handleToggleBlockSeeker(seeker.id, seeker.blocked || false);
+                                        }} 
+                                        className={`${seeker.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-800 hover:bg-gray-700'} text-white px-3 py-1.5 rounded-md text-xs font-semibold`} 
+                                        disabled={blockingSeekerId === seeker.id}
+                                      >
+                                        {blockingSeekerId === seeker.id ? 'Processing...' : seeker.blocked ? 'Unblock' : 'Block'}
+                                      </button>
+                                    </div>
                                   </div>
-                                </div>                                {/* Expanded Seeker Details */}
+                                </div>{/* Expanded Seeker Details */}
                                 {expandedSeekerId === seeker.id && (
                                   <div className="border-t border-gray-700 mt-0 p-4 md:p-6 bg-black/40 text-sm text-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {/* Professional Information */}
@@ -3234,7 +3396,7 @@ const fetchEmployersList = async () => {
                                     name="birthDate"
                                     value={profileData.birthDate || ''}
                                     onChange={handleProfileInputChange}
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className="mt-1 block w-full px-3 py-2 bg-black border bordergray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
                                   />
                                 </div>
                                 <div>
@@ -3402,6 +3564,7 @@ const fetchEmployersList = async () => {
                                     id="confirmPassword"
                                     name="confirmPassword"
                                     value={profileData.confirmPassword}
+                                   
                                     onChange={handleProfileInputChange}
                                     placeholder="Confirm New Password"
                                     className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
@@ -3534,7 +3697,7 @@ const fetchEmployersList = async () => {
                   <div>
                     <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Manage NFTs</h2>{activeSubTab === "add" && (
                       <div className="mb-6 md:mb-10">
-                        <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700">
+                        <div className="bg-black/30 p-4 md:p-6 rounded-xl border border-gray-700 hover:border-orange-500 transition-all shadow-sm">
                           <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Add New NFT</h3>
                           <form onSubmit={handleAddNFT} className="space-y-4 md:space-y-6">
                             <div>
