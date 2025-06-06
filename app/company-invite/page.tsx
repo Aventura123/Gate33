@@ -47,6 +47,8 @@ const CompanyInvitePage: React.FC = () => {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [submittedCompanyName, setSubmittedCompanyName] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -109,9 +111,10 @@ const CompanyInvitePage: React.FC = () => {
         body: JSON.stringify(submitData),
       });
 
-      const result = await response.json();
-
-      if (result.success) {
+      const result = await response.json();      if (result.success) {
+        // Save the submitted data before clearing the form
+        setSubmittedEmail(formData.email);
+        setSubmittedCompanyName(formData.companyName);
         setShowSuccessCard(true);
         
         // Reset form after successful submission
@@ -150,7 +153,7 @@ const CompanyInvitePage: React.FC = () => {
                     Welcome to Gate33 VIP! 🏆
                   </h2>
                   <p className={`text-white ${isMobile ? 'text-sm' : 'text-base lg:text-lg'} leading-relaxed ${isMobile ? 'mb-3' : 'mb-4'}`}>
-                    Congratulations! Your registration as one of the <span className="text-green-400 font-bold">first 10 founding partners</span> has been successfully approved.
+                    Congratulations! Your registration as one of the <span className="text-green-400 font-bold">first 10 verified companies</span> has been successfully approved.
                   </p>
                   <p className={`text-gray-300 ${isMobile ? 'text-sm' : 'text-base'} leading-relaxed`}>
                     You will soon receive a confirmation email with all the details of your exclusive benefits, 
@@ -162,11 +165,10 @@ const CompanyInvitePage: React.FC = () => {
                   </h3>
                   <p className={`text-gray-300 ${isMobile ? 'text-sm' : 'text-sm'} leading-relaxed mb-3`}>                    Your account is temporarily blocked until the official platform launch. 
                     Once Gate33 is launched, you will receive an email to activate your full access.
-                  </p>
-                  <div className={`bg-orange-900/30 border border-orange-500/50 rounded ${isMobile ? 'p-2 mt-2' : 'p-3 mt-3'}`}>
+                  </p>                  <div className={`bg-orange-900/30 border border-orange-500/50 rounded ${isMobile ? 'p-2 mt-2' : 'p-3 mt-3'}`}>
                     <p className={`text-orange-200 ${isMobile ? 'text-xs' : 'text-xs'}`}>
-                      📧 <strong>Email sent to:</strong> {formData.email}<br/>
-                      🏢 <strong>Company:</strong> {formData.companyName}
+                      📧 <strong>Email sent to:</strong> {submittedEmail}<br/>
+                      🏢 <strong>Company:</strong> {submittedCompanyName}
                     </p>
                   </div>
                 </div>
@@ -495,7 +497,7 @@ const CompanyInvitePage: React.FC = () => {
               {/* Special Benefits Highlight */}
             <div className={`${isMobile ? 'mt-6' : 'mt-8'} bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-400/50 rounded-xl ${isMobile ? 'p-4' : 'p-6'}`}>
               <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-orange-400 ${isMobile ? 'mb-4' : 'mb-6'} text-center`}>
-                Exclusive Founding Partner Benefits
+                Exclusive 10 first companies verified Benefits
               </h3>
               <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'md:grid-cols-4 gap-4'} text-center`}>                <div className="text-white">
                   <div className={`${isMobile ? 'text-xl mb-1' : 'text-2xl mb-2'}`}>🎯</div>
@@ -519,7 +521,7 @@ const CompanyInvitePage: React.FC = () => {
                 </div>
               </div>
                 {/* NFT Collection Details */}              <div className={`${isMobile ? 'mt-4' : 'mt-6'} bg-black/30 border border-orange-400/30 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
-                <h4 className={`text-orange-400 font-bold ${isMobile ? 'mb-1 text-sm' : 'mb-2'} text-center`}>🏆 "Gate33 Founding Partners" NFT Collection</h4>
+                <h4 className={`text-orange-400 font-bold ${isMobile ? 'mb-1 text-sm' : 'mb-2'} text-center`}>🏆 "Gate33 verified companies" NFT Collection</h4>
                 <p className={`text-gray-300 ${isMobile ? 'text-xs' : 'text-sm'} text-center leading-relaxed`}>
                   As one of our first 10 verified companies, you'll have an NFT with your logo in the collection that represents your foundational role in Gate33's journey. 
                   This limited collection not only serves as a digital certificate of your pioneering status but can help finance Gate33's initial development phase. 

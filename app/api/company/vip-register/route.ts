@@ -75,13 +75,13 @@ export async function POST(request: NextRequest) {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #FF6B00 0%, #FFA500 100%); border-radius: 10px;">
         <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">            <h1 style="color: #FF6B00; margin: 0; font-size: 28px;">🎉 Welcome to Gate33 VIP!</h1>
-            <p style="color: #666; margin: 10px 0 0 0; font-size: 16px;">Congratulations on becoming one of our founding partners</p>
+            <p style="color: #666; margin: 10px 0 0 0; font-size: 16px;">Congratulations on becoming one of our verified companies</p>
           </div>
           
           <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FF6B00;">            <h2 style="color: #FF6B00; margin: 0 0 15px 0; font-size: 22px;">✅ Registration Successfully Approved</h2>
             <p style="margin: 10px 0; color: #333; line-height: 1.6;">
               Your VIP company registration has been approved and your account has been successfully created. 
-              As one of the <strong>first 10 founding partners</strong>, you will receive exclusive benefits including 
+              As one of the <strong>first 10 verified companies</strong>, you will receive exclusive benefits including 
               a <strong style="color: #FF6B00;">lifetime 20% discount</strong> on all platform services.
             </p>
           </div>
@@ -98,13 +98,13 @@ export async function POST(request: NextRequest) {
               <li><strong>Lifetime 20% Discount</strong> on all platform services</li>
               <li><strong>Priority Support</strong> with guaranteed 24h response time</li>
               <li><strong>Verified Founder Badge</strong> with exclusive recognition</li>
-              <li><strong>Commemorative NFT</strong> from the "Gate33 - First 10 Partners" collection</li>
+              <li><strong>Commemorative NFT</strong> from the "Gate33 - First 10 Verified Companies" collection</li>
               <li><strong>Early Access</strong> to new platform features</li>
               <li><strong>Personalized Consulting</strong> for platform usage optimization</li>
             </ul>
           </div>
             <div style="background: #e7f3ff; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #b8daff;">
-            <h3 style="color: #004085; margin: 0 0 15px 0; font-size: 18px;">🖼️ NFT "Gate33 - First 10 Partners"</h3>
+            <h3 style="color: #004085; margin: 0 0 15px 0; font-size: 18px;">🖼️ NFT "Gate33 - First 10 Verified Companies"</h3>
             <p style="margin: 10px 0; color: #004085; line-height: 1.6;">
               You will receive an NFT featuring your company logo in the exclusive collection that represents your 
               fundamental role in Gate33's journey. This limited collection not only serves as a digital certificate 
