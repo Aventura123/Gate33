@@ -3329,52 +3329,50 @@ const fetchEmployersList = async () => {
                       {!activeSubTab && <p className="text-gray-400 text-left">Select a category to manage users.</p>}
                     </div>
                   </div>
-                )}
-
-                {/* Show "settings" tab only if you have permission */}
+                )}                {/* Show "settings" tab only if you have permission */}
                 {activeTab === "settings" && settingsDropdownOpen && hasPermission('canAccessSettings') && (
                   <div>                    <h2 className={`font-bold ${isMobile ? 'text-2xl text-center mb-4' : 'text-3xl mb-6 text-left'} text-orange-500`}>Settings</h2>
-                    <div className="mt-6 bg-black/30 p-6 rounded-lg border border-gray-700 hover:border-orange-500 transition-colors">
+                    <div className={`mt-6 bg-black/30 ${isMobile ? 'p-3' : 'p-6'} rounded-lg border border-gray-700 hover:border-orange-500 transition-colors`}>
 
                       {/* Render My Profile Form */}
                       {activeSubTab === "profile" && (
                         <div>
-                          <h3 className="text-xl text-orange-400 mb-4 text-left">My Profile</h3>
-                          {profileLoading && <p>Loading profile...</p>}
-                          {profileError && <p className="text-red-400 mb-4">{profileError}</p>}
-                          {!profileLoading && (                            <form onSubmit={handleUpdateProfile} className="space-y-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">                                <div>
-                                  <label htmlFor="username" className="block text-sm font-medium text-white">Username</label>
+                          <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} text-orange-400 mb-4 ${isMobile ? 'text-center' : 'text-left'}`}>My Profile</h3>
+                          {profileLoading && <p className={`${isMobile ? 'text-center text-sm' : ''}`}>Loading profile...</p>}
+                          {profileError && <p className={`text-red-400 mb-4 ${isMobile ? 'text-center text-sm' : ''}`}>{profileError}</p>}
+                          {!profileLoading && (                            <form onSubmit={handleUpdateProfile} className={`${isMobile ? 'space-y-3' : 'space-y-4'}`}>
+                              <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-${isMobile ? '3' : '4'}`}>                                <div>
+                                  <label htmlFor="username" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white`}>Username</label>
                                   <input 
                                     type="text" 
                                     id="username"
                                     value={profileData.username} 
                                     readOnly 
-                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white cursor-not-allowed" 
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white cursor-not-allowed`} 
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="email" className="block text-sm font-medium text-white">Email</label>
+                                  <label htmlFor="email" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white`}>Email</label>
                                   <input 
                                     type="email" 
                                     id="email"
                                     value={profileData.email} 
                                     readOnly 
-                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white cursor-not-allowed" 
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white cursor-not-allowed`} 
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="role" className="block text-sm font-medium text-white">Role</label>
+                                  <label htmlFor="role" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white`}>Role</label>
                                   <input 
                                     type="text" 
                                     id="role"
                                     value={profileData.role} 
                                     readOnly 
-                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white cursor-not-allowed" 
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white cursor-not-allowed`} 
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="position" className="block text-sm font-medium text-white">Position/Title</label>
+                                  <label htmlFor="position" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white`}>Position/Title</label>
                                   <input
                                     type="text"
                                     id="position"
@@ -3382,22 +3380,22 @@ const fetchEmployersList = async () => {
                                     value={profileData.position || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="Your position or title"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="birthDate" className="block text-sm font-medium text-white">Birth Date</label>
+                                  <label htmlFor="birthDate" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white`}>Birth Date</label>
                                   <input
                                     type="date"
                                     id="birthDate"
                                     name="birthDate"
                                     value={profileData.birthDate || ''}
                                     onChange={handleProfileInputChange}
-                                    className="mt-1 block w-full px-3 py-2 bg-black border bordergray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="nationality" className="block text-sm font-medium text-white">Nationality</label>
+                                  <label htmlFor="nationality" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white`}>Nationality</label>
                                   <input
                                     type="text"
                                     id="nationality"
@@ -3405,15 +3403,13 @@ const fetchEmployersList = async () => {
                                     value={profileData.nationality || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="Your nationality"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
-                              </div>
-
-                              <h4 className="text-lg text-orange-400 pt-4">Contact Information</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              </div>                              <h4 className={`${isMobile ? 'text-base' : 'text-lg'} text-orange-400 ${isMobile ? 'pt-2' : 'pt-4'}`}>Contact Information</h4>
+                              <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-${isMobile ? '3' : '4'}`}>
                                 <div>
-                                  <label htmlFor="phone" className="block text-sm font-medium text-white mb-1">Phone</label>
+                                  <label htmlFor="phone" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>Phone</label>
                                   <input
                                     type="tel"
                                     id="phone"
@@ -3421,11 +3417,11 @@ const fetchEmployersList = async () => {
                                     value={profileData.phone || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="Your phone number"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="address" className="block text-sm font-medium text-white mb-1">Address</label>
+                                  <label htmlFor="address" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>Address</label>
                                   <input
                                     type="text"
                                     id="address"
@@ -3433,11 +3429,11 @@ const fetchEmployersList = async () => {
                                     value={profileData.address || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="Your address"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="city" className="block text-sm font-medium text-white mb-1">City</label>
+                                  <label htmlFor="city" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>City</label>
                                   <input
                                     type="text"
                                     id="city"
@@ -3445,11 +3441,11 @@ const fetchEmployersList = async () => {
                                     value={profileData.city || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="Your city"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="country" className="block text-sm font-medium text-white mb-1">Country</label>
+                                  <label htmlFor="country" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>Country</label>
                                   <input
                                     type="text"
                                     id="country"
@@ -3457,11 +3453,11 @@ const fetchEmployersList = async () => {
                                     value={profileData.country || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="Your country"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="postalCode" className="block text-sm font-medium text-white mb-1">Postal/Zip Code</label>
+                                  <label htmlFor="postalCode" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>Postal/Zip Code</label>
                                   <input
                                     type="text"
                                     id="postalCode"
@@ -3469,15 +3465,14 @@ const fetchEmployersList = async () => {
                                     value={profileData.postalCode || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="Your postal/zip code"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                               </div>
-                              
-                              <h4 className="text-lg text-orange-400 pt-4">Social Media & Online Presence</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <h4 className={`${isMobile ? 'text-base' : 'text-lg'} text-orange-400 ${isMobile ? 'pt-2' : 'pt-4'}`}>Social Media & Online Presence</h4>
+                              <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-${isMobile ? '3' : '4'}`}>
                                 <div>
-                                  <label htmlFor="website" className="block text-sm font-medium text-white mb-1">Personal Website</label>
+                                  <label htmlFor="website" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>Personal Website</label>
                                   <input
                                     type="url"
                                     id="website"
@@ -3485,11 +3480,11 @@ const fetchEmployersList = async () => {
                                     value={profileData.website || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="https://your-website.com"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="linkedin" className="block text-sm font-medium text-white mb-1">LinkedIn</label>
+                                  <label htmlFor="linkedin" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>LinkedIn</label>
                                   <input
                                     type="url"
                                     id="linkedin"
@@ -3497,11 +3492,11 @@ const fetchEmployersList = async () => {
                                     value={profileData.linkedin || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="https://linkedin.com/in/yourprofile"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="twitter" className="block text-sm font-medium text-white mb-1">Twitter</label>
+                                  <label htmlFor="twitter" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>Twitter</label>
                                   <input
                                     type="url"
                                     id="twitter"
@@ -3509,11 +3504,11 @@ const fetchEmployersList = async () => {
                                     value={profileData.twitter || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="https://twitter.com/youraccount"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="github" className="block text-sm font-medium text-white mb-1">GitHub</label>
+                                  <label htmlFor="github" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>GitHub</label>
                                   <input
                                     type="url"
                                     id="github"
@@ -3521,29 +3516,28 @@ const fetchEmployersList = async () => {
                                     value={profileData.github || ''}
                                     onChange={handleProfileInputChange}
                                     placeholder="https://github.com/youraccount"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                               </div>
-                              
-                              <div>
-                                <label htmlFor="biography" className="block text-sm font-medium text-white mb-1">Biography/About</label>
+                                <div>
+                                <label htmlFor="biography" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>Biography/About</label>
                                 <textarea
                                   id="biography"
                                   name="biography"
                                   value={profileData.biography || ''}
                                   onChange={handleProfileInputChange}
                                   placeholder="Tell us about yourself..."
-                                  rows={4}
-                                  className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                  rows={isMobile ? 3 : 4}
+                                  className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                 ></textarea>
                               </div>
                               
-                              <hr className="border-gray-600 my-6"/>
-                              <h4 className="text-lg text-orange-400">Change Password</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <hr className={`border-gray-600 ${isMobile ? 'my-4' : 'my-6'}`}/>
+                              <h4 className={`${isMobile ? 'text-base' : 'text-lg'} text-orange-400`}>Change Password</h4>
+                              <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-${isMobile ? '3' : '4'}`}>
                                 <div>
-                                  <label htmlFor="password" className="block text-sm font-medium text-white mb-1">New Password (leave blank to keep current)</label>
+                                  <label htmlFor="password" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>New Password (leave blank to keep current)</label>
                                   <input
                                     type="password"
                                     id="password"
@@ -3551,11 +3545,11 @@ const fetchEmployersList = async () => {
                                     value={profileData.password}
                                     onChange={handleProfileInputChange}
                                     placeholder="New Password"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-white mb-1">Confirm New Password</label>
+                                  <label htmlFor="confirmPassword" className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-white mb-1`}>Confirm New Password</label>
                                   <input
                                     type="password"
                                     id="confirmPassword"
@@ -3564,16 +3558,16 @@ const fetchEmployersList = async () => {
                                    
                                     onChange={handleProfileInputChange}
                                     placeholder="Confirm New Password"
-                                    className="mt-1 block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white"
+                                    className={`mt-1 block w-full ${isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'} bg-black border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-white`}
                                     disabled={!profileData.password} // Disable if new password is blank
                                   />
                                 </div>
                               </div>
 
-                              <div className="flex justify-end mt-6">
+                              <div className={`flex ${isMobile ? 'justify-center' : 'justify-end'} ${isMobile ? 'mt-4' : 'mt-6'}`}>
                                 <button
                                   type="submit"
-                                  className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-medium"
+                                  className={`bg-orange-500 text-white ${isMobile ? 'px-6 py-2 text-sm w-full' : 'px-4 py-2'} rounded-lg hover:bg-orange-600 disabled:opacity-60 font-medium`}
                                   disabled={profileUpdating}
                                 >
                                   {profileUpdating ? 'Updating...' : 'Update Profile'}
@@ -3582,20 +3576,19 @@ const fetchEmployersList = async () => {
                             </form>
                         )}
                         </div>
-                      )}
-                      {activeSubTab === "permissions" && hasPermission('canManageUsers') && (
-                        <div className="space-y-8">
+                      )}                      {activeSubTab === "permissions" && hasPermission('canManageUsers') && (
+                        <div className={`${isMobile ? 'space-y-4' : 'space-y-8'}`}>
                           {/* Admin Creation Form */}
                           <div>
-                            <h3 className="text-xl text-orange-400 mb-4 text-left">Create New Admin</h3>
-                            <form onSubmit={handleCreateAdmin} className="mb-6 flex gap-2 items-end flex-wrap">
+                            <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} text-orange-400 mb-4 ${isMobile ? 'text-center' : 'text-left'}`}>Create New Admin</h3>
+                            <form onSubmit={handleCreateAdmin} className={`mb-6 ${isMobile ? 'flex flex-col gap-3' : 'flex gap-2 items-end flex-wrap'}`}>
                               <input
                                 type="text"
                                 name="name"
                                 value={newAdmin.name}
                                 onChange={handleInputAdmin}
                                 placeholder="Name"
-                                className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                                className={`border border-gray-300 rounded-lg ${isMobile ? 'px-2 py-2 text-sm' : 'px-3 py-1'} text-black ${isMobile ? 'w-full' : 'w-auto'}`}
                                 required
                               />
                               <input
@@ -3604,7 +3597,7 @@ const fetchEmployersList = async () => {
                                 value={newAdmin.username}
                                 onChange={handleInputAdmin}
                                 placeholder="Username"
-                                className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                                className={`border border-gray-300 rounded-lg ${isMobile ? 'px-2 py-2 text-sm' : 'px-3 py-1'} text-black ${isMobile ? 'w-full' : 'w-auto'}`}
                                 required
                               />
                               <input
@@ -3613,7 +3606,7 @@ const fetchEmployersList = async () => {
                                 value={newAdmin.password}
                                 onChange={handleInputAdmin}
                                 placeholder="Password"
-                                className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                                className={`border border-gray-300 rounded-lg ${isMobile ? 'px-2 py-2 text-sm' : 'px-3 py-1'} text-black ${isMobile ? 'w-full' : 'w-auto'}`}
                                 required
                               />
                               <input
@@ -3622,7 +3615,7 @@ const fetchEmployersList = async () => {
                                 value={newAdmin.email}
                                 onChange={handleInputAdmin}
                                 placeholder="Email"
-                                className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                                className={`border border-gray-300 rounded-lg ${isMobile ? 'px-2 py-2 text-sm' : 'px-3 py-1'} text-black ${isMobile ? 'w-full' : 'w-auto'}`}
                                 required
                               />
                               {/* UPDATED Role Input to Select Dropdown using defined array */}
@@ -3630,7 +3623,7 @@ const fetchEmployersList = async () => {
                                 name="role"
                                 value={newAdmin.role} // Controlled component
                                 onChange={handleInputAdmin}
-                                className="border border-gray-300 rounded-lg px-3 py-1 text-black w-auto"
+                                className={`border border-gray-300 rounded-lg ${isMobile ? 'px-2 py-2 text-sm' : 'px-3 py-1'} text-black ${isMobile ? 'w-full' : 'w-auto'}`}
                                 required
                               >
                                 <option value="" disabled>Select Role</option>
@@ -3644,7 +3637,7 @@ const fetchEmployersList = async () => {
                               </select>
                               <button
                                 type="submit"
-                                className="bg-orange-500 text-white px-4 py-1 rounded-lg hover:bg-orange-600 disabled:opacity-60 w-auto"
+                                className={`bg-orange-500 text-white ${isMobile ? 'px-4 py-2 text-sm w-full' : 'px-4 py-1 w-auto'} rounded-lg hover:bg-orange-600 disabled:opacity-60`}
                                 disabled={creating}
                               >
                                 {creating ? 'Creating...' : 'Add Admin'}
@@ -3654,16 +3647,20 @@ const fetchEmployersList = async () => {
 
                           {/* Existing Admins List */}
                           <div>
-                            <h3 className="text-xl text-orange-400 mb-2 text-left">Existing Admins</h3>
-                            {adminsLoading && <p className="text-gray-400 text-left">Loading admins...</p>}
-                            {adminsError && <p className="text-red-400 text-left">{adminsError}</p>}
-                            <ul className="mb-4">
+                            <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} text-orange-400 mb-2 ${isMobile ? 'text-center' : 'text-left'}`}>Existing Admins</h3>                            {adminsLoading && <p className={`text-gray-400 ${isMobile ? 'text-center text-sm' : 'text-left'}`}>Loading admins...</p>}
+                            {adminsError && <p className={`text-red-400 ${isMobile ? 'text-center text-sm' : 'text-left'}`}>{adminsError}</p>}
+                            <ul className={`${isMobile ? 'mb-2' : 'mb-4'}`}>
                               {admins.map((adm) => (
-                                <li key={adm.id} className="flex items-center justify-between text-white mb-1">
-                                <span className="text-left">{adm.name} <span className="text-gray-400">({adm.username} - {adm.email} - {adm.role})</span></span>
+                                <li key={adm.id} className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'} text-white ${isMobile ? 'mb-3 p-2 bg-black/20 rounded-lg' : 'mb-1'}`}>
+                                <span className={`${isMobile ? 'text-center mb-2 text-sm' : 'text-left'}`}>
+                                  {adm.name} 
+                                  <span className={`text-gray-400 ${isMobile ? 'block text-xs' : ''}`}>
+                                    ({adm.username} - {adm.email} - {adm.role})
+                                  </span>
+                                </span>
                                 <button
                                   onClick={() => handleDeleteAdmin(adm.id)}
-                                  className="ml-2 px-2 py-1 bg-red-600 rounded hover:bg-red-700 text-xs disabled:opacity-60"
+                                  className={`${isMobile ? 'mx-auto' : 'ml-2'} px-2 py-1 bg-red-600 rounded hover:bg-red-700 text-xs disabled:opacity-60 ${isMobile ? 'w-20' : ''}`}
                                   disabled={deletingId === adm.id}
                                 >
                                   {deletingId === adm.id ? 'Deleting...' : 'Delete'}

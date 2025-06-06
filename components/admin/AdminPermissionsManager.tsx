@@ -287,8 +287,22 @@ const AdminPermissionsManager: React.FC = () => {
   const [rolePermissions, setRolePermissions] = useState<AdminPermissions>(defaultRolePermissions.super_admin);
   const [updating, setUpdating] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);  const { hasPermission, role } = useAdminPermissions();
+  const [error, setError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const { hasPermission, role } = useAdminPermissions();
   const router = useRouter();
+
+  // Mobile detection effect
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
 
   // Load initial permissions for the default selected role
   useEffect(() => {
@@ -369,40 +383,40 @@ const AdminPermissionsManager: React.FC = () => {
     } finally {
       setUpdating(false);
     }
-  };// Check if user has permission to manage permissions
+  };  // Check if user has permission to manage permissions
   if (!hasPermission('canAccessUsers')) {
     return (
-      <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-center text-sm">
+      <div className={`bg-red-900/50 border border-red-500 text-white ${isMobile ? 'p-2 mb-3 text-xs' : 'p-3 md:p-4 mb-4 md:mb-6 text-sm'} rounded-lg text-center`}>
         You do not have permission to manage administrator permissions.
       </div>
     );
   }
-
   return (
-    <div className="bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700 hover:border-orange-500 transition-colors">      <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">
+    <div className={`bg-black/30 ${isMobile ? 'p-3' : 'p-4 md:p-6'} rounded-xl ${isMobile ? 'mb-4' : 'mb-6 md:mb-10'} border border-gray-700 hover:border-orange-500 transition-colors`}>
+      <h3 className={`${isMobile ? 'text-lg text-center' : 'text-lg md:text-xl'} font-bold text-orange-400 ${isMobile ? 'mb-3' : 'mb-4'}`}>
         Role Permissions Manager
       </h3>
 
       {error && (
-        <div className="bg-red-900/50 border border-red-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
+        <div className={`bg-red-900/50 border border-red-500 text-white ${isMobile ? 'p-2 mb-3 text-xs' : 'p-3 md:p-4 mb-4 md:mb-6 text-sm'} rounded-lg`}>
           {error}
         </div>
       )}
       {successMessage && (
-        <div className="bg-green-900/50 border border-green-500 text-white p-3 md:p-4 rounded-lg mb-4 md:mb-6 text-sm">
+        <div className={`bg-green-900/50 border border-green-500 text-white ${isMobile ? 'p-2 mb-3 text-xs' : 'p-3 md:p-4 mb-4 md:mb-6 text-sm'} rounded-lg`}>
           {successMessage}
         </div>
       )}
 
       {/* Role Selector */}
-      <div className="mb-6">
-        <label className="block text-sm font-semibold text-gray-300 mb-1">
+      <div className={`${isMobile ? 'mb-4' : 'mb-6'}`}>
+        <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-300 ${isMobile ? 'mb-1 text-center' : 'mb-1'}`}>
           Select role to manage:
         </label>
         <select
           value={selectedRole}
           onChange={(e) => handleRoleSelection(e.target.value as AdminRole)}
-          className="w-full max-w-xs px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+          className={`${isMobile ? 'w-full px-2 py-2 text-sm' : 'w-full max-w-xs px-3 py-2 text-sm'} bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none`}
         >
           {availableRoles.map((roleOption) => (
             <option key={roleOption} value={roleOption}>
@@ -410,18 +424,16 @@ const AdminPermissionsManager: React.FC = () => {
             </option>
           ))}
         </select>
-      </div>
-
-      {/* Permissions Grid for Selected Role */}
-      <div className="bg-black/30 border border-gray-700 rounded-xl overflow-hidden transition-colors p-4 md:p-6 mb-6">
-        <h4 className="text-base font-bold text-orange-400 mb-4">
+      </div>      {/* Permissions Grid for Selected Role */}
+      <div className={`bg-black/30 border border-gray-700 rounded-xl overflow-hidden transition-colors ${isMobile ? 'p-3 mb-4' : 'p-4 md:p-6 mb-6'}`}>
+        <h4 className={`${isMobile ? 'text-sm' : 'text-base'} font-bold text-orange-400 ${isMobile ? 'mb-3 text-center' : 'mb-4'}`}>
           Permissions for {getRoleDisplayName(selectedRole)}
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-12 gap-y-4">
+        <div className={`grid grid-cols-1 ${isMobile ? 'gap-3' : 'md:grid-cols-2 xl:grid-cols-3 gap-x-12 gap-y-4'}`}>
           {permissionGroups.map((group) => (
-            <div key={group.label} className={group.children.length > 0 ? "mb-6" : "mb-2"}>
+            <div key={group.label} className={`${group.children.length > 0 ? (isMobile ? "mb-4" : "mb-6") : (isMobile ? "mb-2" : "mb-2")}`}>
               {group.main && (
-                <div className="flex items-center mb-1">
+                <div className={`flex items-center ${isMobile ? 'mb-2' : 'mb-1'}`}>
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -429,16 +441,16 @@ const AdminPermissionsManager: React.FC = () => {
                       checked={!!rolePermissions[group.main as keyof AdminPermissions]}
                       onChange={() => handlePermissionToggle(group.main as keyof AdminPermissions)}
                       disabled={updating || role !== 'super_admin'}
-                      className="mr-2 h-5 w-5 accent-orange-500"
+                      className={`mr-2 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'} accent-orange-500`}
                     />
-                    <span className="text-orange-400 text-sm font-semibold">
+                    <span className={`text-orange-400 ${isMobile ? 'text-xs' : 'text-sm'} font-semibold`}>
                       {getPermissionDisplayName(group.main)}
                     </span>
                   </label>
                 </div>
               )}
               {group.children.length > 0 && (
-                <div className="ml-6 space-y-1">
+                <div className={`${isMobile ? 'ml-4 space-y-2' : 'ml-6 space-y-1'}`}>
                   {group.children.map((permissionKey) => (
                     <div key={permissionKey} className="flex items-center">
                       <label className="flex items-center cursor-pointer">
@@ -448,9 +460,9 @@ const AdminPermissionsManager: React.FC = () => {
                           checked={!!rolePermissions[permissionKey as keyof AdminPermissions]}
                           onChange={() => handlePermissionToggle(permissionKey as keyof AdminPermissions)}
                           disabled={updating || role !== 'super_admin'}
-                          className="mr-2 h-5 w-5 accent-orange-500"
+                          className={`mr-2 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'} accent-orange-500`}
                         />
-                        <span className="text-gray-300 text-sm font-medium">
+                        <span className={`text-gray-300 ${isMobile ? 'text-xs' : 'text-sm'} font-medium`}>
                           {getPermissionDisplayName(permissionKey)}
                         </span>
                       </label>
@@ -462,15 +474,15 @@ const AdminPermissionsManager: React.FC = () => {
           ))}
         </div>
         {role !== 'super_admin' && (
-          <div className="mt-4 p-3 bg-yellow-900/40 rounded border border-yellow-600">
-            <p className="text-yellow-400 text-sm">
+          <div className={`${isMobile ? 'mt-3 p-2' : 'mt-4 p-3'} bg-yellow-900/40 rounded border border-yellow-600`}>
+            <p className={`text-yellow-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
               <strong>Note:</strong> Only Super Admins can modify role permissions. You can view but not edit these settings.
             </p>
           </div>
         )}
       </div>
 
-      <div className="mt-6 md:mt-8 text-sm text-gray-400">
+      <div className={`${isMobile ? 'mt-4 text-xs' : 'mt-6 md:mt-8 text-sm'} text-gray-400`}>
         {/* Role descriptions removed as requested */}
       </div>
     </div>
