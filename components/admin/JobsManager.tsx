@@ -50,8 +50,7 @@ const JobListItem: React.FC<{
       <div 
         className="flex justify-between items-center p-2 md:p-3 cursor-pointer hover:bg-black/40"
         onClick={() => setExpanded(!expanded)}
-      >
-        <div className="flex-1">
+      >        <div className="flex-1 min-w-0 pr-2">
           <div className="flex items-center gap-2">
             <p className={`font-bold truncate ${job.disabled ? 'text-gray-400' : 'text-orange-400'}`}>
               {job.title}
@@ -65,10 +64,9 @@ const JobListItem: React.FC<{
               <span className="px-1 md:px-1.5 py-0.5 rounded-full text-xs bg-green-900/50 text-green-300 border border-green-700 animate-pulse">
                 TP
               </span>
-            )}
-          </div>
-          <p className="text-gray-300 text-xs">{job.companyName}</p>
-        </div>        <div className="flex items-center gap-1 md:gap-2">
+            )}          </div>
+          <p className="text-gray-300 text-xs truncate overflow-hidden whitespace-nowrap text-ellipsis w-full">{job.companyName}</p>
+        </div>        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           {job.location && (
             <span className="hidden sm:inline-block px-1 md:px-1.5 py-0.5 rounded-full text-xs bg-black/40 text-orange-300 border border-orange-700/50">
               {job.location}
@@ -79,7 +77,7 @@ const JobListItem: React.FC<{
               e.stopPropagation(); // Prevent expansion toggle
               onToggleDisable();
             }}
-            className={`${job.disabled ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-600 hover:bg-yellow-700'} text-white px-1.5 md:px-2 py-1 rounded-md text-xs font-semibold`}
+            className={`${job.disabled ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-600 hover:bg-yellow-700'} text-white px-1.5 md:px-2 py-1 rounded-md text-xs font-semibold whitespace-nowrap`}
             disabled={isDisabling}
           >
             {isDisabling ? "..." : job.disabled ? "Enable" : "Disable"}
@@ -89,7 +87,7 @@ const JobListItem: React.FC<{
               e.stopPropagation(); // Prevent expansion toggle
               onDelete();
             }}
-            className="bg-red-600 hover:bg-red-700 text-white px-1.5 md:px-2 py-1 rounded-md text-xs font-semibold"
+            className="bg-red-600 hover:bg-red-700 text-white px-1.5 md:px-2 py-1 rounded-md text-xs font-semibold whitespace-nowrap"
             disabled={isDeleting}
           >
             {isDeleting ? "..." : "Delete"}

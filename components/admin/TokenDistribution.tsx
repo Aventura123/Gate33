@@ -123,34 +123,32 @@ const TokenDistribution: React.FC = () => {
                 Error: {stats.error}
               </div>
             )}
-          </div>
-
-          {/* Distribution Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl p-4 transition-colors">
-              <h3 className="text-sm font-semibold text-gray-300 mb-1">Total Supply</h3>
-              <p className="text-xl md:text-2xl font-bold text-white">{formatNumber(stats.totalSupply)}</p>
+          </div>          {/* Distribution Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl p-3 md:p-4 transition-colors">
+              <h3 className="text-xs md:text-sm font-semibold text-gray-300 mb-1">Total Supply</h3>
+              <p className="text-lg md:text-2xl font-bold text-white">{formatNumber(stats.totalSupply)}</p>
               <p className="text-xs text-gray-400">G33 Tokens</p>
             </div>
 
-            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl p-4 transition-colors">
-              <h3 className="text-sm font-semibold text-gray-300 mb-1">Distributed</h3>
-              <p className="text-xl md:text-2xl font-bold text-green-400">{formatNumber(stats.totalDistributed)}</p>
+            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl p-3 md:p-4 transition-colors">
+              <h3 className="text-xs md:text-sm font-semibold text-gray-300 mb-1">Distributed</h3>
+              <p className="text-lg md:text-2xl font-bold text-green-400">{formatNumber(stats.totalDistributed)}</p>
               <p className="text-xs text-gray-400">{stats.percentageDistributed.toFixed(2)}% of supply</p>
             </div>
 
-            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl p-4 transition-colors">
-              <h3 className="text-sm font-semibold text-gray-300 mb-1">Available</h3>
-              <p className="text-xl md:text-2xl font-bold text-orange-400">{formatNumber(stats.availableForDistribution)}</p>
+            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl p-3 md:p-4 transition-colors">
+              <h3 className="text-xs md:text-sm font-semibold text-gray-300 mb-1">Available</h3>
+              <p className="text-lg md:text-2xl font-bold text-orange-400">{formatNumber(stats.availableForDistribution)}</p>
               <p className="text-xs text-gray-400">Ready to distribute</p>
             </div>
 
-            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl p-4 transition-colors">
-              <h3 className="text-sm font-semibold text-gray-300 mb-1">Total Donations</h3>
-              <p className="text-xl md:text-2xl font-bold text-blue-400">${formatNumber(stats.totalDonationsUsd)}</p>
+            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl p-3 md:p-4 transition-colors">
+              <h3 className="text-xs md:text-sm font-semibold text-gray-300 mb-1">Total Donations</h3>
+              <p className="text-lg md:text-2xl font-bold text-blue-400">${formatNumber(stats.totalDonationsUsd)}</p>
               <p className="text-xs text-gray-400">USD equivalent</p>
             </div>
-          </div>          {/* Distribution Progress */}
+          </div>{/* Distribution Progress */}
           <div className="bg-black/30 border border-gray-700 hover:border-orange-500 rounded-xl p-4 md:p-6 transition-colors">
             <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Distribution Progress</h3>
             <div className="space-y-2">
