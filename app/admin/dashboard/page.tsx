@@ -244,8 +244,10 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
   const [seekersLoading, setSeekersLoading] = useState(false);  const [seekersError, setSeekersError] = useState<string|null>(null);
   const [deletingSeekerId, setDeletingSeekerId] = useState<string|null>(null);
   const [blockingSeekerId, setBlockingSeekerId] = useState<string|null>(null);
-
   const [pendingCompanies, setPendingCompanies] = useState<any[]>([]);
+  const [rejectedCompanies, setRejectedCompanies] = useState<any[]>([]);
+  const [rejectedCompaniesLoading, setRejectedCompaniesLoading] = useState(false);
+  const [expandedRejectedCompanyId, setExpandedRejectedCompanyId] = useState<string | null>(null);
   // --- Profile State and Handlers ---
   const [profileData, setProfileData] = useState({
     name: '',
@@ -278,7 +280,6 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileUpdating, setProfileUpdating] = useState(false);
-
   useEffect(() => {
     const fetchPendingCompanies = async () => {
       try {
@@ -298,7 +299,29 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
       }
     };
 
+    const fetchRejectedCompanies = async () => {
+      try {
+        setRejectedCompaniesLoading(true);
+        if (!db) throw new Error("Firestore is not initialized");
+
+        const rejectedCompaniesCollection = collection(db, "rejectedCompanies");
+        const snapshot = await getDocs(rejectedCompaniesCollection);
+
+        const companies = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setRejectedCompanies(companies);
+      } catch (error) {
+        console.error("Error fetching rejected companies:", error);
+      } finally {
+        setRejectedCompaniesLoading(false);
+      }
+    };
+
     fetchPendingCompanies();
+    fetchRejectedCompanies();
   }, []);
 
   const auth = getAuth();
@@ -382,6 +405,40 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
       alert("Failed to approve company.");
     }
   };
+
+  // --- Rejection modal state ---
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectingCompanyId, setRejectingCompanyId] = useState<string|null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectingCompanyName, setRejectingCompanyName] = useState('');
+
+  // Função para rejeitar empresa
+  const handleRejectCompany = async () => {
+    if (!rejectingCompanyId || !rejectionReason.trim()) return;
+    try {
+      if (!db) throw new Error("Firestore is not initialized");
+      const company = pendingCompanies.find(c => c.id === rejectingCompanyId);
+      if (!company) throw new Error("Company not found");
+      // Salva na coleção rejectedCompanies
+      await addDoc(collection(db, "rejectedCompanies"), {
+        ...company,
+        rejectionReason,
+        rejectedAt: new Date().toISOString(),
+      });
+      // Remove da coleção pendingCompanies
+      await deleteDoc(doc(db, "pendingCompanies", rejectingCompanyId));
+      setPendingCompanies(prev => prev.filter(c => c.id !== rejectingCompanyId));
+      setShowRejectModal(false);
+      setRejectionReason('');
+      setRejectingCompanyId(null);
+      setRejectingCompanyName('');
+      alert("Company rejected successfully.");
+    } catch (err) {
+      alert("Failed to reject company.");
+    }
+  };
+
+  // --- Existing code ---
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1196,9 +1253,9 @@ const fetchEmployersList = async () => {
       setBlockingSeekerId(null);
     }
   };
-
   const [searchQuery, setSearchQuery] = useState("");
   const [searchSeekersQuery, setSearchSeekersQuery] = useState("");
+  const [searchRejectedCompaniesQuery, setSearchRejectedCompaniesQuery] = useState("");
 
   // Filter seekers based on search query
   const filteredSeekers = seekers.filter((seeker) => {
@@ -1210,7 +1267,6 @@ const fetchEmployersList = async () => {
       (seeker.surname && seeker.surname.toLowerCase().includes(query))
     );
   });
-
   // Filter employers based on search query (already defined)
   const filteredEmployers = employers.filter((employer) => {
     const query = searchQuery.toLowerCase();
@@ -1218,6 +1274,18 @@ const fetchEmployersList = async () => {
       employer.name?.toLowerCase().includes(query) ||
       employer.email.toLowerCase().includes(query) ||
       (employer.companyName || "").toLowerCase().includes(query)
+    );
+  });
+  
+  // Filter rejected companies based on search query
+  const filteredRejectedCompanies = rejectedCompanies.filter((company) => {
+    const query = searchRejectedCompaniesQuery.toLowerCase();
+    return (
+      (company.companyName || "").toLowerCase().includes(query) ||
+      (company.name || "").toLowerCase().includes(query) ||
+      (company.email || "").toLowerCase().includes(query) ||
+      (company.responsibleName || "").toLowerCase().includes(query) ||
+      (company.responsiblePerson || "").toLowerCase().includes(query)
     );
   });
 
@@ -1640,9 +1708,12 @@ const fetchEmployersList = async () => {
   // Add these lines near the other useState hooks at the top of AdminDashboard (after other useState calls)
   const [expandedPendingCompanyId, setExpandedPendingCompanyId] = useState<string | null>(null);
   const [expandedSeekerId, setExpandedSeekerId] = useState<string | null>(null);
-
   const togglePendingCompanyDetails = (id: string) => {
     setExpandedPendingCompanyId(prevId => prevId === id ? null : id);
+  };
+
+  const toggleRejectedCompanyDetails = (id: string) => {
+    setExpandedRejectedCompanyId(prevId => prevId === id ? null : id);
   };
 
   const toggleSeekerDetails = (id: string) => {
@@ -1852,7 +1923,19 @@ const fetchEmployersList = async () => {
                           if (isMobile) setMobileMenuOpen(false);
                         }}
                       >
-                        Employers - List
+                        Approved Companies                     </button>
+                    </li>
+                    <li>
+                      <button
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${
+                          activeSubTab === "employers-rejected" ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'
+                        }`}
+                        onClick={() => {
+                          setActiveSubTab("employers-rejected");
+                          if (isMobile) setMobileMenuOpen(false);
+                        }}
+                      >
+                        Rejected Companies
                       </button>
                     </li>
                     {hasPermission('canApproveCompanies') && (
@@ -1866,7 +1949,7 @@ const fetchEmployersList = async () => {
                             if (isMobile) setMobileMenuOpen(false);
                           }}
                         >
-                          Approve Companies
+                          Pending Companies
                         </button>
                       </li>
                     )}
@@ -2459,8 +2542,117 @@ const fetchEmployersList = async () => {
                               ))}
                             </ul>
                           )}
+                        </div>                      )}                      
+                      {/* Rejected companies list */}
+                      {activeSubTab === "employers-rejected" && (
+                        <div>                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
+                            <div>
+                              <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-2 md:mb-0">Rejected Companies</h3>
+                            </div>
+                            <div className="w-full md:w-auto">
+                              <label htmlFor="rejectedCompanySearch" className="sr-only">Search rejected companies</label>
+                              <input
+                                id="rejectedCompanySearch"
+                                type="text"
+                                placeholder="Search rejected companies..."
+                                value={searchRejectedCompaniesQuery}
+                                onChange={(e) => setSearchRejectedCompaniesQuery(e.target.value)}
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                            {rejectedCompaniesLoading ? (
+                            <div className="bg-black/40 p-8 rounded-lg text-center">
+                              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-orange-500 mx-auto"></div>
+                              <p className="text-gray-400 mt-2">Loading rejected companies...</p>
+                            </div>
+                          ) : filteredRejectedCompanies.length === 0 ? (
+                            <div className="bg-black/40 p-8 rounded-lg text-center">
+                              <p className="text-gray-400">
+                                {searchRejectedCompaniesQuery ? "No matching rejected companies found." : "No rejected companies found."}
+                              </p>
+                            </div>
+                          ) : (
+                            <ul className="space-y-4">
+                              {filteredRejectedCompanies.map((company) => (
+                                <li
+                                  key={company.id}
+                                  className={`bg-black/40 border ${expandedRejectedCompanyId === company.id ? 'border-orange-500' : 'border-gray-700'} hover:border-orange-500 rounded-xl overflow-hidden transition-colors`}
+                                  onClick={() => toggleRejectedCompanyDetails(company.id)}
+                                  tabIndex={0}
+                                >
+                                  <div className="p-4 grid grid-cols-1 md:grid-cols-6 gap-4">
+                                    <div className="md:col-span-1">
+                                      <p className="text-sm text-gray-400">Company Name</p>
+                                      <p className="text-white">{company.companyName || company.name || 'N/A'}</p>
+                                    </div>
+                                    <div className="md:col-span-1">
+                                      <p className="text-sm text-gray-400">Responsible Person</p>
+                                      <p className="text-white">{company.responsibleName || company.responsiblePerson || 'N/A'}</p>
+                                    </div>
+                                    <div className="md:col-span-1">
+                                      <p className="text-sm text-gray-400">Industry</p>
+                                      <p className="text-white">{company.industry || 'N/A'}</p>
+                                    </div>
+                                    <div className="md:col-span-1">
+                                      <p className="text-sm text-gray-400">Email</p>
+                                      <p className="text-white">{company.email || 'N/A'}</p>
+                                    </div>
+                                    <div className="md:col-span-1">
+                                      <p className="text-sm text-gray-400">Rejected At</p>
+                                      <p className="text-white">{company.rejectedAt ? new Date(company.rejectedAt).toLocaleDateString() : 'N/A'}</p>
+                                    </div>
+                                    <div className="md:col-span-1">
+                                      <div className="flex justify-end">
+                                        <button className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-md text-xs">
+                                          {expandedRejectedCompanyId === company.id ? 'Hide Details' : 'Show Details'}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {expandedRejectedCompanyId === company.id && (
+                                    <div className="border-t border-gray-700 mt-0 p-4 md:p-6 bg-black/40 text-sm text-gray-100">
+                                      <div className="mb-4">
+                                        <h4 className="text-base font-bold text-orange-400 mb-2">Rejection Reason</h4>
+                                        <div className="bg-black/30 p-3 rounded border border-gray-700 text-white">
+                                          {company.rejectionReason || 'No reason provided'}
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Company Basic Information */}
+                                        <div>
+                                          <h5 className="font-bold text-white mb-2">Company Details</h5>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Company Name:</span> {company.companyName || company.name || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Industry:</span> {company.industry || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Company Size:</span> {company.employees || company.companySize || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Tax ID:</span> {company.taxId || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Registration Number:</span> {company.registrationNumber || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Website:</span> {company.website || 'N/A'}</p>
+                                        </div>
+                                        
+                                        {/* Contact Information */}
+                                        <div>
+                                          <h5 className="font-bold text-white mb-2">Contact Information</h5>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Responsible Person:</span> {company.responsibleName || company.responsiblePerson || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Email:</span> {company.email || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Responsible Email:</span> {company.responsibleEmail || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Phone:</span> {company.contactPhone || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Responsible Phone:</span> {company.responsiblePhone || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Country:</span> {company.country || 'N/A'}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </div>
-                      )}                      {/* Pending company approvals */}
+                      )}
+                      
+                      {/* Pending company approvals */}
                       {activeSubTab === "employers-approve" && hasPermission('canApproveCompanies') && (
                         <div>                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
                             <div>
@@ -2512,13 +2704,16 @@ const fetchEmployersList = async () => {
                                         >
                                           Approve
                                         </button>
-                                        {/* Block/Unblock button for company */}
                                         <button
-                                          onClick={e => { e.stopPropagation(); handleToggleBlockEmployer(company.id, company.blocked || false); }}
-                                          className={`${company.blocked ? 'bg-gray-800 hover:bg-gray-700' : 'bg-orange-500 hover:bg-orange-600'} text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold`}
-                                          disabled={blockingEmployerId === company.id}
+                                          onClick={e => {
+                                            e.stopPropagation();
+                                            setRejectingCompanyId(company.id);
+                                            setRejectingCompanyName(company.companyName || company.name || '');
+                                            setShowRejectModal(true);
+                                          }}
+                                          className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold ml-2"
                                         >
-                                          {blockingEmployerId === company.id ? 'Processing...' : company.blocked ? 'Unblock' : 'Block'}
+                                          Reject
                                         </button>
                                       </div>
                                     </div>
@@ -2623,14 +2818,14 @@ const fetchEmployersList = async () => {
                                         {company.notes && (
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Notes:</span> {company.notes}</p>
                                         )}
-                                          {company.responsiblePhone && (
+                                          {company.responsablePhone && (
                                           <p className="mb-1">
                                             <span className="font-semibold text-orange-300">Phone:</span>{' '}                                            <a 
-                                              href={`tel:${company.responsiblePhone}`} 
+                                              href={`tel:${company.responsablePhone}`} 
                                               className="text-orange-400 hover:underline"
                                               onClick={e => e.stopPropagation()}
                                             >
-                                              {company.responsiblePhone}
+                                              {company.responsablePhone}
                                             </a>
                                           </p>
                                         )}
@@ -3384,7 +3579,7 @@ const fetchEmployersList = async () => {
                                 onChange={handleInputChange}
                                 placeholder="Enter a description for the NFT"
                                 rows={4}
-                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                                className="w-full px-3 py-2 bg-black border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                                 required
                               ></textarea>
                             </div>
@@ -3400,7 +3595,7 @@ const fetchEmployersList = async () => {
                                 value={newNFT.value}
                                 onChange={handleInputChange}
                                 placeholder="Enter NFT value"
-                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                                className="w-full px-3 py-2 bg-black border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                                 required
                               />
                             </div>
@@ -3416,7 +3611,7 @@ const fetchEmployersList = async () => {
                                 value={newNFT.link || ""}
                                 onChange={handleInputChange}
                                 placeholder="https://"
-                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                                className="w-full px-3 py-2 bg-black border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                               />
                               <p className="text-xs text-gray-400 mt-1">Link to an external resource for this NFT</p>
                             </div>
@@ -3738,6 +3933,34 @@ const fetchEmployersList = async () => {
            
             overlay
           />               )}
+
+          {/* Modal de rejeição */}
+          {showRejectModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+              <div className="bg-black rounded-xl p-6 border border-orange-500 w-full max-w-md">
+                <h2 className="text-orange-400 text-lg font-bold mb-2">Reject Company</h2>
+                <p className="mb-2 text-white">Please provide a reason for rejecting <span className="font-semibold">{rejectingCompanyName}</span>:</p>
+                <textarea
+                  className="w-full p-2 rounded bg-black/40 border border-gray-700 text-white mb-4"
+                  rows={3}
+                  value={rejectionReason}
+                  onChange={e => setRejectionReason(e.target.value)}
+                  placeholder="Enter rejection reason..."
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                    onClick={() => { setShowRejectModal(false); setRejectionReason(''); setRejectingCompanyId(null); setRejectingCompanyName(''); }}
+                  >Cancel</button>
+                  <button
+                    className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                    onClick={handleRejectCompany}
+                    disabled={!rejectionReason.trim()}
+                  >Confirm Reject</button>
+                </div>
+              </div>
+            </div>
+          )}
       </main>
       )}
     </Layout>
