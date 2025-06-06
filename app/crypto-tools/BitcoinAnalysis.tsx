@@ -514,7 +514,7 @@ const BitcoinAnalysis = () => {
           </div>
         </div>        {/* Coming Soon com Integração API Premium */}
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-[#fb923c] mb-4">Coming Soon com Integração de API Premium</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-[#fb923c] mb-4">Coming Soon with Premium API Integration</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bitcoin-price-card opacity-60">
               <h3 className="text-lg font-bold text-[#fb923c] mb-2">On-Chain Analysis</h3>
