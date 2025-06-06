@@ -1298,27 +1298,11 @@ export default function CryptoToolsPage() {
               >
                 &times;
               </button>
-            )}
-            <div className="flex flex-col space-y-6 p-4">
+            )}            <div className="flex flex-col space-y-6 p-4">
               {/* Wallet Connection Section */}
-              <div className="bg-black/60 p-4 rounded-lg border border-orange-500/30">
-                <h3 className="text-orange-400 font-bold mb-3">Wallet Connection</h3>
+              <div className="p-4">
+                <h3 className="text-orange-400 font-bold mb-3 text-center">Wallet Connection</h3>
                 <WalletButton className="wallet-connect-btn w-full overflow-hidden whitespace-nowrap" />
-                
-                {/* Connected Wallet Info */}
-                {isConnected && (
-                  <div className="mt-3 text-sm">
-                    <div className="bg-orange-900/20 p-2 rounded border border-orange-500/20">
-                      <p className="text-gray-300 break-all">{formatWalletAddress(address)}</p>
-                      {networkInfo && (
-                        <p className="text-xs text-orange-300 mt-1">
-                          <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
-                          {networkInfo.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
                 
                 {/* Display network error messages */}
                 {networkError && (
@@ -1328,11 +1312,42 @@ export default function CryptoToolsPage() {
                 )}
               </div>
               
-              {/* Menu Options */}
-              <div className="bg-black/60 p-4 rounded-lg border border-orange-500/30">
+              {/* Menu Options */}              <div className="bg-black/60 p-4 rounded-lg border border-orange-500/30">
                 <h3 className="text-orange-400 font-bold mb-3">Tools Menu</h3>
                 <nav>
                   <ul className="space-y-2">
+                    {/* Top section - AI Tools */}
+                    <li className="sidebar-menu-item">
+                      <button
+                        onClick={() => { setActiveMenuOption("governance"); if(isMobile) setSidebarOpen(false); }}
+                        className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "governance" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
+                      >
+                        Governance AI
+                      </button>
+                    </li>
+                    <li className="sidebar-menu-item">
+                      <button
+                        onClick={() => { setActiveMenuOption("audit"); if(isMobile) setSidebarOpen(false); }}
+                        className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "audit" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
+                      >
+                        AI Smart contracts audit
+                      </button>
+                    </li>
+                    <li className="sidebar-menu-item">
+                      <button
+                        onClick={() => { setActiveMenuOption("stake"); if(isMobile) setSidebarOpen(false); }}
+                        className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "stake" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
+                      >
+                        Stake
+                      </button>
+                    </li>
+                    
+                    {/* Thin orange divider line */}
+                    <li className="my-3">
+                      <div className="mx-2 h-px bg-orange-500/40"></div>
+                    </li>
+                    
+                    {/* Middle section - Market Tools */}
                     <li className="sidebar-menu-item">
                       <button
                         onClick={() => { setActiveMenuOption("marketlist"); if(isMobile) setSidebarOpen(false); }}
@@ -1349,14 +1364,13 @@ export default function CryptoToolsPage() {
                         Market Cap Calculator
                       </button>
                     </li>
-                    <li className="sidebar-menu-item">
-                      <button
-                        onClick={() => { setActiveMenuOption("governance"); if(isMobile) setSidebarOpen(false); }}
-                        className={`w-full text-left px-3 py-2 rounded transition-colors ${activeMenuOption === "governance" ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-orange-900/40'}`}
-                      >
-                        Governance AI
-                      </button>
+                    
+                    {/* Dotted divider line */}
+                    <li className="my-3">
+                      <div className="mx-2 h-px bg-orange-500/30 border-t border-dotted border-orange-500/50"></div>
                     </li>
+                    
+                    {/* Bottom section - Analysis & Fun Tools */}
                     <li className="sidebar-menu-item">
                       <button
                         onClick={() => { setActiveMenuOption("bitcoin"); if(isMobile) setSidebarOpen(false); }}
@@ -1563,9 +1577,7 @@ export default function CryptoToolsPage() {
               <div className="max-w-7xl mx-auto content-section">
                 <BitcoinAnalysis />
               </div>
-            )}
-
-            {activeMenuOption === "funny" && (
+            )}            {activeMenuOption === "funny" && (
               <div className="max-w-7xl mx-auto">
                 <h2 className="text-2xl font-bold text-orange-400 mb-6">Funny Crypto Tools</h2>
                 <div className="bg-black/40 p-6 rounded-lg border border-orange-500/20">
@@ -1586,6 +1598,66 @@ export default function CryptoToolsPage() {
                   {/* NFT Profile Pic full width at the bottom */}
                   <div>
                     <NFTProfilePicCard address={address} isConnected={isConnected} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeMenuOption === "audit" && (
+              <div className="max-w-7xl mx-auto content-section">
+                <h2 className="text-2xl font-bold text-orange-400 mb-6">AI Smart Contracts Audit</h2>
+                <div className="bg-black/40 p-8 rounded-lg border border-orange-500/20 text-center">
+                  <div className="mb-6">
+                    <svg className="w-16 h-16 text-orange-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Coming Soon</h3>
+                    <p className="text-gray-300 mb-4">
+                      AI-powered smart contract auditing tool will analyze your contracts for vulnerabilities, 
+                      gas optimization opportunities, and security best practices.
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      This feature is currently in development and will be available soon.
+                    </p>
+                  </div>
+                  <div className="bg-orange-900/20 p-4 rounded-lg border border-orange-500/30">
+                    <h4 className="text-orange-400 font-medium mb-2">What to expect:</h4>
+                    <ul className="text-gray-300 text-sm space-y-1">
+                      <li>• Automated vulnerability detection</li>
+                      <li>• Gas optimization suggestions</li>
+                      <li>• Security best practices analysis</li>
+                      <li>• Detailed audit reports</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeMenuOption === "stake" && (
+              <div className="max-w-7xl mx-auto content-section">
+                <h2 className="text-2xl font-bold text-orange-400 mb-6">Staking Platform</h2>
+                <div className="bg-black/40 p-8 rounded-lg border border-orange-500/20 text-center">
+                  <div className="mb-6">
+                    <svg className="w-16 h-16 text-orange-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Coming Soon</h3>
+                    <p className="text-gray-300 mb-4">
+                      Stake your tokens and earn rewards through our secure staking platform. 
+                      Support the network while generating passive income.
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      This feature is currently in development and will be available soon.
+                    </p>
+                  </div>
+                  <div className="bg-orange-900/20 p-4 rounded-lg border border-orange-500/30">
+                    <h4 className="text-orange-400 font-medium mb-2">What to expect:</h4>
+                    <ul className="text-gray-300 text-sm space-y-1">
+                      <li>• Multiple staking pools</li>
+                      <li>• Competitive APY rates</li>
+                      <li>• Flexible staking periods</li>
+                      <li>• Real-time rewards tracking</li>
+                    </ul>
                   </div>
                 </div>
               </div>

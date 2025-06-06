@@ -220,10 +220,9 @@ function Home() {
                   disabled={waitlistLoading || waitlistSuccess}
                 />
                 <button
-                  className="waitlist-btn bg-orange-500/90 text-white py-2 px-4 rounded-full hover:bg-orange-400 transition-colors font-semibold text-sm shadow-md border border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-300 w-full"
+                  className="waitlist-btn bg-orange-500/90 text-white py-2 px-4 rounded-full hover:bg-orange-400 transition-colors font-semibold text-sm shadow-md border border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-300 w-full max-w-[180px]"
                   onClick={handleWaitlistSubscribe}
                   disabled={waitlistLoading || waitlistSuccess}
-                  style={{ maxWidth: '180px' }}
                 >
                   {waitlistLoading ? 'Sending...' : waitlistSuccess ? 'Subscribed!' : 'Join the Waitlist'}
                 </button>
