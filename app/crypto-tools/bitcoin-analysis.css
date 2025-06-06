@@ -180,3 +180,31 @@
 .width-80 { width: 80%; }
 .width-90 { width: 90%; }
 .width-100 { width: 100%; }
+
+/* Border utilities */
+.border-orange-subtle {
+  border: 1px solid rgba(251, 146, 60, 0.3);
+}
+
+.rainbow-legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.rainbow-color-box {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 0.125rem;
+  margin-right: 0.5rem;
+}
+
+/* Dynamic width utilities for fear & greed meter */
+.fear-greed-progress {
+  background-color: rgba(255, 255, 255, 0.7);
+  height: 0.5rem;
+  border-radius: 9999px;
+  transition: all 0.5s ease;
+}
+
+
