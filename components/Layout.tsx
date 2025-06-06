@@ -8,7 +8,22 @@ import UserProfileButton from './UserProfileButton';
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const isProduction = process.env.NEXT_PUBLIC_DEPLOY_STAGE === "production";
+
+  // Mobile detection hook
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   // Verificar se o usuário está logado para decidir quais botões mostrar
   useEffect(() => {
@@ -170,56 +185,56 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <AdPopup />
 
       {/* Footer */}
-      <footer id="main-footer" className="bg-black text-white py-6 sm:py-10 border-t-4 border-orange-500">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-2 md:grid-cols-5">
+      <footer id="main-footer" className={`bg-black text-white ${isMobile ? 'py-4' : 'py-6 sm:py-10'} border-t-4 border-orange-500`}>
+        <div className={`max-w-6xl mx-auto px-4 grid grid-cols-2 ${isMobile ? 'gap-x-3 gap-y-4' : 'gap-x-4 gap-y-6'} sm:grid-cols-2 md:grid-cols-5`}>
           <div className="col-span-2 sm:col-span-1">
-            <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">About Gate33</h4>
+            <h4 className={`text-orange-500 font-bold text-base sm:text-lg ${isMobile ? 'mb-2' : 'mb-2 sm:mb-4'}`}>About Gate33</h4>
             <p className="text-gray-400 text-xs sm:text-sm">
               Your trusted platform for secure work, real opportunities, and user protection in the Web3 job market.
             </p>
           </div>
           <div>
-            <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">Quick Links</h4>
+            <h4 className={`text-orange-500 font-bold text-base sm:text-lg ${isMobile ? 'mb-2' : 'mb-2 sm:mb-4'}`}>Quick Links</h4>
             <nav className="text-gray-400 text-xs sm:text-sm">
-              <a href="/jobs" className="block hover:text-orange-500 mb-1 sm:mb-2">Jobs</a>
+              <a href="/jobs" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Jobs</a>
               {isProduction ? (
-                <span className="block mb-1 sm:mb-2 text-gray-500 cursor-not-allowed opacity-60">Instant Jobs (Coming Soon)</span>
+                <span className={`block ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'} text-gray-500 cursor-not-allowed opacity-60`}>Instant Jobs (Coming Soon)</span>
               ) : (
-                <a href="/instant-jobs" className="block hover:text-orange-500 mb-1 sm:mb-2">Instant Jobs</a>
+                <a href="/instant-jobs" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Instant Jobs</a>
               )}
-              <a href="/learn2earn" className="block hover:text-orange-500 mb-1 sm:mb-2">Learn2Earn</a>
-              <a href="/nft" className="block hover:text-orange-500 mb-1 sm:mb-2">NFT</a>
-              <a href="/crypto-tools" className="block hover:text-orange-500 mb-1 sm:mb-2">Crypto Tools</a>
-              <a href="/donate" className="block hover:text-orange-500 mb-1 sm:mb-2 font-medium">Donate</a>
+              <a href="/learn2earn" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Learn2Earn</a>
+              <a href="/nft" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>NFT</a>
+              <a href="/crypto-tools" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Crypto Tools</a>
+              <a href="/donate" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'} font-medium`}>Donate</a>
             </nav>
           </div>
           <div>
-            <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">Services</h4>
+            <h4 className={`text-orange-500 font-bold text-base sm:text-lg ${isMobile ? 'mb-2' : 'mb-2 sm:mb-4'}`}>Services</h4>
             <nav className="text-gray-400 text-xs sm:text-sm">
-              <a href="/seeker-signup" className="block hover:text-orange-500 mb-1 sm:mb-2">For Job Seekers</a>
-              <a href="/company-register" className="block hover:text-orange-500 mb-1 sm:mb-2">For Companies</a>
-              <a href="/learn2earn" className="block hover:text-orange-500 mb-1 sm:mb-2">Learn2Earn</a>
+              <a href="/seeker-signup" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>For Job Seekers</a>
+              <a href="/company-register" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>For Companies</a>
+              <a href="/learn2earn" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Learn2Earn</a>
             </nav>
           </div>
           <div>
-            <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">Contact</h4>
+            <h4 className={`text-orange-500 font-bold text-base sm:text-lg ${isMobile ? 'mb-2' : 'mb-2 sm:mb-4'}`}>Contact</h4>
             <nav className="text-gray-400 text-xs sm:text-sm">
-              <a href="/contact" className="block hover:text-orange-500 mb-1 sm:mb-2">Contact Us</a>
-              <a href="/#about" className="block hover:text-orange-500 mb-1 sm:mb-2">About</a>
-              <a href="/#services" className="block hover:text-orange-500 mb-1 sm:mb-2">Services</a>
-              <a href="/#faq" className="block hover:text-orange-500 mb-1 sm:mb-2">FAQ</a>
+              <a href="/contact" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Contact Us</a>
+              <a href="/#about" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>About</a>
+              <a href="/#services" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Services</a>
+              <a href="/#faq" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>FAQ</a>
             </nav>
           </div>
           <div>
-            <h4 className="text-orange-500 font-bold text-base sm:text-lg mb-2 sm:mb-4">Socials</h4>
+            <h4 className={`text-orange-500 font-bold text-base sm:text-lg ${isMobile ? 'mb-2' : 'mb-2 sm:mb-4'}`}>Socials</h4>
             <nav className="text-gray-400 text-xs sm:text-sm">
-              <a href="https://t.me/gate33_tg_channel" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500 mb-1 sm:mb-2">Telegram</a>
-              <a href="https://x.com/x_Gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500 mb-1 sm:mb-2">X (Twitter)</a>
+              <a href="https://t.me/gate33_tg_channel" target="_blank" rel="noopener noreferrer" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Telegram</a>
+              <a href="https://x.com/x_Gate33" target="_blank" rel="noopener noreferrer" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>X (Twitter)</a>
               <a href="https://www.linkedin.com/company/gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500">LinkedIn</a>
             </nav>
           </div>
         </div>
-        <div className="mt-6 sm:mt-8 pt-3 sm:pt-4 text-center text-gray-500 text-xs sm:text-sm">
+        <div className={`${isMobile ? 'mt-4 pt-3' : 'mt-6 sm:mt-8 pt-3 sm:pt-4'} text-center text-gray-500 text-xs sm:text-sm`}>
           <p>© 2025 Gate33. All Rights Reserved.</p>
         </div>
       </footer>
