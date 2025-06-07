@@ -5,11 +5,10 @@ import { AdminRole } from './hooks/useAdminPermissions';
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key_here';
 
 // Function to verify the JWT token and identify the user type
-function verifyToken(token: string) {
-  try {
+function verifyToken(token: string) {  try {
     // We check if we're on the server side to avoid build problems
     if (typeof window === 'undefined') {
-      // Dynamic use of jsonwebtoken to avoid Netlify build issues
+      // Dynamic import of jsonwebtoken
       const jwt = require('jsonwebtoken');
       const decoded = jwt.verify(token, JWT_SECRET);
       return { isValid: true, payload: decoded };
@@ -40,11 +39,6 @@ const routePermissions: Record<string, string[]> = {
 };
 
 export function middleware(request: NextRequest) {
-  // Additional check for Netlify environment
-  if (process.env.NETLIFY || process.env.NETLIFY_DEV) {
-    console.log('Middleware running in Netlify environment');
-  }
-
   // Check if we are on a public page
   const isPublicRoute = !adminRoutes.some(route => request.nextUrl.pathname.startsWith(route)) &&
                         !companyRoutes.some(route => request.nextUrl.pathname.startsWith(route));

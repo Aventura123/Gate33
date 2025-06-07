@@ -3,7 +3,7 @@ import { db } from "../../../../lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import bcrypt from "bcryptjs";
 
-// Handler para método OPTIONS (necessário para CORS no Netlify)
+// Handler para método OPTIONS (para suporte CORS)
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
@@ -16,7 +16,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: Request) {
-  // Adicionar headers CORS para compatibilidade com Netlify
+  // Configuração de headers CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',

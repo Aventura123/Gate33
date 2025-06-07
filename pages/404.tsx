@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 
-// Componente 404 - corrigido para o Netlify
+// Componente 404 personalizado
 const Custom404: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">

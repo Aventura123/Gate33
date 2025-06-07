@@ -51,17 +51,12 @@ dist/
 # logs
 *.log
 
-# deployment specific files
-netlify.toml
-netlify.toml.bak
-
 # Firebase configuration files that contain sensitive information
 firebase-service-account*.json
 firebaseConfig.json
 serviceAccountKey.json
 
 # Local deployment files
-.netlify/
 .env*.local
 
 # Documentation files
