@@ -1,6 +1,6 @@
-# Gate33 New Age
+# Gate33
 
-Gate33 New Age is a next-generation Web3 job and micro-task platform, featuring company dashboards, instant jobs, Learn2Earn campaigns, and blockchain-based payments.
+Gate33 is a next-generation Web3 job and micro-task platform, featuring company dashboards, instant jobs, Learn2Earn campaigns, and blockchain-based payments.
 
 ## Features
 

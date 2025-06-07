@@ -1,11 +1,14 @@
 {
-  "name": "projeto-gate33-fireside",
+  "name": "gate33",
   "version": "1.0.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gate33/Gate33.git"
+  },
   "engines": {
     "node": ">=20.0.0"
-  },
-  "scripts": {
+  },  "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
