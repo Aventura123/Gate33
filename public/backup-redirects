@@ -1,2 +1,0 @@
-# Next.js no Netlify - não use redirecionamento específico, deixe o plugin @netlify/plugin-nextjs lidar com isso
-# /*    /.netlify/functions/nextjs-server   200

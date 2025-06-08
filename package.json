@@ -4,7 +4,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/Gate33/Gate33.git"
+    "url": "https://github.com/Aventura123/Gate33.git"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -20,7 +20,7 @@
     "git:status": "git branch && git remote -v",
     "github:deploy": "npm run git:add && git commit -m \"Update deployment\" && npm run git:push",
     "github:send-all": "git add . && git commit -m \"Envio completo do projeto\" && git push origin master",
-    "netlify:deploy": "git add . && git commit -m \"Atualização para deploy no Netlify\" && git push origin master"
+    "vercel:deploy": "vercel --prod"
   },
   "dependencies": {
     "@google-cloud/storage": "7.16.0",

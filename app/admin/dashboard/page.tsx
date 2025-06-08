@@ -1776,7 +1776,7 @@ const fetchEmployersList = async () => {
           </div>
         </main>
       ) : (
-      <main className="min-h-screen flex bg-gradient-to-br from-orange-900 to-black text-white min-h-screen">
+      <main className="min-h-screen flex bg-gradient-to-br from-orange-900 to-black text-white">
         {/* Mobile menu toggle button - move to bottom left */}
         {isMobile && !mobileMenuOpen && (
           <button
@@ -2432,7 +2432,7 @@ const fetchEmployersList = async () => {
                                               e.stopPropagation(); 
                                               handleDeleteEmployer(employer.id);
                                             }} 
-                                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold"
+                                            className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
                                             aria-label="Delete company"
                                           >
                                             Delete
@@ -2442,7 +2442,7 @@ const fetchEmployersList = async () => {
                                               e.stopPropagation(); 
                                               handleToggleBlockEmployer(employer.id, employer.blocked || false);
                                             }} 
-                                            className={`${employer.blocked ? 'bg-green-600 hover:bg-green-700 active:bg-green-800' : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-900'} text-white px-3 py-1.5 rounded-md text-xs font-semibold`} 
+                                            className={`${employer.blocked ? 'bg-green-600 hover:bg-green-700 active:bg-green-800' : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-900'} text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold`} 
                                             disabled={blockingEmployerId === employer.id}
                                             aria-label={employer.blocked ? "Unblock company" : "Block company"}
                                           >
@@ -2716,7 +2716,7 @@ const fetchEmployersList = async () => {
                                         {/* Contact Information */}
                                         <div>
                                           <h5 className="font-bold text-white mb-2">Contact Information</h5>
-                                          <p className="mb-1"><span className="font-semibold text-orange-300">Responsible Person:</span> {company.responsibleName || company.responsiblePerson || 'N/A'}</p>
+                                          <p className="mb-1"><span className="font-semibold text-orange-300">Responsible Person:</span> {company.responsibleName || 'N/A'}</p>
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Email:</span> {company.email || 'N/A'}</p>
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Responsible Email:</span> {company.responsibleEmail || 'N/A'}</p>
                                           <p className="mb-1"><span className="font-semibold text-orange-300">Phone:</span> {company.contactPhone || 'N/A'}</p>

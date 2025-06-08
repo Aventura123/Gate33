@@ -58,6 +58,11 @@ serviceAccountKey.json
 
 # Local deployment files
 .env*.local
+.env.example
+
+# Portable setup files
+PORTABLE_SETUP.md
+setup-portable.ps1
 
 # Documentation files
 /docs/

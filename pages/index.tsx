@@ -1,4 +1,5 @@
 'use client';
+import '../styles/gate33-revolutionary-hero.css';
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -107,44 +108,108 @@ function Home() {
     }
   };
 
+  // Matrix Rain Effect
+  useEffect(() => {
+    const matrix = document.getElementById('matrix-container');
+    if (!matrix) return;
+
+    const chars = '01GATE33BLOCKCHAIN';
+    const createMatrixChar = () => {
+      const char = document.createElement('div');
+      char.className = 'matrix-char';
+      char.textContent = chars[Math.floor(Math.random() * chars.length)];
+      char.style.left = Math.random() * 100 + '%';
+      char.style.animationDuration = (Math.random() * 3 + 2) + 's';
+      char.style.animationDelay = Math.random() * 2 + 's';
+      matrix.appendChild(char);
+
+      // Remove char after animation
+      setTimeout(() => {
+        if (char.parentNode) {
+          char.parentNode.removeChild(char);
+        }
+      }, 5000);
+    };
+
+    // Create matrix chars periodically
+    const interval = setInterval(createMatrixChar, 100);
+
+    return () => {
+      clearInterval(interval);
+      if (matrix) {
+        matrix.innerHTML = '';
+      }
+    };
+  }, []);
+
   return (
     <>
       {showDevNotice && (
         <DevNoticePopup onClose={() => setShowDevNotice(false)} />
       )}
-      <main className="min-h-screen bg-gradient-to-b from-black to-orange-500 to-black text-white relative">
-        <section
-          id="home"
-          className="hero pt-24 pb-20 text-center px-4 bg-gradient-to-b from-black to-orange-800/50 to-black bg-no-repeat bg-center bg-cover relative"
-        >
-          <div className="absolute top-0 left-0 w-full h-full bg-black/70 z-10"></div>
-          <div className="hero-content relative z-20">
+      {/* Revolutionary Hero Section */}
+      <section className="gate33-revolutionary-hero">
+        {/* 3D Portal Gateway */}
+        <div className="gate33-portal-gateway"></div>
+        
+        {/* Quantum Floating Elements */}
+        <div className="quantum-element"></div>
+        <div className="quantum-element"></div>
+        <div className="quantum-element"></div>
+        <div className="quantum-element"></div>
+        <div className="quantum-element"></div>
+        <div className="quantum-element"></div>
+        
+        {/* Data Stream Effects */}
+        <div className="data-stream"></div>
+        <div className="data-stream"></div>
+        <div className="data-stream"></div>
+        <div className="data-stream"></div>
+        <div className="data-stream"></div>
+        <div className="data-stream"></div>
+        
+        {/* Matrix Rain Effect */}
+        <div className="matrix-rain" id="matrix-container"></div>
+        
+        {/* Hero Content */}
+        <div className="relative z-20 h-full flex flex-col items-center justify-center px-4 py-20">
+          {/* Logo with Portal Effect */}
+          <div className="gate33-logo-portal mb-6">
             <Image
               src="/logo2.png"
               alt="Gate33 Logo"
-              width={300}
-              height={300}
-              className="mx-auto mb-4"
+              width={220}
+              height={220}
+              className="mx-auto"
               priority
               style={{ width: 'auto', height: 'auto' }}
             />
-            <h2 className="text-4xl md:text-6xl font-bold text-orange-500 text-shadow-glow mb-6 animate-glow">
-              Connecting Talent with Trusted Opportunities
-            </h2>
-            <p className="text-gray-200 max-w-4xl mx-auto mb-8 text-lg leading-relaxed">
-              Gate33 is a secure platform that connects job seekers with quality employment opportunities from verified 
-              and trustworthy companies. Our mission is to create a safe environment where trust between companies and candidates is the priority.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/seeker-signup" className="button bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-colors hover:bg-orange-300 border-none shadow-md shadow-orange-500/50">
-                I'm a Job Seeker
-              </Link>
-              <Link href="/company-register" className="button bg-black/50 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-colors hover:bg-black/70 border border-orange-500 shadow-md">
-                I'm an Employer
-              </Link>
-            </div>
           </div>
-        </section>
+          
+          {/* Revolutionary Title */}
+          <h1 className="gate33-holo-title mb-4">
+            Enter the Gateway
+          </h1>
+          
+          {/* Subtitle */}
+          <p className="gate33-holo-subtitle max-w-3xl mx-auto mb-8">
+            Step through the portal to Web3's most secure employment ecosystem. 
+            Where verified companies meet exceptional talent in a trustless, transparent future.
+          </p>
+          
+          {/* Revolutionary Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link href="/seeker-signup" className="gate33-portal-button">
+              🌟 I'm Seeking Talent 
+            </Link>
+            <Link href="/company-register" className="gate33-portal-button">
+              🚀 I'm Hiring Talent
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <main className="min-h-screen bg-gradient-to-b from-black via-orange-500 to-black text-white relative overflow-hidden gate33-main-section">
 
         <section id="about" className="about py-20 text-center bg-black/70 px-4">
           <h2 className="text-3xl font-bold text-orange-500 mb-8">Why Choose Gate33?</h2>

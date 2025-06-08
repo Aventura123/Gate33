@@ -4,7 +4,7 @@ const tsParser = require('@typescript-eslint/parser');
 module.exports = [  {    ignores: [
       'functions/lib/**',
       '**/lib/**',
-      '**/gate33 newage/**',
+      '**/gate33/**',
       'functions/run-sync-learn2earn.js'
     ],
     files: ['functions/**/*.ts', 'functions/**/*.js'],

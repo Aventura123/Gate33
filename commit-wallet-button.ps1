@@ -2,7 +2,7 @@
 # Script para fazer commit das mudanças do WalletButton
 
 # Caminho para o diretório do projeto
-$projectDir = "c:\Users\ventu\visual studio\gate33 newage"
+$projectDir = "c:\Users\ventu\visual studio\gate33"
 
 # Navegar para o diretório do projeto
 cd $projectDir
