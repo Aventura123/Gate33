@@ -267,7 +267,7 @@ function Home() {
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent"></div>
       </section>
 
-      <main className="min-h-screen bg-gradient-to-b from-black via-orange-600/70 to-black text-white relative overflow-hidden gate33-main-section">
+      <main className="min-h-screen bg-gradient-to-b from-black via-black to-black text-white relative overflow-hidden gate33-main-section">
 
         <section id="about" className="about py-20 text-center px-4 relative overflow-hidden bg-gradient-to-b from-black/90 to-black">
           {/* Overlay escuro para melhor legibilidade */}
@@ -311,212 +311,267 @@ function Home() {
           </div>
         </section>
 
-        <section id="services" className="services py-20 text-center bg-gradient-to-b from-black/80 to-black/90 px-4">
-          <h2 className="text-3xl font-bold text-orange-500 mb-8">Our Services</h2>
-          <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-            Gate33 offers a complete platform to connect companies and candidates securely and efficiently.
-          </p>
-          <div className="services-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <div className="service-card bg-black/5 rounded-lg p-8 text-left border border-orange-500/10 hover:translate-y-[-10px] hover:bg-black/10 hover:border-orange-500/30 transition-all">
-              <div className="service-icon text-orange-500 text-5xl mb-4">🔎</div>
-              <h3 className="text-xl text-orange-500 mb-4">For Job Seekers</h3>
-              <p className="text-gray-200 text-sm mb-4 text-left">
-                Access quality jobs from verified companies, create a standout professional profile, and 
-                track your applications in one place.
-              </p>
-              <Link href="/seeker-signup" className="text-orange-400 text-sm hover:underline">Register as a job seeker →</Link>
-            </div>
-            <div className="service-card bg-black/5 rounded-lg p-8 text-left border border-orange-500/10 hover:translate-y-[-10px] hover:bg-black/10 hover:border-orange-500/30 transition-all">
-              <div className="service-icon text-orange-500 text-5xl mb-4">💼</div>
-              <h3 className="text-xl text-orange-500 mb-4">For Companies</h3>
-              <p className="text-gray-200 text-sm mb-4 text-left">
-                Post jobs for qualified professionals, manage applications, and maintain a 
-                corporate profile that highlights your culture and values.
-              </p>
-              <Link href="/company-register" className="text-orange-400 text-sm hover:underline">Register as a company →</Link>
-            </div>
-            <div className="service-card bg-black/5 rounded-lg p-8 text-left border border-orange-500/10 hover:translate-y-[-10px] hover:bg-black/10 hover:border-orange-500/30 transition-all">
-              <div className="service-icon text-orange-500 text-5xl mb-4">🧠</div>
-              <h3 className="text-xl text-orange-500 mb-4">Learn2Earn</h3>
-              <p className="text-gray-200 text-sm mb-4 text-left">
-                Participate in educational programs offered by partner companies, learn new 
-                skills, and receive token rewards for completing courses.
-              </p>
-              <Link href="/learn2earn" className="text-orange-400 text-sm hover:underline">Discover Learn2Earn →</Link>
+        <section id="services" className="services py-20 text-center bg-black px-4 relative">
+          <div className="absolute inset-0 bg-orange-900/5"></div>
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold text-orange-500 mb-8">Our Services</h2>
+            <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
+              Gate33 offers a complete platform to connect companies and candidates securely and efficiently.
+            </p>
+            <div className="services-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <div className="service-card bg-black/80 rounded-lg p-8 text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
+                <div className="service-icon text-orange-500 text-5xl mb-4">🔎</div>
+                <h3 className="text-xl text-orange-500 mb-4">For Job Seekers</h3>
+                <p className="text-gray-200 text-sm mb-4 text-left">
+                  Access quality jobs from verified companies, create a standout professional profile, and 
+                  track your applications in one place.
+                </p>
+                <Link href="/seeker-signup" className="text-orange-400 text-sm hover:underline">Register as a job seeker →</Link>
+              </div>
+              <div className="service-card bg-black/80 rounded-lg p-8 text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
+                <div className="service-icon text-orange-500 text-5xl mb-4">💼</div>
+                <h3 className="text-xl text-orange-500 mb-4">For Companies</h3>
+                <p className="text-gray-200 text-sm mb-4 text-left">
+                  Post jobs for qualified professionals, manage applications, and maintain a 
+                  corporate profile that highlights your culture and values.
+                </p>
+                <Link href="/company-register" className="text-orange-400 text-sm hover:underline">Register as a company →</Link>
+              </div>
+              <div className="service-card bg-black/80 rounded-lg p-8 text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
+                <div className="service-icon text-orange-500 text-5xl mb-4">🧠</div>
+                <h3 className="text-xl text-orange-500 mb-4">Learn2Earn</h3>
+                <p className="text-gray-200 text-sm mb-4 text-left">
+                  Participate in educational programs offered by partner companies, learn new 
+                  skills, and receive token rewards for completing courses.
+                </p>
+                <Link href="/learn2earn" className="text-orange-400 text-sm hover:underline">Discover Learn2Earn →</Link>
+              </div>
             </div>
           </div>
         </section>
 
-        <section id="jobs" className="jobs py-20 text-center bg-black/80 px-4">
-          <h2 className="text-3xl font-bold text-orange-500 mb-8">Featured Jobs</h2>
-          <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-            Explore some of the current opportunities available on our platform.
-          </p>
-          <div className="jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <div className="job-card bg-black/30 rounded-lg p-6 border border-orange-500/10 hover:border-orange-500/30 transition-all">
-              <h3 className="text-xl font-medium text-orange-500 mb-2">Blockchain Developer</h3>
-              <p className="text-gray-500 text-sm mb-4">TechFinance • Remote</p>
-              <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                Develop and maintain decentralized applications (DApps) using Solidity. Experience with smart contracts and Web3.js.
-              </p>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">Full-time</span>
-                <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
+        <section id="jobs" className="jobs py-20 text-center bg-black px-4 relative">
+          <div className="absolute inset-0 bg-orange-900/5 bg-gradient-to-b from-transparent via-black/90 to-transparent"></div>
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold text-orange-500 mb-8">Featured Jobs</h2>
+            <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
+              Explore some of the current opportunities available on our platform.
+            </p>
+            <div className="jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
+                <h3 className="text-xl font-medium text-orange-500 mb-2">Blockchain Developer</h3>
+                <p className="text-gray-500 text-sm mb-4">TechFinance • Remote</p>
+                <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                  Develop and maintain decentralized applications (DApps) using Solidity. Experience with smart contracts and Web3.js.
+                </p>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-400">Full-time</span>
+                  <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
+                </div>
+              </div>
+              <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
+                <h3 className="text-xl font-medium text-orange-500 mb-2">Digital Marketing Analyst</h3>
+                <p className="text-gray-500 text-sm mb-4">CryptoMedia • São Paulo</p>
+                <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                  Develop digital marketing strategies focused on cryptocurrency and blockchain markets. SEO, SEM, and social media.
+                </p>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-400">Full-time</span>
+                  <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
+                </div>
+              </div>
+              <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
+                <h3 className="text-xl font-medium text-orange-500 mb-2">Security Specialist</h3>
+                <p className="text-gray-500 text-sm mb-4">SecureChain • Lisbon</p>
+                <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                  Audit smart contracts and implement security protocols in blockchain-based applications.
+                </p>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-400">Full-time</span>
+                  <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
+                </div>
               </div>
             </div>
-            <div className="job-card bg-black/30 rounded-lg p-6 border border-orange-500/10 hover:border-orange-500/30 transition-all">
-              <h3 className="text-xl font-medium text-orange-500 mb-2">Digital Marketing Analyst</h3>
-              <p className="text-gray-500 text-sm mb-4">CryptoMedia • São Paulo</p>
-              <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                Develop digital marketing strategies focused on cryptocurrency and blockchain markets. SEO, SEM, and social media.
-              </p>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">Full-time</span>
-                <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
-              </div>
-            </div>
-            <div className="job-card bg-black/30 rounded-lg p-6 border border-orange-500/10 hover:border-orange-500/30 transition-all">
-              <h3 className="text-xl font-medium text-orange-500 mb-2">Security Specialist</h3>
-              <p className="text-gray-500 text-sm mb-4">SecureChain • Lisbon</p>
-              <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                Audit smart contracts and implement security protocols in blockchain-based applications.
-              </p>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">Full-time</span>
-                <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
-              </div>
+            <div className="mt-10">
+              <Link href="/jobs" className="bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-all hover:bg-orange-600 border-none shadow-lg hover:shadow-xl">
+                View all jobs
+              </Link>
             </div>
           </div>
-          <div className="mt-10">
-            <Link href="/jobs" className="bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-colors hover:bg-orange-300 border-none">
-              View all jobs
+        </section>
+
+        <section id="companies" className="companies py-20 text-center bg-black px-4 relative">
+          <div className="absolute inset-0 bg-orange-900/5"></div>
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold text-orange-500 mb-8">Trusted Companies</h2>
+            <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
+              All companies on our platform undergo a verification process to ensure a safe environment for candidates.
+            </p>
+            <div className="company-logos flex flex-wrap justify-center items-center gap-10 mx-auto max-w-5xl mb-10">
+              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
+                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
+              </div>
+              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
+                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
+              </div>
+              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
+                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
+              </div>
+              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
+                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
+              </div>
+              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
+                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
+              </div>
+              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
+                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
+              </div>
+            </div>
+            <Link href="/crypto-tools" className="text-orange-400 text-sm hover:text-orange-300 hover:underline font-medium">
+              View all verified companies →
             </Link>
           </div>
         </section>
 
-        <section id="companies" className="companies py-20 text-center bg-black/70 px-4">
-          <h2 className="text-3xl font-bold text-orange-500 mb-8">Trusted Companies</h2>
-          <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-            All companies on our platform undergo a verification process to ensure a safe environment for candidates.
-          </p>
-          <div className="company-logos flex flex-wrap justify-center items-center gap-10 mx-auto max-w-5xl mb-10">
-            <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
-            </div>
-            <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
-            </div>
-            <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
-            </div>
-            <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
-            </div>
-            <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
-            </div>
-            <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
-            </div>
-          </div>
-          <Link href="/crypto-tools" className="text-orange-400 text-sm hover:underline">
-            View all verified companies →
-          </Link>
-        </section>
-
-        <section id="partners" className="partners py-20 text-center bg-gradient-to-r from-black via-orange-900/20 to-black px-4">
-          <h2 className="text-3xl font-bold text-orange-500 mb-8">Our Partners</h2>
-          <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-            We collaborate with industry leaders to bring you the best opportunities and resources in the blockchain and tech space.
-          </p>
-          
-          <div className="partners-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {partners.length > 0 ? partners.map((partner) => (
-              <div key={partner.id} className="partner-card bg-black/20 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all">
-                <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
-                  <a href={partner.website || '#'} target="_blank" rel="noopener noreferrer" title={`Visit ${partner.name}`}>
-                    <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
-                      <Image 
-                        src={partner.logoUrl}
-                        alt={`${partner.name} Logo`}
-                        width={90}
-                        height={90}
-                        className="partner-logo-container"
-                      />
+        <section id="partners" className="partners py-20 text-center bg-black px-4 relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-orange-900/10 to-black"></div>
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold text-orange-500 mb-8">Our Partners</h2>
+            <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
+              We collaborate with industry leaders to bring you the best opportunities and resources in the blockchain and tech space.
+            </p>
+            
+            {partners.length > 0 ? (
+              <div className="partners-container max-w-6xl mx-auto mb-10">
+                {partners.length <= 3 ? (
+                  // Center partners when 3 or fewer
+                  <div className="flex justify-center items-center gap-8 flex-wrap">
+                    {partners.map((partner) => (
+                      <div key={partner.id} className="partner-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all shadow-lg flex-shrink-0 w-80">
+                        <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
+                          <a href={partner.website || '#'} target="_blank" rel="noopener noreferrer" title={`Visit ${partner.name}`}>
+                            <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
+                              <Image 
+                                src={partner.logoUrl}
+                                alt={`${partner.name} Logo`}
+                                width={90}
+                                height={90}
+                                className="partner-logo-container"
+                              />
+                            </div>
+                          </a>
+                        </div>
+                        <h3 className="text-xl text-orange-500 mb-2">{partner.name}</h3>
+                        <p className="text-gray-300 text-sm mb-4">
+                          {partner.description}
+                        </p>
+                        {partner.website && (
+                          <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-orange-400 text-sm hover:underline">Visit {partner.name} →</a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  // Scrolling carousel when more than 3 partners
+                  <div className="partners-scroll-container overflow-x-auto overflow-y-hidden">
+                    <div className="flex gap-8 pb-4" style={{ width: `${partners.length * 340}px` }}>
+                      {partners.map((partner) => (
+                        <div key={partner.id} className="partner-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all shadow-lg flex-shrink-0 w-80">
+                          <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
+                            <a href={partner.website || '#'} target="_blank" rel="noopener noreferrer" title={`Visit ${partner.name}`}>
+                              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
+                                <Image 
+                                  src={partner.logoUrl}
+                                  alt={`${partner.name} Logo`}
+                                  width={90}
+                                  height={90}
+                                  className="partner-logo-container"
+                                />
+                              </div>
+                            </a>
+                          </div>
+                          <h3 className="text-xl text-orange-500 mb-2">{partner.name}</h3>
+                          <p className="text-gray-300 text-sm mb-4">
+                            {partner.description}
+                          </p>
+                          {partner.website && (
+                            <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-orange-400 text-sm hover:underline">Visit {partner.name} →</a>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  </a>
-                </div>
-                <h3 className="text-xl text-orange-500 mb-2">{partner.name}</h3>
-                <p className="text-gray-300 text-sm mb-4">
-                  {partner.description}
-                </p>
-                {partner.website && (
-                  <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-orange-400 text-sm hover:underline">Visit {partner.name} →</a>
+                  </div>
                 )}
               </div>
-            )) : (
-              <div className="col-span-1 md:col-span-3 text-center">
+            ) : (
+              <div className="text-center mb-10">
                 <p className="text-gray-400">Partners will be displayed here once added.</p>
               </div>
             )}
             
             {loading && (
-              <div className="col-span-1 md:col-span-3 text-center">
+              <div className="text-center mb-10">
                 <p className="text-gray-400">Loading partners...</p>
               </div>
             )}
-          </div>
-          
-          <div className="mt-10">
-            <Link href="/partners" className="bg-orange-500/80 text-white py-2 px-6 rounded-lg hover:bg-orange-500 transition-colors">
-              Become a Partner
-            </Link>
-          </div>
-        </section>
-
-        <section id="faq" className="faq py-20 bg-black/80 px-4">
-          <h2 className="text-3xl font-bold text-orange-500 mb-10 text-center">Frequently Asked Questions</h2>
-          <div className="faq-container max-w-4xl mx-auto">
-            <FAQItem
-              question="How does Gate33 ensure companies are trustworthy?"
-              answer="All companies undergo a rigorous verification process before they can post jobs on our platform. We verify business documents, assess market reputation, and continuously monitor the quality of published jobs to ensure a safe environment for candidates."
-            />
-            <FAQItem
-              question="What makes Gate33 different from other job platforms?"
-              answer="Gate33 differentiates itself through three main factors: (1) Rigorous company verification; (2) Use of blockchain technology to ensure data security; (3) Learn2Earn system that allows candidates to earn tokens while improving their professional skills. Additionally, we're developing a revolutionary new feature that will transform how talent connects with opportunities."
-            />
-            <FAQItem
-              question="How does the Learn2Earn program work?"
-              answer="Learn2Earn is an exclusive program where partner companies create educational content about their technologies and processes. Candidates who complete this content earn tokens as rewards and increase their chances of being hired by demonstrating interest and knowledge in specific company areas."
-            />
-            <FAQItem
-              question="Is it free for candidates to register on the platform?"
-              answer="Yes, registration and job applications are completely free for candidates. Our business model is based on services offered to companies that want to post jobs and access our qualified talent pool."
-            />
-            <FAQItem
-              question="How does Gate33 use blockchain to improve the recruitment process?"
-              answer="We use blockchain to: (1) Verify the authenticity of certificates and qualifications; (2) Protect personal data against leaks; (3) Ensure that companies keep their promises during the recruitment process; (4) Enable secure token reward payments through the Learn2Earn program."
-            />
-            <FAQItem
-              question="What is this new feature coming soon?"
-              answer="We're developing a groundbreaking new way to connect talent with opportunities that will fundamentally change how work is discovered, agreed upon, and compensated. While we can't reveal all the details yet, it will combine instant matching with verified payments and smart contracts to create a seamless, secure experience for both talent and employers."
-            />
+            
+            <div className="mt-10">
+              <Link href="/partners" className="bg-orange-500 text-white py-2.5 px-8 rounded-full hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl font-medium">
+                Become a Partner
+              </Link>
+            </div>
           </div>
         </section>
 
-        <section id="contact" className="contact bg-black py-20 text-center px-4">
-          <h2 className="text-3xl font-bold text-orange-500 mb-6">Contact Us</h2>
-          <p className="text-gray-200 max-w-xl mx-auto mb-10 text-base leading-relaxed">
-            Have a question or need help? Contact us and we'll respond as quickly as possible.
-          </p>
-          <div className="max-w-md mx-auto">
-            <ContactForm 
-              title="" 
-              submitButtonText="Send Message"
-              className="border border-orange-500/20"
-              defaultSubject="Contact from Gate33 Website"
-              showSubjectField={false}
-            />
+        <section id="faq" className="faq py-20 bg-black px-4 relative">
+          <div className="absolute inset-0 bg-orange-900/5 bg-gradient-to-b from-transparent via-black/90 to-transparent"></div>
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold text-orange-500 mb-10 text-center">Frequently Asked Questions</h2>
+            <div className="faq-container max-w-4xl mx-auto bg-black/80 rounded-xl border border-orange-500/10 p-6 shadow-lg">
+              <FAQItem
+                question="How does Gate33 ensure companies are trustworthy?"
+                answer="All companies undergo a rigorous verification process before they can post jobs on our platform. We verify business documents, assess market reputation, and continuously monitor the quality of published jobs to ensure a safe environment for candidates."
+              />
+              <FAQItem
+                question="What makes Gate33 different from other job platforms?"
+                answer="Gate33 differentiates itself through three main factors: (1) Rigorous company verification; (2) Use of blockchain technology to ensure data security; (3) Learn2Earn system that allows candidates to earn tokens while improving their professional skills. Additionally, we're developing a revolutionary new feature that will transform how talent connects with opportunities."
+              />
+              <FAQItem
+                question="How does the Learn2Earn program work?"
+                answer="Learn2Earn is an exclusive program where partner companies create educational content about their technologies and processes. Candidates who complete this content earn tokens as rewards and increase their chances of being hired by demonstrating interest and knowledge in specific company areas."
+              />
+              <FAQItem
+                question="Is it free for candidates to register on the platform?"
+                answer="Yes, registration and job applications are completely free for candidates. Our business model is based on services offered to companies that want to post jobs and access our qualified talent pool."
+              />
+              <FAQItem
+                question="How does Gate33 use blockchain to improve the recruitment process?"
+                answer="We use blockchain to: (1) Verify the authenticity of certificates and qualifications; (2) Protect personal data against leaks; (3) Ensure that companies keep their promises during the recruitment process; (4) Enable secure token reward payments through the Learn2Earn program."
+              />
+              <FAQItem
+                question="What is this new feature coming soon?"
+                answer="We're developing a groundbreaking new way to connect talent with opportunities that will fundamentally change how work is discovered, agreed upon, and compensated. While we can't reveal all the details yet, it will combine instant matching with verified payments and smart contracts to create a seamless, secure experience for both talent and employers."
+              />
+            </div>
+          </div>
+        </section>
+
+        <section id="contact" className="contact bg-black py-20 text-center px-4 relative">
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-orange-900/5 to-black"></div>
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold text-orange-500 mb-6">Contact Us</h2>
+            <p className="text-gray-200 max-w-xl mx-auto mb-10 text-base leading-relaxed">
+              Have a question or need help? Contact us and we'll respond as quickly as possible.
+            </p>
+            <div className="max-w-md mx-auto">
+              <ContactForm 
+                title="" 
+                submitButtonText="Send Message"
+                className="border border-orange-500/20 bg-black/80 shadow-lg rounded-xl"
+                defaultSubject="Contact from Gate33 Website"
+                showSubjectField={false}
+              />
+            </div>
           </div>
         </section>
       </main>
