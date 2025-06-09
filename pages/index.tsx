@@ -147,120 +147,116 @@ function Home() {
       {showDevNotice && (
         <DevNoticePopup onClose={() => setShowDevNotice(false)} />
       )}
-      {/* Hero Section - NOVO LAYOUT */}
-      <section className="relative flex flex-col items-center justify-center min-h-[90vh] bg-gradient-to-br from-black via-[#1a1a1a] to-black px-4 py-16 overflow-hidden">
-        {/* BG Portão decorativo */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-          <Image
-            src="/images/bg.png"
-            alt="Gate33 Portal Background"
-            fill
-            className="bg-portal-image"
-            priority
-            sizes="100vw"
-          />
-        </div>
+      {/* Hero Section - NOVO LAYOUT COM FUNDO FIXO */}
+      <section className="hero-section-fixed-bg relative flex flex-col items-center justify-center min-h-[90vh] px-4 py-16 overflow-hidden">
         {/* Efeito de luz da lâmpada - posicionado exatamente na lanterna */}
         <div className="lamp-light-effect" />
         {/* Cone de luz da lâmpada */}
         <div className="lamp-cone-light" />
-        {/* Logo centralizado - ligeiramente abaixo da luz e menor */}
-        <div className="mt-16 mb-6 flex flex-col items-center z-10">
-          <Image
-            src="/images/Logo_Icon-temp-no-glow.png"
-            alt="Gate33 Logo"
-            width={120}
-            height={120}
-            className="mx-auto logo-with-glow"
-            priority
-          />
-        </div>
-        {/* Título principal */}
-        <h1 className="text-2xl md:text-4xl font-bold text-center text-white mb-2 tracking-wide">
-          YOUR GATEWAY TO TRUSTED<br />
-          <span className="text-orange-500 text-3xl md:text-5xl font-extrabold block mt-1">WEB3 OPPORTUNITIES</span>
-        </h1>
-        {/* Subtítulo */}
-        <p className="text-base md:text-lg text-center text-gray-200 mb-10 mt-2 max-w-2xl">
-          Hire, Get Hired, Learn and Build Smarter&nbsp;
-          <span className="text-orange-400 font-semibold">Verified. Secure. Web3-Native.</span>
-        </p>
-        {/* Cards */}
-        <div className="w-full max-w-6xl flex flex-col md:flex-row gap-6 justify-center items-center mt-4">
-          {/* Card 1 */}
-          <div className="bg-black/90 rounded-2xl p-7 flex-1 min-w-[390px] max-w-md flex flex-col items-start border border-[#232323] shadow-lg relative">
-            <span className="uppercase text-xs text-orange-400 font-bold mb-2">For Builders</span>
-            <span className="text-white font-semibold text-lg mb-1">Hire or Get Hired</span>
-            <p className="text-gray-300 text-sm mb-5">
-              Access trusted Web3 jobs or post roles with escrow protection. Build the future, securely.
-            </p>
-            <div className="flex gap-2 w-full">
-              <Link href="/jobs" className="flex-1 bg-orange-500 hover:bg-orange-400 text-white font-bold py-2 px-4 rounded-full text-sm text-center transition-all">
-                Find Jobs
-              </Link>
-              <Link href="/company-register" className="flex-1 bg-[#232323] hover:bg-orange-500 hover:text-white text-orange-400 font-bold py-2 px-4 rounded-full text-sm text-center border border-orange-500 transition-all">
-                Post Jobs
-              </Link>
-            </div>
-            {/* Badge opcional */}
-            <span className="absolute top-4 right-4 text-[10px] text-orange-300 bg-black/60 px-2 py-1 rounded-full border border-orange-400 font-bold">ESCROW</span>
+        
+        {/* Container do conteúdo que se move */}
+        <div className="hero-content w-full max-w-6xl mx-auto">
+          {/* Logo centralizado - ligeiramente abaixo da luz e menor */}
+          <div className="mt-16 mb-6 flex flex-col items-center">
+            <Image
+              src="/images/Logo_Icon-temp-no-glow.png"
+              alt="Gate33 Logo"
+              width={120}
+              height={120}
+              className="mx-auto logo-with-glow"
+              priority
+            />
           </div>
-          {/* Card 2 */}
-          <div className="bg-black/90 rounded-2xl p-7 flex-1 min-w-[390px] max-w-md flex flex-col items-start border border-[#232323] shadow-lg relative">
-            <span className="uppercase text-xs text-orange-400 font-bold mb-2">For Hodlers</span>
-            <span className="text-white font-semibold text-lg mb-1">Use Crypto Tools</span>
-            <p className="text-gray-300 text-sm mb-5">
-              Analyze the market with AI-powered tools and insights. Make informed decisions, faster.
-            </p>
-            <Link href="/crypto-tools" className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-2 px-4 rounded-full text-sm text-center transition-all">
-              Explore Crypto Tools
-            </Link>
-            {/* Badge opcional */}
-            <span className="absolute top-4 right-4 text-[10px] text-green-300 bg-black/60 px-2 py-1 rounded-full border border-green-400 font-bold">AI TOOLS</span>
-          </div>
-          {/* Card 3 */}
-          <div className="bg-black/90 rounded-2xl p-7 flex-1 min-w-[390px] max-w-md flex flex-col items-start border border-[#232323] shadow-lg relative">
-            <span className="uppercase text-xs text-orange-400 font-bold mb-2">For Explorers</span>
-            <span className="text-white font-semibold text-lg mb-1">Learn 2 Earn</span>
-            <p className="text-gray-300 text-sm mb-5">
-              Enhance your skills while earning rewards. Complete courses and get certified in Web3 technologies.
-            </p>
-            <Link href="/learn2earn" className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-2 px-4 rounded-full text-sm text-center transition-all">
-              Start Learning
-            </Link>
-            {/* Badge opcional */}
-            <span className="absolute top-4 right-4 text-[10px] text-purple-300 bg-black/60 px-2 py-1 rounded-full border border-purple-400 font-bold">LEARN</span>
-          </div>
-        </div>
-
-        {/* EVEN MORE...COMING SOON Section */}
-        <div className="w-full mt-14 mb-6 z-10 flex justify-center">
-          <div className="bg-orange-500 rounded-lg py-5 px-6 shadow-lg relative overflow-hidden max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-white py-2">EVEN MORE...COMING SOON</h2>
-            <p className="text-white text-lg leading-relaxed pb-3 max-w-2xl mx-auto">
-              We're developing groundbreaking features that will transform how talent connects with opportunities.
-            </p>
-            <div className="pt-3 pb-4">
-              <div className="flex flex-col items-center justify-center gap-3 max-w-md mx-auto">
-                <input
-                  type="email"
-                  value={waitlistEmail || ''}
-                  onChange={e => setWaitlistEmail(e.target.value)}
-                  placeholder="Enter your e-mail here to stay up-to-date"
-                  className="waitlist-input bg-black/40 text-white text-sm px-6 py-2.5 rounded-md focus:outline-none focus:ring-2 focus:ring-white w-full shadow-sm placeholder:text-gray-300 border border-black/30 text-center"
-                  disabled={waitlistLoading || waitlistSuccess}
-                />
-                <button
-                  className="waitlist-btn bg-black text-white py-2.5 px-6 rounded-md hover:bg-black/70 transition-colors font-semibold text-sm shadow-md border border-white/30 focus:outline-none focus:ring-2 focus:ring-white whitespace-nowrap w-full sm:w-1/2"
-                  onClick={handleWaitlistSubscribe}
-                  disabled={waitlistLoading || waitlistSuccess}
-                >
-                  {waitlistLoading ? 'Sending...' : waitlistSuccess ? 'Subscribed!' : 'Join the Waitlist'}
-                </button>
+          
+          {/* Título principal */}
+          <h1 className="text-2xl md:text-4xl font-bold text-center text-white mb-2 tracking-wide">
+            YOUR GATEWAY TO TRUSTED<br />
+            <span className="text-orange-500 text-3xl md:text-5xl font-extrabold block mt-1">WEB3 OPPORTUNITIES</span>
+          </h1>
+          
+          {/* Subtítulo */}
+          <p className="text-base md:text-lg text-center text-gray-200 mb-10 mt-2 max-w-2xl mx-auto">
+            Hire, Get Hired, Learn and Build Smarter&nbsp;
+            <span className="text-orange-400 font-semibold">Verified. Secure. Web3-Native.</span>
+          </p>
+          
+          {/* Cards */}
+          <div className="w-full flex flex-col md:flex-row gap-6 justify-center items-center mt-4">
+            {/* Card 1 */}
+            <div className="bg-black/90 rounded-2xl p-7 flex-1 min-w-[390px] max-w-md flex flex-col items-start border border-[#232323] shadow-lg relative">
+              <span className="uppercase text-xs text-orange-400 font-bold mb-2">For Builders</span>
+              <span className="text-white font-semibold text-lg mb-1">Hire or Get Hired</span>
+              <p className="text-gray-300 text-sm mb-5">
+                Access trusted Web3 jobs or post roles with escrow protection. Build the future, securely.
+              </p>
+              <div className="flex gap-2 w-full">
+                <Link href="/jobs" className="flex-1 bg-orange-500 hover:bg-orange-400 text-white font-bold py-2 px-4 rounded-full text-sm text-center transition-all">
+                  Find Jobs
+                </Link>
+                <Link href="/company-register" className="flex-1 bg-[#232323] hover:bg-orange-500 hover:text-white text-orange-400 font-bold py-2 px-4 rounded-full text-sm text-center border border-orange-500 transition-all">
+                  Post Jobs
+                </Link>
               </div>
+              {/* Badge opcional */}
+              <span className="absolute top-4 right-4 text-[10px] text-orange-300 bg-black/60 px-2 py-1 rounded-full border border-orange-400 font-bold">ESCROW</span>
             </div>
-            {waitlistError && <div className="text-red-200 text-xs pb-1 text-center">{waitlistError === 'Please enter a valid email address.' ? 'Please enter a valid email address.' : 'Failed to subscribe. Please try again later.'}</div>}
-            {waitlistSuccess && <div className="text-green-200 text-xs pb-1 text-center">You have joined the waitlist!</div>}
+            {/* Card 2 */}
+            <div className="bg-black/90 rounded-2xl p-7 flex-1 min-w-[390px] max-w-md flex flex-col items-start border border-[#232323] shadow-lg relative">
+              <span className="uppercase text-xs text-orange-400 font-bold mb-2">For Hodlers</span>
+              <span className="text-white font-semibold text-lg mb-1">Use Crypto Tools</span>
+              <p className="text-gray-300 text-sm mb-5">
+                Analyze the market with AI-powered tools and insights. Make informed decisions, faster.
+              </p>
+              <Link href="/crypto-tools" className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-2 px-4 rounded-full text-sm text-center transition-all">
+                Explore Crypto Tools
+              </Link>
+              {/* Badge opcional */}
+              <span className="absolute top-4 right-4 text-[10px] text-green-300 bg-black/60 px-2 py-1 rounded-full border border-green-400 font-bold">AI TOOLS</span>
+            </div>
+            {/* Card 3 */}
+            <div className="bg-black/90 rounded-2xl p-7 flex-1 min-w-[390px] max-w-md flex flex-col items-start border border-[#232323] shadow-lg relative">
+              <span className="uppercase text-xs text-orange-400 font-bold mb-2">For Explorers</span>
+              <span className="text-white font-semibold text-lg mb-1">Learn 2 Earn</span>
+              <p className="text-gray-300 text-sm mb-5">
+                Enhance your skills while earning rewards. Complete courses and get certified in Web3 technologies.
+              </p>
+              <Link href="/learn2earn" className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-2 px-4 rounded-full text-sm text-center transition-all">
+                Start Learning
+              </Link>
+              {/* Badge opcional */}
+              <span className="absolute top-4 right-4 text-[10px] text-purple-300 bg-black/60 px-2 py-1 rounded-full border border-purple-400 font-bold">LEARN</span>
+            </div>
+          </div>
+
+          {/* EVEN MORE...COMING SOON Section */}
+          <div className="w-full mt-14 mb-6 flex justify-center">
+            <div className="bg-orange-500 rounded-lg py-5 px-6 shadow-lg relative overflow-hidden max-w-4xl mx-auto text-center">
+              <h2 className="text-3xl font-bold text-white py-2">EVEN MORE...COMING SOON</h2>
+              <p className="text-white text-lg leading-relaxed pb-3 max-w-2xl mx-auto">
+                We're developing groundbreaking features that will transform how talent connects with opportunities.
+              </p>
+              <div className="pt-3 pb-4">
+                <div className="flex flex-col items-center justify-center gap-3 max-w-md mx-auto">
+                  <input
+                    type="email"
+                    value={waitlistEmail || ''}
+                    onChange={e => setWaitlistEmail(e.target.value)}
+                    placeholder="Enter your e-mail here to stay up-to-date"
+                    className="waitlist-input bg-black/40 text-white text-sm px-6 py-2.5 rounded-md focus:outline-none focus:ring-2 focus:ring-white w-full shadow-sm placeholder:text-gray-300 border border-black/30 text-center"
+                    disabled={waitlistLoading || waitlistSuccess}
+                  />
+                  <button
+                    className="waitlist-btn bg-black text-white py-2.5 px-6 rounded-md hover:bg-black/70 transition-colors font-semibold text-sm shadow-md border border-white/30 focus:outline-none focus:ring-2 focus:ring-white whitespace-nowrap w-full sm:w-1/2"
+                    onClick={handleWaitlistSubscribe}
+                    disabled={waitlistLoading || waitlistSuccess}
+                  >
+                    {waitlistLoading ? 'Sending...' : waitlistSuccess ? 'Subscribed!' : 'Join the Waitlist'}
+                  </button>
+                </div>
+              </div>
+              {waitlistError && <div className="text-red-200 text-xs pb-1 text-center">{waitlistError === 'Please enter a valid email address.' ? 'Please enter a valid email address.' : 'Failed to subscribe. Please try again later.'}</div>}
+              {waitlistSuccess && <div className="text-green-200 text-xs pb-1 text-center">You have joined the waitlist!</div>}
+            </div>
           </div>
         </div>
         

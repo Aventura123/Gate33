@@ -1,5 +1,4 @@
 import "./globals.css";
-import { metadata } from "./metadata";
 import { WalletProvider } from '../components/WalletProvider';
 
 // Contract monitoring initialization has been moved to the server-init.ts file
@@ -9,13 +8,12 @@ export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
-}) {  return (
+}) {
+  return (
     <html lang="en">
       <head>
-        <title>Gate33</title>
         <link rel="icon" href="/favicon.png" type="image/png" />
         <link rel="shortcut icon" href="/favicon.png" type="image/png" />
-        <link rel="preload" href="/logo2.png" as="image" />
       </head>
       <body>
         <WalletProvider>
