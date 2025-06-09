@@ -1,0 +1,375 @@
+/* Gate33 Index Page Styles */
+
+/* Background image styles */
+.bg-portal-image {
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0.25;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Lamp light effect */
+.lamp-light-effect {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 25px;
+  background: radial-gradient(ellipse, rgba(255, 165, 0, 0.9) 0%, rgba(255, 165, 0, 0.6) 40%, rgba(255, 165, 0, 0.2) 70%, transparent 100%);
+  border-radius: 4px;
+  filter: blur(1px);
+  box-shadow: 0 0 30px rgba(255, 165, 0, 0.4), 0 0 60px rgba(255, 165, 0, 0.2);
+}
+
+/* Lamp cone light */
+.lamp-cone-light {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 350px;
+  background: linear-gradient(180deg, rgba(255, 165, 0, 0.2) 0%, rgba(255, 165, 0, 0.08) 40%, rgba(255, 165, 0, 0.03) 70%, transparent 100%);
+  clip-path: polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%);
+  filter: blur(4px);
+}
+
+/* Logo with glow effect */
+.logo-with-glow {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 15px rgba(255, 165, 0, 0.4));
+}
+
+/* Company logo auto sizing */
+.company-logo-image {
+  width: auto;
+  height: auto;
+}
+
+/* Partner logo container */
+.partner-logo-container {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+}
+
+/* Matrix rain effect styles */
+#matrix-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.matrix-char {
+  position: absolute;
+  color: rgba(255, 165, 0, 0.3);
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: bold;
+  animation: matrix-fall linear infinite;
+  text-shadow: 0 0 5px rgba(255, 165, 0, 0.5);
+}
+
+@keyframes matrix-fall {
+  0% {
+    transform: translateY(-100vh);
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+/* Waitlist input styles */
+.waitlist-input {
+  background: rgba(0, 0, 0, 0.4);
+  color: rgb(251, 191, 36);
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  border: 0;
+  text-align: center;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.waitlist-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(251, 146, 60);
+}
+
+.waitlist-input::placeholder {
+  color: rgb(253, 186, 116);
+}
+
+.waitlist-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Waitlist button styles */
+.waitlist-btn {
+  background: rgba(249, 115, 22, 0.9);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgb(251, 146, 60);
+  transition: background-color 0.2s;
+}
+
+.waitlist-btn:hover {
+  background: rgb(251, 146, 60);
+}
+
+.waitlist-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(253, 186, 116);
+}
+
+.waitlist-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* FAQ Item Styles */
+.faq-item {
+  border: 1px solid rgb(249, 115, 22);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.faq-item.active {
+  border-color: rgb(251, 146, 60);
+}
+
+.faq-question {
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.05);
+  color: rgb(209, 213, 219);
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.faq-question:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.faq-answer.open {
+  padding: 1rem;
+  max-height: 500px;
+}
+
+.faq-answer p {
+  color: rgb(209, 213, 219);
+  line-height: 1.625;
+}
+
+/* Main section styles */
+.gate33-main-section {
+  min-height: 100vh;
+  background: linear-gradient(to bottom, black, rgb(249, 115, 22), black);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Service grid styles */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 2rem;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .services-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .services-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.service-card {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: left;
+  border: 1px solid rgba(249, 115, 22, 0.1);
+  transition: all 0.3s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-10px);
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+.service-icon {
+  color: rgb(249, 115, 22);
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+/* Jobs grid styles */
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 2rem;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .jobs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .jobs-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.job-card {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(249, 115, 22, 0.1);
+  transition: all 0.3s ease;
+}
+
+.job-card:hover {
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+/* Company logos styles */
+.company-logos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2.5rem;
+  margin: 0 auto;
+  max-width: 80rem;
+  margin-bottom: 2.5rem;
+}
+
+.company-logo {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  width: 10rem;
+  height: 6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.company-logo:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Partners grid styles */
+.partners-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 2rem;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .partners-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .partners-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.partner-card {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  transition: all 0.3s ease;
+}
+
+.partner-card:hover {
+  border-color: rgba(249, 115, 22, 0.5);
+}
+
+.partner-logo {
+  width: 100%;
+  height: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+/* FAQ container styles */
+.faq-container {
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+/* Line clamp utility */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Contact form styles */
+.contact {
+  background: black;
+  padding: 5rem 0;
+  text-align: center;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}

@@ -1,11 +1,11 @@
 'use client';
-import '../styles/gate33-revolutionary-hero.css';
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ContactForm from '../components/ContactForm';
 import DevNoticePopup from '../components/DevNoticePopup';
+import '../components/index-page.css';
 
 interface Partner {
   id: string;
@@ -25,20 +25,18 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className={`faq-item border border-orange-500 rounded-lg overflow-hidden mb-4 ${isOpen ? 'active' : ''}`}>
+    <div className={`faq-item ${isOpen ? 'active' : ''}`}>
       <div
-        className="faq-question p-4 bg-black/5 text-gray-300 font-medium cursor-pointer flex justify-between items-center hover:bg-black/10"
+        className="faq-question"
         onClick={() => setIsOpen(!isOpen)}
       >
         {question}
         <span className="text-orange-500 text-xl">{isOpen ? '-' : '+'}</span>
       </div>
       <div
-        className={`faq-answer max-h-0 overflow-hidden transition-all duration-300 ${
-          isOpen ? 'p-4 max-h-[500px]' : ''
-        }`}
+        className={`faq-answer ${isOpen ? 'open' : ''}`}
       >
-        <p className="text-gray-300 leading-relaxed">{answer}</p>
+        <p>{answer}</p>
       </div>
     </div>
   );
@@ -144,67 +142,93 @@ function Home() {
 
   return (
     <>
+      <div id="matrix-container"></div>
       {showDevNotice && (
         <DevNoticePopup onClose={() => setShowDevNotice(false)} />
       )}
-      {/* Revolutionary Hero Section */}
-      <section className="gate33-revolutionary-hero">
-        {/* 3D Portal Gateway */}
-        <div className="gate33-portal-gateway"></div>
-        
-        {/* Quantum Floating Elements */}
-        <div className="quantum-element"></div>
-        <div className="quantum-element"></div>
-        <div className="quantum-element"></div>
-        <div className="quantum-element"></div>
-        <div className="quantum-element"></div>
-        <div className="quantum-element"></div>
-        
-        {/* Data Stream Effects */}
-        <div className="data-stream"></div>
-        <div className="data-stream"></div>
-        <div className="data-stream"></div>
-        <div className="data-stream"></div>
-        <div className="data-stream"></div>
-        <div className="data-stream"></div>
-        
-        {/* Matrix Rain Effect */}
-        <div className="matrix-rain" id="matrix-container"></div>
-        
-        {/* Hero Content */}
-        <div className="relative z-20 h-full flex flex-col items-center justify-center px-4 py-20">
-          {/* Logo with Portal Effect */}
-          <div className="gate33-logo-portal mb-6">
-            <Image
-              src="/logo2.png"
-              alt="Gate33 Logo"
-              width={220}
-              height={220}
-              className="mx-auto"
-              priority
-              style={{ width: 'auto', height: 'auto' }}
-            />
+      {/* Hero Section - NOVO LAYOUT */}
+      <section className="relative flex flex-col items-center justify-center min-h-[90vh] bg-gradient-to-br from-black via-[#1a1a1a] to-black px-4 py-16 overflow-hidden">
+        {/* BG Portão decorativo */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+          <Image
+            src="/images/bg.png"
+            alt="Gate33 Portal Background"
+            fill
+            className="bg-portal-image"
+            priority
+            sizes="100vw"
+          />
+        </div>
+        {/* Efeito de luz da lâmpada - posicionado exatamente na lanterna */}
+        <div className="lamp-light-effect" />
+        {/* Cone de luz da lâmpada */}
+        <div className="lamp-cone-light" />
+        {/* Logo centralizado */}
+        <div className="mb-6 flex flex-col items-center z-10">
+          <Image
+            src="/images/Logo_Icon-temp-no-glow.png"
+            alt="Gate33 Logo"
+            width={180}
+            height={180}
+            className="mx-auto logo-with-glow"
+            priority
+          />
+        </div>
+        {/* Título principal */}
+        <h1 className="text-2xl md:text-4xl font-bold text-center text-white mb-2 tracking-wide">
+          YOUR GATEWAY TO TRUSTED<br />
+          <span className="text-orange-500 text-3xl md:text-5xl font-extrabold block mt-1">WEB3 OPPORTUNITIES</span>
+        </h1>
+        {/* Subtítulo */}
+        <p className="text-base md:text-lg text-center text-gray-200 mb-10 mt-2 max-w-2xl">
+          Hire, Get Hired, Learn and Build Smarter&nbsp;
+          <span className="text-orange-400 font-semibold">Verified. Secure. Web3-Native.</span>
+        </p>
+        {/* Cards */}
+        <div className="w-full max-w-6xl flex flex-col md:flex-row gap-6 justify-center items-center mt-4">
+          {/* Card 1 */}
+          <div className="bg-black/90 rounded-2xl p-7 flex-1 min-w-[390px] max-w-md flex flex-col items-start border border-[#232323] shadow-lg relative">
+            <span className="uppercase text-xs text-orange-400 font-bold mb-2">For Builders</span>
+            <span className="text-white font-semibold text-lg mb-1">Hire or Get Hired</span>
+            <p className="text-gray-300 text-sm mb-5">
+              Access trusted Web3 jobs or post roles with escrow protection. Build the future, securely.
+            </p>
+            <div className="flex gap-2 w-full">
+              <Link href="/jobs" className="flex-1 bg-orange-500 hover:bg-orange-400 text-white font-bold py-2 px-4 rounded-full text-sm text-center transition-all">
+                Find Jobs
+              </Link>
+              <Link href="/company-register" className="flex-1 bg-[#232323] hover:bg-orange-500 hover:text-white text-orange-400 font-bold py-2 px-4 rounded-full text-sm text-center border border-orange-500 transition-all">
+                Post Jobs
+              </Link>
+            </div>
+            {/* Badge opcional */}
+            <span className="absolute top-4 right-4 text-[10px] text-orange-300 bg-black/60 px-2 py-1 rounded-full border border-orange-400 font-bold">ESCROW</span>
           </div>
-          
-          {/* Revolutionary Title */}
-          <h1 className="gate33-holo-title mb-4">
-            Enter the Gateway
-          </h1>
-          
-          {/* Subtitle */}
-          <p className="gate33-holo-subtitle max-w-3xl mx-auto mb-8">
-            Step through the portal to Web3's most secure employment ecosystem. 
-            Where verified companies meet exceptional talent in a trustless, transparent future.
-          </p>
-          
-          {/* Revolutionary Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/seeker-signup" className="gate33-portal-button">
-              🌟 I'm Seeking Talent 
+          {/* Card 2 */}
+          <div className="bg-black/90 rounded-2xl p-7 flex-1 min-w-[390px] max-w-md flex flex-col items-start border border-[#232323] shadow-lg relative">
+            <span className="uppercase text-xs text-orange-400 font-bold mb-2">For Hodlers</span>
+            <span className="text-white font-semibold text-lg mb-1">Use Crypto Tools</span>
+            <p className="text-gray-300 text-sm mb-5">
+              Analyze the market with AI-powered tools and insights. Make informed decisions, faster.
+            </p>
+            <Link href="/crypto-tools" className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-2 px-4 rounded-full text-sm text-center transition-all">
+              Explore Crypto Tools
             </Link>
-            <Link href="/company-register" className="gate33-portal-button">
-              🚀 I'm Hiring Talent
+            {/* Badge opcional */}
+            <span className="absolute top-4 right-4 text-[10px] text-green-300 bg-black/60 px-2 py-1 rounded-full border border-green-400 font-bold">AI TOOLS</span>
+          </div>
+          {/* Card 3 */}
+          <div className="bg-black/90 rounded-2xl p-7 flex-1 min-w-[390px] max-w-md flex flex-col items-start border border-[#232323] shadow-lg relative">
+            <span className="uppercase text-xs text-orange-400 font-bold mb-2">For Explorers</span>
+            <span className="text-white font-semibold text-lg mb-1">Learn 2 Earn</span>
+            <p className="text-gray-300 text-sm mb-5">
+              Enhance your skills while earning rewards. Complete courses and get certified in Web3 technologies.
+            </p>
+            <Link href="/learn2earn" className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-2 px-4 rounded-full text-sm text-center transition-all">
+              Start Learning
             </Link>
+            {/* Badge opcional */}
+            <span className="absolute top-4 right-4 text-[10px] text-purple-300 bg-black/60 px-2 py-1 rounded-full border border-purple-400 font-bold">LEARN</span>
           </div>
         </div>
       </section>
@@ -340,7 +364,6 @@ function Home() {
             Explore some of the current opportunities available on our platform.
           </p>
           <div className="jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Example job cards */}
             <div className="job-card bg-black/30 rounded-lg p-6 border border-orange-500/10 hover:border-orange-500/30 transition-all">
               <h3 className="text-xl font-medium text-orange-500 mb-2">Blockchain Developer</h3>
               <p className="text-gray-500 text-sm mb-4">TechFinance • Remote</p>
@@ -389,22 +412,22 @@ function Home() {
           </p>
           <div className="company-logos flex flex-wrap justify-center items-center gap-10 mx-auto max-w-5xl mb-10">
             <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} style={{ width: 'auto', height: 'auto' }} />
+              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
             </div>
             <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} style={{ width: 'auto', height: 'auto' }} />
+              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
             </div>
             <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} style={{ width: 'auto', height: 'auto' }} />
+              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
             </div>
             <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} style={{ width: 'auto', height: 'auto' }} />
+              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
             </div>
             <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} style={{ width: 'auto', height: 'auto' }} />
+              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
             </div>
             <div className="company-logo bg-black/30 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all">
-              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} style={{ width: 'auto', height: 'auto' }} />
+              <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
             </div>
           </div>
           <Link href="/crypto-tools" className="text-orange-400 text-sm hover:underline">
@@ -429,7 +452,7 @@ function Home() {
                         alt={`${partner.name} Logo`}
                         width={90}
                         height={90}
-                        style={{ width: '90px', height: '90px', objectFit: 'cover' }}
+                        className="partner-logo-container"
                       />
                     </div>
                   </a>
