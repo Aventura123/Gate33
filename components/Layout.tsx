@@ -138,17 +138,20 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div className="layout">
       {/* Header */}
       <header className="site-header w-full text-white fixed top-0 left-0 z-50">
-        <div className="w-full flex justify-between items-center py-4 px-8">
+        <div className="w-full flex justify-between items-center py-4 px-6">
           <a href="/" className="logo flex items-center">
             <img src="/images/GATE33-LOGO-wordmark.png" alt="Gate33 Logo" className="h-6" />
           </a>
           
           {/* Hamburger Menu Button - Only opens the menu */}
           <button
-            className="md:hidden text-orange-500 focus:outline-none z-50"
+            className="md:hidden text-orange-500 focus:outline-none z-50 flex items-center"
             onClick={() => setMenuOpen(true)}
           >
-            Menu
+            <span className="mr-2 text-sm font-medium">Menu</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
           
           {/* Desktop Navigation */}
@@ -240,7 +243,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       {/* Mobile Navigation Panel (Slides from right) */}
       <nav
-        className={`fixed top-0 right-0 h-full w-72 max-w-full bg-black/95 z-50 transition-transform duration-300 ease-in-out md:hidden overflow-y-auto mobile-nav-panel ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-0 right-0 h-full w-72 max-w-full bg-black/95 z-50 transition-transform duration-300 ease-in-out md:hidden overflow-y-auto mobile-nav-panel backdrop-blur-md ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Close Button inside the panel */}
         <button
@@ -249,52 +252,74 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         >
           &times;
         </button>
-        <div className="mt-12 flex flex-col px-3 pb-6">
-          {/* Principais páginas */}
-          <a href="/" className={getMobileMenuItemClasses('/')} onClick={() => setMenuOpen(false)}>Home</a>
-          <a href="/#about" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>About</a>
-          <a href="/#services" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Services</a>
+        
+        {/* Logo in mobile menu */}
+        <div className="flex justify-center my-8">
+          <a href="/" onClick={() => setMenuOpen(false)}>
+            <img src="/images/GATE33-LOGO-wordmark.png" alt="Gate33 Logo" className="h-8" />
+          </a>
+        </div>
+        
+        <div className="flex flex-col px-4 pb-6">
+          {/* Home link */}
+          <a href="/" className={`block py-2 text-lg font-medium hover:text-orange-500 transition-colors mb-4 border-b border-gray-800 pb-4`} onClick={() => setMenuOpen(false)}>HOME</a>
           
-          <div className="border-t border-gray-700 my-0.5"></div>
+          {/* JOBS Dropdown */}
+          <div className="mb-4">
+            <h4 className="text-orange-500 font-bold text-lg mb-2">JOBS</h4>
+            <div className="ml-2 border-l border-gray-700 pl-3">
+              <a href="/jobs" className={getMobileMenuItemClasses('/jobs')} onClick={() => setMenuOpen(false)}>JOB-BOARD</a>
+              {isProduction ? (
+                <span className="block py-1.5 text-base text-gray-500 cursor-not-allowed opacity-60">INSTANT JOBS (Coming Soon)</span>
+              ) : (
+                <a href="/instant-jobs" className={getMobileMenuItemClasses('/instant-jobs')} onClick={() => setMenuOpen(false)}>INSTANT JOBS</a>
+              )}
+            </div>
+          </div>
           
-          <a href="/jobs" className={getMobileMenuItemClasses('/jobs')} onClick={() => setMenuOpen(false)}>Jobs</a>
-          {isProduction ? (
-            <span className="block py-1.5 text-base text-gray-500 cursor-not-allowed opacity-60">Instant Jobs (Coming Soon)</span>
-          ) : (
-            <a href="/instant-jobs" className={getMobileMenuItemClasses('/instant-jobs')} onClick={() => setMenuOpen(false)}>Instant Jobs</a>
-          )}
-          <a href="/learn2earn" className={getMobileMenuItemClasses('/learn2earn')} onClick={() => setMenuOpen(false)}>Learn2Earn</a>
+          {/* TOOLS Dropdown */}
+          <div className="mb-4">
+            <h4 className="text-orange-500 font-bold text-lg mb-2">TOOLS</h4>
+            <div className="ml-2 border-l border-gray-700 pl-3">
+              <a href="/crypto-tools" className={getMobileMenuItemClasses('/crypto-tools')} onClick={() => setMenuOpen(false)}>CRYPTO TOOLS</a>
+              <a href="/nft" className={getMobileMenuItemClasses('/nft')} onClick={() => setMenuOpen(false)}>NFT</a>
+            </div>
+          </div>
           
-          <div className="border-t border-gray-700 my-0.5"></div>
+          {/* LEARN Dropdown */}
+          <div className="mb-4">
+            <h4 className="text-orange-500 font-bold text-lg mb-2">LEARN</h4>
+            <div className="ml-2 border-l border-gray-700 pl-3">
+              <a href="/learn2earn" className={getMobileMenuItemClasses('/learn2earn')} onClick={() => setMenuOpen(false)}>LEARN2EARN</a>
+            </div>
+          </div>
           
-          <a href="/nft" className={getMobileMenuItemClasses('/nft')} onClick={() => setMenuOpen(false)}>NFT</a>
-          <a href="/crypto-tools" className={getMobileMenuItemClasses('/crypto-tools')} onClick={() => setMenuOpen(false)}>Crypto Tools</a>
-          <a href="/donate" className="block py-1.5 text-base hover:text-orange-500 font-medium" onClick={() => setMenuOpen(false)}>Donate</a>
-          <a href="/#faq" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>FAQ</a>
-          <a href="/#contact" className="block py-1.5 text-base hover:text-orange-500" onClick={() => setMenuOpen(false)}>Contact</a>
+          <div className="border-t border-gray-800 my-4"></div>
           
-          <div className="border-t border-gray-700 my-0.5"></div>
+          {/* About, Partners, FAQ, Contact links */}
+          <div className="mb-4">
+            <a href="/#about" className="block py-1.5 text-base hover:text-orange-500 transition-colors" onClick={() => setMenuOpen(false)}>About Us</a>
+            <a href="/#services" className="block py-1.5 text-base hover:text-orange-500 transition-colors" onClick={() => setMenuOpen(false)}>Services</a>
+            <a href="/#partners" className="block py-1.5 text-base hover:text-orange-500 transition-colors" onClick={() => setMenuOpen(false)}>Our Partners</a>
+            <a href="/#faq" className="block py-1.5 text-base hover:text-orange-500 transition-colors" onClick={() => setMenuOpen(false)}>FAQ</a>
+            <a href="/#contact" className="block py-1.5 text-base hover:text-orange-500 transition-colors" onClick={() => setMenuOpen(false)}>Contact</a>
+          </div>
           
-          {/* Botões de login ou componente de perfil */}
+          <div className="border-t border-gray-800 my-2"></div>
+          
+          {/* Login/Profile Section */}
           {isLoggedIn ? (
-            <div className="pt-1 -ml-1">
+            <div className="pt-2">
               <UserProfileButton />
             </div>
           ) : (
-            <div className="flex flex-col gap-1 pt-1">
+            <div className="pt-2">
               <a 
                 href="/login" 
-                className="block w-full px-3 py-1.5 border border-orange-500 text-orange-500 rounded text-center hover:bg-orange-500 hover:text-white transition-colors" 
+                className="block w-full px-6 py-2.5 bg-orange-500 text-white rounded-full text-center hover:bg-orange-600 transition-colors font-medium" 
                 onClick={() => setMenuOpen(false)}
               >
-                Login
-              </a>
-              <a 
-                href="/seeker-signup" 
-                className="block w-full px-3 py-1.5 bg-orange-500 text-white rounded text-center hover:bg-orange-600 transition-colors" 
-                onClick={() => setMenuOpen(false)}
-              >
-                Signup
+                Log In / Sign Up
               </a>
             </div>
           )}

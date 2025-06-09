@@ -50,6 +50,7 @@ function Home() {
   const [waitlistLoading, setWaitlistLoading] = useState(false);
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
   const [waitlistError, setWaitlistError] = useState("");
+  const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
     fetchPartners();
@@ -164,12 +165,12 @@ function Home() {
         {/* Cone de luz da lâmpada */}
         <div className="lamp-cone-light" />
         {/* Logo centralizado - ligeiramente abaixo da luz e menor */}
-        <div className="mt-4 mb-6 flex flex-col items-center z-10">
+        <div className="mt-16 mb-6 flex flex-col items-center z-10">
           <Image
             src="/images/Logo_Icon-temp-no-glow.png"
             alt="Gate33 Logo"
-            width={150}
-            height={150}
+            width={120}
+            height={120}
             className="mx-auto logo-with-glow"
             priority
           />
@@ -436,9 +437,9 @@ function Home() {
         <section id="partners" className="partners py-20 text-center bg-black px-4 relative">
           <div className="absolute inset-0 bg-gradient-to-r from-black via-orange-900/10 to-black"></div>
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-orange-500 mb-8">Our Partners</h2>
+            <h2 className="text-3xl font-bold text-orange-500 mb-8">Our Strategic Partners</h2>
             <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-              We collaborate with industry leaders to bring you the best opportunities and resources in the blockchain and tech space.
+              Gate33 has established strategic partnerships with leading organizations in the blockchain, technology, and recruitment sectors. These collaborations enable us to provide enhanced services, cutting-edge solutions, and expanded opportunities for our community.
             </p>
             
             {partners.length > 0 ? (
@@ -514,12 +515,22 @@ function Home() {
                 <p className="text-gray-400">Loading partners...</p>
               </div>
             )}
-            
-            <div className="mt-10">
-              <Link href="/partners" className="bg-orange-500 text-white py-2.5 px-8 rounded-full hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl font-medium">
-                Become a Partner
-              </Link>
-            </div>
+          </div>
+        </section>
+
+        <section id="contact" className="contact bg-black py-20 text-center px-4 relative">
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-orange-900/5 to-black"></div>
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold text-orange-500 mb-6">Contact Us</h2>
+            <p className="text-gray-200 max-w-xl mx-auto mb-10 text-base leading-relaxed">
+              Have a question or need help? Contact us and we'll respond as quickly as possible.
+            </p>
+            <button
+              onClick={() => setShowContactModal(true)}
+              className="bg-orange-500 text-white py-2.5 px-8 rounded-full hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl font-medium"
+            >
+              Get in Touch
+            </button>
           </div>
         </section>
 
@@ -556,25 +567,32 @@ function Home() {
           </div>
         </section>
 
-        <section id="contact" className="contact bg-black py-20 text-center px-4 relative">
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-orange-900/5 to-black"></div>
-          <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-orange-500 mb-6">Contact Us</h2>
-            <p className="text-gray-200 max-w-xl mx-auto mb-10 text-base leading-relaxed">
-              Have a question or need help? Contact us and we'll respond as quickly as possible.
-            </p>
-            <div className="max-w-md mx-auto">
-              <ContactForm 
-                title="" 
-                submitButtonText="Send Message"
-                className="border border-orange-500/20 bg-black/80 shadow-lg rounded-xl"
-                defaultSubject="Contact from Gate33 Website"
-                showSubjectField={false}
-              />
-            </div>
-          </div>
-        </section>
       </main>
+
+      {/* Contact Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-black/95 rounded-xl border border-orange-500/20 p-6 w-full max-w-md relative shadow-2xl">
+            <button
+              onClick={() => setShowContactModal(false)}
+              className="absolute top-4 right-4 text-orange-400 hover:text-orange-300 text-2xl font-bold"
+            >
+              ×
+            </button>
+            <h3 className="text-2xl font-bold text-orange-500 mb-4 text-center">Contact Us</h3>
+            <ContactForm 
+              title="" 
+              submitButtonText="Send Message"
+              className="border-0"
+              defaultSubject="Contact from Gate33 Website"
+              showSubjectField={false}
+              onSuccess={() => {
+                setShowContactModal(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }
