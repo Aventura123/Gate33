@@ -37,13 +37,93 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.4);
   z-index: 1;
 }
 
 .hero-content {
   position: relative;
   z-index: 10;
+}
+
+/* Estilização especial para os cartões na página principal */
+.card-orange-glow {
+  position: relative;
+  background-color: rgba(18, 18, 18, 0.95);
+  border: 1px solid #f97316;
+  transition: all 0.3s ease;
+  overflow: hidden; /* Volta para hidden já que os pontos estão dentro */
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.3);
+}
+
+.card-orange-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #f97316;
+}
+
+.card-orange-glow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(to bottom, rgba(249, 115, 22, 0.4), transparent);
+}
+
+.card-orange-glow:hover {
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
+  transform: translateY(-3px);
+  border-color: #fb923c;
+}
+
+/* Efeito sutil de luz pulsante nos cards */
+@keyframes pulse-glow {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+  100% { opacity: 0.3; }
+}
+
+/* Animação melhorada para os pontinhos de luz - acende no hover */
+@keyframes light-dots-glow {
+  0% { 
+    opacity: 0.8; 
+    transform: scale(1);
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.9), 0 0 16px rgba(249, 115, 22, 0.5);
+  }
+  50% { 
+    opacity: 1; 
+    transform: scale(1.2);
+    box-shadow: 0 0 12px rgba(249, 115, 22, 1), 0 0 24px rgba(249, 115, 22, 0.7);
+  }
+  100% { 
+    opacity: 0.8; 
+    transform: scale(1);
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.9), 0 0 16px rgba(249, 115, 22, 0.5);
+  }
+}
+
+/* Aplicar animação aos pontinhos de luz apenas no hover */
+.card-orange-glow:hover .group-hover\\:animate-pulse {
+  animation: light-dots-glow 1s infinite ease-in-out !important;
+}
+
+/* Animation delays for light dots */
+.light-dot-delay-0 {
+  animation-delay: 0s;
+}
+
+.light-dot-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.light-dot-delay-400 {
+  animation-delay: 0.4s;
 }
 
 /* Fallback para dispositivos móveis onde background-attachment: fixed pode ter problemas */
@@ -107,42 +187,6 @@ body {
   width: 90px;
   height: 90px;
   object-fit: cover;
-}
-
-/* Matrix rain effect styles */
-#matrix-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: -1;
-  overflow: hidden;
-}
-
-.matrix-char {
-  position: absolute;
-  color: rgba(255, 165, 0, 0.3);
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  font-weight: bold;
-  animation: matrix-fall linear infinite;
-  text-shadow: 0 0 5px rgba(255, 165, 0, 0.5);
-}
-
-@keyframes matrix-fall {
-  0% {
-    transform: translateY(-100vh);
-    opacity: 1;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh);
-    opacity: 0;
-  }
 }
 
 /* Waitlist input styles */
@@ -397,15 +441,6 @@ body {
   border-color: rgba(249, 115, 22, 0.5);
 }
 
-.partner-logo {
-  width: 100%;
-  height: 5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1rem;
-}
-
 /* FAQ container styles */
 .faq-container {
   max-width: 56rem;
@@ -432,4 +467,52 @@ body {
   text-align: center;
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+/* Cartões com rebordo laranja forte e fundo escuro */
+.card-orange-border {
+  border: 2.5px solid rgb(251, 146, 60) !important;
+  box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.18), 0 2px 12px 0 rgba(251, 146, 60, 0.08);
+  background: rgba(0,0,0,0.80) !important;
+  border-radius: 1.5rem !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.card-orange-border:hover {
+  border-color: rgb(255, 115, 22) !important;
+  box-shadow: 0 0 0 3px rgba(255, 115, 22, 0.25), 0 4px 24px 0 rgba(251, 146, 60, 0.12);
+}
+
+/* Cartão laranja do bloco EVEN MORE...COMING SOON */
+.coming-soon-card {
+  background: rgb(249, 115, 22) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 4px 32px 0 rgba(249, 115, 22, 0.18);
+  border: none !important;
+}
+
+/* Input e botão do bloco laranja */
+.waitlist-input-orange {
+  background: rgba(255,255,255,0.10) !important;
+  color: #fff !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+.waitlist-input-orange::placeholder {
+  color: #fff !important;
+  opacity: 0.8;
+}
+.waitlist-btn-orange {
+  background: rgb(249, 115, 22) !important;
+  color: #fff !important;
+  border-radius: 9999px !important;
+  border: 2px solid #fff3 !important;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.waitlist-btn-orange:hover {
+  background: rgb(234, 88, 12) !important;
 }
