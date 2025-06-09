@@ -163,13 +163,13 @@ function Home() {
         <div className="lamp-light-effect" />
         {/* Cone de luz da lâmpada */}
         <div className="lamp-cone-light" />
-        {/* Logo centralizado */}
-        <div className="mb-6 flex flex-col items-center z-10">
+        {/* Logo centralizado - ligeiramente abaixo da luz e menor */}
+        <div className="mt-4 mb-6 flex flex-col items-center z-10">
           <Image
             src="/images/Logo_Icon-temp-no-glow.png"
             alt="Gate33 Logo"
-            width={180}
-            height={180}
+            width={150}
+            height={150}
             className="mx-auto logo-with-glow"
             priority
           />
@@ -231,93 +231,82 @@ function Home() {
             <span className="absolute top-4 right-4 text-[10px] text-purple-300 bg-black/60 px-2 py-1 rounded-full border border-purple-400 font-bold">LEARN</span>
           </div>
         </div>
-      </section>
 
-      <main className="min-h-screen bg-gradient-to-b from-black via-orange-500 to-black text-white relative overflow-hidden gate33-main-section">
-
-        <section id="about" className="about py-20 text-center bg-black/70 px-4">
-          <h2 className="text-3xl font-bold text-orange-500 mb-8">Why Choose Gate33?</h2>
-          <p className="text-gray-200 mb-10 max-w-5xl mx-auto text-base leading-relaxed">
-            We offer a secure environment where verified companies post genuine job opportunities and qualified candidates can 
-            find real opportunities. Our platform uses blockchain technology to ensure greater transparency and security throughout the process.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-left mt-10 px-5 max-w-6xl mx-auto">
-            <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-              <h3 className="text-xl text-orange-500 mb-4">Verified Companies</h3>
-              <p className="text-gray-200 text-sm">
-                All companies on our platform undergo a rigorous verification process to ensure 
-                legitimacy and reliability in job postings.
-              </p>
-            </div>
-            <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-              <h3 className="text-xl text-orange-500 mb-4">Quality Opportunities</h3>
-              <p className="text-gray-200 text-sm">
-                Curated high-quality job listings with detailed descriptions, clear benefits, and 
-                transparent selection processes.
-              </p>
-            </div>
-            <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-              <h3 className="text-xl text-orange-500 mb-4">Data Security</h3>
-              <p className="text-gray-200 text-sm">
-                We use blockchain technology to protect your personal information and ensure that your 
-                profile and application data remain secure.
-              </p>
-            </div>
-            <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-              <h3 className="text-xl text-orange-500 mb-4">Learn2Earn</h3>
-              <p className="text-gray-200 text-sm">
-                Enhance your skills and earn rewards by participating in our Learn2Earn program, 
-                where learning converts into real opportunities.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section id="coming-soon" className="py-16 text-center bg-gradient-to-r from-black via-orange-900/20 to-black px-4">
-          <div className="max-w-4xl mx-auto bg-black/40 p-8 rounded-lg border border-orange-500/30 backdrop-blur-sm">
-            <h2 className="text-3xl font-bold text-orange-500 mb-4">Something Revolutionary is Coming</h2>
-            <div className="w-24 h-1 bg-orange-500 mx-auto mb-6"></div>
-            <p className="text-gray-200 mb-6 text-lg leading-relaxed">
-              We're developing a groundbreaking feature that will transform how talent connects with opportunities.
+        {/* EVEN MORE...COMING SOON Section */}
+        <div className="w-full mt-14 mb-6 z-10 flex justify-center">
+          <div className="bg-orange-500 rounded-lg py-5 px-6 shadow-lg relative overflow-hidden max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl font-bold text-white py-2">EVEN MORE...COMING SOON</h2>
+            <p className="text-white text-lg leading-relaxed pb-3 max-w-2xl mx-auto">
+              We're developing groundbreaking features that will transform how talent connects with opportunities.
             </p>
-            <div className="bg-black/50 p-4 rounded-lg inline-block">
-              <span className="text-2xl font-mono tracking-wider text-orange-400">Coming Soon</span>
-            </div>
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-              <div className="bg-black/30 p-4 rounded-lg">
-                <h3 className="text-lg text-orange-400 mb-2">Instant Matching</h3>
-                <p className="text-gray-300 text-sm">Connect with opportunities that match your skills immediately.</p>
-              </div>
-              <div className="bg-black/30 p-4 rounded-lg">
-                <h3 className="text-lg text-orange-400 mb-2">Smart Contracts</h3>
-                <p className="text-gray-300 text-sm">Secure, transparent agreements between all parties.</p>
-              </div>
-              <div className="bg-black/30 p-4 rounded-lg">
-                <h3 className="text-lg text-orange-400 mb-2">Verified Payments</h3>
-                <p className="text-gray-300 text-sm">Guaranteed compensation for your time and expertise.</p>
-              </div>
-            </div>
-            {/* Waitlist Email Field */}
-            <div className="mt-8 flex flex-col items-center">
-              <div className="w-full max-w-xs mx-auto flex flex-col items-center">
+            <div className="pt-3 pb-4">
+              <div className="flex flex-col items-center justify-center gap-3 max-w-md mx-auto">
                 <input
                   type="email"
                   value={waitlistEmail || ''}
                   onChange={e => setWaitlistEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="waitlist-input bg-black/40 text-orange-100 text-sm px-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-400 w-full mb-2 shadow-sm placeholder:text-orange-300 border-0 text-center"
+                  placeholder="Enter your e-mail here to stay up-to-date"
+                  className="waitlist-input bg-black/40 text-white text-sm px-6 py-2.5 rounded-md focus:outline-none focus:ring-2 focus:ring-white w-full shadow-sm placeholder:text-gray-300 border border-black/30 text-center"
                   disabled={waitlistLoading || waitlistSuccess}
                 />
                 <button
-                  className="waitlist-btn bg-orange-500/90 text-white py-2 px-4 rounded-full hover:bg-orange-400 transition-colors font-semibold text-sm shadow-md border border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-300 w-full max-w-[180px]"
+                  className="waitlist-btn bg-black text-white py-2.5 px-6 rounded-md hover:bg-black/70 transition-colors font-semibold text-sm shadow-md border border-white/30 focus:outline-none focus:ring-2 focus:ring-white whitespace-nowrap w-full sm:w-1/2"
                   onClick={handleWaitlistSubscribe}
                   disabled={waitlistLoading || waitlistSuccess}
                 >
                   {waitlistLoading ? 'Sending...' : waitlistSuccess ? 'Subscribed!' : 'Join the Waitlist'}
                 </button>
               </div>
-              {waitlistError && <div className="text-red-400 text-xs mt-2 text-center">{waitlistError === 'Please enter a valid email address.' ? 'Please enter a valid email address.' : 'Failed to subscribe. Please try again later.'}</div>}
-              {waitlistSuccess && <div className="text-green-400 text-xs mt-2 text-center">You have joined the waitlist!</div>}
+            </div>
+            {waitlistError && <div className="text-red-200 text-xs pb-1 text-center">{waitlistError === 'Please enter a valid email address.' ? 'Please enter a valid email address.' : 'Failed to subscribe. Please try again later.'}</div>}
+            {waitlistSuccess && <div className="text-green-200 text-xs pb-1 text-center">You have joined the waitlist!</div>}
+          </div>
+        </div>
+        
+        {/* Gradient transition overlay */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent"></div>
+      </section>
+
+      <main className="min-h-screen bg-gradient-to-b from-black via-orange-600/70 to-black text-white relative overflow-hidden gate33-main-section">
+
+        <section id="about" className="about py-20 text-center px-4 relative overflow-hidden bg-gradient-to-b from-black/90 to-black">
+          {/* Overlay escuro para melhor legibilidade */}
+          <div className="absolute inset-0 bg-black/60"></div>
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold text-orange-500 mb-8">Why Choose Gate33?</h2>
+            <p className="text-gray-200 mb-10 max-w-5xl mx-auto text-base leading-relaxed">
+              We offer a secure environment where verified companies post genuine job opportunities and qualified candidates can 
+              find real opportunities. Our platform uses blockchain technology to ensure greater transparency and security throughout the process.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-left mt-10 px-5 max-w-6xl mx-auto">
+              <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
+                <h3 className="text-xl text-orange-500 mb-4">Verified Companies</h3>
+                <p className="text-gray-200 text-sm">
+                  All companies on our platform undergo a rigorous verification process to ensure 
+                  legitimacy and reliability in job postings.
+                </p>
+              </div>
+              <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
+                <h3 className="text-xl text-orange-500 mb-4">Quality Opportunities</h3>
+                <p className="text-gray-200 text-sm">
+                  Curated high-quality job listings with detailed descriptions, clear benefits, and 
+                  transparent selection processes.
+                </p>
+              </div>
+              <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
+                <h3 className="text-xl text-orange-500 mb-4">Data Security</h3>
+                <p className="text-gray-200 text-sm">
+                  Our platform prioritizes the protection of your personal information with 
+                  advanced security measures to keep your profile and application data safe.
+                </p>
+              </div>
+              <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
+                <h3 className="text-xl text-orange-500 mb-4">Learn2Earn</h3>
+                <p className="text-gray-200 text-sm">
+                  Enhance your skills and earn rewards by participating in our Learn2Earn program, 
+                  where learning converts into real opportunities.
+                </p>
+              </div>
             </div>
           </div>
         </section>
