@@ -7,6 +7,63 @@ import { logSystemActivity } from "./logSystem";
 // Moved config loading inside functions to avoid initialization timeouts
 
 /**
+ * Validates LinkedIn token has the required scopes
+ * @param token LinkedIn API access token
+ * @returns boolean indicating if token has required scopes
+ */
+async function validateLinkedInToken(token: string): Promise<boolean> {
+  try {
+    const response = await axios.get('https://api.linkedin.com/v2/me', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    // If we can fetch the profile, the token has at least basic access
+    if (response.data && response.data.id) {
+      console.log('[SocialMedia] LinkedIn token validation successful - profile access confirmed');
+      
+      // Additional validation: Try to check token info for scopes
+      try {
+        const tokenInfo = await axios.get('https://api.linkedin.com/v2/introspectToken', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        const scopes = tokenInfo.data?.scope?.split(' ') || [];
+        const requiredScopes = ['openid', 'profile', 'w_member_social', 'email'];
+        const hasAllScopes = requiredScopes.every(scope => scopes.includes(scope));
+        
+        if (hasAllScopes) {
+          console.log('[SocialMedia] LinkedIn token has all required scopes:', requiredScopes.join(', '));
+          return true;
+        } else {
+          const missingScopes = requiredScopes.filter(scope => !scopes.includes(scope));
+          console.warn('[SocialMedia] LinkedIn token missing required scopes:', missingScopes.join(', '));
+          console.warn('[SocialMedia] Available scopes:', scopes.join(', '));
+          return false;
+        }
+      } catch (scopeError: any) {
+        // If introspection fails, but we can access profile, assume token is valid
+        // This is because LinkedIn's introspection endpoint might not be available for all tokens
+        console.log('[SocialMedia] LinkedIn scope introspection failed, but profile access works - proceeding');
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (err: any) {
+    if (err?.response?.data) {
+      console.error('[SocialMedia] LinkedIn token validation failed:', err.response.data);
+    } else {
+      console.error('[SocialMedia] LinkedIn token validation failed:', err.message);
+    }
+    return false;
+  }
+}
+
+/**
  * Gets the LinkedIn person ID using the API
  * @param token LinkedIn API access token
  */
@@ -36,16 +93,31 @@ async function postToLinkedIn(job: SocialMediaJob): Promise<boolean> {
   try {
     // Use environment variables for Firebase Functions v2
     const LINKEDIN_ACCESS_TOKEN = process.env.LINKEDIN_ACCESS_TOKEN;
+    
+    if (!LINKEDIN_ACCESS_TOKEN) {
+      console.error('[SocialMedia] LinkedIn access token not configured');
+      return false;
+    }
+    
     if (!job.title || !job.companyName) {
       console.error(`[SocialMedia] Cannot post job ${job.id} to LinkedIn: Missing title or companyName`);
       return false;
+    }    // Validate token has required scopes (openid, profile, w_member_social, email)
+    const tokenValid = await validateLinkedInToken(LINKEDIN_ACCESS_TOKEN);
+    if (!tokenValid) {
+      console.error(
+        '[SocialMedia] LinkedIn token validation failed - required scopes: ' +
+        'openid, profile, w_member_social, email'
+      );
+      return false;
     }
+    
     // Use custom message if present, else build default
     const postText = job.shortDescription ||
       `🚀 New job: ${job.title}\nCompany: ${job.companyName}` +
       (job.location ? `\nLocation: ${job.location}` : '') +
       (job.salary ? `\nSalary: ${job.salary}` : '') +
-      `\n\nSee details: https://gate33.io/jobs/${job.id}`;
+      `\n\nSee details: https://gate33.net/jobs/${job.id}`;
     const hasMedia = !!job.mediaUrl;
 
     // Fetch personId dynamically

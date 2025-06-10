@@ -42,32 +42,32 @@ console.log("================================================================");
 // Salvando todas as URLs para criar um HTML
 const urls = [];
 
-// URL 1: Apenas compartilhamento (perfil pessoal)
+// URL 1: Compartilhamento com scopes completos (perfil pessoal)
 urls.push({
-  description: "TESTE 1 - Compartilhamento como Perfil Pessoal",
-  scope: "w_member_social",
-  url: generateAuthUrl("w_member_social", "TESTE 1 - Compartilhamento como Perfil Pessoal")
+  description: "TESTE 1 - Compartilhamento como Perfil Pessoal (Scopes Completos)",
+  scope: "openid profile w_member_social email",
+  url: generateAuthUrl("openid profile w_member_social email", "TESTE 1 - Compartilhamento como Perfil Pessoal (Scopes Completos)")
 });
 
-// URL 2: Página de Empresa (Leitura)
+// URL 2: Página de Empresa (Leitura) com scopes completos
 urls.push({
-  description: "TESTE 2 - Leitura da Página de Empresa",
-  scope: "r_organization_social",
-  url: generateAuthUrl("r_organization_social", "TESTE 2 - Leitura da Página de Empresa")
+  description: "TESTE 2 - Leitura da Página de Empresa (Scopes Completos)",
+  scope: "openid profile email r_organization_social",
+  url: generateAuthUrl("openid profile email r_organization_social", "TESTE 2 - Leitura da Página de Empresa (Scopes Completos)")
 });
 
-// URL 3: Página de Empresa (Escrita/Posting)
+// URL 3: Página de Empresa (Escrita/Posting) com scopes completos
 urls.push({
-  description: "TESTE 3 - Postagem na Página de Empresa",
-  scope: "w_organization_social",
-  url: generateAuthUrl("w_organization_social", "TESTE 3 - Postagem na Página de Empresa")
+  description: "TESTE 3 - Postagem na Página de Empresa (Scopes Completos)",
+  scope: "openid profile email w_organization_social",
+  url: generateAuthUrl("openid profile email w_organization_social", "TESTE 3 - Postagem na Página de Empresa (Scopes Completos)")
 });
 
-// URL 4: COMPLETO para Página de Empresa (IDEAL)
+// URL 4: COMPLETO para Página de Empresa (IDEAL) com todos os scopes
 urls.push({
-  description: "TESTE 4 - EMPRESA (COMPLETO E IDEAL)",
-  scope: "r_organization_social w_organization_social",
-  url: generateAuthUrl("r_organization_social w_organization_social", "TESTE 4 - EMPRESA (COMPLETO E IDEAL)")
+  description: "TESTE 4 - EMPRESA (COMPLETO E IDEAL) - Todos os Scopes",
+  scope: "openid profile email r_organization_social w_organization_social",
+  url: generateAuthUrl("openid profile email r_organization_social w_organization_social", "TESTE 4 - EMPRESA (COMPLETO E IDEAL) - Todos os Scopes")
 });
 
 console.log("\n📋 INSTRUÇÕES:");

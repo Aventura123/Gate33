@@ -1,5 +1,28 @@
 /* Gate33 Index Page Styles */
 
+/* Custom color classes for #F97316 */
+.text-gate33-orange {
+  color: #F97316 !important;
+}
+
+.bg-gate33-orange {
+  background-color: #F97316 !important;
+}
+
+.bg-gate33-orange:hover {
+  background-color: #E8640F !important;
+}
+
+.gate33-btn {
+  background-color: #F97316;
+  color: white;
+  transition: background-color 0.2s ease;
+}
+
+.gate33-btn:hover {
+  background-color: #E8640F;
+}
+
 /* Background image styles - Fixed Background */
 .bg-portal-image {
   object-fit: cover;
@@ -80,50 +103,6 @@ body {
   box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
   transform: translateY(-3px);
   border-color: #fb923c;
-}
-
-/* Efeito sutil de luz pulsante nos cards */
-@keyframes pulse-glow {
-  0% { opacity: 0.3; }
-  50% { opacity: 0.5; }
-  100% { opacity: 0.3; }
-}
-
-/* Animação melhorada para os pontinhos de luz - acende no hover */
-@keyframes light-dots-glow {
-  0% { 
-    opacity: 0.8; 
-    transform: scale(1);
-    box-shadow: 0 0 8px rgba(249, 115, 22, 0.9), 0 0 16px rgba(249, 115, 22, 0.5);
-  }
-  50% { 
-    opacity: 1; 
-    transform: scale(1.2);
-    box-shadow: 0 0 12px rgba(249, 115, 22, 1), 0 0 24px rgba(249, 115, 22, 0.7);
-  }
-  100% { 
-    opacity: 0.8; 
-    transform: scale(1);
-    box-shadow: 0 0 8px rgba(249, 115, 22, 0.9), 0 0 16px rgba(249, 115, 22, 0.5);
-  }
-}
-
-/* Aplicar animação aos pontinhos de luz apenas no hover */
-.card-orange-glow:hover .group-hover\\:animate-pulse {
-  animation: light-dots-glow 1s infinite ease-in-out !important;
-}
-
-/* Animation delays for light dots */
-.light-dot-delay-0 {
-  animation-delay: 0s;
-}
-
-.light-dot-delay-200 {
-  animation-delay: 0.2s;
-}
-
-.light-dot-delay-400 {
-  animation-delay: 0.4s;
 }
 
 /* Fallback para dispositivos móveis onde background-attachment: fixed pode ter problemas */

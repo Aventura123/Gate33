@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ContactForm from '../components/ContactForm';
@@ -31,7 +31,7 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
         onClick={() => setIsOpen(!isOpen)}
       >
         {question}
-        <span className="text-orange-500 text-xl">{isOpen ? '-' : '+'}</span>
+        <span className="text-gate33-orange text-xl">{isOpen ? '-' : '+'}</span>
       </div>
       <div
         className={`faq-answer ${isOpen ? 'open' : ''}`}
@@ -49,12 +49,20 @@ function Home() {
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistLoading, setWaitlistLoading] = useState(false);
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
+  const carouselRef = useRef<HTMLDivElement>(null);
   const [waitlistError, setWaitlistError] = useState("");
   const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
     fetchPartners();
   }, []);
+
+  // Set carousel width after partners are loaded
+  useEffect(() => {
+    if (carouselRef.current && partners.length > 3) {
+      carouselRef.current.style.width = `${partners.length * 340}px`;
+    }
+  }, [partners]);
 
   const fetchPartners = async () => {
     setLoading(true);
@@ -120,12 +128,12 @@ function Home() {
           {/* Título principal alinhado à esquerda */}
           <h1 className="font-bold text-white mb-2 tracking-wide">
             <span className="text-3xl md:text-6xl block mb-2">YOUR GATEWAY TO TRUSTED</span>
-            <span className="text-orange-700 text-2xl md:text-5xl font-extrabold block mt-1">WEB3 OPPORTUNITIES</span>
+            <span className="text-gate33-orange text-2xl md:text-5xl font-extrabold block mt-1">WEB3 OPPORTUNITIES</span>
           </h1>
           {/* Subtítulo alinhado à esquerda */}
           <p className="text-base md:text-lg text-gray-200 mb-10 mt-6 max-w-2xl">
             Hire, Get Hired, Learn and Build Smarter<br />
-            <span className="text-orange-700 font-semibold">Verified. Secure. Web3-Native.</span>
+            <span className="text-gate33-orange font-semibold">Verified. Secure. Web3-Native.</span>
           </p>
           {/* Section Cards exatamente como na imagem */}
           <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-8 mt-14 max-w-7xl">
@@ -139,14 +147,14 @@ function Home() {
               </div>
               <div className="mb-4 text-center">
                 <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR BUILDERS</span>
-                <h3 className="text-orange-500 font-medium text-base mb-3">Hire or Get Hired</h3>
+                <h3 className="text-gate33-orange font-medium text-base mb-3">Hire or Get Hired</h3>
                 <p className="text-gray-300 text-sm leading-relaxed mb-3">
-                  Access <span className="text-orange-500 font-medium">trusted</span> Web3 jobs or post roles with<br />
-                  <span className="text-orange-500 font-medium">escrow protection</span>. Build the future, <span className="text-orange-500 font-medium">securely</span>.
+                  Access <span className="text-gate33-orange font-medium">trusted</span> Web3 jobs or post roles with<br />
+                  <span className="text-gate33-orange font-medium">escrow protection</span>. Build the future, <span className="text-gate33-orange font-medium">securely</span>.
                 </p>
               </div>
               <div className="flex gap-3 justify-center mb-3">
-                <Link href="/jobs" className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+                <Link href="/jobs" className="gate33-btn text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
                   Find Jobs
                 </Link>
                 <span className="text-white mx-1">or</span>
@@ -165,14 +173,14 @@ function Home() {
               </div>
               <div className="mb-4 text-center">
                 <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR HODLERS</span>
-                <h3 className="text-orange-500 font-medium text-base mb-3">Use Crypto Tools</h3>
+                <h3 className="text-gate33-orange font-medium text-base mb-3">Use Crypto Tools</h3>
                 <p className="text-gray-300 text-sm leading-relaxed mb-3">
-                  Analyze the market with <span className="text-orange-500 font-medium">AI-powered tools</span> and<br />
-                  insights. Make informed decisions, <span className="text-orange-500 font-medium">faster</span>.
+                  Analyze the market with <span className="text-gate33-orange font-medium">AI-powered tools</span> and<br />
+                  insights. Make informed decisions, <span className="text-gate33-orange font-medium">faster</span>.
                 </p>
               </div>
               <div className="flex justify-center mb-3">
-                <Link href="/crypto-tools" className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+                <Link href="/crypto-tools" className="gate33-btn text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
                   Explore Crypto Tools
                 </Link>
               </div>
@@ -187,13 +195,13 @@ function Home() {
               </div>
               <div className="mb-4 text-center">
                 <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR EXPLORERS</span>
-                <h3 className="text-orange-500 font-medium text-base mb-3">Learn 2 Earn</h3>
+                <h3 className="text-gate33-orange font-medium text-base mb-3">Learn 2 Earn</h3>
                 <p className="text-gray-300 text-sm leading-relaxed mb-3">
-                  Take <span className="text-orange-500 font-medium">Web3 Learn2Earn</span> and <span className="text-orange-500 font-medium">earn token rewards</span>. Grow your knowledge, grow your portfolio.
+                  Take <span className="text-gate33-orange font-medium">Web3 Learn2Earn</span> and <span className="text-gate33-orange font-medium">earn token rewards</span>. Grow your knowledge, grow your portfolio.
                 </p>
               </div>
               <div className="flex justify-center mb-3">
-                <Link href="/learn2earn" className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+                <Link href="/learn2earn" className="gate33-btn text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
                   Start Learning
                 </Link>
               </div>
@@ -201,7 +209,7 @@ function Home() {
           </div>
           {/* EVEN MORE...COMING SOON Section com alinhamento centrado */}
           <div className="w-full mt-14 mb-6">
-            <div className="coming-soon-card bg-orange-500 rounded-2xl py-8 px-8 shadow-lg relative overflow-hidden w-full text-center">
+            <div className="coming-soon-card bg-gate33-orange rounded-2xl py-8 px-8 shadow-lg relative overflow-hidden w-full text-center">
               <h2 className="text-3xl font-bold text-white py-2 mb-2">EVEN MORE...COMING SOON</h2>
               <p className="text-white text-lg leading-relaxed pb-3 mx-auto max-w-xl mb-4">
                 We're developing groundbreaking features that will transform how talent connects with opportunities.
@@ -217,7 +225,7 @@ function Home() {
                     disabled={waitlistLoading || waitlistSuccess}
                   />
                   <button
-                    className="waitlist-btn-orange bg-orange-500 text-white py-2.5 px-6 rounded-full hover:bg-orange-600 transition-colors font-semibold text-base shadow-md border-2 border-white/30 focus:outline-none focus:ring-2 focus:ring-white whitespace-nowrap flex-shrink-0"
+                    className="waitlist-btn-orange gate33-btn text-white py-2.5 px-6 rounded-full transition-colors font-semibold text-base shadow-md border-2 border-white/30 focus:outline-none focus:ring-2 focus:ring-white whitespace-nowrap flex-shrink-0"
                     onClick={handleWaitlistSubscribe}
                     disabled={waitlistLoading || waitlistSuccess}
                   >
@@ -237,35 +245,35 @@ function Home() {
         <section id="about" className="about py-20 text-center px-4 relative overflow-hidden">
           <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-orange-500 mb-8">Why Choose Gate33?</h2>
+            <h2 className="text-3xl font-bold text-gate33-orange mb-8">Why Choose Gate33?</h2>
             <p className="text-gray-200 mb-10 max-w-5xl mx-auto text-base leading-relaxed">
               We offer a secure environment where verified companies post genuine job opportunities and qualified candidates can 
               find real opportunities. Our platform uses blockchain technology to ensure greater transparency and security throughout the process.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-left mt-10 px-5 max-w-6xl mx-auto">
               <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-                <h3 className="text-xl text-orange-500 mb-4">Verified Companies</h3>
+                <h3 className="text-xl text-gate33-orange mb-4">Verified Companies</h3>
                 <p className="text-gray-200 text-sm">
                   All companies on our platform undergo a rigorous verification process to ensure 
                   legitimacy and reliability in job postings.
                 </p>
               </div>
               <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-                <h3 className="text-xl text-orange-500 mb-4">Quality Opportunities</h3>
+                <h3 className="text-xl text-gate33-orange mb-4">Quality Opportunities</h3>
                 <p className="text-gray-200 text-sm">
                   Curated high-quality job listings with detailed descriptions, clear benefits, and 
                   transparent selection processes.
                 </p>
               </div>
               <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-                <h3 className="text-xl text-orange-500 mb-4">Data Security</h3>
+                <h3 className="text-xl text-gate33-orange mb-4">Data Security</h3>
                 <p className="text-gray-200 text-sm">
                   Our platform prioritizes the protection of your personal information with 
                   advanced security measures to keep your profile and application data safe.
                 </p>
               </div>
               <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-                <h3 className="text-xl text-orange-500 mb-4">Learn2Earn</h3>
+                <h3 className="text-xl text-gate33-orange mb-4">Learn2Earn</h3>
                 <p className="text-gray-200 text-sm">
                   Enhance your skills and earn rewards by participating in our Learn2Earn program, 
                   where learning converts into real opportunities.
@@ -278,14 +286,14 @@ function Home() {
         <section id="services" className="services py-20 text-center px-4 relative">
           <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-orange-500 mb-8">Our Services</h2>
+            <h2 className="text-3xl font-bold text-gate33-orange mb-8">Our Services</h2>
             <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
               Gate33 offers a complete platform to connect companies and candidates securely and efficiently.
             </p>
             <div className="services-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               <div className="service-card bg-black/80 rounded-lg p-8 text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
                 <div className="service-icon text-orange-500 text-5xl mb-4">🔎</div>
-                <h3 className="text-xl text-orange-500 mb-4">For Job Seekers</h3>
+                <h3 className="text-xl text-gate33-orange mb-4">For Job Seekers</h3>
                 <p className="text-gray-200 text-sm mb-4 text-left">
                   Access quality jobs from verified companies, create a standout professional profile, and 
                   track your applications in one place.
@@ -294,7 +302,7 @@ function Home() {
               </div>
               <div className="service-card bg-black/80 rounded-lg p-8 text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
                 <div className="service-icon text-orange-500 text-5xl mb-4">💼</div>
-                <h3 className="text-xl text-orange-500 mb-4">For Companies</h3>
+                <h3 className="text-xl text-gate33-orange mb-4">For Companies</h3>
                 <p className="text-gray-200 text-sm mb-4 text-left">
                   Post jobs for qualified professionals, manage applications, and maintain a 
                   corporate profile that highlights your culture and values.
@@ -303,7 +311,7 @@ function Home() {
               </div>
               <div className="service-card bg-black/80 rounded-lg p-8 text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
                 <div className="service-icon text-orange-500 text-5xl mb-4">🧠</div>
-                <h3 className="text-xl text-orange-500 mb-4">Learn2Earn</h3>
+                <h3 className="text-xl text-gate33-orange mb-4">Learn2Earn</h3>
                 <p className="text-gray-200 text-sm mb-4 text-left">
                   Participate in educational programs offered by partner companies, learn new 
                   skills, and receive token rewards for completing courses.
@@ -317,7 +325,7 @@ function Home() {
         <section id="jobs" className="jobs py-20 text-center px-4 relative">
           <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-orange-500 mb-8">Featured Jobs</h2>
+            <h2 className="text-3xl font-bold text-gate33-orange mb-8">Featured Jobs</h2>
             <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
               Explore some of the current opportunities available on our platform.
             </p>
@@ -357,7 +365,7 @@ function Home() {
               </div>
             </div>
             <div className="mt-10">
-              <Link href="/jobs" className="bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-all hover:bg-orange-600 border-none shadow-lg hover:shadow-xl">
+              <Link href="/jobs" className="gate33-btn text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-all border-none shadow-lg hover:shadow-xl">
                 View all jobs
               </Link>
             </div>
@@ -367,7 +375,7 @@ function Home() {
         <section id="companies" className="companies py-20 text-center px-4 relative">
           <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-orange-500 mb-8">Trusted Companies</h2>
+            <h2 className="text-3xl font-bold text-gate33-orange mb-8">Trusted Companies</h2>
             <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
               All companies on our platform undergo a verification process to ensure a safe environment for candidates.
             </p>
@@ -400,7 +408,7 @@ function Home() {
         <section id="partners" className="partners py-20 text-center px-4 relative">
           <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-orange-500 mb-8">Our Strategic Partners</h2>
+            <h2 className="text-3xl font-bold text-gate33-orange mb-8">Our Strategic Partners</h2>
             <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
               Gate33 has established strategic partnerships with leading organizations in the blockchain, technology, and recruitment sectors. These collaborations enable us to provide enhanced services, cutting-edge solutions, and expanded opportunities for our community.
             </p>
@@ -438,7 +446,10 @@ function Home() {
                 ) : (
                   // Scrolling carousel when more than 3 partners
                   <div className="partners-scroll-container overflow-x-auto overflow-y-hidden">
-                    <div className="flex gap-8 pb-4" style={{ width: `${partners.length * 340}px` }}>
+                    <div 
+                      ref={carouselRef}
+                      className="flex gap-8 pb-4"
+                    >
                       {partners.map((partner) => (
                         <div key={partner.id} className="partner-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all shadow-lg flex-shrink-0 w-80">
                           <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
@@ -484,13 +495,13 @@ function Home() {
         <section id="contact" className="contact py-20 text-center px-4 relative">
           <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-orange-500 mb-6">Contact Us</h2>
+            <h2 className="text-3xl font-bold text-gate33-orange mb-6">Contact Us</h2>
             <p className="text-gray-200 max-w-xl mx-auto mb-10 text-base leading-relaxed">
               Have a question or need help? Contact us and we'll respond as quickly as possible.
             </p>
             <button
               onClick={() => setShowContactModal(true)}
-              className="bg-orange-500 text-white py-2.5 px-8 rounded-full hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl font-medium"
+              className="gate33-btn text-white py-2.5 px-8 rounded-full transition-colors shadow-lg hover:shadow-xl font-medium"
             >
               Get in Touch
             </button>
@@ -500,7 +511,7 @@ function Home() {
         <section id="faq" className="faq py-20 px-4 relative">
           <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-orange-500 mb-10 text-center">Frequently Asked Questions</h2>
+            <h2 className="text-3xl font-bold text-gate33-orange mb-10 text-center">Frequently Asked Questions</h2>
             <div className="faq-container max-w-4xl mx-auto bg-black/80 rounded-xl border border-orange-500/10 p-6 shadow-lg">
               <FAQItem
                 question="How does Gate33 ensure companies are trustworthy?"
