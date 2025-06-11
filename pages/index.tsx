@@ -136,8 +136,19 @@ function Home() {
             <span className="text-gate33-orange font-semibold">Verified. Secure. Web3-Native.</span>
           </p>
           {/* Section Cards com alinhamento aos limites do cartão laranja */}
-          <div className="w-full mt-14 mb-6">
-            <div className="bg-transparent rounded-2xl py-8 relative overflow-hidden w-full max-w-6xl mx-auto">
+          <div className="w-full mt-14 mb-6 relative">
+            {/* Logo 3D G33 - Posicionado à esquerda, 3x maior e animado */}
+            <div className="hidden lg:block absolute left-[-150px] top-[-390px] z-0">
+              <Image
+                src="/images/3a1c587e459142a944acdb0e7aa6e10e2d631aab.png"
+                alt="Gate33 3D Logo"
+                width={1300}
+                height={1300}
+                className="opacity-40 drop-shadow-2xl animate-pulse"
+                priority
+              />
+            </div>
+            <div className="bg-transparent rounded-2xl py-8 relative overflow-visible w-full max-w-6xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 h-full w-full">
                 {/* For Builders Section - Alinhado à esquerda */}
                 <div className="flex justify-start">
