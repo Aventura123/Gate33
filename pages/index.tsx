@@ -135,23 +135,26 @@ function Home() {
             Hire, Get Hired, Learn and Build Smarter<br />
             <span className="text-gate33-orange font-semibold">Verified. Secure. Web3-Native.</span>
           </p>
-          {/* Section Cards exatamente como na imagem */}
-          <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-8 mt-14 max-w-7xl">
-            {/* For Builders Section */}
-            <div className="rounded-2xl card-orange-glow card-builders p-6 relative overflow-hidden group aspect-[5/3] flex flex-col justify-between">
+          {/* Section Cards com alinhamento aos limites do cartão laranja */}
+          <div className="w-full mt-14 mb-6">
+            <div className="bg-transparent rounded-2xl py-8 relative overflow-hidden w-full max-w-6xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 h-full w-full">
+                {/* For Builders Section - Alinhado à esquerda */}
+                <div className="flex justify-start">
+                  <div className="rounded-2xl card-orange-glow card-builders p-5 h-auto flex flex-col justify-between w-[95%] group overflow-hidden">
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>
-              <div className="mb-4 text-center">
+              <div className="mb-2 text-center">
                 <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR BUILDERS</span>
-                <h3 className="text-gate33-orange font-medium text-base mb-3">Hire or Get Hired</h3>
-                <p className="text-gray-300 text-sm leading-relaxed mb-3">
+                <h3 className="text-gate33-orange font-medium text-base mb-2">Hire or Get Hired</h3>
+                <p className="text-gray-300 text-sm leading-relaxed mb-2">
                   Access <span className="text-gate33-orange font-medium">trusted</span> Web3 jobs or post roles with<br />
                   <span className="text-gate33-orange font-medium">escrow protection</span>. Build the future, <span className="text-gate33-orange font-medium">securely</span>.
                 </p>
               </div>
-              <div className="flex gap-3 justify-center mb-3">
+              <div className="flex gap-3 justify-center mb-2">
                 <Link href="/jobs" className="gate33-btn text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
                   Find Jobs
                 </Link>
@@ -160,50 +163,57 @@ function Home() {
                   Post Jobs
                 </Link>
               </div>
-            </div>
-            {/* For Hodlers Section */}
-            <div className="rounded-2xl card-orange-glow card-hodlers p-6 relative overflow-hidden group aspect-[5/3] flex flex-col justify-between">
+                  </div>
+                </div>
+                {/* For Hodlers Section - Centralizado */}
+                <div className="flex justify-center">
+                  <div className="rounded-2xl card-orange-glow card-hodlers p-5 h-auto flex flex-col justify-between w-[95%] group overflow-hidden">
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>
-              <div className="mb-4 text-center">
+              <div className="mb-2 text-center">
                 <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR HODLERS</span>
-                <h3 className="text-gate33-orange font-medium text-base mb-3">Use Crypto Tools</h3>
-                <p className="text-gray-300 text-sm leading-relaxed mb-3">
+                <h3 className="text-gate33-orange font-medium text-base mb-2">Use Crypto Tools</h3>
+                <p className="text-gray-300 text-sm leading-relaxed mb-2">
                   Analyze the market with <span className="text-gate33-orange font-medium">AI-powered tools</span> and<br />
                   insights. Make informed decisions, <span className="text-gate33-orange font-medium">faster</span>.
                 </p>
               </div>
-              <div className="flex justify-center mb-3">
+              <div className="flex justify-center mb-2">
                 <Link href="/crypto-tools" className="gate33-btn text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
                   Explore Crypto Tools
                 </Link>
               </div>
-            </div>
-            {/* For Explorers Section */}
-            <div className="rounded-2xl card-orange-glow card-explorers p-6 relative overflow-hidden group aspect-[5/3] flex flex-col justify-between">
+                  </div>
+                </div>
+                {/* For Explorers Section - Alinhado à direita */}
+                <div className="flex justify-end">
+                  <div className="rounded-2xl card-orange-glow card-explorers p-5 h-auto flex flex-col justify-between w-[95%] group overflow-hidden">
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>
-              <div className="mb-4 text-center">
+              <div className="mb-2 text-center">
                 <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR EXPLORERS</span>
-                <h3 className="text-gate33-orange font-medium text-base mb-3">Learn 2 Earn</h3>
-                <p className="text-gray-300 text-sm leading-relaxed mb-3">
+                <h3 className="text-gate33-orange font-medium text-base mb-2">Learn 2 Earn</h3>
+                <p className="text-gray-300 text-sm leading-relaxed mb-2">
                   Take <span className="text-gate33-orange font-medium">Web3 Learn2Earn</span> and <span className="text-gate33-orange font-medium">earn token rewards</span>. Grow your knowledge, grow your portfolio.
                 </p>
               </div>
-              <div className="flex justify-center mb-3">
+              <div className="flex justify-center mb-2">
                 <Link href="/learn2earn" className="gate33-btn text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
                   Start Learning
                 </Link>
+              </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
           {/* EVEN MORE...COMING SOON Section com alinhamento centrado */}
           <div className="w-full mt-14 mb-6">
-            <div className="coming-soon-card bg-gate33-orange rounded-2xl py-8 px-8 shadow-lg relative overflow-hidden w-full text-center">
+            <div className="coming-soon-card bg-gate33-orange rounded-2xl py-8 px-8 shadow-lg relative overflow-hidden w-full max-w-6xl mx-auto text-center">
               <h2 className="text-3xl font-bold text-white py-2 mb-2">EVEN MORE...COMING SOON</h2>
               <p className="text-white text-lg leading-relaxed pb-3 mx-auto max-w-xl mb-4">
                 We're developing groundbreaking features that will transform how talent connects with opportunities.
@@ -285,7 +295,7 @@ function Home() {
               Gate33 offers a complete platform to connect companies and candidates securely and efficiently.
             </p>
             <div className="services-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              <div className="service-card bg-black/80 rounded-lg p-8 text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
+              <div className="service-card bg-black/80 rounded-lg p-7 h-40 max-w-xs min-h-[160px] text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
                 <div className="service-icon text-orange-500 text-5xl mb-4">🔎</div>
                 <h3 className="text-xl text-gate33-orange mb-4">For Job Seekers</h3>
                 <p className="text-gray-200 text-sm mb-4 text-left">
@@ -294,7 +304,7 @@ function Home() {
                 </p>
                 <Link href="/seeker-signup" className="text-orange-400 text-sm hover:underline">Register as a job seeker →</Link>
               </div>
-              <div className="service-card bg-black/80 rounded-lg p-8 text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
+              <div className="service-card bg-black/80 rounded-lg p-7 h-40 max-w-xs min-h-[160px] text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
                 <div className="service-icon text-orange-500 text-5xl mb-4">💼</div>
                 <h3 className="text-xl text-gate33-orange mb-4">For Companies</h3>
                 <p className="text-gray-200 text-sm mb-4 text-left">
@@ -303,7 +313,7 @@ function Home() {
                 </p>
                 <Link href="/company-register" className="text-orange-400 text-sm hover:underline">Register as a company →</Link>
               </div>
-              <div className="service-card bg-black/80 rounded-lg p-8 text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
+              <div className="service-card bg-black/80 rounded-lg p-7 h-40 max-w-xs min-h-[160px] text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
                 <div className="service-icon text-orange-500 text-5xl mb-4">🧠</div>
                 <h3 className="text-xl text-gate33-orange mb-4">Learn2Earn</h3>
                 <p className="text-gray-200 text-sm mb-4 text-left">
