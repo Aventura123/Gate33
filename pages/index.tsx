@@ -138,12 +138,12 @@ function Home() {
           {/* Section Cards com alinhamento aos limites do cartão laranja */}
           <div className="w-full mt-14 mb-6 relative">
             {/* Logo 3D G33 - Posicionado à esquerda, 3x maior e animado */}
-            <div className="hidden lg:block absolute left-[-150px] top-[-390px] z-0">
+            <div className="hidden lg:block absolute left-[-1px] top-[-300px] z-0">
               <Image
                 src="/images/3a1c587e459142a944acdb0e7aa6e10e2d631aab.png"
                 alt="Gate33 3D Logo"
-                width={1300}
-                height={1300}
+                width={1100}
+                height={1100}
                 className="opacity-40 drop-shadow-2xl logo3d-animation"
                 priority
               />
