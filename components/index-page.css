@@ -1,5 +1,22 @@
 /* Gate33 Index Page Styles */
 
+/* Animação personalizada para o logo 3D */
+@keyframes logo3d-float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(80px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.logo3d-animation {
+  animation: logo3d-float 8s ease-in-out infinite;
+}
+
 /* Custom color classes for #EA580C */
 .text-gate33-orange {
   color: #EA580C !important;

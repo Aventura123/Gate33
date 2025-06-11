@@ -144,7 +144,7 @@ function Home() {
                 alt="Gate33 3D Logo"
                 width={1300}
                 height={1300}
-                className="opacity-40 drop-shadow-2xl animate-pulse"
+                className="opacity-40 drop-shadow-2xl logo3d-animation"
                 priority
               />
             </div>
