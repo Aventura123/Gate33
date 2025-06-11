@@ -25,7 +25,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // Function to get menu item styling with active state
   const getMenuItemClasses = (path: string) => {
-    const baseClasses = "block px-4 py-2 text-sm transition-all duration-200 relative";
+    const baseClasses = "block px-4 py-2 text-base font-verdana font-normal leading-[24px] tracking-normal uppercase transition-all duration-200 relative";
     const activeClasses = "text-white border-l-2 border-orange-500 bg-orange-500/10";
     const inactiveClasses = "text-gray-300 hover:text-white hover:border-l-2 hover:border-orange-500 hover:bg-orange-500/5";
     
@@ -137,7 +137,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="layout">
       {/* Header */}
-      <header className="site-header w-full text-white fixed top-0 left-0 z-50">
+      <header className="site-header w-full text-white fixed top-0 left-0 z-50 bg-black/30 backdrop-blur-sm">
         <div className="w-full flex justify-between items-center py-4 px-6">
           <a href="/" className="logo flex items-center">
             <img src="/images/GATE33-LOGO-wordmark.png" alt="Gate33 Logo" className="h-6" />
@@ -162,12 +162,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               onMouseEnter={handleJobsEnter}
               onMouseLeave={handleJobsLeave}
             >
-              <button className="flex items-center gap-1 hover:text-orange-500 transition-colors">
+              <button className="flex items-center gap-1 hover:text-orange-500 transition-colors font-verdana text-sm font-bold leading-[18px] tracking-normal text-center">
                 JOBS
-                <span className="text-orange-500">▲</span>
+                <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
               </button>
               {jobsDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/90 border border-gray-700 rounded-lg shadow-lg min-w-[200px] z-50 backdrop-blur-sm"
+                <div className="absolute top-full left-0 mt-1 bg-black/80 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-md"
                   onMouseEnter={handleJobsEnter}
                   onMouseLeave={handleJobsLeave}
                 >
@@ -187,12 +187,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               onMouseEnter={handleToolsEnter}
               onMouseLeave={handleToolsLeave}
             >
-              <button className="flex items-center gap-1 hover:text-orange-500 transition-colors">
+              <button className="flex items-center gap-1 hover:text-orange-500 transition-colors font-verdana text-sm font-bold leading-[18px] tracking-normal text-center">
                 TOOLS
-                <span className="text-orange-500">▼</span>
+                <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
               </button>
               {toolsDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/90 border border-gray-700 rounded-lg shadow-lg min-w-[200px] z-50 backdrop-blur-sm"
+                <div className="absolute top-full left-0 mt-1 bg-black/80 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-md"
                   onMouseEnter={handleToolsEnter}
                   onMouseLeave={handleToolsLeave}
                 >
@@ -210,12 +210,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               onMouseEnter={handleLearnEnter}
               onMouseLeave={handleLearnLeave}
             >
-              <button className="flex items-center gap-1 hover:text-orange-500 transition-colors">
+              <button className="flex items-center gap-1 hover:text-orange-500 transition-colors font-verdana text-sm font-bold leading-[18px] tracking-normal text-center">
                 LEARN
-                <span className="text-orange-500">▼</span>
+                <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
               </button>
               {learnDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/90 border border-gray-700 rounded-lg shadow-lg min-w-[200px] z-50 backdrop-blur-sm"
+                <div className="absolute top-full left-0 mt-1 bg-black/80 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-md"
                   onMouseEnter={handleLearnEnter}
                   onMouseLeave={handleLearnLeave}
                 >

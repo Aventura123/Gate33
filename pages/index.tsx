@@ -126,24 +126,22 @@ function Home() {
       <section className="hero-section-fixed-bg relative flex flex-col justify-center min-h-[90vh] px-4 py-16 overflow-hidden">
         <div className="hero-content w-full max-w-6xl mx-auto flex flex-col pt-20">
           {/* Título principal alinhado à esquerda */}
-          <h1 className="font-bold text-white mb-2 tracking-wide">
-            <span className="text-3xl md:text-6xl block mb-2">YOUR GATEWAY TO TRUSTED</span>
-            <span className="text-gate33-orange text-2xl md:text-5xl font-extrabold block mt-1">WEB3 OPPORTUNITIES</span>
+          <h1 className="font-verdana font-bold text-white mb-2 tracking-normal uppercase">
+            <span className="text-[42px] leading-[40px] block mb-2">YOUR GATEWAY TO TRUSTED</span>
+            <span className="text-gate33-orange text-[42px] leading-[40px] font-bold block mt-1">WEB3 OPPORTUNITIES</span>
           </h1>
           {/* Subtítulo alinhado à esquerda */}
-          <p className="text-base md:text-lg text-gray-200 mb-10 mt-6 max-w-2xl">
+          <p className="font-verdana font-normal text-xl md:text-2xl text-gray-200 mb-10 mt-6 max-w-2xl">
             Hire, Get Hired, Learn and Build Smarter<br />
             <span className="text-gate33-orange font-semibold">Verified. Secure. Web3-Native.</span>
           </p>
           {/* Section Cards exatamente como na imagem */}
           <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-8 mt-14 max-w-7xl">
             {/* For Builders Section */}
-            <div className="rounded-2xl card-orange-glow p-6 relative overflow-hidden group aspect-[5/3] flex flex-col justify-between">
-              {/* Pontinhos de luz dentro do cartão no topo */}
-              <div className="absolute top-3 left-1/2 transform -translate-x-1/2 flex space-x-1 z-10 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="w-1.5 h-1.5 bg-orange-400 rounded-full shadow-md shadow-orange-400/50 group-hover:animate-pulse light-dot-delay-0"></div>
-                <div className="w-2 h-2 bg-orange-500 rounded-full shadow-md shadow-orange-500/50 group-hover:animate-pulse light-dot-delay-200"></div>
-                <div className="w-1.5 h-1.5 bg-orange-400 rounded-full shadow-md shadow-orange-400/50 group-hover:animate-pulse light-dot-delay-400"></div>
+            <div className="rounded-2xl card-orange-glow card-builders p-6 relative overflow-hidden group aspect-[5/3] flex flex-col justify-between">
+              {/* Barra LED horizontal no topo */}
+              <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
+                <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>
               <div className="mb-4 text-center">
                 <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR BUILDERS</span>
@@ -164,12 +162,10 @@ function Home() {
               </div>
             </div>
             {/* For Hodlers Section */}
-            <div className="rounded-2xl card-orange-glow p-6 relative overflow-hidden group aspect-[5/3] flex flex-col justify-between">
-              {/* Pontinhos de luz dentro do cartão no topo */}
-              <div className="absolute top-3 left-1/2 transform -translate-x-1/2 flex space-x-1 z-10 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="w-1.5 h-1.5 bg-orange-400 rounded-full shadow-md shadow-orange-400/50 group-hover:animate-pulse light-dot-delay-0"></div>
-                <div className="w-2 h-2 bg-orange-500 rounded-full shadow-md shadow-orange-500/50 group-hover:animate-pulse light-dot-delay-200"></div>
-                <div className="w-1.5 h-1.5 bg-orange-400 rounded-full shadow-md shadow-orange-400/50 group-hover:animate-pulse light-dot-delay-400"></div>
+            <div className="rounded-2xl card-orange-glow card-hodlers p-6 relative overflow-hidden group aspect-[5/3] flex flex-col justify-between">
+              {/* Barra LED horizontal no topo */}
+              <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
+                <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>
               <div className="mb-4 text-center">
                 <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR HODLERS</span>
@@ -186,12 +182,10 @@ function Home() {
               </div>
             </div>
             {/* For Explorers Section */}
-            <div className="rounded-2xl card-orange-glow p-6 relative overflow-hidden group aspect-[5/3] flex flex-col justify-between">
-              {/* Pontinhos de luz dentro do cartão no topo */}
-              <div className="absolute top-3 left-1/2 transform -translate-x-1/2 flex space-x-1 z-10 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="w-1.5 h-1.5 bg-orange-400 rounded-full shadow-md shadow-orange-400/50 group-hover:animate-pulse light-dot-delay-0"></div>
-                <div className="w-2 h-2 bg-orange-500 rounded-full shadow-md shadow-orange-500/50 group-hover:animate-pulse light-dot-delay-200"></div>
-                <div className="w-1.5 h-1.5 bg-orange-400 rounded-full shadow-md shadow-orange-400/50 group-hover:animate-pulse light-dot-delay-400"></div>
+            <div className="rounded-2xl card-orange-glow card-explorers p-6 relative overflow-hidden group aspect-[5/3] flex flex-col justify-between">
+              {/* Barra LED horizontal no topo */}
+              <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
+                <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>
               <div className="mb-4 text-center">
                 <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR EXPLORERS</span>

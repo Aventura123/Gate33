@@ -1,20 +1,20 @@
 /* Gate33 Index Page Styles */
 
-/* Custom color classes for #F97316 */
+/* Custom color classes for #EA580C */
 .text-gate33-orange {
-  color: #F97316 !important;
+  color: #EA580C !important;
 }
 
 .bg-gate33-orange {
-  background-color: #F97316 !important;
+  background-color: #EA580C !important;
 }
 
 .bg-gate33-orange:hover {
-  background-color: #E8640F !important;
+  background-color: #DC4C05 !important;
 }
 
 .gate33-btn {
-  background-color: #F97316;
+  background-color: #EA580C;
   color: white;
   transition: background-color 0.2s ease;
 }
@@ -70,39 +70,147 @@ body {
 }
 
 /* Estilização especial para os cartões na página principal */
+/* Card hover glow effect - Top lighting like in the image */
 .card-orange-glow {
-  position: relative;
-  background-color: rgba(18, 18, 18, 0.95);
-  border: 1px solid #f97316;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #FF6A00;
   transition: all 0.3s ease;
-  overflow: hidden; /* Volta para hidden já que os pontos estão dentro */
-  box-shadow: 0 0 10px rgba(249, 115, 22, 0.3);
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(255, 106, 0, 0.3);
+  position: relative;
 }
 
-.card-orange-glow::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #f97316;
+/* Card backgrounds usando a cor exata da referência #1A1F26 com 71% transparência */
+.card-builders {
+  background: #1A1F26B5;
+  border: 1px solid rgba(255, 140, 0, 0.6);
+  box-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
 }
 
-.card-orange-glow::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 6px;
-  background: linear-gradient(to bottom, rgba(249, 115, 22, 0.4), transparent);
+.card-hodlers {
+  background: #1A1F26B5;
+  border: 1px solid rgba(255, 140, 0, 0.6);
+  box-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
 }
 
+.card-explorers {
+  background: #1A1F26B5;
+  border: 1px solid rgba(255, 140, 0, 0.6);
+  box-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
+}
+
+/* Clean card hover - minimal effects, focus on LED */
 .card-orange-glow:hover {
-  box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
-  transform: translateY(-3px);
-  border-color: #fb923c;
+  transform: translateY(-2px);
+  border-color: #FF6A00;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+/* Specific hover effects for each card type */
+.card-builders:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 140, 0, 0.8);
+  background: #1A1F26;
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
+}
+
+.card-hodlers:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 140, 0, 0.8);
+  background: #1A1F26;
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
+}
+
+.card-explorers:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 140, 0, 0.8);
+  background: #1A1F26;
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
+}
+
+/* LED Bar Horizontal - Base styles */
+.led-bar {
+  width: 26px;
+  height: 3px;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 0 6px rgba(255, 106, 0, 0.4);
+}
+
+/* LED Bar Hover - Light up the LED itself with diffused glow */
+.group:hover .led-bar {
+  width: 45px;
+  opacity: 1;
+  box-shadow: 
+    0 0 10px rgba(255, 106, 0, 0.8),
+    0 0 18px rgba(255, 106, 0, 0.6),
+    0 0 28px rgba(255, 106, 0, 0.4),
+    0 0 40px rgba(255, 106, 0, 0.25),
+    0 0 55px rgba(255, 106, 0, 0.15);
+  filter: brightness(1.2);
+}
+
+/* Specific LED effects for each card type */
+.card-builders:hover .led-bar {
+  box-shadow: 
+    0 0 10px rgba(255, 140, 0, 0.8),
+    0 0 18px rgba(255, 140, 0, 0.6),
+    0 0 28px rgba(255, 140, 0, 0.4),
+    0 0 40px rgba(255, 140, 0, 0.25),
+    0 0 55px rgba(255, 140, 0, 0.15);
+}
+
+.card-hodlers:hover .led-bar {
+  box-shadow: 
+    0 0 10px rgba(255, 140, 0, 0.8),
+    0 0 18px rgba(255, 140, 0, 0.6),
+    0 0 28px rgba(255, 140, 0, 0.4),
+    0 0 40px rgba(255, 140, 0, 0.25),
+    0 0 55px rgba(255, 140, 0, 0.15);
+}
+
+.card-explorers:hover .led-bar {
+  box-shadow: 
+    0 0 10px rgba(255, 140, 0, 0.8),
+    0 0 18px rgba(255, 140, 0, 0.6),
+    0 0 28px rgba(255, 140, 0, 0.4),
+    0 0 40px rgba(255, 140, 0, 0.25),
+    0 0 55px rgba(255, 140, 0, 0.15);
+}
+
+/* LED diffused light effect spreading around */
+.group:hover .led-bar::after {
+  content: '';
+  position: absolute;
+  top: -94px;
+  left: -109px;
+  right: -109px;
+  bottom: -94px;  background: radial-gradient(
+    ellipse 250px 125px, 
+    rgba(255, 106, 0, 0.42) 0%, 
+    rgba(255, 106, 0, 0.40) 3%, 
+    rgba(255, 106, 0, 0.36) 8%, 
+    rgba(255, 106, 0, 0.32) 14%, 
+    rgba(255, 106, 0, 0.28) 20%, 
+    rgba(255, 106, 0, 0.24) 27%, 
+    rgba(255, 106, 0, 0.20) 34%, 
+    rgba(255, 106, 0, 0.16) 42%, 
+    rgba(255, 106, 0, 0.13) 50%, 
+    rgba(255, 106, 0, 0.10) 58%, 
+    rgba(255, 106, 0, 0.08) 66%, 
+    rgba(255, 106, 0, 0.06) 74%, 
+    rgba(255, 106, 0, 0.04) 81%, 
+    rgba(255, 106, 0, 0.03) 87%, 
+    rgba(255, 106, 0, 0.02) 92%, 
+    rgba(255, 106, 0, 0.01) 96%, 
+    rgba(255, 106, 0, 0.005) 98.5%, 
+    transparent 100%
+  );
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(3px);
 }
 
 /* Fallback para dispositivos móveis onde background-attachment: fixed pode ter problemas */
@@ -450,22 +558,22 @@ body {
 
 /* Cartões com rebordo laranja forte e fundo escuro */
 .card-orange-border {
-  border: 2.5px solid rgb(251, 146, 60) !important;
-  box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.18), 0 2px 12px 0 rgba(251, 146, 60, 0.08);
+  border: 2.5px solid #FF6A00 !important;
+  box-shadow: 0 0 0 2px rgba(255, 106, 0, 0.18), 0 2px 12px 0 rgba(255, 106, 0, 0.08);
   background: rgba(0,0,0,0.80) !important;
   border-radius: 1.5rem !important;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .card-orange-border:hover {
-  border-color: rgb(255, 115, 22) !important;
-  box-shadow: 0 0 0 3px rgba(255, 115, 22, 0.25), 0 4px 24px 0 rgba(251, 146, 60, 0.12);
+  border-color: #FF6A00 !important;
+  box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.25), 0 4px 24px 0 rgba(255, 106, 0, 0.12);
 }
 
 /* Cartão laranja do bloco EVEN MORE...COMING SOON */
 .coming-soon-card {
-  background: rgb(249, 115, 22) !important;
+  background: #FF6A00 !important;
   border-radius: 1rem !important;
-  box-shadow: 0 4px 32px 0 rgba(249, 115, 22, 0.18);
+  box-shadow: 0 4px 32px 0 rgba(255, 106, 0, 0.18);
   border: none !important;
 }
 
