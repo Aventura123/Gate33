@@ -563,8 +563,8 @@ body {
 }
 
 .lamp-light-effect-vertical.lamp-light-effect-orange {
-  width: 500px;
-  height: 300px;
+  width: 400px;
+  height: 150px;
   background: radial-gradient(ellipse at right, 
     rgba(255, 187, 0, 0.40) 0%, 
     rgba(255, 149, 0, 0.20) 40%, 
@@ -576,33 +576,52 @@ body {
   pointer-events: none;
 }
 
-/* Efeito de luz horizontal para FEATURED JOBS (usando a mesma lógica dos cartões builder/hodler/explorer) */
+/* Efeito de luz horizontal para FEATURED JOBS (exatamente igual ao FOR HODLERS) */
 .lamp-light-effect-horizontal {
   position: absolute;
   left: 0;
   top: 0;
-  width: 190px;
+  width: 95px;
   height: 100%;
   z-index: 1;
   pointer-events: none;
-  background: conic-gradient(
-    from 0deg,
-    rgba(255, 106, 0, 0.70) 0deg,
-    rgba(255, 106, 0, 0.45) 30deg,
-    rgba(255, 106, 0, 0.14) 90deg,
-    rgba(255, 106, 0, 0.04) 180deg,
-    rgba(255, 106, 0, 0.14) 270deg,
-    rgba(255, 106, 0, 0.35) 330deg,
-    rgba(255, 106, 0, 0.20) 360deg
+  background: radial-gradient(ellipse at left,
+    rgba(255, 187, 0, 0.90) 0%,
+    rgba(255, 149, 0, 0.10) 50%,
+    rgba(255, 106, 0, 0.10) 100%
   );
-  border-radius: 50%;
+  border-radius: 50% 0 0 50% / 50% 0 0 50%;
   filter: blur(8px);
   transition: opacity 0.3s;
   opacity: 0;
 }
+
 .card-builders:hover .lamp-light-effect-horizontal,
 .card-hodlers:hover .lamp-light-effect-horizontal,
 .card-explorers:hover .lamp-light-effect-horizontal,
 .job-card:hover .lamp-light-effect-horizontal {
   opacity: 1;
+}
+
+/* Ajuste específico para os cards FEATURED JOBS na seção à direita da Home */
+.jobs .card-orange-glow {
+  width: calc(100% + 20px) !important; /* aumenta ~0.5cm */
+  min-width: 660px !important;
+  max-width: 540px !important;
+  height: 125px !important; /* reduz altura, ajuste conforme necessário */
+  padding-top: 0.8rem !important;
+  padding-bottom: 1.1rem !important;
+  padding-left: 1.2rem !important;
+  padding-right: 1.2rem !important;
+}
+
+@media (max-width: 1024px) {
+  .jobs .card-orange-glow {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    padding-left: 0rem !important;
+    padding-right: 1rem !important;
+  }
 }

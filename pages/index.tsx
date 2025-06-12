@@ -152,11 +152,7 @@ function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 h-full w-full">
                 {/* For Builders Section - Centered for even spacing */}
                 <div className="flex justify-center">
-                  <div className="rounded-2xl card-orange-glow card-builders p-5 h-auto flex flex-col justify-between w-[98%] group overflow-hidden">
-              {/* Barra LED horizontal no topo */}
-              <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
-                <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
-              </div>
+                  <div className="rounded-2xl p-5 h-auto flex flex-col justify-between w-[98%] group overflow-hidden">
               <div className="mb-2 text-center">
                 <span className="font-verdana uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR BUILDERS</span>
                 <h3 className="font-verdana text-gate33-orange font-medium text-base mb-2">Hire or Get Hired</h3>
@@ -280,8 +276,6 @@ function Home() {
               {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
               <div className="flex flex-col justify-center items-center mr-5 relative">
                 <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
-                {/* Efeito de luz da lanterna, só aparece no hover do card */}
-                <div className="lamp-light-effect-vertical pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 lamp-light-effect-orange"></div>
               </div>
               <div className="flex-1">
                 <h3 className="font-verdana font-bold text-white text-lg mb-1">Blockchain Developer <span className="text-gray-400 font-normal text-base">@Polygon</span></h3>
@@ -299,8 +293,6 @@ function Home() {
               {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
               <div className="flex flex-col justify-center items-center mr-5 relative">
                 <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
-                {/* Efeito de luz da lanterna, só aparece no hover do card */}
-                <div className="lamp-light-effect-vertical pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 lamp-light-effect-orange"></div>
               </div>
               <div className="flex-1">
                 <h3 className="font-verdana font-bold text-white text-lg mb-1">Digital Marketing Analyst <span className="text-gray-400 font-normal text-base">@OpenSea</span></h3>
@@ -318,8 +310,6 @@ function Home() {
               {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
               <div className="flex flex-col justify-center items-center mr-5 relative">
                 <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
-                {/* Efeito de luz da lanterna, só aparece no hover do card */}
-                <div className="lamp-light-effect-vertical pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 lamp-light-effect-orange"></div>
               </div>
               <div className="flex-1">
                 <h3 className="font-verdana font-bold text-white text-lg mb-1">Security Specialist <span className="text-gray-400 font-normal text-base">@Ethereum Foundation</span></h3>
@@ -337,15 +327,110 @@ function Home() {
       </section>
 
       <main className="min-h-screen bg-gradient-to-b from-black via-black to-black text-white relative overflow-hidden gate33-main-section">
-        <section id="about" className="about py-20 text-center px-4 relative">
-          <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-gate33-orange mb-6">About Us</h2>
-            <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-              Gate33 is more than just a job platform; we are a comprehensive ecosystem designed to empower individuals and organizations in the Web3 space. Our mission is to bridge the gap between talent and opportunity, facilitating growth, learning, and innovation.
-            </p>
-            <div className="flex justify-center">
-              <Link href="/about" className="gate33-btn text-white py-2.5 px-8 rounded-full transition-colors shadow-lg hover:shadow-xl font-medium">
-                Learn More About Us
+        <section id="about" className="about py-20 px-4 relative">
+          <div className="relative z-10 flex flex-col lg:flex-row max-w-7xl mx-auto gap-4 items-start justify-start">
+            {/* Cartões à esquerda - grid 3x2 compacto */}
+            <div className="flex-shrink-0 w-full lg:w-[65%]">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
+                {/* Card 1 */}
+                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <Image src="/icons/Vector.png" alt="Governance AI Icon" width={40} height={40} className="mb-2" />
+                  <div className="flex-1 flex flex-col justify-between w-full">
+                    <div>
+                      <h3 className="font-verdana font-bold text-white text-lg mb-1">Governance AI</h3>
+                      <p className="text-gray-300 text-sm mb-4">
+                        Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
+                      </p>
+                    </div>
+                    <Link href="/crypto-tools/governance-ai" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-sm cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto">
+                      Try This Out
+                    </Link>
+                  </div>
+                </div>
+                {/* Card 2 */}
+                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <Image src="/icons/Vector (4).png" alt="Market List Icon" width={40} height={40} className="mb-2" />
+                  <div className="flex-1 flex flex-col justify-between w-full">
+                    <div>
+                      <h3 className="font-verdana font-bold text-white text-lg mb-1">Market List</h3>
+                      <p className="text-gray-300 text-sm mb-4">
+                        Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
+                      </p>
+                    </div>
+                    <Link href="/crypto-tools/market-list" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-sm cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto">
+                      Try This Out
+                    </Link>
+                  </div>
+                </div>
+                {/* Card 3 */}
+                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <Image src="/icons/Vector (5).png" alt="Bitcoin Analysis Icon" width={40} height={40} className="mb-2" />
+                  <div className="flex-1 flex flex-col justify-between w-full">
+                    <div>
+                      <h3 className="font-verdana font-bold text-white text-lg mb-1">Bitcoin Analysis</h3>
+                      <p className="text-gray-300 text-sm mb-4">
+                        Real-time Bitcoin price data, market sentiment analysis, and useful trading utilities powered by free APIs.
+                      </p>
+                    </div>
+                    <Link href="/crypto-tools/bitcoin-analysis" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-sm cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto">
+                      Try This Out
+                    </Link>
+                  </div>
+                </div>
+                {/* Card 4 */}
+                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <Image src="/icons/Vector (1).png" alt="AI Smart Contracts Icon" width={40} height={40} className="mb-2" />
+                  <div className="flex-1 flex flex-col justify-between w-full">
+                    <div>
+                      <h3 className="font-verdana font-bold text-white text-lg mb-1">AI Smart Contracts</h3>
+                      <p className="text-gray-300 text-sm mb-4">
+                        AI-powered smart contract auditing tool will analyze your contracts for gas optimization opportunities and security best practices.
+                      </p>
+                    </div>
+                    <button className="bg-gray-400 text-white py-2 px-4 rounded-full font-semibold text-sm cursor-not-allowed mt-auto" disabled>
+                      Coming Soon
+                    </button>
+                  </div>
+                </div>
+                {/* Card 5 */}
+                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <Image src="/icons/Vector (6).png" alt="Staking Tool Icon" width={40} height={40} className="mb-2" />
+                  <div className="flex-1 flex flex-col justify-between w-full">
+                    <div>
+                      <h3 className="font-verdana font-bold text-white text-lg mb-1">Staking Tool</h3>
+                      <p className="text-gray-300 text-sm mb-4">
+                        Stake your tokens and earn rewards through our secure staking platform. Support the network while generating passive income.
+                      </p>
+                    </div>
+                    <button className="bg-gray-400 text-white py-2 px-4 rounded-full font-semibold text-sm cursor-not-allowed mt-auto" disabled>
+                      Coming Soon
+                    </button>
+                  </div>
+                </div>
+                {/* Card 6 */}
+                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <Image src="/icons/Vector (4).png" alt="Market Gap Icon" width={40} height={40} className="mb-2" />
+                  <div className="flex-1 flex flex-col justify-between w-full">
+                    <div>
+                      <h3 className="font-verdana font-bold text-white text-lg mb-1">Market Gap</h3>
+                      <p className="text-gray-300 text-sm mb-4">
+                        Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
+                      </p>
+                    </div>
+                    <Link href="/crypto-tools/market-gap" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-sm cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto">
+                      Try This Out
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Texto à direita alinhado ao topo, largura fixa, sem centralização vertical */}
+            <div className="flex-shrink-0 w-full lg:w-[30%] flex flex-col justify-start items-start text-left mt-8 lg:mt-0">
+              <h2 className="text-3xl font-bold text-white mb-4 leading-tight">EXPLORE OUR CRYPTO TOOLS</h2>
+              <p className="text-orange-400 font-semibold mb-3 leading-snug">Crypto Tools offers solutions for analyzing Ethereum wallets. Features include ENS resolution, wallet age assessment, and dust token detection.</p>
+              <p className="text-gray-200 mb-6 leading-snug">Operations are secure in your browser, using public APIs and your Ethereum provider. Private keys remain secure and never exposed.</p>
+              <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-6 rounded-full font-semibold text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl">
+                Explore Our Crypto Tools
               </Link>
             </div>
           </div>
