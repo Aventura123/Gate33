@@ -133,12 +133,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const timer = setTimeout(() => setLearnDropdownOpen(false), 1000);
     setLearnDropdownTimer(timer);
   };
-
   return (
     <div className="layout">
-      {/* Header */}
-      <header className="site-header w-full text-white fixed top-0 left-0 z-50">
-        <div className="w-full flex justify-between items-center py-4 px-6">
+      {/* Header with Professional Glassmorphism */}      <header className="site-header fixed h-[10vh] left-0 top-0 w-[100vw] z-50 backdrop-blur-[20px] bg-gradient-to-b from-[rgba(15,15,15,0.4)] to-[rgba(15,15,15,0.2)] text-white"
+        style={{
+          mask: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.3) 85%, transparent 95%)',
+          WebkitMask: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.3) 85%, transparent 95%)'
+        }}
+      >
+        <div className="w-full flex justify-between items-center py-4 px-6 h-16">
           <a href="/" className="logo flex items-center">
             <img src="/images/GATE33-LOGO-wordmark.png" alt="Gate33 Logo" className="h-6" />
           </a>
@@ -324,10 +327,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
           )}
         </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="px-0 sm:px-0 md:px-0 lg:px-0 w-full">{children}</main>
+      </nav>      {/* Main Content with spacing for glassmorphism header */}
+      <main className="px-0 sm:px-0 md:px-0 lg:px-0 w-full mt-[12vh]">{children}</main>
 
       {/* Advertisement Popup */}
       <AdPopup />

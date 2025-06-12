@@ -1,46 +1,42 @@
-/* Gate33 Index Page Styles */
+/* Gate33 Index Page Styles - Optimized */
 
-/* Animação personalizada para o logo 3D */
+/* CSS Variables for consistent theming */
+:root {
+  --gate33-orange: #EA580C;
+  --gate33-orange-hover: #DC4C05;
+  --gate33-orange-alt: #E8640F;
+  --led-orange: #FF6A00;
+  --led-orange-alt: #FF8C00;
+  --card-bg: rgba(26, 31, 38, 0.71);
+  --card-bg-solid: #1A1F26;
+  --overlay-dark: rgba(0, 0, 0, 0.8);
+  --overlay-light: rgba(0, 0, 0, 0.4);
+  --border-orange: rgba(255, 140, 0, 0.6);
+}
+
+/* Base animations */
 @keyframes logo3d-float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(80px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(80px); }
 }
 
 .logo3d-animation {
   animation: logo3d-float 8s ease-in-out infinite;
 }
 
-/* Custom color classes for #EA580C */
-.text-gate33-orange {
-  color: #EA580C !important;
-}
-
-.bg-gate33-orange {
-  background-color: #EA580C !important;
-}
-
-.bg-gate33-orange:hover {
-  background-color: #DC4C05 !important;
-}
+/* Utility classes */
+.text-gate33-orange { color: var(--gate33-orange) !important; }
+.bg-gate33-orange { background-color: var(--gate33-orange) !important; }
+.bg-gate33-orange:hover { background-color: var(--gate33-orange-hover) !important; }
 
 .gate33-btn {
-  background-color: #EA580C;
+  background-color: var(--gate33-orange);
   color: white;
   transition: background-color 0.2s ease;
 }
+.gate33-btn:hover { background-color: var(--gate33-orange-alt); }
 
-.gate33-btn:hover {
-  background-color: #E8640F;
-}
-
-/* Background image styles - Fixed Background */
+/* Background styles */
 .bg-portal-image {
   object-fit: cover;
   object-position: center top;
@@ -50,8 +46,8 @@
   height: 100%;
 }
 
-/* Hero section with fixed background */
-.hero-section-fixed-bg {
+.hero-section-fixed-bg,
+body {
   background-image: url('/images/bg.png');
   background-size: cover;
   background-position: center top;
@@ -60,24 +56,14 @@
   position: relative;
 }
 
-/* Aplicar o mesmo fundo fixo ao body/html para toda a página */
 body {
-  background-image: url('/images/bg.png');
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
   min-height: 100vh;
 }
 
 .hero-section-fixed-bg::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  inset: 0;
   z-index: 1;
 }
 
@@ -86,66 +72,59 @@ body {
   z-index: 10;
 }
 
-/* Estilização especial para os cartões na página principal */
-/* Card hover glow effect - Top lighting like in the image */
-.card-orange-glow {
-  background: rgba(0, 0, 0, 0.8);
-  border: 1px solid #FF6A00;
+/* Card base styles - consolidated */
+.card-orange-glow,
+.card-builders,
+.card-hodlers,
+.card-explorers {
+  background: var(--card-bg);
+  border: none;
+  border-radius: 1rem;
+  position: relative;
+  box-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
   transition: all 0.3s ease;
   overflow: hidden;
-  box-shadow: 0 0 10px rgba(255, 106, 0, 0.3);
-  position: relative;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
-/* Card backgrounds usando a cor exata da referência #1A1F26 com 71% transparência */
-.card-builders {
-  background: #1A1F26B5;
-  border: 1px solid rgba(255, 140, 0, 0.6);
-  box-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
+/* Gradient border using pseudo-element */
+.card-orange-glow::before,
+.card-builders::before,
+.card-hodlers::before,
+.card-explorers::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 0.93px;
+  background: conic-gradient(from 0deg, #FF6A00, #983F00, #000000, #8E3B00, #FF6A00, #000000, #983F00, #FF6A00);
+  border-radius: inherit;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  z-index: -1;
 }
 
-.card-hodlers {
-  background: #1A1F26B5;
-  border: 1px solid rgba(255, 140, 0, 0.6);
-  box-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
-}
-
-.card-explorers {
-  background: #1A1F26B5;
-  border: 1px solid rgba(255, 140, 0, 0.6);
-  box-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
-}
-
-/* Clean card hover - minimal effects, focus on LED */
-.card-orange-glow:hover {
-  transform: translateY(-2px);
-  border-color: #FF6A00;
-  background: rgba(0, 0, 0, 0.85);
-}
-
-/* Specific hover effects for each card type */
-.card-builders:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 140, 0, 0.8);
-  background: #1A1F26;
-  box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
-}
-
-.card-hodlers:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 140, 0, 0.8);
-  background: #1A1F26;
-  box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
-}
-
+/* Card hover effects - consolidated */
+.card-orange-glow:hover,
+.card-builders:hover,
+.card-hodlers:hover,
 .card-explorers:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 140, 0, 0.8);
-  background: #1A1F26;
+  background: var(--card-bg-solid);
   box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
 }
 
-/* LED Bar Horizontal - Base styles */
+/* Hover effect for gradient border */
+.card-orange-glow:hover::before,
+.card-builders:hover::before,
+.card-hodlers:hover::before,
+.card-explorers:hover::before {
+  background: conic-gradient(from 45deg, #FF6A00, #983F00, #000000, #8E3B00, #FF6A00, #000000, #983F00, #FF6A00);
+}
+
+/* LED Bar styles - simplified */
 .led-bar {
   width: 26px;
   height: 3px;
@@ -155,94 +134,45 @@ body {
   box-shadow: 0 0 6px rgba(255, 106, 0, 0.4);
 }
 
-/* LED Bar Hover - Light up the LED itself with diffused glow */
-.group:hover .led-bar {
+/* LED hover effect - single implementation */
+.group:hover .led-bar,
+.card-builders:hover .led-bar,
+.card-hodlers:hover .led-bar,
+.card-explorers:hover .led-bar {
   width: 45px;
   opacity: 1;
   box-shadow: 
-    0 0 10px rgba(255, 106, 0, 0.8),
-    0 0 18px rgba(255, 106, 0, 0.6),
-    0 0 28px rgba(255, 106, 0, 0.4),
-    0 0 40px rgba(255, 106, 0, 0.25),
-    0 0 55px rgba(255, 106, 0, 0.15);
-  filter: brightness(1.2);
+    0 0 8px var(--led-orange),
+    0 0 16px rgba(255, 140, 0, 0.4),
+    0 0 24px rgba(255, 140, 0, 0.2);
+  filter: brightness(1.1);
 }
 
-/* Specific LED effects for each card type */
-.card-builders:hover .led-bar {
-  box-shadow: 
-    0 0 10px rgba(255, 140, 0, 0.8),
-    0 0 18px rgba(255, 140, 0, 0.6),
-    0 0 28px rgba(255, 140, 0, 0.4),
-    0 0 40px rgba(255, 140, 0, 0.25),
-    0 0 55px rgba(255, 140, 0, 0.15);
-}
-
-.card-hodlers:hover .led-bar {
-  box-shadow: 
-    0 0 10px rgba(255, 140, 0, 0.8),
-    0 0 18px rgba(255, 140, 0, 0.6),
-    0 0 28px rgba(255, 140, 0, 0.4),
-    0 0 40px rgba(255, 140, 0, 0.25),
-    0 0 55px rgba(255, 140, 0, 0.15);
-}
-
-.card-explorers:hover .led-bar {
-  box-shadow: 
-    0 0 10px rgba(255, 140, 0, 0.8),
-    0 0 18px rgba(255, 140, 0, 0.6),
-    0 0 28px rgba(255, 140, 0, 0.4),
-    0 0 40px rgba(255, 140, 0, 0.25),
-    0 0 55px rgba(255, 140, 0, 0.15);
-}
-
-/* LED diffused light effect spreading around */
+/* Simplified LED diffused light - maior e mais suave */
 .group:hover .led-bar::after {
   content: '';
   position: absolute;
-  top: -94px;
-  left: -109px;
-  right: -109px;
-  bottom: -94px;
-  background: radial-gradient(
-    ellipse 250px 125px, 
-    rgba(255, 106, 0, 0.42) 0%, 
-    rgba(255, 106, 0, 0.40) 3%, 
-    rgba(255, 106, 0, 0.36) 8%, 
-    rgba(255, 106, 0, 0.32) 14%, 
-    rgba(255, 106, 0, 0.28) 20%, 
-    rgba(255, 106, 0, 0.24) 27%, 
-    rgba(255, 106, 0, 0.20) 34%, 
-    rgba(255, 106, 0, 0.16) 42%, 
-    rgba(255, 106, 0, 0.13) 50%, 
-    rgba(255, 106, 0, 0.10) 58%, 
-    rgba(255, 106, 0, 0.08) 66%, 
-    rgba(255, 106, 0, 0.06) 74%, 
-    rgba(255, 106, 0, 0.04) 81%, 
-    rgba(255, 106, 0, 0.03) 87%, 
-    rgba(255, 106, 0, 0.02) 92%, 
-    rgba(255, 106, 0, 0.01) 96%, 
-    rgba(255, 106, 0, 0.005) 98.5%, 
-    transparent 100%
+  top: -100px;
+  left: -140px;
+  right: -140px;
+  bottom: -100px;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 106, 0, 0.70) 0deg,
+    rgba(255, 106, 0, 0.45) 30deg,
+    rgba(255, 106, 0, 0.18) 90deg,
+    rgba(255, 106, 0, 0.08) 180deg,
+    rgba(255, 106, 0, 0.18) 270deg,
+    rgba(255, 106, 0, 0.45) 330deg,
+    rgba(255, 106, 0, 0.70) 360deg
   );
   z-index: 1;
   pointer-events: none;
   border-radius: 50%;
-  filter: blur(3px);
+  filter: blur(5.6px);
 }
 
-/* Fallback para dispositivos móveis onde background-attachment: fixed pode ter problemas */
-@media (max-width: 768px) {
-  .hero-section-fixed-bg {
-    background-attachment: scroll;
-  }
-  
-  body {
-    background-attachment: scroll;
-  }
-}
-
-/* Lamp light effect */
+/* Light effects - optimized */
 .lamp-light-effect {
   position: absolute;
   pointer-events: none;
@@ -252,13 +182,12 @@ body {
   transform: translateX(-50%);
   width: 160px;
   height: 25px;
-  background: radial-gradient(ellipse, rgba(255, 165, 0, 0.9) 0%, rgba(255, 165, 0, 0.6) 40%, rgba(255, 165, 0, 0.2) 70%, transparent 100%);
+  background: radial-gradient(ellipse, rgba(255, 165, 0, 0.9) 0%, rgba(255, 165, 0, 0.6) 40%, transparent 100%);
   border-radius: 4px;
   filter: blur(1px);
-  box-shadow: 0 0 30px rgba(255, 165, 0, 0.4), 0 0 60px rgba(255, 165, 0, 0.2);
+  box-shadow: 0 0 30px rgba(255, 165, 0, 0.4);
 }
 
-/* Lamp cone light */
 .lamp-cone-light {
   position: absolute;
   pointer-events: none;
@@ -268,12 +197,12 @@ body {
   transform: translateX(-50%);
   width: 300px;
   height: 350px;
-  background: linear-gradient(180deg, rgba(255, 165, 0, 0.2) 0%, rgba(255, 165, 0, 0.08) 40%, rgba(255, 165, 0, 0.03) 70%, transparent 100%);
+  background: linear-gradient(180deg, rgba(255, 165, 0, 0.2) 0%, rgba(255, 165, 0, 0.05) 50%, transparent 100%);
   clip-path: polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%);
-  filter: blur(4px);
+  filter: blur(3px);
 }
 
-/* Logo with glow effect */
+/* Logo styles */
 .logo-with-glow {
   width: 180px;
   height: 180px;
@@ -281,22 +210,20 @@ body {
   filter: drop-shadow(0 0 15px rgba(255, 165, 0, 0.4));
 }
 
-/* Company logo auto sizing */
 .company-logo-image {
   width: auto;
   height: auto;
 }
 
-/* Partner logo container */
 .partner-logo-container {
   width: 90px;
   height: 90px;
   object-fit: cover;
 }
 
-/* Waitlist input styles */
+/* Form styles - consolidated */
 .waitlist-input {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay-light);
   color: rgb(251, 191, 36);
   font-size: 0.875rem;
   padding: 0.5rem 1rem;
@@ -320,7 +247,6 @@ body {
   cursor: not-allowed;
 }
 
-/* Waitlist button styles */
 .waitlist-btn {
   background: rgba(249, 115, 22, 0.9);
   color: white;
@@ -347,7 +273,7 @@ body {
   cursor: not-allowed;
 }
 
-/* FAQ Item Styles */
+/* FAQ styles */
 .faq-item {
   border: 1px solid rgb(249, 115, 22);
   border-radius: 0.5rem;
@@ -391,7 +317,7 @@ body {
   line-height: 1.625;
 }
 
-/* Main section styles */
+/* Layout styles */
 .gate33-main-section {
   min-height: 100vh;
   background: transparent;
@@ -400,51 +326,8 @@ body {
   overflow: hidden;
 }
 
-/* Service grid styles */
-.services-grid {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 2rem;
-  max-width: 72rem;
-  margin: 0 auto;
-}
-
-@media (min-width: 768px) {
-  .services-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .services-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.service-card {
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 0.5rem;
-  padding: 2rem;
-  text-align: left;
-  border: 1px solid rgba(249, 115, 22, 0.2);
-  transition: all 0.3s ease;
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-}
-
-.service-card:hover {
-  transform: translateY(-10px);
-  background: rgba(0, 0, 0, 0.1);
-  border-color: rgba(249, 115, 22, 0.3);
-}
-
-.service-icon {
-  color: rgb(249, 115, 22);
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-/* Jobs grid styles */
+/* Grid layouts - consolidated */
+.services-grid,
 .jobs-grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -453,42 +336,66 @@ body {
   margin: 0 auto;
 }
 
-@media (min-width: 768px) {
-  .jobs-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.partners-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 2rem;
+  max-width: 80rem;
+  margin: 0 auto;
 }
 
-@media (min-width: 1024px) {
-  .jobs-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.job-card {
+/* Card styles - consolidated */
+.service-card,
+.job-card,
+.partner-card {
   background: rgba(0, 0, 0, 0.7);
   border-radius: 0.5rem;
-  padding: 1.5rem;
   border: 1px solid rgba(249, 115, 22, 0.2);
   transition: all 0.3s ease;
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
-.job-card:hover {
+.service-card {
+  padding: 2rem;
+  text-align: left;
+}
+
+.job-card,
+.partner-card {
+  padding: 1.5rem;
+}
+
+.service-card:hover {
+  transform: translateY(-10px);
+  background: rgba(0, 0, 0, 0.1);
   border-color: rgba(249, 115, 22, 0.3);
 }
 
-/* Company logos styles */
+.job-card:hover,
+.partner-card:hover {
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+.partner-card:hover {
+  border-color: rgba(249, 115, 22, 0.5);
+}
+
+.service-icon {
+  color: rgb(249, 115, 22);
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+/* Company logos */
 .company-logos {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   gap: 2.5rem;
-  margin: 0 auto;
+  margin: 0 auto 2.5rem auto;
   max-width: 80rem;
-  margin-bottom: 2.5rem;
 }
 
 .company-logo {
@@ -511,42 +418,7 @@ body {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-/* Partners grid styles */
-.partners-grid {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 2rem;
-  max-width: 80rem;
-  margin: 0 auto;
-}
-
-@media (min-width: 768px) {
-  .partners-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .partners-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.partner-card {
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  border: 1px solid rgba(249, 115, 22, 0.2);
-  transition: all 0.3s ease;
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-}
-
-.partner-card:hover {
-  border-color: rgba(249, 115, 22, 0.5);
-}
-
-/* FAQ container styles */
+/* FAQ container */
 .faq-container {
   max-width: 56rem;
   margin: 0 auto;
@@ -556,7 +428,7 @@ body {
   border: 1px solid rgba(249, 115, 22, 0.1);
 }
 
-/* Line clamp utility */
+/* Utilities */
 .line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -565,59 +437,96 @@ body {
   overflow: hidden;
 }
 
-/* Contact form styles */
 .contact {
   background: transparent;
-  padding: 5rem 0;
+  padding: 5rem 1rem;
   text-align: center;
-  padding-left: 1rem;
-  padding-right: 1rem;
 }
 
-/* Cartões com rebordo laranja forte e fundo escuro */
+/* Special cards */
 .card-orange-border {
-  border: 2.5px solid #FF6A00 !important;
+  border: 2.5px solid var(--led-orange) !important;
   box-shadow: 0 0 0 2px rgba(255, 106, 0, 0.18), 0 2px 12px 0 rgba(255, 106, 0, 0.08);
-  background: rgba(0,0,0,0.80) !important;
+  background: var(--overlay-dark) !important;
   border-radius: 1.5rem !important;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
+
 .card-orange-border:hover {
-  border-color: #FF6A00 !important;
+  border-color: var(--led-orange) !important;
   box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.25), 0 4px 24px 0 rgba(255, 106, 0, 0.12);
 }
 
-/* Cartão laranja do bloco EVEN MORE...COMING SOON */
 .coming-soon-card {
-  background: #FF6A00 !important;
-  border-radius: 1rem !important;
+  background: var(--led-orange) !important;
+  border-radius: 40px !important;
   box-shadow: 0 4px 32px 0 rgba(255, 106, 0, 0.18);
   border: none !important;
 }
 
-/* Input e botão do bloco laranja */
+/* Orange themed inputs */
 .waitlist-input-orange {
-  background: rgba(255,255,255,0.10) !important;
-  color: #fff !important;
-  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #6B7280 !important;
+  border-radius: 8px !important;
   border: none !important;
-  font-size: 1rem;
-  text-align: center;
-  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  text-align: left !important;
+  margin-bottom: 0 !important;
+  height: 40px !important;
+  padding: 0 16px !important;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
 }
+
 .waitlist-input-orange::placeholder {
-  color: #fff !important;
-  opacity: 0.8;
+  color: #9CA3AF !important;
+  opacity: 1;
 }
+
 .waitlist-btn-orange {
-  background: rgb(249, 115, 22) !important;
+  background: #000000 !important;
   color: #fff !important;
-  border-radius: 9999px !important;
-  border: 2px solid #fff3 !important;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 8px !important;
+  border: none !important;
+  font-size: 0.9rem;
+  font-weight: 700;
   transition: background 0.2s;
+  height: 40px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 .waitlist-btn-orange:hover {
-  background: rgb(234, 88, 12) !important;
+  background: #1F2937 !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .hero-section-fixed-bg,
+  body {
+    background-attachment: scroll;
+  }
+}
+
+@media (min-width: 768px) {
+  .services-grid,
+  .jobs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .partners-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .services-grid,
+  .jobs-grid,
+  .partners-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }

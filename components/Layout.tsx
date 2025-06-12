@@ -136,9 +136,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="layout">
-      {/* Header */}
-      <header className="site-header w-full text-white fixed top-0 left-0 z-50 bg-black/30 backdrop-blur-sm">
-        <div className="w-full flex justify-between items-center py-4 px-6">
+      {/* Header with Professional Glassmorphism */}
+      <header className="site-header fixed h-[12vh] left-0 top-0 w-[100vw] z-50 backdrop-blur-[20px] bg-gradient-to-b from-[rgba(15,15,15,0.4)] to-[rgba(15,15,15,0.2)] text-white"
+        style={{
+          mask: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.3) 85%, transparent 95%)',
+          WebkitMask: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.3) 85%, transparent 95%)'
+        }}
+      >
+        <div className="w-full flex justify-between items-center py-4 px-6 h-16">
           <a href="/" className="logo flex items-center">
             <img src="/images/GATE33-LOGO-wordmark.png" alt="Gate33 Logo" className="h-6" />
           </a>
@@ -167,7 +172,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
               </button>
               {jobsDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/80 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-md"
+                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-sm"
                   onMouseEnter={handleJobsEnter}
                   onMouseLeave={handleJobsLeave}
                 >
@@ -192,7 +197,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
               </button>
               {toolsDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/80 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-md"
+                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-sm"
                   onMouseEnter={handleToolsEnter}
                   onMouseLeave={handleToolsLeave}
                 >
@@ -215,7 +220,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
               </button>
               {learnDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/80 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-md"
+                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-sm"
                   onMouseEnter={handleLearnEnter}
                   onMouseLeave={handleLearnLeave}
                 >
@@ -243,7 +248,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       {/* Mobile Navigation Panel (Slides from right) */}
       <nav
-        className={`fixed top-0 right-0 h-full w-72 max-w-full bg-black/95 z-50 transition-transform duration-300 ease-in-out md:hidden overflow-y-auto mobile-nav-panel backdrop-blur-md ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-0 right-0 h-full w-72 max-w-full bg-black/85 z-50 transition-transform duration-300 ease-in-out md:hidden overflow-y-auto mobile-nav-panel backdrop-blur-sm ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Close Button inside the panel */}
         <button
@@ -326,8 +331,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="px-0 sm:px-0 md:px-0 lg:px-0 w-full">{children}</main>
+      {/* Main Content with spacing for glassmorphism header */}
+      <main className="px-0 sm:px-0 md:px-0 lg:px-0 w-full mt-[12vh]">{children}</main>
 
       {/* Advertisement Popup */}
       <AdPopup />

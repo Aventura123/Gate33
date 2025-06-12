@@ -144,76 +144,112 @@ function Home() {
                 alt="Gate33 3D Logo"
                 width={1100}
                 height={1100}
-                className="opacity-40 drop-shadow-2xl logo3d-animation"
+                className="opacity-70 drop-shadow-2xl logo3d-animation"
                 priority
               />
             </div>
             <div className="bg-transparent rounded-2xl py-8 relative overflow-visible w-full max-w-6xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 h-full w-full">
-                {/* For Builders Section - Alinhado à esquerda */}
-                <div className="flex justify-start">
-                  <div className="rounded-2xl card-orange-glow card-builders p-5 h-auto flex flex-col justify-between w-[95%] group overflow-hidden">
+                {/* For Builders Section - Centered for even spacing */}
+                <div className="flex justify-center">
+                  <div className="rounded-2xl card-orange-glow card-builders p-5 h-auto flex flex-col justify-between w-[98%] group overflow-hidden">
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>
               <div className="mb-2 text-center">
-                <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR BUILDERS</span>
-                <h3 className="text-gate33-orange font-medium text-base mb-2">Hire or Get Hired</h3>
-                <p className="text-gray-300 text-sm leading-relaxed mb-2">
+                <span className="font-verdana uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR BUILDERS</span>
+                <h3 className="font-verdana text-gate33-orange font-medium text-base mb-2">Hire or Get Hired</h3>
+                <p className="font-verdana text-gray-300 text-xs leading-relaxed mb-2">
                   Access <span className="text-gate33-orange font-medium">trusted</span> Web3 jobs or post roles with<br />
                   <span className="text-gate33-orange font-medium">escrow protection</span>. Build the future, <span className="text-gate33-orange font-medium">securely</span>.
                 </p>
               </div>
-              <div className="flex gap-3 justify-center mb-2">
-                <Link href="/jobs" className="gate33-btn text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+              <div className="flex justify-center mb-2" style={{ gap: '9.32px' }}>
+                <Link href="/jobs" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center" style={{ 
+                  width: '150px', 
+                  height: '34px', 
+                  borderRadius: '12px', 
+                  paddingLeft: '20px', 
+                  paddingRight: '20px',
+                  paddingTop: '0',
+                  paddingBottom: '0',
+                  background: '#FF6A00'
+                }}>
                   Find Jobs
                 </Link>
-                <span className="text-white mx-1">or</span>
-                <Link href="/company-register" className="bg-transparent border border-orange-500/80 hover:border-orange-500 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+                <span className="font-verdana text-white flex items-center" style={{ fontSize: '14px' }}>or</span>
+                <Link href="/company-register" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center" style={{ 
+                  width: '150px', 
+                  height: '34px', 
+                  borderRadius: '12px', 
+                  paddingLeft: '20px', 
+                  paddingRight: '20px',
+                  paddingTop: '0',
+                  paddingBottom: '0',
+                  background: '#FF6A00'
+                }}>
                   Post Jobs
                 </Link>
               </div>
                   </div>
                 </div>
-                {/* For Hodlers Section - Centralizado */}
+                {/* For Hodlers Section - Centered for even spacing */}
                 <div className="flex justify-center">
-                  <div className="rounded-2xl card-orange-glow card-hodlers p-5 h-auto flex flex-col justify-between w-[95%] group overflow-hidden">
+                  <div className="rounded-2xl card-orange-glow card-hodlers p-5 h-auto flex flex-col justify-between w-[98%] group overflow-hidden">
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>
               <div className="mb-2 text-center">
-                <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR HODLERS</span>
-                <h3 className="text-gate33-orange font-medium text-base mb-2">Use Crypto Tools</h3>
-                <p className="text-gray-300 text-sm leading-relaxed mb-2">
+                <span className="font-verdana uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR HODLERS</span>
+                <h3 className="font-verdana text-gate33-orange font-medium text-base mb-2">Use Crypto Tools</h3>
+                <p className="font-verdana text-gray-300 text-xs leading-relaxed mb-2">
                   Analyze the market with <span className="text-gate33-orange font-medium">AI-powered tools</span> and<br />
                   insights. Make informed decisions, <span className="text-gate33-orange font-medium">faster</span>.
                 </p>
               </div>
               <div className="flex justify-center mb-2">
-                <Link href="/crypto-tools" className="gate33-btn text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+                <Link href="/crypto-tools" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center whitespace-nowrap" style={{ 
+                  width: '180px', 
+                  height: '34px', 
+                  borderRadius: '12px', 
+                  paddingLeft: '20px', 
+                  paddingRight: '20px',
+                  paddingTop: '0',
+                  paddingBottom: '0',
+                  background: '#FF6A00'
+                }}>
                   Explore Crypto Tools
                 </Link>
               </div>
                   </div>
                 </div>
-                {/* For Explorers Section - Alinhado à direita */}
-                <div className="flex justify-end">
-                  <div className="rounded-2xl card-orange-glow card-explorers p-5 h-auto flex flex-col justify-between w-[95%] group overflow-hidden">
+                {/* For Explorers Section - Centered for even spacing */}
+                <div className="flex justify-center">
+                  <div className="rounded-2xl card-orange-glow card-explorers p-5 h-auto flex flex-col justify-between w-[98%] group overflow-hidden">
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>
               <div className="mb-2 text-center">
-                <span className="uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR EXPLORERS</span>
-                <h3 className="text-gate33-orange font-medium text-base mb-2">Learn 2 Earn</h3>
-                <p className="text-gray-300 text-sm leading-relaxed mb-2">
+                <span className="font-verdana uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR EXPLORERS</span>
+                <h3 className="font-verdana text-gate33-orange font-medium text-base mb-2">Learn 2 Earn</h3>
+                <p className="font-verdana text-gray-300 text-xs leading-relaxed mb-2">
                   Take <span className="text-gate33-orange font-medium">Web3 Learn2Earn</span> and <span className="text-gate33-orange font-medium">earn token rewards</span>. Grow your knowledge, grow your portfolio.
                 </p>
               </div>
               <div className="flex justify-center mb-2">
-                <Link href="/learn2earn" className="gate33-btn text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200">
+                <Link href="/learn2earn" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center" style={{ 
+                  width: '180px', 
+                  height: '34px', 
+                  borderRadius: '12px', 
+                  paddingLeft: '20px', 
+                  paddingRight: '20px',
+                  paddingTop: '0',
+                  paddingBottom: '0',
+                  background: '#FF6A00'
+                }}>
                   Start Learning
                 </Link>
               </div>
@@ -224,32 +260,33 @@ function Home() {
           </div>
           {/* EVEN MORE...COMING SOON Section com alinhamento centrado */}
           <div className="w-full mt-14 mb-6">
-            <div className="coming-soon-card bg-gate33-orange rounded-2xl py-8 px-8 shadow-lg relative overflow-hidden w-full max-w-6xl mx-auto text-center">
-              <h2 className="text-3xl font-bold text-white py-2 mb-2">EVEN MORE...COMING SOON</h2>
-              <p className="text-white text-lg leading-relaxed pb-3 mx-auto max-w-xl mb-4">
+            <div
+              className="coming-soon-card rounded-[40px] py-8 px-10 shadow-lg shadow-black/10 relative overflow-hidden w-full max-w-6xl mx-auto text-center"
+              style={{ background: '#F97316' }}
+            >
+              <h2 className="text-3xl font-bold text-white text-center mb-4">EVEN MORE...COMING SOON</h2>
+              <p className="text-[#0F0F0F] text-lg font-normal text-center mb-6">
                 We're developing groundbreaking features that will transform how talent connects with opportunities.
               </p>
-              <div className="pt-1 pb-2 w-full flex justify-center items-center">
-                <div className="flex items-center gap-3 w-full max-w-2xl">
+              <div className="w-full flex justify-center items-center">
+                <form className="flex items-center gap-3 w-full max-w-xl mx-auto" onSubmit={e => { e.preventDefault(); handleWaitlistSubscribe(); }}>
                   <input
                     type="email"
                     value={waitlistEmail || ''}
                     onChange={e => setWaitlistEmail(e.target.value)}
                     placeholder="Enter your e-mail here to stay up-to-date"
-                    className="waitlist-input-orange bg-orange-400/40 text-white text-sm px-6 py-2.5 rounded-full focus:outline-none focus:ring-2 focus:ring-white flex-1 shadow-sm placeholder:text-white/80 border-0 text-center"
+                    className="waitlist-input-orange flex-1 focus:outline-none"
                     disabled={waitlistLoading || waitlistSuccess}
                   />
                   <button
-                    className="waitlist-btn-orange gate33-btn text-white py-2.5 px-6 rounded-full transition-colors font-semibold text-base shadow-md border-2 border-white/30 focus:outline-none focus:ring-2 focus:ring-white whitespace-nowrap flex-shrink-0"
-                    onClick={handleWaitlistSubscribe}
+                    type="submit"
+                    className="waitlist-btn-orange px-4 py-2.5 min-w-[90px]"
                     disabled={waitlistLoading || waitlistSuccess}
                   >
-                    {waitlistLoading ? 'Sending...' : waitlistSuccess ? 'Subscribed!' : 'Join the Waitlist'}
+                    Notify Me
                   </button>
-                </div>
+                </form>
               </div>
-              {waitlistError && <div className="text-white text-xs pb-1 text-center">{waitlistError === 'Please enter a valid email address.' ? 'Please enter a valid email address.' : 'Failed to subscribe. Please try again later.'}</div>}
-              {waitlistSuccess && <div className="text-white text-xs pb-1 text-center">You have joined the waitlist!</div>}
             </div>
           </div>
         </div>
@@ -258,7 +295,6 @@ function Home() {
       <main className="min-h-screen bg-gradient-to-b from-black via-black to-black text-white relative overflow-hidden gate33-main-section">
 
         <section id="about" className="about py-20 text-center px-4 relative overflow-hidden">
-          <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
             <h2 className="text-3xl font-bold text-gate33-orange mb-8">Why Choose Gate33?</h2>
             <p className="text-gray-200 mb-10 max-w-5xl mx-auto text-base leading-relaxed">
@@ -299,7 +335,6 @@ function Home() {
         </section>
 
         <section id="services" className="services py-20 text-center px-4 relative">
-          <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
             <h2 className="text-3xl font-bold text-gate33-orange mb-8">Our Services</h2>
             <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
@@ -338,7 +373,6 @@ function Home() {
         </section>
 
         <section id="jobs" className="jobs py-20 text-center px-4 relative">
-          <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
             <h2 className="text-3xl font-bold text-gate33-orange mb-8">Featured Jobs</h2>
             <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
@@ -388,7 +422,6 @@ function Home() {
         </section>
 
         <section id="companies" className="companies py-20 text-center px-4 relative">
-          <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
             <h2 className="text-3xl font-bold text-gate33-orange mb-8">Trusted Companies</h2>
             <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
@@ -421,7 +454,6 @@ function Home() {
         </section>
 
         <section id="partners" className="partners py-20 text-center px-4 relative">
-          <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
             <h2 className="text-3xl font-bold text-gate33-orange mb-8">Our Strategic Partners</h2>
             <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
@@ -508,7 +540,6 @@ function Home() {
         </section>
 
         <section id="contact" className="contact py-20 text-center px-4 relative">
-          <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
             <h2 className="text-3xl font-bold text-gate33-orange mb-6">Contact Us</h2>
             <p className="text-gray-200 max-w-xl mx-auto mb-10 text-base leading-relaxed">
@@ -524,7 +555,6 @@ function Home() {
         </section>
 
         <section id="faq" className="faq py-20 px-4 relative">
-          <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="relative z-10">
             <h2 className="text-3xl font-bold text-gate33-orange mb-10 text-center">Frequently Asked Questions</h2>
             <div className="faq-container max-w-4xl mx-auto bg-black/80 rounded-xl border border-orange-500/10 p-6 shadow-lg">
