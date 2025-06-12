@@ -576,30 +576,30 @@ body {
   pointer-events: none;
 }
 
-/* Efeito de luz horizontal para FEATURED JOBS (exatamente igual ao FOR HODLERS) */
-.lamp-light-effect-horizontal {
+/* Efeito de luz horizontal tipo lanterna que acende no hover */
+.lamp-light-vertical {
   position: absolute;
-  left: 0;
   top: 0;
-  width: 95px;
+  left: 0;
+  width: 50%;
   height: 100%;
   z-index: 1;
-  pointer-events: none;
-  background: radial-gradient(ellipse at left,
-    rgba(255, 187, 0, 0.90) 0%,
-    rgba(255, 149, 0, 0.10) 50%,
-    rgba(255, 106, 0, 0.10) 100%
+  pointer-events: none;  background: linear-gradient(
+    90deg,
+    rgba(255, 106, 0, 0.18) 00%,
+    rgba(255, 106, 0, 0.15) 50%,
+    rgba(255, 85, 0, 0.10) 80%,
+    transparent 100%
   );
-  border-radius: 50% 0 0 50% / 50% 0 0 50%;
-  filter: blur(8px);
-  transition: opacity 0.3s;
+  border-radius: inherit;
+  filter: blur(4px);
   opacity: 0;
+  transition: opacity 0.4s ease-in-out;
 }
 
-.card-builders:hover .lamp-light-effect-horizontal,
-.card-hodlers:hover .lamp-light-effect-horizontal,
-.card-explorers:hover .lamp-light-effect-horizontal,
-.job-card:hover .lamp-light-effect-horizontal {
+/* Ativa o efeito no hover dos cartões */
+.card-orange-glow:hover .lamp-light-vertical,
+.job-card:hover .lamp-light-vertical {
   opacity: 1;
 }
 

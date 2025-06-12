@@ -152,7 +152,11 @@ function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 h-full w-full">
                 {/* For Builders Section - Centered for even spacing */}
                 <div className="flex justify-center">
-                  <div className="rounded-2xl p-5 h-auto flex flex-col justify-between w-[98%] group overflow-hidden">
+                  <div className="rounded-2xl card-orange-glow p-5 h-auto flex flex-col justify-between w-[98%] group overflow-hidden">
+              {/* Barra LED horizontal no topo */}
+              <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
+                <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
+              </div>
               <div className="mb-2 text-center">
                 <span className="font-verdana uppercase text-lg text-white font-bold tracking-wider mb-2 block">FOR BUILDERS</span>
                 <h3 className="font-verdana text-gate33-orange font-medium text-base mb-2">Hire or Get Hired</h3>
@@ -273,6 +277,8 @@ function Home() {
           <div className="flex-1 w-full max-w-2xl flex flex-col gap-6">
             {/* Card 1 */}
             <Link href="/jobs" className="rounded-2xl card-orange-glow p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+              {/* Efeito de luz vertical tipo lanterna */}
+              <div className="lamp-light-vertical"></div>
               {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
               <div className="flex flex-col justify-center items-center mr-5 relative">
                 <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
@@ -290,6 +296,8 @@ function Home() {
             </Link>
             {/* Card 2 */}
             <Link href="/jobs" className="rounded-2xl card-orange-glow p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+              {/* Efeito de luz vertical tipo lanterna */}
+              <div className="lamp-light-vertical"></div>
               {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
               <div className="flex flex-col justify-center items-center mr-5 relative">
                 <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
@@ -307,6 +315,8 @@ function Home() {
             </Link>
             {/* Card 3 */}
             <Link href="/jobs" className="rounded-2xl card-orange-glow p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+              {/* Efeito de luz vertical tipo lanterna */}
+              <div className="lamp-light-vertical"></div>
               {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
               <div className="flex flex-col justify-center items-center mr-5 relative">
                 <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
@@ -334,6 +344,9 @@ function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
                 {/* Card 1 */}
                 <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <div className="absolute top-3 right-3 z-10">
+                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">New</span>
+                  </div>
                   <Image src="/icons/Vector.png" alt="Governance AI Icon" width={40} height={40} className="mb-2" />
                   <div className="flex-1 flex flex-col justify-between w-full">
                     <div>
@@ -379,6 +392,9 @@ function Home() {
                 </div>
                 {/* Card 4 */}
                 <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <div className="absolute top-3 right-3 z-10">
+                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">New</span>
+                  </div>
                   <Image src="/icons/Vector (1).png" alt="AI Smart Contracts Icon" width={40} height={40} className="mb-2" />
                   <div className="flex-1 flex flex-col justify-between w-full">
                     <div>
@@ -409,6 +425,9 @@ function Home() {
                 </div>
                 {/* Card 6 */}
                 <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <div className="absolute top-3 right-3 z-10">
+                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-semibold">Popular</span>
+                  </div>
                   <Image src="/icons/Vector (4).png" alt="Market Gap Icon" width={40} height={40} className="mb-2" />
                   <div className="flex-1 flex flex-col justify-between w-full">
                     <div>
