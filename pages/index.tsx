@@ -338,9 +338,6 @@ function Home() {
 
       <main className="min-h-screen bg-gradient-to-b from-black via-black to-black text-white relative overflow-hidden gate33-main-section">
         {/* Linha laranja divisória superior */}
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>
-        </div>
         
         <section id="about" className="about py-20 px-4 relative">
           <div className="relative z-10 max-w-7xl mx-auto">
@@ -474,164 +471,137 @@ function Home() {
           <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>
         </div>
 
-        <section id="services" className="services py-20 text-center px-4 relative">
-          <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-gate33-orange mb-6">Our Services</h2>
-            <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-              We offer a range of services tailored to the needs of Web3 professionals and companies, including job postings, talent sourcing, and innovative learning and earning programs.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              <div className="service-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg">
-                <h3 className="text-xl font-medium text-orange-500 mb-4">Job Postings</h3>
-                <p className="text-gray-300 text-sm mb-4">
-                  Post your job openings and connect with a pool of talented Web3 professionals. Our platform ensures that your listings reach the right audience.
-                </p>
-                <Link href="/company-register" className="text-orange-400 text-sm hover:underline">
-                  Start Hiring Today →
-                </Link>
+        {/* LEARN2EARN SECTION - substitui Our Services */}
+        <section id="learn2earn" className="py-20 px-4 relative">
+          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-10 items-stretch relative z-10">
+            {/* Sidebar */}
+            <div className="lg:w-1/3 flex flex-col justify-center mb-8 lg:mb-0">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">ACTIVE LEARN & EARN<br />OPPORTUNITIES</h2>
+              <p className="text-orange-400 text-base mb-6 max-w-xs">Complete educational tasks and<br />earn crypto rewards</p>
+              <button className="gate33-btn-orange text-white py-2.5 px-8 rounded-full font-semibold text-base w-fit">See All Opportunities</button>
+            </div>
+            {/* Cards Grid */}
+            <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+              {/* Card 1 */}
+              <div className="relative rounded-2xl card-orange-glow p-6 flex flex-col min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <div className="absolute top-4 right-4 z-10">
+                  <span className="bg-green-900 text-green-300 text-xs px-2 py-1 rounded-full font-semibold">Earn 0.01 ETH</span>
+                </div>
+                <div className="mb-2 text-left">
+                  <span className="text-xs text-gray-400 block mb-1">Ends: May 23, 2025 at 03:00 AM</span>
+                  <h3 className="font-bold text-white text-lg mb-1">Ethereum Fundamentals</h3>
+                  <p className="text-gray-300 text-xs mb-2">Complete this 4-module course to understand Ethereum's architecture and smart contract basics.</p>
+                </div>
+                <div className="flex items-center justify-between mt-auto">
+                  <span className="text-xs text-orange-300 flex items-center"><span className="inline-block w-2 h-2 bg-orange-400 rounded-full mr-1"></span>4,321 enrolled</span>
+                  <a href="#" className="text-orange-400 text-xs font-semibold hover:underline">Start learning</a>
+                </div>
               </div>
-              <div className="service-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg">
-                <h3 className="text-xl font-medium text-orange-500 mb-4">Talent Sourcing</h3>
-                <p className="text-gray-300 text-sm mb-4">
-                  Let us help you find the perfect candidate for your Web3 project. We source and vet top talent to match your specific requirements.
-                </p>
-                <Link href="/contact" className="text-orange-400 text-sm hover:underline">
-                  Contact Sales to Learn More →
-                </Link>
+              {/* Card 2 */}
+              <div className="relative rounded-2xl card-orange-glow p-6 flex flex-col min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <div className="absolute top-4 right-4 z-10">
+                  <span className="bg-green-900 text-green-300 text-xs px-2 py-1 rounded-full font-semibold">Earn 50 USDC</span>
+                </div>
+                <div className="mb-2 text-left">
+                  <span className="text-xs text-gray-400 block mb-1">Ends: May 23, 2025 at 03:00 AM</span>
+                  <h3 className="font-bold text-white text-lg mb-1">DeFi Protocols</h3>
+                  <p className="text-gray-300 text-xs mb-2">Learn how decentralized finance works and how to interact with major lending and exchange protocols.</p>
+                </div>
+                <div className="flex items-center justify-between mt-auto">
+                  <span className="text-xs text-orange-300 flex items-center"><span className="inline-block w-2 h-2 bg-orange-400 rounded-full mr-1"></span>2,157 enrolled</span>
+                  <a href="#" className="text-orange-400 text-xs font-semibold hover:underline">Start learning</a>
+                </div>
               </div>
-              <div className="service-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg">
-                <h3 className="text-xl font-medium text-orange-500 mb-4">Learn and Earn</h3>
-                <p className="text-gray-300 text-sm mb-4">
-                  Join our Learn2Earn program and gain rewards while you learn. Enhance your skills and increase your visibility to potential employers.
-                </p>
-                <Link href="/learn2earn" className="text-orange-400 text-sm hover:underline">
-                  Discover Learn2Earn →
-                </Link>
+              {/* Card 3 */}
+              <div className="relative rounded-2xl card-orange-glow p-6 flex flex-col min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <div className="absolute top-4 right-4 z-10">
+                  <span className="bg-green-900 text-green-300 text-xs px-2 py-1 rounded-full font-semibold">Earn 0.01 ETH</span>
+                </div>
+                <div className="mb-2 text-left">
+                  <span className="text-xs text-gray-400 block mb-1">Ends: May 23, 2025 at 03:00 AM</span>
+                  <h3 className="font-bold text-white text-lg mb-1">Ethereum Fundamentals</h3>
+                  <p className="text-gray-300 text-xs mb-2">Complete this 4-module course to understand Ethereum's architecture and smart contract basics.</p>
+                </div>
+                <div className="flex items-center justify-between mt-auto">
+                  <span className="text-xs text-orange-300 flex items-center"><span className="inline-block w-2 h-2 bg-orange-400 rounded-full mr-1"></span>4,321 enrolled</span>
+                  <a href="#" className="text-orange-400 text-xs font-semibold hover:underline">Start learning</a>
+                </div>
+              </div>
+              {/* Card 4 - Coming Soon */}
+              <div className="relative rounded-2xl card-orange-glow p-6 flex flex-col min-h-[210px] items-center justify-center group overflow-visible opacity-60 cursor-not-allowed">
+                <span className="text-gray-400 text-sm">MORE COMING SOON</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Linha laranja divisória após Our Services */}
+        {/* Linha laranja divisória após Learn2Earn */}
         <div className="max-w-7xl mx-auto px-4">
           <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>
         </div>
 
-        <section id="companies" className="companies py-20 text-center px-4 relative">
-          <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-gate33-orange mb-8">Trusted Companies</h2>
-            <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-              All companies on our platform undergo a verification process to ensure a safe environment for candidates.
+        {/* WHY CHOOSE GATE33 - substitui Trusted Companies */}
+        <section id="why-gate33" className="py-20 px-4 relative">
+          <div className="max-w-7xl mx-auto relative z-10">
+            {/* Linha laranja superior removida, conteúdo puxado para cima */}
+            <h2 className="text-2xl md:text-3xl font-bold text-gate33-orange mb-2 text-center tracking-wide mt-0">WHY CHOOSE GATE33?</h2>
+            <p className="text-gray-200 max-w-3xl mx-auto mb-12 text-center text-base leading-relaxed">
+              We offer a secure environment where verified companies post genuine job opportunities and qualified candidates can find real opportunities.
             </p>
-            <div className="company-logos flex flex-wrap justify-center items-center gap-10 mx-auto max-w-5xl mb-10">
-              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
-                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 max-w-5xl mx-auto">
+              {/* Verified Companies */}
+              <div className="flex flex-col items-center text-center">
+                <span className="mb-4"><svg width="40" height="40" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><path d="M28 15.5l-8.25 9L12 17.5" stroke="#FF6A00" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="20" cy="20" r="13.5" stroke="#FF6A00" strokeWidth="2"/></svg></span>
+                <h3 className="font-bold text-white text-base mb-2">Verified Companies</h3>
+                <p className="text-gray-400 text-xs">All companies on our platform undergo a rigorous verification process to ensure legitimacy and reliability in job postings.</p>
               </div>
-              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
-                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
+              {/* Quality Opportunities */}
+              <div className="flex flex-col items-center text-center">
+                <span className="mb-4"><svg width="40" height="40" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><path d="M20 13l2.09 4.24L27 18.27l-3.45 3.36L24.18 27 20 24.27 15.82 27l.63-5.37L13 18.27l4.91-.99L20 13z" stroke="#FF6A00" strokeWidth="2" strokeLinejoin="round"/></svg></span>
+                <h3 className="font-bold text-white text-base mb-2">Quality Opportunities</h3>
+                <p className="text-gray-400 text-xs">Curated high-quality job listings with detailed descriptions, clear benefits, and transparent selection processes.</p>
               </div>
-              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
-                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
+              {/* Data Security */}
+              <div className="flex flex-col items-center text-center">
+                <span className="mb-4"><svg width="40" height="40" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><rect x="13" y="18" width="14" height="9" rx="2" stroke="#FF6A00" strokeWidth="2"/><path d="M20 23v2" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round"/></svg></span>
+                <h3 className="font-bold text-white text-base mb-2">Data Security</h3>
+                <p className="text-gray-400 text-xs">Our platform prioritizes the protection of your personal information with advanced security measures to keep your profile and application data safe.</p>
               </div>
-              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
-                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
-              </div>
-              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
-                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
-              </div>
-              <div className="company-logo bg-black/80 rounded-lg p-5 w-40 h-24 flex items-center justify-center hover:scale-105 hover:shadow-lg transition-all border border-orange-500/10 hover:border-orange-500/30">
-                <Image src="/logo2.png" alt="Company Logo" width={120} height={40} className="company-logo-image" />
+              {/* Learn2Earn */}
+              <div className="flex flex-col items-center text-center">
+                <span className="mb-4"><svg width="40" height="40" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><rect x="14" y="13" width="12" height="14" rx="2" stroke="#FF6A00" strokeWidth="2"/><path d="M18 17h4M18 21h4" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round"/></svg></span>
+                <h3 className="font-bold text-white text-base mb-2">Learn2Earn</h3>
+                <p className="text-gray-400 text-xs">Enhance your skills and earn rewards by participating in our Learn2Earn program, where learning converts into real opportunities.</p>
               </div>
             </div>
-            <Link href="/crypto-tools" className="text-orange-400 text-sm hover:text-orange-300 hover:underline font-medium">
-              View all verified companies →
-            </Link>
           </div>
         </section>
 
-        <section id="partners" className="partners py-20 text-center px-4 relative">
-          <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-gate33-orange mb-8">Our Strategic Partners</h2>
-            <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-              Gate33 has established strategic partnerships with leading organizations in the blockchain, technology, and recruitment sectors. These collaborations enable us to provide enhanced services, cutting-edge solutions, and expanded opportunities for our community.
-            </p>
-            
-            {partners.length > 0 ? (
-              <div className="partners-container max-w-6xl mx-auto mb-10">
-                {partners.length <= 3 ? (
-                  // Center partners when 3 or fewer
-                  <div className="flex justify-center items-center gap-8 flex-wrap">
-                    {partners.map((partner) => (
-                      <div key={partner.id} className="partner-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all shadow-lg flex-shrink-0 w-80">
-                        <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
-                          <a href={partner.website || '#'} target="_blank" rel="noopener noreferrer" title={`Visit ${partner.name}`}>
-                            <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
-                              <Image 
-                                src={partner.logoUrl}
-                                alt={`${partner.name} Logo`}
-                                width={90}
-                                height={90}
-                                className="partner-logo-container"
-                              />
-                            </div>
-                          </a>
-                        </div>
-                        <h3 className="text-xl text-orange-500 mb-2">{partner.name}</h3>
-                        <p className="text-gray-300 text-sm mb-4">
-                          {partner.description}
-                        </p>
-                        {partner.website && (
-                          <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-orange-400 text-sm hover:underline">Visit {partner.name} →</a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  // Scrolling carousel when more than 3 partners
-                  <div className="partners-scroll-container overflow-x-auto overflow-y-hidden">
-                    <div 
-                      ref={carouselRef}
-                      className="flex gap-8 pb-4"
-                    >
-                      {partners.map((partner) => (
-                        <div key={partner.id} className="partner-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/50 transition-all shadow-lg flex-shrink-0 w-80">
-                          <div className="partner-logo w-full h-20 flex items-center justify-center mb-4">
-                            <a href={partner.website || '#'} target="_blank" rel="noopener noreferrer" title={`Visit ${partner.name}`}>
-                              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-orange-500 overflow-hidden">
-                                <Image 
-                                  src={partner.logoUrl}
-                                  alt={`${partner.name} Logo`}
-                                  width={90}
-                                  height={90}
-                                  className="partner-logo-container"
-                                />
-                              </div>
-                            </a>
-                          </div>
-                          <h3 className="text-xl text-orange-500 mb-2">{partner.name}</h3>
-                          <p className="text-gray-300 text-sm mb-4">
-                            {partner.description}
-                          </p>
-                          {partner.website && (
-                            <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-orange-400 text-sm hover:underline">Visit {partner.name} →</a>
-                          )}
-                        </div>
-                      ))}
+        {/* PARTNERS/INDUSTRY LEADERS SECTION */}
+        <section id="partners" className="py-16 px-4 bg-[#181C22] relative">
+          <div className="max-w-7xl mx-auto relative z-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 tracking-wide">
+              TRUSTED BY <span className="text-gate33-orange">INDUSTRY LEADERS</span>
+            </h2>
+            {/* Carousel de logos de parceiros - cartões maiores e logos redondos */}
+            <div className="flex overflow-x-auto gap-12 py-4 px-2 scrollbar-hide items-center justify-center" ref={carouselRef}>
+              {partners && partners.length > 0 ? (
+                partners.map((partner) => (
+                  <div key={partner.id} className="bg-black rounded-2xl flex items-center justify-center min-w-[130px] min-h-[130px] w-[130px] h-[130px] mx-2 shadow-lg">
+                    <div className="rounded-full bg-[#222] flex items-center justify-center w-[90px] h-[90px]">
+                      <Image src={partner.logoUrl} alt={partner.name} width={80} height={80} className="object-contain rounded-full" />
                     </div>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center mb-10">
-                <p className="text-gray-400">Partners will be displayed here once added.</p>
-              </div>
-            )}
-            
-            {loading && (
-              <div className="text-center mb-10">
-                <p className="text-gray-400">Loading partners...</p>
-              </div>
-            )}
+                ))
+              ) : (
+                <span className="text-gray-400 text-sm">No partners yet.</span>
+              )}
+            </div>
+            <div className="flex justify-center mt-4">
+              <Link href="/partners" className="text-orange-400 text-sm hover:underline font-medium flex items-center gap-1">
+                View all Partners <span className="ml-1">→</span>
+              </Link>
+            </div>
           </div>
         </section>
 
