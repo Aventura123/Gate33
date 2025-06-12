@@ -337,123 +337,142 @@ function Home() {
       </section>
 
       <main className="min-h-screen bg-gradient-to-b from-black via-black to-black text-white relative overflow-hidden gate33-main-section">
+        {/* Linha laranja divisória superior */}
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>
+        </div>
+        
         <section id="about" className="about py-20 px-4 relative">
-          <div className="relative z-10 flex flex-col lg:flex-row max-w-7xl mx-auto gap-4 items-start justify-start">
-            {/* Cartões à esquerda - grid 3x2 compacto */}
-            <div className="flex-shrink-0 w-full lg:w-[65%]">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
-                {/* Card 1 */}
-                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
-                  <div className="absolute top-3 right-3 z-10">
-                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">New</span>
-                  </div>
-                  <Image src="/icons/Vector.png" alt="Governance AI Icon" width={40} height={40} className="mb-2" />
-                  <div className="flex-1 flex flex-col justify-between w-full">
-                    <div>
-                      <h3 className="font-verdana font-bold text-white text-lg mb-1">Governance AI</h3>
-                      <p className="text-gray-300 text-sm mb-4">
-                        Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
-                      </p>
+          <div className="relative z-10 max-w-7xl mx-auto">
+            <div className="flex flex-col lg:flex-row gap-8 items-start justify-start">
+              {/* Cartões à esquerda - grid 3x2 compacto */}
+              <div className="flex-shrink-0 w-full lg:w-[65%]">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 w-full">
+                  {/* Card 1 */}
+                  <div className="rounded-2xl card-orange-glow p-6 flex flex-col items-center w-full aspect-square min-h-[280px] max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <div className="absolute top-4 right-4 z-10">
+                      <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">New</span>
                     </div>
-                    <Link href="/crypto-tools/governance-ai" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-sm cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto">
-                      Try This Out
-                    </Link>
-                  </div>
-                </div>
-                {/* Card 2 */}
-                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
-                  <Image src="/icons/Vector (4).png" alt="Market List Icon" width={40} height={40} className="mb-2" />
-                  <div className="flex-1 flex flex-col justify-between w-full">
-                    <div>
-                      <h3 className="font-verdana font-bold text-white text-lg mb-1">Market List</h3>
-                      <p className="text-gray-300 text-sm mb-4">
-                        Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
-                      </p>
+                    <Image src="/icons/Vector.png" alt="Governance AI Icon" width={32} height={32} className="mb-4" />
+                    <div className="flex-1 flex flex-col justify-between w-full text-center">
+                      <div>
+                        <h3 className="font-verdana font-bold text-white text-base mb-2">Governance AI</h3>
+                        <p className="text-gray-300 text-xs mb-4 leading-relaxed">
+                          Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
+                        </p>
+                      </div>
+                      <Link href="/crypto-tools/governance-ai" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                        Try This Out
+                      </Link>
                     </div>
-                    <Link href="/crypto-tools/market-list" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-sm cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto">
-                      Try This Out
-                    </Link>
                   </div>
-                </div>
-                {/* Card 3 */}
-                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
-                  <Image src="/icons/Vector (5).png" alt="Bitcoin Analysis Icon" width={40} height={40} className="mb-2" />
-                  <div className="flex-1 flex flex-col justify-between w-full">
-                    <div>
-                      <h3 className="font-verdana font-bold text-white text-lg mb-1">Bitcoin Analysis</h3>
-                      <p className="text-gray-300 text-sm mb-4">
-                        Real-time Bitcoin price data, market sentiment analysis, and useful trading utilities powered by free APIs.
-                      </p>
+                  {/* Card 2 */}
+                  <div className="rounded-2xl card-orange-glow p-6 flex flex-col items-center w-full aspect-square min-h-[280px] max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <div className="absolute top-4 right-4 z-10">
+                      <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-semibold">Popular</span>
                     </div>
-                    <Link href="/crypto-tools/bitcoin-analysis" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-sm cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto">
-                      Try This Out
-                    </Link>
-                  </div>
-                </div>
-                {/* Card 4 */}
-                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
-                  <div className="absolute top-3 right-3 z-10">
-                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">New</span>
-                  </div>
-                  <Image src="/icons/Vector (1).png" alt="AI Smart Contracts Icon" width={40} height={40} className="mb-2" />
-                  <div className="flex-1 flex flex-col justify-between w-full">
-                    <div>
-                      <h3 className="font-verdana font-bold text-white text-lg mb-1">AI Smart Contracts</h3>
-                      <p className="text-gray-300 text-sm mb-4">
-                        AI-powered smart contract auditing tool will analyze your contracts for gas optimization opportunities and security best practices.
-                      </p>
+                    <Image src="/icons/Vector (4).png" alt="Market List Icon" width={32} height={32} className="mb-4" />
+                    <div className="flex-1 flex flex-col justify-between w-full text-center">
+                      <div>
+                        <h3 className="font-verdana font-bold text-white text-base mb-2">Market List</h3>
+                        <p className="text-gray-300 text-xs mb-4 leading-relaxed">
+                          Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
+                        </p>
+                      </div>
+                      <Link href="/crypto-tools/market-list" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                        Try This Out
+                      </Link>
                     </div>
-                    <button className="bg-gray-400 text-white py-2 px-4 rounded-full font-semibold text-sm cursor-not-allowed mt-auto" disabled>
-                      Coming Soon
-                    </button>
                   </div>
-                </div>
-                {/* Card 5 */}
-                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
-                  <Image src="/icons/Vector (6).png" alt="Staking Tool Icon" width={40} height={40} className="mb-2" />
-                  <div className="flex-1 flex flex-col justify-between w-full">
-                    <div>
-                      <h3 className="font-verdana font-bold text-white text-lg mb-1">Staking Tool</h3>
-                      <p className="text-gray-300 text-sm mb-4">
-                        Stake your tokens and earn rewards through our secure staking platform. Support the network while generating passive income.
-                      </p>
+                  {/* Card 3 */}
+                  <div className="rounded-2xl card-orange-glow p-6 flex flex-col items-center w-full aspect-square min-h-[280px] max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <Image src="/icons/Vector (5).png" alt="Bitcoin Analysis Icon" width={32} height={32} className="mb-4" />
+                    <div className="flex-1 flex flex-col justify-between w-full text-center">
+                      <div>
+                        <h3 className="font-verdana font-bold text-white text-base mb-2">Bitcoin Analysis</h3>
+                        <p className="text-gray-300 text-xs mb-4 leading-relaxed">
+                          Real-time Bitcoin price data, market sentiment analysis, and useful trading utilities powered by free APIs.
+                        </p>
+                      </div>
+                      <Link href="/crypto-tools/bitcoin-analysis" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                        Try This Out
+                      </Link>
                     </div>
-                    <button className="bg-gray-400 text-white py-2 px-4 rounded-full font-semibold text-sm cursor-not-allowed mt-auto" disabled>
-                      Coming Soon
-                    </button>
                   </div>
-                </div>
-                {/* Card 6 */}
-                <div className="rounded-2xl card-orange-glow p-4 flex flex-col items-center w-full aspect-square min-h-[240px] max-h-[300px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
-                  <div className="absolute top-3 right-3 z-10">
-                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-semibold">Popular</span>
-                  </div>
-                  <Image src="/icons/Vector (4).png" alt="Market Gap Icon" width={40} height={40} className="mb-2" />
-                  <div className="flex-1 flex flex-col justify-between w-full">
-                    <div>
-                      <h3 className="font-verdana font-bold text-white text-lg mb-1">Market Gap</h3>
-                      <p className="text-gray-300 text-sm mb-4">
-                        Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
-                      </p>
+                  {/* Card 4 */}
+                  <div className="rounded-2xl card-orange-glow p-6 flex flex-col items-center w-full aspect-square min-h-[280px] max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <div className="absolute top-4 right-4 z-10">
+                      <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">New</span>
                     </div>
-                    <Link href="/crypto-tools/market-gap" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-sm cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto">
-                      Try This Out
-                    </Link>
+                    <Image src="/icons/Vector (1).png" alt="AI Smart Contracts Icon" width={32} height={32} className="mb-4" />
+                    <div className="flex-1 flex flex-col justify-between w-full text-center">
+                      <div>
+                        <h3 className="font-verdana font-bold text-white text-base mb-2">AI Smart Contracts</h3>
+                        <p className="text-gray-300 text-xs mb-4 leading-relaxed">
+                          AI-powered smart contract auditing tool will analyze your contracts for gas optimization opportunities and security best practices.
+                        </p>
+                      </div>
+                      <button className="bg-gray-600 text-gray-300 py-2 px-4 rounded-full font-semibold text-xs cursor-not-allowed mt-auto mx-auto block w-fit" disabled>
+                        Coming Soon
+                      </button>
+                    </div>
+                  </div>
+                  {/* Card 5 */}
+                  <div className="rounded-2xl card-orange-glow p-6 flex flex-col items-center w-full aspect-square min-h-[280px] max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <Image src="/icons/Vector (6).png" alt="Staking Tool Icon" width={32} height={32} className="mb-4" />
+                    <div className="flex-1 flex flex-col justify-between w-full text-center">
+                      <div>
+                        <h3 className="font-verdana font-bold text-white text-base mb-2">Staking Tool</h3>
+                        <p className="text-gray-300 text-xs mb-4 leading-relaxed">
+                          Stake your tokens and earn rewards through our secure staking platform. Support the network while generating passive income.
+                        </p>
+                      </div>
+                      <button className="bg-gray-600 text-gray-300 py-2 px-4 rounded-full font-semibold text-xs cursor-not-allowed mt-auto mx-auto block w-fit" disabled>
+                        Coming Soon
+                      </button>
+                    </div>
+                  </div>
+                  {/* Card 6 */}
+                  <div className="rounded-2xl card-orange-glow p-6 flex flex-col items-center w-full aspect-square min-h-[280px] max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <div className="absolute top-4 right-4 z-10">
+                      <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-semibold">Popular</span>
+                    </div>
+                    <Image src="/icons/Vector (4).png" alt="Market Cap Icon" width={32} height={32} className="mb-4" />
+                    <div className="flex-1 flex flex-col justify-between w-full text-center">
+                      <div>
+                        <h3 className="font-verdana font-bold text-white text-base mb-2">Market Cap</h3>
+                        <p className="text-gray-300 text-xs mb-4 leading-relaxed">
+                          Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
+                        </p>
+                      </div>
+                      <Link href="/crypto-tools/market-cap" className="gate33-btn-orange text-white py-2 px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                        Try This Out
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            {/* Texto à direita alinhado ao topo, largura fixa, sem centralização vertical */}
-            <div className="flex-shrink-0 w-full lg:w-[30%] flex flex-col justify-start items-start text-left mt-8 lg:mt-0">
-              <h2 className="text-3xl font-bold text-white mb-4 leading-tight">EXPLORE OUR CRYPTO TOOLS</h2>
-              <p className="text-orange-400 font-semibold mb-3 leading-snug">Crypto Tools offers solutions for analyzing Ethereum wallets. Features include ENS resolution, wallet age assessment, and dust token detection.</p>
-              <p className="text-gray-200 mb-6 leading-snug">Operations are secure in your browser, using public APIs and your Ethereum provider. Private keys remain secure and never exposed.</p>
-              <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-6 rounded-full font-semibold text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl">
-                Explore Our Crypto Tools
-              </Link>
+              {/* Texto à direita */}
+              <div className="flex-shrink-0 w-full lg:w-[35%] flex flex-col justify-center items-start text-left mt-8 lg:mt-0 lg:pl-6">
+                <h2 className="text-3xl font-bold text-gate33-orange mb-4 text-left">EXPLORE OUR<br />CRYPTO TOOLS</h2>
+                <p className="text-left text-orange-300 mb-4 font-medium">
+                  Crypto Tools offers solutions for analyzing Ethereum wallets. Features include ENS resolution, wallet age assessment, and dust token detection.
+                </p>
+                <p className="text-gray-200 text-left text-sm mb-8">
+                  Operations are secure in your browser, using public APIs and your Ethereum provider. Private keys remain secure and never exposed.
+                </p>
+                <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-12 min-w-[230px] rounded-full font-semibold text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit">
+                  Explore Our Crypto Tools
+                </Link>
+              </div>
             </div>
           </div>
         </section>
+        
+        {/* Linha laranja divisória inferior */}
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>
+        </div>
 
         <section id="services" className="services py-20 text-center px-4 relative">
           <div className="relative z-10">
@@ -492,6 +511,11 @@ function Home() {
             </div>
           </div>
         </section>
+
+        {/* Linha laranja divisória após Our Services */}
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>
+        </div>
 
         <section id="companies" className="companies py-20 text-center px-4 relative">
           <div className="relative z-10">
