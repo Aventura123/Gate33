@@ -6,8 +6,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
     // Configuração para gerenciamento de rotas
   trailingSlash: false,
-  
-  // Configurações para imagens
+    // Configurações para imagens
   images: {
     remotePatterns: [
       {
@@ -33,6 +32,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'support.coingecko.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'styles.redditmedia.com',
       },
     ],
   },
