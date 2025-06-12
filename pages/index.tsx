@@ -123,8 +123,8 @@ function Home() {
         <DevNoticePopup onClose={() => setShowDevNotice(false)} />
       )}
       {/* Hero Section - NOVO LAYOUT COM FUNDO FIXO */}
-      <section className="hero-section-fixed-bg relative flex flex-col justify-center min-h-[90vh] px-4 py-16 overflow-hidden">
-        <div className="hero-content w-full max-w-6xl mx-auto flex flex-col pt-20">
+      <section className="hero-section-fixed-bg relative flex flex-col justify-center min-h-[50vh] px-4 pt-14 pb-12 overflow-hidden">
+        <div className="hero-content w-full max-w-6xl mx-auto flex flex-col pt-4">
           {/* Título principal alinhado à esquerda */}
           <h1 className="font-verdana font-bold text-white mb-2 tracking-normal uppercase">
             <span className="text-[42px] leading-[40px] block mb-2">YOUR GATEWAY TO TRUSTED</span>
@@ -136,7 +136,7 @@ function Home() {
             <span className="text-gate33-orange font-semibold">Verified. Secure. Web3-Native.</span>
           </p>
           {/* Section Cards com alinhamento aos limites do cartão laranja */}
-          <div className="w-full mt-14 mb-6 relative">
+          <div className="w-full mt-0.5 mb-1.5 relative">
             {/* Logo 3D G33 - Posicionado à esquerda, 3x maior e animado */}
             <div className="hidden lg:block absolute left-[-1px] top-[-300px] z-0">
               <Image
@@ -165,30 +165,12 @@ function Home() {
                   <span className="text-gate33-orange font-medium">escrow protection</span>. Build the future, <span className="text-gate33-orange font-medium">securely</span>.
                 </p>
               </div>
-              <div className="flex justify-center mb-2" style={{ gap: '9.32px' }}>
-                <Link href="/jobs" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center" style={{ 
-                  width: '150px', 
-                  height: '34px', 
-                  borderRadius: '12px', 
-                  paddingLeft: '20px', 
-                  paddingRight: '20px',
-                  paddingTop: '0',
-                  paddingBottom: '0',
-                  background: '#FF6A00'
-                }}>
+              <div className="flex justify-center mb-2 gap-[9.32px]">
+                <Link href="/jobs" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center gate33-btn-orange">
                   Find Jobs
                 </Link>
-                <span className="font-verdana text-white flex items-center" style={{ fontSize: '14px' }}>or</span>
-                <Link href="/company-register" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center" style={{ 
-                  width: '150px', 
-                  height: '34px', 
-                  borderRadius: '12px', 
-                  paddingLeft: '20px', 
-                  paddingRight: '20px',
-                  paddingTop: '0',
-                  paddingBottom: '0',
-                  background: '#FF6A00'
-                }}>
+                <span className="font-verdana text-white flex items-center text-[14px]">or</span>
+                <Link href="/company-register" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center gate33-btn-orange">
                   Post Jobs
                 </Link>
               </div>
@@ -210,16 +192,7 @@ function Home() {
                 </p>
               </div>
               <div className="flex justify-center mb-2">
-                <Link href="/crypto-tools" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center whitespace-nowrap" style={{ 
-                  width: '180px', 
-                  height: '34px', 
-                  borderRadius: '12px', 
-                  paddingLeft: '20px', 
-                  paddingRight: '20px',
-                  paddingTop: '0',
-                  paddingBottom: '0',
-                  background: '#FF6A00'
-                }}>
+                <Link href="/crypto-tools" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center whitespace-nowrap gate33-btn-orange">
                   Explore Crypto Tools
                 </Link>
               </div>
@@ -240,16 +213,7 @@ function Home() {
                 </p>
               </div>
               <div className="flex justify-center mb-2">
-                <Link href="/learn2earn" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center" style={{ 
-                  width: '180px', 
-                  height: '34px', 
-                  borderRadius: '12px', 
-                  paddingLeft: '20px', 
-                  paddingRight: '20px',
-                  paddingTop: '0',
-                  paddingBottom: '0',
-                  background: '#FF6A00'
-                }}>
+                <Link href="/learn2earn" className="font-verdana text-white font-medium text-sm transition-all duration-200 flex items-center justify-center gate33-btn-orange">
                   Start Learning
                 </Link>
               </div>
@@ -258,165 +222,139 @@ function Home() {
               </div>
             </div>
           </div>
-          {/* EVEN MORE...COMING SOON Section com alinhamento centrado */}
-          <div className="w-full mt-14 mb-6">
-            <div
-              className="coming-soon-card rounded-[40px] py-8 px-10 shadow-lg shadow-black/10 relative overflow-hidden w-full max-w-6xl mx-auto text-center"
-              style={{ background: '#F97316' }}
-            >
-              <h2 className="text-3xl font-bold text-white text-center mb-4">EVEN MORE...COMING SOON</h2>
-              <p className="text-[#0F0F0F] text-lg font-normal text-center mb-6">
-                We're developing groundbreaking features that will transform how talent connects with opportunities.
+        </div>
+      </section>
+
+      {/* EVEN MORE...COMING SOON Section com alinhamento centrado */}
+      <div className="w-full mt-0.5 mb-1.5">
+        <div
+          className="coming-soon-card rounded-[40px] py-8 px-10 shadow-lg shadow-black/10 relative overflow-hidden w-full max-w-6xl mx-auto text-center bg-[#F97316]"
+        >
+          <h2 className="text-3xl font-bold text-white text-center mb-4">EVEN MORE...COMING SOON</h2>
+          <p className="text-[#0F0F0F] text-lg font-normal text-center mb-6">
+            We're developing groundbreaking features that will transform how talent connects with opportunities.
+          </p>
+          <div className="w-full flex justify-center items-center">
+            <form className="flex items-center gap-3 w-full max-w-xl mx-auto" onSubmit={e => { e.preventDefault(); handleWaitlistSubscribe(); }}>
+              <input
+                type="email"
+                value={waitlistEmail || ''}
+                onChange={e => setWaitlistEmail(e.target.value)}
+                placeholder="Enter your e-mail here to stay up-to-date"
+                className="waitlist-input-orange flex-1 focus:outline-none"
+                disabled={waitlistLoading || waitlistSuccess}
+              />
+              <button
+                type="submit"
+                className="waitlist-btn-orange px-4 py-2.5 min-w-[90px]"
+                disabled={waitlistLoading || waitlistSuccess}
+              >
+                Notify Me
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Featured Jobs Section - MOVIDA PARA DEPOIS DA NEWSLETTER */}
+      <section id="jobs" className="jobs py-20 text-center px-4 relative">
+        <div className="relative z-10">
+          <h2 className="text-3xl font-bold text-gate33-orange mb-8">Featured Jobs</h2>
+          <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
+            Explore some of the current opportunities available on our platform.
+          </p>
+          <div className="jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
+              <h3 className="text-xl font-medium text-orange-500 mb-2">Blockchain Developer</h3>
+              <p className="text-gray-500 text-sm mb-4">TechFinance • Remote</p>
+              <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                Develop and maintain decentralized applications (DApps) using Solidity. Experience with smart contracts and Web3.js.
               </p>
-              <div className="w-full flex justify-center items-center">
-                <form className="flex items-center gap-3 w-full max-w-xl mx-auto" onSubmit={e => { e.preventDefault(); handleWaitlistSubscribe(); }}>
-                  <input
-                    type="email"
-                    value={waitlistEmail || ''}
-                    onChange={e => setWaitlistEmail(e.target.value)}
-                    placeholder="Enter your e-mail here to stay up-to-date"
-                    className="waitlist-input-orange flex-1 focus:outline-none"
-                    disabled={waitlistLoading || waitlistSuccess}
-                  />
-                  <button
-                    type="submit"
-                    className="waitlist-btn-orange px-4 py-2.5 min-w-[90px]"
-                    disabled={waitlistLoading || waitlistSuccess}
-                  >
-                    Notify Me
-                  </button>
-                </form>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">Full-time</span>
+                <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
               </div>
             </div>
+            <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
+              <h3 className="text-xl font-medium text-orange-500 mb-2">Digital Marketing Analyst</h3>
+              <p className="text-gray-500 text-sm mb-4">CryptoMedia • São Paulo</p>
+              <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                Develop digital marketing strategies focused on cryptocurrency and blockchain markets. SEO, SEM, and social media.
+              </p>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">Full-time</span>
+                <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
+              </div>
+            </div>
+            <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
+              <h3 className="text-xl font-medium text-orange-500 mb-2">Security Specialist</h3>
+              <p className="text-gray-500 text-sm mb-4">SecureChain • Lisbon</p>
+              <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                Audit smart contracts and implement security protocols in blockchain-based applications.
+              </p>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">Full-time</span>
+                <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
+              </div>
+            </div>
+          </div>
+          <div className="mt-10">
+            <Link href="/jobs" className="gate33-btn text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-all border-none shadow-lg hover:shadow-xl">
+              View all jobs
+            </Link>
           </div>
         </div>
       </section>
 
       <main className="min-h-screen bg-gradient-to-b from-black via-black to-black text-white relative overflow-hidden gate33-main-section">
-
-        <section id="about" className="about py-20 text-center px-4 relative overflow-hidden">
+        <section id="about" className="about py-20 text-center px-4 relative">
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-gate33-orange mb-8">Why Choose Gate33?</h2>
-            <p className="text-gray-200 mb-10 max-w-5xl mx-auto text-base leading-relaxed">
-              We offer a secure environment where verified companies post genuine job opportunities and qualified candidates can 
-              find real opportunities. Our platform uses blockchain technology to ensure greater transparency and security throughout the process.
+            <h2 className="text-3xl font-bold text-gate33-orange mb-6">About Us</h2>
+            <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
+              Gate33 is more than just a job platform; we are a comprehensive ecosystem designed to empower individuals and organizations in the Web3 space. Our mission is to bridge the gap between talent and opportunity, facilitating growth, learning, and innovation.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-left mt-10 px-5 max-w-6xl mx-auto">
-              <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-                <h3 className="text-xl text-gate33-orange mb-4">Verified Companies</h3>
-                <p className="text-gray-200 text-sm">
-                  All companies on our platform undergo a rigorous verification process to ensure 
-                  legitimacy and reliability in job postings.
-                </p>
-              </div>
-              <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-                <h3 className="text-xl text-gate33-orange mb-4">Quality Opportunities</h3>
-                <p className="text-gray-200 text-sm">
-                  Curated high-quality job listings with detailed descriptions, clear benefits, and 
-                  transparent selection processes.
-                </p>
-              </div>
-              <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-                <h3 className="text-xl text-gate33-orange mb-4">Data Security</h3>
-                <p className="text-gray-200 text-sm">
-                  Our platform prioritizes the protection of your personal information with 
-                  advanced security measures to keep your profile and application data safe.
-                </p>
-              </div>
-              <div className="bg-black/10 rounded-lg p-8 backdrop-blur-sm border border-orange-500/20 hover:-translate-y-2 hover:shadow-lg transition-all">
-                <h3 className="text-xl text-gate33-orange mb-4">Learn2Earn</h3>
-                <p className="text-gray-200 text-sm">
-                  Enhance your skills and earn rewards by participating in our Learn2Earn program, 
-                  where learning converts into real opportunities.
-                </p>
-              </div>
+            <div className="flex justify-center">
+              <Link href="/about" className="gate33-btn text-white py-2.5 px-8 rounded-full transition-colors shadow-lg hover:shadow-xl font-medium">
+                Learn More About Us
+              </Link>
             </div>
           </div>
         </section>
 
         <section id="services" className="services py-20 text-center px-4 relative">
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-gate33-orange mb-8">Our Services</h2>
+            <h2 className="text-3xl font-bold text-gate33-orange mb-6">Our Services</h2>
             <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-              Gate33 offers a complete platform to connect companies and candidates securely and efficiently.
+              We offer a range of services tailored to the needs of Web3 professionals and companies, including job postings, talent sourcing, and innovative learning and earning programs.
             </p>
-            <div className="services-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              <div className="service-card bg-black/80 rounded-lg p-7 h-40 max-w-xs min-h-[160px] text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
-                <div className="service-icon text-orange-500 text-5xl mb-4">🔎</div>
-                <h3 className="text-xl text-gate33-orange mb-4">For Job Seekers</h3>
-                <p className="text-gray-200 text-sm mb-4 text-left">
-                  Access quality jobs from verified companies, create a standout professional profile, and 
-                  track your applications in one place.
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <div className="service-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg">
+                <h3 className="text-xl font-medium text-orange-500 mb-4">Job Postings</h3>
+                <p className="text-gray-300 text-sm mb-4">
+                  Post your job openings and connect with a pool of talented Web3 professionals. Our platform ensures that your listings reach the right audience.
                 </p>
-                <Link href="/seeker-signup" className="text-orange-400 text-sm hover:underline">Register as a job seeker →</Link>
+                <Link href="/company-register" className="text-orange-400 text-sm hover:underline">
+                  Start Hiring Today →
+                </Link>
               </div>
-              <div className="service-card bg-black/80 rounded-lg p-7 h-40 max-w-xs min-h-[160px] text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
-                <div className="service-icon text-orange-500 text-5xl mb-4">💼</div>
-                <h3 className="text-xl text-gate33-orange mb-4">For Companies</h3>
-                <p className="text-gray-200 text-sm mb-4 text-left">
-                  Post jobs for qualified professionals, manage applications, and maintain a 
-                  corporate profile that highlights your culture and values.
+              <div className="service-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg">
+                <h3 className="text-xl font-medium text-orange-500 mb-4">Talent Sourcing</h3>
+                <p className="text-gray-300 text-sm mb-4">
+                  Let us help you find the perfect candidate for your Web3 project. We source and vet top talent to match your specific requirements.
                 </p>
-                <Link href="/company-register" className="text-orange-400 text-sm hover:underline">Register as a company →</Link>
+                <Link href="/contact" className="text-orange-400 text-sm hover:underline">
+                  Contact Sales to Learn More →
+                </Link>
               </div>
-              <div className="service-card bg-black/80 rounded-lg p-7 h-40 max-w-xs min-h-[160px] text-left border border-orange-500/20 hover:translate-y-[-10px] hover:bg-black hover:border-orange-500/40 transition-all shadow-lg">
-                <div className="service-icon text-orange-500 text-5xl mb-4">🧠</div>
-                <h3 className="text-xl text-gate33-orange mb-4">Learn2Earn</h3>
-                <p className="text-gray-200 text-sm mb-4 text-left">
-                  Participate in educational programs offered by partner companies, learn new 
-                  skills, and receive token rewards for completing courses.
+              <div className="service-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg">
+                <h3 className="text-xl font-medium text-orange-500 mb-4">Learn and Earn</h3>
+                <p className="text-gray-300 text-sm mb-4">
+                  Join our Learn2Earn program and gain rewards while you learn. Enhance your skills and increase your visibility to potential employers.
                 </p>
-                <Link href="/learn2earn" className="text-orange-400 text-sm hover:underline">Discover Learn2Earn →</Link>
+                <Link href="/learn2earn" className="text-orange-400 text-sm hover:underline">
+                  Discover Learn2Earn →
+                </Link>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="jobs" className="jobs py-20 text-center px-4 relative">
-          <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-gate33-orange mb-8">Featured Jobs</h2>
-            <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-              Explore some of the current opportunities available on our platform.
-            </p>
-            <div className="jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
-                <h3 className="text-xl font-medium text-orange-500 mb-2">Blockchain Developer</h3>
-                <p className="text-gray-500 text-sm mb-4">TechFinance • Remote</p>
-                <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                  Develop and maintain decentralized applications (DApps) using Solidity. Experience with smart contracts and Web3.js.
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">Full-time</span>
-                  <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
-                </div>
-              </div>
-              <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
-                <h3 className="text-xl font-medium text-orange-500 mb-2">Digital Marketing Analyst</h3>
-                <p className="text-gray-500 text-sm mb-4">CryptoMedia • São Paulo</p>
-                <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                  Develop digital marketing strategies focused on cryptocurrency and blockchain markets. SEO, SEM, and social media.
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">Full-time</span>
-                  <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
-                </div>
-              </div>
-              <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
-                <h3 className="text-xl font-medium text-orange-500 mb-2">Security Specialist</h3>
-                <p className="text-gray-500 text-sm mb-4">SecureChain • Lisbon</p>
-                <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                  Audit smart contracts and implement security protocols in blockchain-based applications.
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">Full-time</span>
-                  <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
-                </div>
-              </div>
-            </div>
-            <div className="mt-10">
-              <Link href="/jobs" className="gate33-btn text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-all border-none shadow-lg hover:shadow-xl">
-                View all jobs
-              </Link>
             </div>
           </div>
         </section>

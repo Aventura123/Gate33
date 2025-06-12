@@ -137,11 +137,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="layout">
       {/* Header with Professional Glassmorphism */}
-      <header className="site-header fixed h-[12vh] left-0 top-0 w-[100vw] z-50 backdrop-blur-[20px] bg-gradient-to-b from-[rgba(15,15,15,0.4)] to-[rgba(15,15,15,0.2)] text-white"
-        style={{
-          mask: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.3) 85%, transparent 95%)',
-          WebkitMask: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.3) 85%, transparent 95%)'
-        }}
+      <header
+        className="site-header fixed h-[8vh] left-0 top-0 w-full z-[60] backdrop-blur-[20px] bg-gradient-to-b from-[rgba(15,15,15,0.4)] to-[rgba(15,15,15,0.2)] text-white gate33-header-fullwidth overflow-visible"
       >
         <div className="w-full flex justify-between items-center py-4 px-6 h-16">
           <a href="/" className="logo flex items-center">
@@ -172,7 +169,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
               </button>
               {jobsDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-sm"
+                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-[70] backdrop-blur-sm"
                   onMouseEnter={handleJobsEnter}
                   onMouseLeave={handleJobsLeave}
                 >
@@ -197,7 +194,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
               </button>
               {toolsDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-sm"
+                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-[70] backdrop-blur-sm"
                   onMouseEnter={handleToolsEnter}
                   onMouseLeave={handleToolsLeave}
                 >
@@ -220,7 +217,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
               </button>
               {learnDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-50 backdrop-blur-sm"
+                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-[70] backdrop-blur-sm"
                   onMouseEnter={handleLearnEnter}
                   onMouseLeave={handleLearnLeave}
                 >
@@ -332,7 +329,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </nav>
 
       {/* Main Content with spacing for glassmorphism header */}
-      <main className="px-0 sm:px-0 md:px-0 lg:px-0 w-full mt-[12vh]">{children}</main>
+      <main className="px-0 sm:px-0 md:px-0 lg:px-0 w-full mt-[2vh]">{children}</main>
 
       {/* Advertisement Popup */}
       <AdPopup />
