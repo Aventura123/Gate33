@@ -100,7 +100,7 @@ body {
 .card-explorers {
   background: var(--card-bg);
   border: none;
-  border-radius: 1rem;
+  border-radius: 2.5rem; /* Mais arredondado */
   position: relative;
   box-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
   transition: all 0.3s ease;
@@ -560,4 +560,49 @@ body {
 .gate33-header-fullwidth {
   width: 100%;
   min-width: 0;
+}
+
+.lamp-light-effect-vertical.lamp-light-effect-orange {
+  width: 500px;
+  height: 300px;
+  background: radial-gradient(ellipse at right, 
+    rgba(255, 187, 0, 0.40) 0%, 
+    rgba(255, 149, 0, 0.20) 40%, 
+    rgba(255, 106, 0, 0.10) 70%, 
+    transparent 100%
+  );
+  z-index: 1;
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+/* Efeito de luz horizontal para FEATURED JOBS (usando a mesma lógica dos cartões builder/hodler/explorer) */
+.lamp-light-effect-horizontal {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 190px;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 106, 0, 0.70) 0deg,
+    rgba(255, 106, 0, 0.45) 30deg,
+    rgba(255, 106, 0, 0.14) 90deg,
+    rgba(255, 106, 0, 0.04) 180deg,
+    rgba(255, 106, 0, 0.14) 270deg,
+    rgba(255, 106, 0, 0.35) 330deg,
+    rgba(255, 106, 0, 0.20) 360deg
+  );
+  border-radius: 50%;
+  filter: blur(8px);
+  transition: opacity 0.3s;
+  opacity: 0;
+}
+.card-builders:hover .lamp-light-effect-horizontal,
+.card-hodlers:hover .lamp-light-effect-horizontal,
+.card-explorers:hover .lamp-light-effect-horizontal,
+.job-card:hover .lamp-light-effect-horizontal {
+  opacity: 1;
 }

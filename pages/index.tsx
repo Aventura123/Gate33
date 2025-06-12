@@ -256,51 +256,81 @@ function Home() {
         </div>
       </div>
 
-      {/* Featured Jobs Section - MOVIDA PARA DEPOIS DA NEWSLETTER */}
-      <section id="jobs" className="jobs py-20 text-center px-4 relative">
-        <div className="relative z-10">
-          <h2 className="text-3xl font-bold text-gate33-orange mb-8">Featured Jobs</h2>
-          <p className="text-gray-200 max-w-4xl mx-auto mb-10 text-base leading-relaxed">
-            Explore some of the current opportunities available on our platform.
-          </p>
-          <div className="jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
-              <h3 className="text-xl font-medium text-orange-500 mb-2">Blockchain Developer</h3>
-              <p className="text-gray-500 text-sm mb-4">TechFinance • Remote</p>
-              <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                Develop and maintain decentralized applications (DApps) using Solidity. Experience with smart contracts and Web3.js.
-              </p>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">Full-time</span>
-                <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
-              </div>
-            </div>
-            <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
-              <h3 className="text-xl font-medium text-orange-500 mb-2">Digital Marketing Analyst</h3>
-              <p className="text-gray-500 text-sm mb-4">CryptoMedia • São Paulo</p>
-              <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                Develop digital marketing strategies focused on cryptocurrency and blockchain markets. SEO, SEM, and social media.
-              </p>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">Full-time</span>
-                <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
-              </div>
-            </div>
-            <div className="job-card bg-black/80 rounded-lg p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all shadow-lg hover:shadow-xl">
-              <h3 className="text-xl font-medium text-orange-500 mb-2">Security Specialist</h3>
-              <p className="text-gray-500 text-sm mb-4">SecureChain • Lisbon</p>
-              <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                Audit smart contracts and implement security protocols in blockchain-based applications.
-              </p>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">Full-time</span>
-                <Link href="/jobs" className="text-orange-400 text-sm hover:underline">View job</Link>
-              </div>
-            </div>
+      {/* Featured Jobs Section - Novo layout horizontal, cards empilhados à direita */}
+      <section id="jobs" className="jobs py-20 px-4 relative">
+        <div className="relative z-10 flex flex-col lg:flex-row max-w-7xl mx-auto gap-10 items-start lg:items-center justify-center">
+          {/* Coluna esquerda: título, descrição, botão */}
+          <div className="flex-1 min-w-[260px] max-w-md lg:sticky lg:top-32 flex flex-col justify-center h-full">
+            <h2 className="text-3xl font-bold text-gate33-orange mb-4 text-left">FEATURED JOBS</h2>
+            <p className="text-left text-orange-300 mb-4 font-medium">
+              Explore some of the current opportunities available on our platform.
+            </p>
+            <p className="text-gray-200 text-left text-sm mb-8 max-w-xs">
+              Access quality Web3 jobs from verified companies or post roles as a trusted employer. Build your profile, manage applications, and connect securely with top talent in one place.
+            </p>
+            <Link href="/jobs" className="gate33-btn-orange text-white py-2.5 px-12 min-w-[230px] rounded-full font-semibold text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit">
+              Explore The Job-Board
+            </Link>
           </div>
-          <div className="mt-10">
-            <Link href="/jobs" className="gate33-btn text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-all border-none shadow-lg hover:shadow-xl">
-              View all jobs
+
+          {/* Coluna direita: cards de vagas empilhados */}
+          <div className="flex-1 w-full max-w-2xl flex flex-col gap-6">
+            {/* Card 1 */}
+            <Link href="/jobs" className="rounded-2xl card-orange-glow p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+              {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
+              <div className="flex flex-col justify-center items-center mr-5 relative">
+                <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
+                {/* Efeito de luz da lanterna, só aparece no hover do card */}
+                <div className="lamp-light-effect-vertical pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 lamp-light-effect-orange"></div>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-verdana font-bold text-white text-lg mb-1">Blockchain Developer <span className="text-gray-400 font-normal text-base">@Polygon</span></h3>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Remote</span>
+                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Contract</span>
+                </div>
+                <p className="text-gray-200 text-sm mb-2 text-justify pr-2">
+                  Develop and maintain decentralized applications (DApps) using Solidity. Experience with smart contracts and Web3.js.
+                </p>
+              </div>
+            </Link>
+            {/* Card 2 */}
+            <Link href="/jobs" className="rounded-2xl card-orange-glow p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+              {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
+              <div className="flex flex-col justify-center items-center mr-5 relative">
+                <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
+                {/* Efeito de luz da lanterna, só aparece no hover do card */}
+                <div className="lamp-light-effect-vertical pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 lamp-light-effect-orange"></div>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-verdana font-bold text-white text-lg mb-1">Digital Marketing Analyst <span className="text-gray-400 font-normal text-base">@OpenSea</span></h3>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Lisbon</span>
+                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Full-time</span>
+                </div>
+                <p className="text-gray-200 text-sm mb-2 text-justify pr-2">
+                  Develop digital marketing strategies focused on cryptocurrency and blockchain markets. SEO, SEM, and social media.
+                </p>
+              </div>
+            </Link>
+            {/* Card 3 */}
+            <Link href="/jobs" className="rounded-2xl card-orange-glow p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+              {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
+              <div className="flex flex-col justify-center items-center mr-5 relative">
+                <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
+                {/* Efeito de luz da lanterna, só aparece no hover do card */}
+                <div className="lamp-light-effect-vertical pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 lamp-light-effect-orange"></div>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-verdana font-bold text-white text-lg mb-1">Security Specialist <span className="text-gray-400 font-normal text-base">@Ethereum Foundation</span></h3>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Remote</span>
+                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Full-time</span>
+                </div>
+                <p className="text-gray-200 text-sm mb-2 text-justify pr-2">
+                  Conduct thorough audits of smart contracts while implementing robust security protocols to enhance the safety and reliability of blockchain-based applications.
+                </p>
+              </div>
             </Link>
           </div>
         </div>
