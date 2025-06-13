@@ -733,3 +733,16 @@ body {
   max-height: 25!important;
   height: 25!important;
 }
+
+.gate33-faq-btn {
+  min-height: 32px;
+  height: 38px;
+  font-size: 1rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.gate33-faq-open {
+  background: #181A20 !important;
+  color: #fff !important;
+}

@@ -44,19 +44,19 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
 
 // Modern FAQ Item Component
 const ModernFAQItem = ({ question, answer, open = false, highlight = false }: { question: string, answer: React.ReactNode, open?: boolean, highlight?: boolean }) => {
-  const [isOpen, setIsOpen] = useState(open);
+  const [isOpen, setIsOpen] = useState(false); // Always start closed
   return (
-    <div className={`rounded-xl bg-[#181A20] border border-orange-500/20 shadow-md transition-all ${isOpen ? 'border-orange-500 bg-black/80' : ''} ${highlight ? 'text-gate33-orange font-semibold' : 'text-white'}`}
+    <div className={`rounded-xl border border-orange-500/20 shadow-md transition-all ${isOpen ? 'border-orange-500 gate33-faq-open' : 'bg-[#181A20] text-white'} ${highlight ? 'font-semibold' : ''}`}
       style={{ boxShadow: isOpen ? '0 0 16px 0 #ea580c33' : undefined }}>
       <button
-        className={`w-full flex justify-between items-center px-5 py-4 text-left focus:outline-none transition-colors ${highlight ? 'text-gate33-orange' : 'text-white'}`}
+        className={`w-full flex justify-between items-center px-5 text-left focus:outline-none transition-colors gate33-faq-btn ${highlight ? 'text-gate33-orange' : 'text-white'}`}
         onClick={() => setIsOpen((v) => !v)}
       >
-        <span className="text-lg font-medium">{question}</span>
-        <span className={`ml-4 text-2xl font-bold transition-transform ${isOpen ? 'text-gate33-orange rotate-180' : 'text-gray-400'}`}>⌄</span>
+        <span className="text-base font-medium">{question}</span>
+        <span className={`ml-4 text-xl font-bold transition-transform ${isOpen ? 'text-white rotate-180' : 'text-gate33-orange'}`}>⌄</span>
       </button>
       {isOpen && (
-        <div className="px-5 pb-4 text-base text-gray-200 animate-fade-in">
+        <div className="px-5 pb-4 text-base animate-fade-in">
           {answer}
         </div>
       )}
@@ -141,9 +141,6 @@ function Home() {
 
   return (
     <>
-      {showDevNotice && (
-        <DevNoticePopup onClose={() => setShowDevNotice(false)} />
-      )}
       {/* Hero Section - NEW LAYOUT WITH FIXED BACKGROUND */}
       <section className="hero-section-fixed-bg relative flex flex-col justify-center min-h-[50vh] px-4 pt-14 pb-12 overflow-hidden">
         <div className="hero-content w-full max-w-6xl mx-auto flex flex-col pt-4">
@@ -246,7 +243,9 @@ function Home() {
           </div>
         </div>
       </section>
-
+      {showDevNotice && (
+        <DevNoticePopup onClose={() => setShowDevNotice(false)} />
+      )}
       {/* EVEN MORE...COMING SOON Section com alinhamento centrado */}
       <div className="w-full mt-0.5 mb-1.5">
         <div
@@ -609,11 +608,19 @@ function Home() {
             <div className="flex overflow-x-auto gap-12 py-4 px-2 scrollbar-hide items-center justify-center" ref={carouselRef}>
               {partners && partners.length > 0 ? (
                 partners.map((partner) => (
-                  <div key={partner.id} className="bg-black rounded-2xl flex items-center justify-center min-w-[130px] min-h-[130px] w-[130px] h-[130px] mx-2 shadow-lg">
+                  <a
+                    key={partner.id}
+                    href={partner.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`Visit ${partner.name}`}
+                    className="bg-black rounded-2xl flex items-center justify-center min-w-[130px] min-h-[130px] w-[130px] h-[130px] mx-2 shadow-lg transition-transform hover:scale-105 focus:outline-none"
+                  >
+                    <span className="sr-only">{`Visit ${partner.name}`}</span>
                     <div className="rounded-full bg-[#222] flex items-center justify-center w-[90px] h-[90px]">
                       <Image src={partner.logoUrl} alt={partner.name} width={80} height={80} className="object-contain rounded-full" />
                     </div>
-                  </div>
+                  </a>
                 ))
               ) : (
                 <span className="text-gray-400 text-sm">No partners yet.</span>
