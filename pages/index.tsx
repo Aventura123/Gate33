@@ -6,6 +6,7 @@ import Link from 'next/link';
 import ContactForm from '../components/ContactForm';
 import DevNoticePopup from '../components/DevNoticePopup';
 import '../components/index-page.css';
+import '../styles/job-indicators.css';
 
 interface Partner {
   id: string;
@@ -74,6 +75,21 @@ function Home() {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [waitlistError, setWaitlistError] = useState("");
   const [showContactModal, setShowContactModal] = useState(false);
+  const [activeJobCard, setActiveJobCard] = useState<number>(0);
+
+  // Job cards data
+  const featuredJobs = [
+    { id: 0, title: "Blockchain Developer" },
+    { id: 1, title: "Digital Marketing Analyst" },
+    { id: 2, title: "Security Specialist" }
+  ];
+
+  // Card sections data
+  const cardSections = [
+    { id: 0, title: "FOR BUILDERS" },
+    { id: 1, title: "FOR HODLERS" },
+    { id: 2, title: "FOR EXPLORERS" }
+  ];
 
   useEffect(() => {
     fetchPartners();
@@ -141,6 +157,16 @@ function Home() {
 
   return (
     <>
+      {/* Card Indicators */}
+      <div className="card-indicators hidden lg:flex">
+        {cardSections.map((section) => (
+          <div
+            key={section.id}
+            className={`card-indicator ${activeJobCard === section.id ? 'active' : ''}`}
+          />
+        ))}
+      </div>
+
       {/* Hero Section - NEW LAYOUT WITH FIXED BACKGROUND */}
       <section className="hero-section-fixed-bg relative flex flex-col justify-center min-h-[50vh] px-4 pt-14 pb-12 overflow-hidden">
         <div className="hero-content w-full max-w-6xl mx-auto flex flex-col pt-4">
@@ -171,7 +197,11 @@ function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 h-full w-full">
                 {/* For Builders Section - Centered for even spacing */}
                 <div className="flex justify-center">
-                  <div className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-col justify-between w-full max-w-[320px] md:w-[98%] group overflow-hidden">
+                  <div 
+                    className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-col justify-between w-full max-w-[320px] md:w-[98%] group overflow-hidden"
+                    onMouseEnter={() => setActiveJobCard(0)}
+                    onMouseLeave={() => setActiveJobCard(0)}
+                  >
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
@@ -197,7 +227,11 @@ function Home() {
                 </div>
                 {/* For Hodlers Section - Centered for even spacing */}
                 <div className="flex justify-center">
-                  <div className="rounded-2xl card-orange-glow card-hodlers p-4 md:p-5 h-auto flex flex-col justify-between w-full max-w-[320px] md:w-[98%] group overflow-hidden">
+                  <div 
+                    className="rounded-2xl card-orange-glow card-hodlers p-4 md:p-5 h-auto flex flex-col justify-between w-full max-w-[320px] md:w-[98%] group overflow-hidden"
+                    onMouseEnter={() => setActiveJobCard(1)}
+                    onMouseLeave={() => setActiveJobCard(0)}
+                  >
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
@@ -219,7 +253,11 @@ function Home() {
                 </div>
                 {/* For Explorers Section - Centered for even spacing */}
                 <div className="flex justify-center md:col-span-2 lg:col-span-1">
-                  <div className="rounded-2xl card-orange-glow card-explorers p-4 md:p-5 h-auto flex flex-col justify-between w-full max-w-[320px] md:w-[98%] group overflow-hidden">
+                  <div 
+                    className="rounded-2xl card-orange-glow card-explorers p-4 md:p-5 h-auto flex flex-col justify-between w-full max-w-[320px] md:w-[98%] group overflow-hidden"
+                    onMouseEnter={() => setActiveJobCard(2)}
+                    onMouseLeave={() => setActiveJobCard(0)}
+                  >
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
@@ -295,9 +333,24 @@ function Home() {
           </div>
 
           {/* Right column: stacked job cards */}
-          <div className="flex-1 w-full max-w-2xl flex flex-col gap-4 md:gap-6">
-            {/* Card 1 */}
-            <Link href="/jobs" className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+          <div className="flex-1 w-full max-w-2xl flex flex-col gap-4 md:gap-6 relative">
+            {/* Job Indicators */}
+            <div className="job-indicators hidden lg:flex">
+              {featuredJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className={`job-indicator ${activeJobCard === job.id ? 'active' : ''}`}
+                />
+              ))}
+            </div>
+
+            {/* Card 1: Blockchain Developer */}
+            <Link 
+              href="/jobs" 
+              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"
+              onMouseEnter={() => setActiveJobCard(0)}
+              onMouseLeave={() => setActiveJobCard(0)}
+            >
               {/* Efeito de luz vertical tipo lanterna */}
               <div className="lamp-light-vertical"></div>
               {/* Vertical LED bar on the left + light effect only on hover */}
@@ -315,8 +368,13 @@ function Home() {
                 </p>
               </div>
             </Link>
-            {/* Card 2 */}
-            <Link href="/jobs" className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+            {/* Card 2: Digital Marketing Analyst */}
+            <Link 
+              href="/jobs" 
+              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"
+              onMouseEnter={() => setActiveJobCard(1)}
+              onMouseLeave={() => setActiveJobCard(0)}
+            >
               {/* Efeito de luz vertical tipo lanterna */}
               <div className="lamp-light-vertical"></div>
               {/* Vertical LED bar on the left + light effect only on hover */}
@@ -334,8 +392,13 @@ function Home() {
                 </p>
               </div>
             </Link>
-            {/* Card 3 */}
-            <Link href="/jobs" className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+            {/* Card 3: Security Specialist */}
+            <Link 
+              href="/jobs" 
+              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"
+              onMouseEnter={() => setActiveJobCard(2)}
+              onMouseLeave={() => setActiveJobCard(0)}
+            >
               {/* Efeito de luz vertical tipo lanterna */}
               <div className="lamp-light-vertical"></div>
               {/* Vertical LED bar on the left + light effect only on hover */}
