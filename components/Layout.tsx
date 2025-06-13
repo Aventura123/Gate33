@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import '../components/global.css';
 import AdPopup from './AdPopup';
 import UserProfileButton from './UserProfileButton';
+import ContactForm from './ContactForm';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -334,58 +335,86 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Advertisement Popup */}
       <AdPopup />
 
-      {/* Footer */}
-      <footer id="main-footer" className={`bg-black text-white ${isMobile ? 'py-4' : 'py-6 sm:py-10'} border-t-4 border-orange-500`}>
-        <div className={`max-w-6xl mx-auto px-4 grid grid-cols-2 ${isMobile ? 'gap-x-3 gap-y-4' : 'gap-x-4 gap-y-6'} sm:grid-cols-2 md:grid-cols-5`}>
-          <div className="col-span-2 sm:col-span-1">
-            <h4 className={`text-orange-500 font-bold text-base sm:text-lg ${isMobile ? 'mb-2' : 'mb-2 sm:mb-4'}`}>About Gate33</h4>
-            <p className="text-gray-400 text-xs sm:text-sm">
+      {/* Modern Footer - Only show contact form on index page */}
+      <footer id="main-footer" className="bg-[#FF6A00] text-black pt-10 pb-2 border-t-4 border-orange-500 mt-10">
+        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-10">
+          {/* Left: Contact Info & Socials */}
+          <div className="flex flex-col gap-4 justify-between">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">GET IN TOUCH</h2>
+              <p className="mb-4 text-base">Have questions or need support? Our team is here to help you navigate the Web3 universe.</p>
+              <ul className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-base">
+                <li className="flex items-center gap-2"><span className="material-icons text-lg">.</span> support@gate33.net</li>
+                <li className="flex items-center gap-2"><span className="material-icons text-lg">.</span> Follow us on X</li>
+                <li className="flex items-center gap-2"><span className="material-icons text-lg">.</span> Join our Discord community</li>
+                <li className="flex items-center gap-2"><span className="material-icons text-lg">.</span> Join our Telegram</li>
+                <li className="flex items-center gap-2"><span className="material-icons text-lg">.</span> Decentralized globally</li>
+                <li className="flex items-center gap-2"><span className="material-icons text-lg">.</span> Follow us on LinkedIn</li>
+              </ul>
+            </div>
+          </div>
+          {/* Right: Contact Form (only on index) */}
+          <div className="flex flex-col justify-center">
+            {pathname === '/' && (
+              <div className="p-0 m-0">
+                <ContactForm
+                  title=""
+                  submitButtonText="Send Message"
+                  className="border-0 bg-transparent p-0 contact-footer-form"
+                  defaultSubject="Contact from Gate33 Website"
+                  showSubjectField={false}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+        <hr className="my-8 border-black/30" />
+        <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-5 gap-6 pb-2">
+          <div>
+            <h4 className="text-white font-bold text-base mb-2">Quick Links</h4>
+            <nav className="text-black/80 text-sm">
+              <a href="/jobs" className="block hover:underline">Jobs</a>
+              <span className="block text-black/40">Instant Jobs (Coming Soon)</span>
+              <a href="/learn2earn" className="block hover:underline">Learn2Earn</a>
+              <a href="/donate" className="block hover:underline">Invest in us</a>
+              <a href="/crypto-tools" className="block hover:underline">Crypto Tools</a>
+              <a href="/donate" className="block hover:underline">Donate</a>
+            </nav>
+          </div>
+          <div>
+            <h4 className="text-white font-bold text-base mb-2">Services</h4>
+            <nav className="text-black/80 text-sm">
+              <a href="/seeker-signup" className="block hover:underline">For Job Seekers</a>
+              <a href="/company-register" className="block hover:underline">For Companies</a>
+              <a href="/learn2earn" className="block hover:underline">Learn2Earn</a>
+            </nav>
+          </div>
+          <div>
+            <h4 className="text-white font-bold text-base mb-2">Contact</h4>
+            <nav className="text-black/80 text-sm">
+              <a href="/contact" className="block hover:underline">Contact Us</a>
+              <a href="/#about" className="block hover:underline">About</a>
+              <a href="/#services" className="block hover:underline">Services</a>
+              <a href="/#faq" className="block hover:underline">FAQ</a>
+            </nav>
+          </div>
+          <div>
+            <h4 className="text-white font-bold text-base mb-2">About Gate33</h4>
+            <p className="text-black/80 text-xs">
               Your trusted platform for secure work, real opportunities, and user protection in the Web3 job market.
             </p>
           </div>
           <div>
-            <h4 className={`text-orange-500 font-bold text-base sm:text-lg ${isMobile ? 'mb-2' : 'mb-2 sm:mb-4'}`}>Quick Links</h4>
-            <nav className="text-gray-400 text-xs sm:text-sm">
-              <a href="/jobs" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Jobs</a>
-              {isProduction ? (
-                <span className={`block ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'} text-gray-500 cursor-not-allowed opacity-60`}>Instant Jobs (Coming Soon)</span>
-              ) : (
-                <a href="/instant-jobs" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Instant Jobs</a>
-              )}
-              <a href="/learn2earn" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Learn2Earn</a>
-              <a href="/nft" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>NFT</a>
-              <a href="/crypto-tools" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Crypto Tools</a>
-              <a href="/donate" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'} font-medium`}>Donate</a>
-            </nav>
-          </div>
-          <div>
-            <h4 className={`text-orange-500 font-bold text-base sm:text-lg ${isMobile ? 'mb-2' : 'mb-2 sm:mb-4'}`}>Services</h4>
-            <nav className="text-gray-400 text-xs sm:text-sm">
-              <a href="/seeker-signup" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>For Job Seekers</a>
-              <a href="/company-register" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>For Companies</a>
-              <a href="/learn2earn" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Learn2Earn</a>
-            </nav>
-          </div>
-          <div>
-            <h4 className={`text-orange-500 font-bold text-base sm:text-lg ${isMobile ? 'mb-2' : 'mb-2 sm:mb-4'}`}>Contact</h4>
-            <nav className="text-gray-400 text-xs sm:text-sm">
-              <a href="/contact" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Contact Us</a>
-              <a href="/#about" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>About</a>
-              <a href="/#services" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Services</a>
-              <a href="/#faq" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>FAQ</a>
-            </nav>
-          </div>
-          <div>
-            <h4 className={`text-orange-500 font-bold text-base sm:text-lg ${isMobile ? 'mb-2' : 'mb-2 sm:mb-4'}`}>Socials</h4>
-            <nav className="text-gray-400 text-xs sm:text-sm">
-              <a href="https://t.me/gate33_tg_channel" target="_blank" rel="noopener noreferrer" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>Telegram</a>
-              <a href="https://x.com/x_Gate33" target="_blank" rel="noopener noreferrer" className={`block hover:text-orange-500 ${isMobile ? 'mb-1' : 'mb-1 sm:mb-2'}`}>X (Twitter)</a>
-              <a href="https://www.linkedin.com/company/gate33" target="_blank" rel="noopener noreferrer" className="block hover:text-orange-500">LinkedIn</a>
+            <h4 className="text-white font-bold text-base mb-2">Socials</h4>
+            <nav className="text-black/80 text-sm">
+              <a href="https://t.me/gate33_tg_channel" target="_blank" rel="noopener noreferrer" className="block hover:underline">Telegram</a>
+              <a href="https://x.com/x_Gate33" target="_blank" rel="noopener noreferrer" className="block hover:underline">X (Twitter)</a>
+              <a href="https://www.linkedin.com/company/gate33" target="_blank" rel="noopener noreferrer" className="block hover:underline">LinkedIn</a>
             </nav>
           </div>
         </div>
-        <div className={`${isMobile ? 'mt-4 pt-3' : 'mt-6 sm:mt-8 pt-3 sm:pt-4'} text-center text-gray-500 text-xs sm:text-sm`}>
-          <p>© 2025 Gate33. All Rights Reserved.</p>
+        <div className="text-center text-black/60 text-xs mt-4 pb-2">
+          © 2025 Gate33. All Rights Reserved.
         </div>
       </footer>
     </div>

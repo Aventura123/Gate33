@@ -625,3 +625,111 @@ body {
     padding-right: 1rem !important;
   }
 }
+
+/* Footer contact form styles */
+.contact-footer-form input,
+.contact-footer-form textarea {
+  background: #fff !important;
+  border: 1.5px solid #222 !important;
+  color: #222 !important;
+  border-radius: 8px !important;
+  font-size: 1rem !important;
+  padding: 0.5rem 0.75rem !important;
+  margin-bottom: 0.5rem !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-shadow: none !important;
+}
+
+.contact-footer-form label {
+  color: #222 !important;
+  font-weight: 500;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.contact-footer-form button[type="submit"] {
+  background: #000 !important;
+  color: #fff !important;
+  border-radius: 6px !important;
+  font-size: 1rem !important;
+  font-weight: 500;
+  padding: 0.7rem 0 !important;
+  margin-top: 0.5rem;
+  width: 100%;
+  transition: background 0.2s;
+}
+.contact-footer-form button[type="submit"]:hover {
+  background: #222 !important;
+}
+
+.contact-footer-form {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.contact-footer-form .text-red-400 {
+  color: #ff0000 !important;
+}
+
+.contact-footer-form .text-gray-300 {
+  color: #222 !important;
+}
+
+.contact-footer-form .text-gray-400 {
+  color: #222 !important;
+}
+
+.contact-footer-form .text-blue-400 {
+  color: #222 !important;
+}
+
+.contact-footer-form .text-green-200 {
+  color: #008000 !important;
+}
+
+.contact-footer-form .text-red-200 {
+  color: #ff0000 !important;
+}
+
+.contact-footer-form .bg-green-600\/30 {
+  background: #e6ffe6 !important;
+}
+
+.contact-footer-form .bg-red-600\/30 {
+  background: #ffe6e6 !important;
+}
+
+.contact-footer-form .border-green-500 {
+  border-color: #008000 !important;
+}
+
+.contact-footer-form .border-red-500 {
+  border-color: #ff0000 !important;
+}
+
+.contact-footer-form .rounded-lg {
+  border-radius: 8px !important;
+}
+
+.contact-footer-form .focus\:ring-blue-500:focus {
+  box-shadow: 0 0 0 2px #000 !important;
+}
+
+.contact-footer-form input,
+.contact-footer-form textarea {
+  margin-bottom: 0.12rem !important;
+}
+
+.contact-footer-form .space-y-4 > * + * {
+  margin-top: 0.12rem !important;
+}
+
+.contact-footer-form textarea {
+  min-height: 25!important;
+  max-height: 25!important;
+  height: 25!important;
+}

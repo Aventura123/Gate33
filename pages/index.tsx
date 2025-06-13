@@ -42,6 +42,28 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
   );
 };
 
+// Modern FAQ Item Component
+const ModernFAQItem = ({ question, answer, open = false, highlight = false }: { question: string, answer: React.ReactNode, open?: boolean, highlight?: boolean }) => {
+  const [isOpen, setIsOpen] = useState(open);
+  return (
+    <div className={`rounded-xl bg-[#181A20] border border-orange-500/20 shadow-md transition-all ${isOpen ? 'border-orange-500 bg-black/80' : ''} ${highlight ? 'text-gate33-orange font-semibold' : 'text-white'}`}
+      style={{ boxShadow: isOpen ? '0 0 16px 0 #ea580c33' : undefined }}>
+      <button
+        className={`w-full flex justify-between items-center px-5 py-4 text-left focus:outline-none transition-colors ${highlight ? 'text-gate33-orange' : 'text-white'}`}
+        onClick={() => setIsOpen((v) => !v)}
+      >
+        <span className="text-lg font-medium">{question}</span>
+        <span className={`ml-4 text-2xl font-bold transition-transform ${isOpen ? 'text-gate33-orange rotate-180' : 'text-gray-400'}`}>⌄</span>
+      </button>
+      {isOpen && (
+        <div className="px-5 pb-4 text-base text-gray-200 animate-fade-in">
+          {answer}
+        </div>
+      )}
+    </div>
+  );
+};
+
 function Home() {
   const [showDevNotice, setShowDevNotice] = useState(true);
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -122,22 +144,22 @@ function Home() {
       {showDevNotice && (
         <DevNoticePopup onClose={() => setShowDevNotice(false)} />
       )}
-      {/* Hero Section - NOVO LAYOUT COM FUNDO FIXO */}
+      {/* Hero Section - NEW LAYOUT WITH FIXED BACKGROUND */}
       <section className="hero-section-fixed-bg relative flex flex-col justify-center min-h-[50vh] px-4 pt-14 pb-12 overflow-hidden">
         <div className="hero-content w-full max-w-6xl mx-auto flex flex-col pt-4">
-          {/* Título principal alinhado à esquerda */}
+          {/* Main title aligned left */}
           <h1 className="font-verdana font-bold text-white mb-2 tracking-normal uppercase">
             <span className="text-[42px] leading-[40px] block mb-2">YOUR GATEWAY TO TRUSTED</span>
             <span className="text-gate33-orange text-[42px] leading-[40px] font-bold block mt-1">WEB3 OPPORTUNITIES</span>
           </h1>
-          {/* Subtítulo alinhado à esquerda */}
+          {/* Subtitle aligned left */}
           <p className="font-verdana font-normal text-xl md:text-2xl text-gray-200 mb-10 mt-6 max-w-2xl">
             Hire, Get Hired, Learn and Build Smarter<br />
             <span className="text-gate33-orange font-semibold">Verified. Secure. Web3-Native.</span>
           </p>
-          {/* Section Cards com alinhamento aos limites do cartão laranja */}
+          {/* Section Cards aligned to orange card limits */}
           <div className="w-full mt-0.5 mb-1.5 relative">
-            {/* Logo 3D G33 - Posicionado à esquerda, 3x maior e animado */}
+            {/* 3D G33 Logo - Left positioned, 3x larger and animated */}
             <div className="hidden lg:block absolute left-[-1px] top-[-300px] z-0">
               <Image
                 src="/images/3a1c587e459142a944acdb0e7aa6e10e2d631aab.png"
@@ -259,7 +281,7 @@ function Home() {
       {/* Featured Jobs Section - Novo layout horizontal, cards empilhados à direita */}
       <section id="jobs" className="jobs py-20 px-4 relative">
         <div className="relative z-10 flex flex-col lg:flex-row max-w-7xl mx-auto gap-10 items-start lg:items-center justify-center">
-          {/* Coluna esquerda: título, descrição, botão */}
+          {/* Left column: title, description, button */}
           <div className="flex-1 min-w-[260px] max-w-md lg:sticky lg:top-32 flex flex-col justify-center h-full">
             <h2 className="text-3xl font-bold text-gate33-orange mb-4 text-left">FEATURED JOBS</h2>
             <p className="text-left text-orange-300 mb-4 font-medium">
@@ -273,13 +295,13 @@ function Home() {
             </Link>
           </div>
 
-          {/* Coluna direita: cards de vagas empilhados */}
+          {/* Right column: stacked job cards */}
           <div className="flex-1 w-full max-w-2xl flex flex-col gap-6">
             {/* Card 1 */}
             <Link href="/jobs" className="rounded-2xl card-orange-glow p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
               {/* Efeito de luz vertical tipo lanterna */}
               <div className="lamp-light-vertical"></div>
-              {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
+              {/* Vertical LED bar on the left + light effect only on hover */}
               <div className="flex flex-col justify-center items-center mr-5 relative">
                 <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
               </div>
@@ -298,7 +320,7 @@ function Home() {
             <Link href="/jobs" className="rounded-2xl card-orange-glow p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
               {/* Efeito de luz vertical tipo lanterna */}
               <div className="lamp-light-vertical"></div>
-              {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
+              {/* Vertical LED bar on the left + light effect only on hover */}
               <div className="flex flex-col justify-center items-center mr-5 relative">
                 <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
               </div>
@@ -317,7 +339,7 @@ function Home() {
             <Link href="/jobs" className="rounded-2xl card-orange-glow p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
               {/* Efeito de luz vertical tipo lanterna */}
               <div className="lamp-light-vertical"></div>
-              {/* Barra LED vertical à esquerda + efeito de luz só no hover */}
+              {/* Vertical LED bar on the left + light effect only on hover */}
               <div className="flex flex-col justify-center items-center mr-5 relative">
                 <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-12 z-10"></div>
               </div>
@@ -337,12 +359,12 @@ function Home() {
       </section>
 
       <main className="min-h-screen bg-gradient-to-b from-black via-black to-black text-white relative overflow-hidden gate33-main-section">
-        {/* Linha laranja divisória superior */}
+        {/* Top orange divider line */}
         
         <section id="about" className="about py-20 px-4 relative">
           <div className="relative z-10 max-w-7xl mx-auto">
             <div className="flex flex-col lg:flex-row gap-8 items-start justify-start">
-              {/* Cartões à esquerda - grid 3x2 compacto */}
+              {/* Left column: title, description, button */}
               <div className="flex-shrink-0 w-full lg:w-[65%]">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 w-full">
                   {/* Card 1 */}
@@ -449,7 +471,7 @@ function Home() {
                   </div>
                 </div>
               </div>
-              {/* Texto à direita */}
+              {/* Right text */}
               <div className="flex-shrink-0 w-full lg:w-[35%] flex flex-col justify-center items-start text-left mt-8 lg:mt-0 lg:pl-6">
                 <h2 className="text-3xl font-bold text-gate33-orange mb-4 text-left">EXPLORE OUR<br />CRYPTO TOOLS</h2>
                 <p className="text-left text-orange-300 mb-4 font-medium">
@@ -466,7 +488,7 @@ function Home() {
           </div>
         </section>
         
-        {/* Linha laranja divisória inferior */}
+        {/* Bottom orange divider line */}
         <div className="max-w-7xl mx-auto px-4">
           <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>
         </div>
@@ -535,7 +557,7 @@ function Home() {
           </div>
         </section>
 
-        {/* Linha laranja divisória após Learn2Earn */}
+        {/* Orange divider line after Learn2Earn */}
         <div className="max-w-7xl mx-auto px-4">
           <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>
         </div>
@@ -543,7 +565,7 @@ function Home() {
         {/* WHY CHOOSE GATE33 - substitui Trusted Companies */}
         <section id="why-gate33" className="py-20 px-4 relative">
           <div className="max-w-7xl mx-auto relative z-10">
-            {/* Linha laranja superior removida, conteúdo puxado para cima */}
+            {/* Top orange line removed, content pulled up */}
             <h2 className="text-2xl md:text-3xl font-bold text-gate33-orange mb-2 text-center tracking-wide mt-0">WHY CHOOSE GATE33?</h2>
             <p className="text-gray-200 max-w-3xl mx-auto mb-12 text-center text-base leading-relaxed">
               We offer a secure environment where verified companies post genuine job opportunities and qualified candidates can find real opportunities.
@@ -583,7 +605,7 @@ function Home() {
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 tracking-wide">
               TRUSTED BY <span className="text-gate33-orange">INDUSTRY LEADERS</span>
             </h2>
-            {/* Carousel de logos de parceiros - cartões maiores e logos redondos */}
+            {/* Partner logos carousel - larger cards and round logos */}
             <div className="flex overflow-x-auto gap-12 py-4 px-2 scrollbar-hide items-center justify-center" ref={carouselRef}>
               {partners && partners.length > 0 ? (
                 partners.map((partner) => (
@@ -605,49 +627,24 @@ function Home() {
           </div>
         </section>
 
-        <section id="contact" className="contact py-20 text-center px-4 relative">
-          <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-gate33-orange mb-6">Contact Us</h2>
-            <p className="text-gray-200 max-w-xl mx-auto mb-10 text-base leading-relaxed">
-              Have a question or need help? Contact us and we'll respond as quickly as possible.
-            </p>
-            <button
-              onClick={() => setShowContactModal(true)}
-              className="gate33-btn text-white py-2.5 px-8 rounded-full transition-colors shadow-lg hover:shadow-xl font-medium"
-            >
-              Get in Touch
-            </button>
-          </div>
-        </section>
-
         <section id="faq" className="faq py-20 px-4 relative">
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-gate33-orange mb-10 text-center">Frequently Asked Questions</h2>
-            <div className="faq-container max-w-4xl mx-auto bg-black/80 rounded-xl border border-orange-500/10 p-6 shadow-lg">
-              <FAQItem
-                question="How does Gate33 ensure companies are trustworthy?"
-                answer="All companies undergo a rigorous verification process before they can post jobs on our platform. We verify business documents, assess market reputation, and continuously monitor the quality of published jobs to ensure a safe environment for candidates."
-              />
-              <FAQItem
-                question="What makes Gate33 different from other job platforms?"
-                answer="Gate33 differentiates itself through three main factors: (1) Rigorous company verification; (2) Use of blockchain technology to ensure data security; (3) Learn2Earn system that allows candidates to earn tokens while improving their professional skills. Additionally, we're developing a revolutionary new feature that will transform how talent connects with opportunities."
-              />
-              <FAQItem
-                question="How does the Learn2Earn program work?"
-                answer="Learn2Earn is an exclusive program where partner companies create educational content about their technologies and processes. Candidates who complete this content earn tokens as rewards and increase their chances of being hired by demonstrating interest and knowledge in specific company areas."
-              />
-              <FAQItem
-                question="Is it free for candidates to register on the platform?"
-                answer="Yes, registration and job applications are completely free for candidates. Our business model is based on services offered to companies that want to post jobs and access our qualified talent pool."
-              />
-              <FAQItem
-                question="How does Gate33 use blockchain to improve the recruitment process?"
-                answer="We use blockchain to: (1) Verify the authenticity of certificates and qualifications; (2) Protect personal data against leaks; (3) Ensure that companies keep their promises during the recruitment process; (4) Enable secure token reward payments through the Learn2Earn program."
-              />
-              <FAQItem
-                question="What is this new feature coming soon?"
-                answer="We're developing a groundbreaking new way to connect talent with opportunities that will fundamentally change how work is discovered, agreed upon, and compensated. While we can't reveal all the details yet, it will combine instant matching with verified payments and smart contracts to create a seamless, secure experience for both talent and employers."
-              />
+            <h2 className="text-3xl font-bold text-gate33-orange mb-6 text-center">FAQS</h2>
+            <p className="text-center text-gray-300 mb-8 max-w-2xl mx-auto">We get asked these questions a lot so if you have questions of your own it’s best to start here. Not helpful? No worries you can ask us your own below.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              {/* Coluna 1 */}
+              <div className="flex flex-col gap-4">
+                <ModernFAQItem question="What is Gate33?" answer="Gate33 is a platform that connects talent and companies in the Web3 space, ensuring trust, security, and innovation through blockchain technology." />
+                <ModernFAQItem question="How does Learn2Earn work?" open highlight answer={<span>Gate33 differentiates itself through three main factors:<br /><br />1. Rigorous company verification;<br />2. Use of blockchain technology to ensure data security;<br />3. Learn2Earn system that allows candidates to earn tokens while improving their professional skills. Additionally, we are developing a revolutionary new feature that will transform how talent connects with opportunities.</span>} />
+                <ModernFAQItem question="Is Gate33 available worldwide?" answer="Yes, Gate33 is available to users and companies globally." />
+                <ModernFAQItem question="How do I get started with Gate33?" answer="Simply sign up on our platform, complete your profile, and start exploring opportunities or posting jobs." />
+              </div>
+              {/* Coluna 2 */}
+              <div className="flex flex-col gap-4">
+                <ModernFAQItem question="What is Gate33?" answer="Gate33 is a platform that connects talent and companies in the Web3 space, ensuring trust, security, and innovation through blockchain technology." />
+                <ModernFAQItem question="How does Learn2Earn work?" answer={<span>Gate33 differentiates itself através de três fatores principais:<br /><br />1. Verificação rigorosa das empresas;<br />2. Uso da tecnologia blockchain para garantir a segurança dos dados;<br />3. Sistema Learn2Earn que permite aos candidatos ganhar tokens enquanto aprimoram suas habilidades profissionais. Além disso, estamos desenvolvendo um recurso revolucionário que transformará a conexão entre talentos e oportunidades.</span>} />
+                <ModernFAQItem question="Is Gate33 available worldwide?" answer="Yes, Gate33 is available to users and companies globally." />
+              </div>
             </div>
           </div>
         </section>
