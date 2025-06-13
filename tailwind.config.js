@@ -25,5 +25,7 @@ module.exports = {
     'bg-gray-400',
     // Add any other color classes you use for network dots here
   ],
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/line-clamp'),
+  ],
 };
