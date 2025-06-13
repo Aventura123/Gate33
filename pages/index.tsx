@@ -278,7 +278,7 @@ function Home() {
       </div>
 
       {/* Featured Jobs Section - Novo layout horizontal, cards empilhados à direita */}
-      <section id="jobs" className="jobs py-12 md:py-20 px-4 relative">
+      <section id="jobs" className="jobs py-6 md:py-10 px-4 relative">
         <div className="relative z-10 flex flex-col lg:flex-row max-w-7xl mx-auto gap-6 md:gap-10 items-start lg:items-center justify-center">
           {/* Left column: title, description, button */}
           <div className="flex-1 min-w-[260px] max-w-md lg:sticky lg:top-32 flex flex-col justify-center h-full text-center lg:text-left">
@@ -360,7 +360,7 @@ function Home() {
       <main className="min-h-screen bg-gradient-to-b from-black via-black to-black text-white relative overflow-hidden gate33-main-section">
         {/* Top orange divider line */}
         
-        <section id="about" className="about py-12 md:py-20 px-4 relative">
+        <section id="about" className="about py-6 md:py-10 px-4 relative">
           <div className="relative z-10 max-w-7xl mx-auto">
             {/* Mobile-first layout: text above cards */}
             <div className="flex flex-col items-center text-center lg:hidden mb-8">
@@ -507,7 +507,7 @@ function Home() {
         </div>
 
         {/* LEARN2EARN SECTION - substitui Our Services */}
-        <section id="learn2earn" className="py-12 md:py-20 px-4 relative">
+        <section id="learn2earn" className="py-6 md:py-10 px-4 relative">
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 md:gap-10 items-stretch relative z-10">
             {/* Sidebar */}
             <div className="lg:w-1/3 flex flex-col justify-center mb-6 lg:mb-0 text-center lg:text-left">
@@ -576,7 +576,7 @@ function Home() {
         </div>
 
         {/* WHY CHOOSE GATE33 - substitui Trusted Companies */}
-        <section id="why-gate33" className="py-12 md:py-20 px-4 relative">
+        <section id="why-gate33" className="py-6 md:py-10 px-4 relative">
           <div className="max-w-7xl mx-auto relative z-10">
             {/* Top orange line removed, content pulled up */}
             <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-gate33-orange mb-2 text-center tracking-wide mt-0">WHY CHOOSE GATE33?</h2>
@@ -613,13 +613,13 @@ function Home() {
         </section>
 
         {/* PARTNERS/INDUSTRY LEADERS SECTION */}
-        <section id="partners" className="py-12 md:py-16 px-4 bg-[#181C22] relative">
+        <section id="partners" className="py-3 md:py-4 px-4 bg-[#181C22] relative">
           <div className="max-w-7xl mx-auto relative z-10">
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-center mb-6 md:mb-8 tracking-wide">
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-center mb-4 md:mb-6 tracking-wide">
               TRUSTED BY <span className="text-gate33-orange">INDUSTRY LEADERS</span>
             </h2>
             {/* Partner logos carousel - larger cards and round logos */}
-            <div className="flex overflow-x-auto gap-8 md:gap-12 py-4 px-2 scrollbar-hide items-center justify-center" ref={carouselRef}>
+            <div className="flex overflow-x-auto gap-8 md:gap-12 py-2 px-2 scrollbar-hide items-center justify-center" ref={carouselRef}>
               {partners && partners.length > 0 ? (
                 partners.map((partner) => (
                   <a
@@ -640,7 +640,7 @@ function Home() {
                 <span className="text-gray-400 text-sm">No partners yet.</span>
               )}
             </div>
-            <div className="flex justify-center mt-4">
+            <div className="flex justify-center mt-2">
               <Link href="/partners" className="text-orange-400 text-sm hover:underline font-medium flex items-center gap-1">
                 View all Partners <span className="ml-1">→</span>
               </Link>
@@ -648,7 +648,7 @@ function Home() {
           </div>
         </section>
 
-        <section id="faq" className="faq py-20 px-4 relative">
+        <section id="faq" className="faq py-10 px-4 relative">
           <div className="relative z-10">
             <h2 className="text-3xl font-bold text-gate33-orange mb-6 text-center">FAQS</h2>
             <p className="text-center text-gray-300 mb-8 max-w-2xl mx-auto">We get asked these questions a lot so if you have questions of your own it’s best to start here. Not helpful? No worries you can ask us your own below.</p>

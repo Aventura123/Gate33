@@ -4,7 +4,8 @@ module.exports = {
     "./app/**/*.{js,ts,jsx,tsx}", // Adicionado para incluir o diretório app
     "./pages/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
-  ],  theme: {
+  ],
+  theme: {
     extend: {
       fontFamily: {
         'verdana': ['Verdana', 'Geneva', 'sans-serif'],
@@ -28,4 +29,8 @@ module.exports = {
   plugins: [
     require('@tailwindcss/line-clamp'),
   ],
+  corePlugins: {
+    // Disable webkit text size adjust if not needed
+    preflight: true,
+  },
 };

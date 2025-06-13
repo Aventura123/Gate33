@@ -348,6 +348,7 @@ input:where([type='button']),
 input:where([type='reset']),
 input:where([type='submit']) {
   -webkit-appearance: button;
+  appearance: button;
   /* 1 */
   background-color: transparent;
   /* 2 */
@@ -395,6 +396,7 @@ Correct the cursor style of increment and decrement buttons in Safari.
 
 [type='search'] {
   -webkit-appearance: textfield;
+  appearance: textfield;
   /* 1 */
   outline-offset: -2px;
   /* 2 */
@@ -534,8 +536,6 @@ embed,
 object {
   display: block;
   /* 1 */
-  vertical-align: middle;
-  /* 2 */
 }
 
 /*
@@ -1080,6 +1080,7 @@ video {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .line-clamp-3 {
@@ -1087,6 +1088,7 @@ video {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 .block {
@@ -1556,8 +1558,10 @@ video {
 }
 
 .min-w-fit {
-  min-width: -moz-fit-content;
-  min-width: fit-content;
+  min-width: -webkit-fill-available; /* Samsung Internet 5.0+ */
+  min-width: -moz-fit-content; /* Firefox */
+  min-width: -webkit-fit-content; /* Chrome, Safari */
+  min-width: fit-content; /* Standard */
 }
 
 .min-w-full {
@@ -2862,30 +2866,6 @@ video {
   background-color: rgb(20 83 45 / var(--tw-bg-opacity, 1));
 }
 
-.bg-green-900\/10 {
-  background-color: rgb(20 83 45 / 0.1);
-}
-
-.bg-green-900\/20 {
-  background-color: rgb(20 83 45 / 0.2);
-}
-
-.bg-green-900\/30 {
-  background-color: rgb(20 83 45 / 0.3);
-}
-
-.bg-green-900\/40 {
-  background-color: rgb(20 83 45 / 0.4);
-}
-
-.bg-green-900\/50 {
-  background-color: rgb(20 83 45 / 0.5);
-}
-
-.bg-green-900\/70 {
-  background-color: rgb(20 83 45 / 0.7);
-}
-
 .bg-indigo-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(99 102 241 / var(--tw-bg-opacity, 1));
@@ -2943,8 +2923,12 @@ video {
   background-color: rgb(249 115 22 / 0.3);
 }
 
-.bg-orange-500\/40 {
-  background-color: rgb(249 115 22 / 0.4);
+.bg-orange-500\/50 {
+  background-color: rgb(249 115 22 / 0.5);
+}
+
+.bg-orange-500\/70 {
+  background-color: rgb(249 115 22 / 0.7);
 }
 
 .bg-orange-600 {
@@ -2952,8 +2936,22 @@ video {
   background-color: rgb(234 88 12 / var(--tw-bg-opacity, 1));
 }
 
-.bg-orange-700\/40 {
-  background-color: rgb(194 65 12 / 0.4);
+.bg-orange-700 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(194 65 12 / var(--tw-bg-opacity, 1));
+}
+
+.bg-orange-700\/50 {
+  background-color: rgb(194 65 12 / 0.5);
+}
+
+.bg-orange-800 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(154 52 18 / var(--tw-bg-opacity, 1));
+}
+
+.bg-orange-800\/50 {
+  background-color: rgb(154 52 18 / 0.5);
 }
 
 .bg-orange-900 {
@@ -3072,7 +3070,7 @@ video {
 
 .bg-white {
   --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+  background-color: rgb(255 255  255 / var(--tw-bg-opacity, 1));
 }
 
 .bg-white\/60 {
@@ -3452,10 +3450,6 @@ video {
 
 .to-yellow-500\/20 {
   --tw-gradient-to: rgb(234 179 8 / 0.2) var(--tw-gradient-to-position);
-}
-
-.to-yellow-600 {
-  --tw-gradient-to: #ca8a04 var(--tw-gradient-to-position);
 }
 
 .bg-clip-text {
@@ -4182,16 +4176,6 @@ video {
   color: rgb(255 255 255 / 0.8);
 }
 
-.text-yellow-200 {
-  --tw-text-opacity: 1;
-  color: rgb(254 240 138 / var(--tw-text-opacity, 1));
-}
-
-.text-yellow-300 {
-  --tw-text-opacity: 1;
-  color: rgb(253 224 71 / var(--tw-text-opacity, 1));
-}
-
 .text-yellow-400 {
   --tw-text-opacity: 1;
   color: rgb(250 204 21 / var(--tw-text-opacity, 1));
@@ -4437,6 +4421,7 @@ video {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .line-clamp-3 {
@@ -4444,6 +4429,7 @@ video {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 /* Existing custom styles */
@@ -5236,11 +5222,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   .sm\:mb-1 {
-    margin-bottom: 0.25rem;
+       margin-bottom: 0.25rem;
   }
 
   .sm\:mb-12 {
-    margin-bottom: 3rem;
+    margin-bottom:  3rem;
   }
 
   .sm\:mb-2 {
@@ -5289,6 +5275,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
   .sm\:mt-6 {
     margin-top: 1.5rem;
+  }
+
+  .sm\:mt-8 {
+    margin-top: 2rem;
   }
 
   .sm\:inline-block {
@@ -5469,6 +5459,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     --tw-space-y-reverse: 0;
     margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
     margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
+  }
+
+  .sm\:space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+  }
+
+  .sm\:space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
+  }
+
+  .sm\:space-y-8 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(2rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(2rem * var(--tw-space-y-reverse));
   }
 
   .sm\:p-2 {
@@ -6162,8 +6170,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin-bottom: 1.5rem;
   }
 
-  .lg\:mt-0 {
-    margin-top: 0px;
+  .lg\:top-0 {
+    top: 0;
+  }
+
+  .lg\:top-4 {
+    top: 1rem;
   }
 
   .lg\:block {
