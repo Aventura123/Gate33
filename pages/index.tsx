@@ -75,7 +75,7 @@ function Home() {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [waitlistError, setWaitlistError] = useState("");
   const [showContactModal, setShowContactModal] = useState(false);
-  const [activeJobCard, setActiveJobCard] = useState<number>(0);
+  const [activeJobCard, setActiveJobCard] = useState<number>(-1);
 
   // Job cards data
   const featuredJobs = [
@@ -336,10 +336,10 @@ function Home() {
           <div className="flex-1 w-full max-w-2xl flex flex-col gap-4 md:gap-6 relative">
             {/* Job Indicators */}
             <div className="job-indicators hidden lg:flex">
-              {featuredJobs.map((job) => (
+              {[0, 1, 2].map((idx) => (
                 <div
-                  key={job.id}
-                  className={`job-indicator ${activeJobCard === job.id ? 'active' : ''}`}
+                  key={idx}
+                  className={`job-indicator ${((activeJobCard === -1 && idx === 1) || activeJobCard === idx) ? 'active' : ''}`}
                 />
               ))}
             </div>
@@ -349,7 +349,7 @@ function Home() {
               href="/jobs" 
               className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"
               onMouseEnter={() => setActiveJobCard(0)}
-              onMouseLeave={() => setActiveJobCard(0)}
+              onMouseLeave={() => setActiveJobCard(-1)}
             >
               {/* Efeito de luz vertical tipo lanterna */}
               <div className="lamp-light-vertical"></div>
@@ -373,7 +373,7 @@ function Home() {
               href="/jobs" 
               className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"
               onMouseEnter={() => setActiveJobCard(1)}
-              onMouseLeave={() => setActiveJobCard(0)}
+              onMouseLeave={() => setActiveJobCard(-1)}
             >
               {/* Efeito de luz vertical tipo lanterna */}
               <div className="lamp-light-vertical"></div>
@@ -397,7 +397,7 @@ function Home() {
               href="/jobs" 
               className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"
               onMouseEnter={() => setActiveJobCard(2)}
-              onMouseLeave={() => setActiveJobCard(0)}
+              onMouseLeave={() => setActiveJobCard(-1)}
             >
               {/* Efeito de luz vertical tipo lanterna */}
               <div className="lamp-light-vertical"></div>

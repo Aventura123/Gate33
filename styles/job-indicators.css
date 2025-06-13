@@ -11,14 +11,16 @@
 }
 
 .job-indicator {
-  width: 8px;
-  height: 8px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background-color: rgba(255, 106, 0, 0.2);
+  background-color: #232733; /* mesmo fundo dos cards dos featured jobs */
   transition: all 0.3s ease;
+  border: 1.5px solid rgba(255, 106, 0, 0.12);
 }
 
 .job-indicator.active {
   background-color: #FF6A00;
-  box-shadow: 0 0 8px rgba(255, 106, 0, 0.5);
+  box-shadow: 0 0 12px 2px rgba(255, 106, 0, 0.5);
+  border: 1.5px solid #FF6A00;
 }
