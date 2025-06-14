@@ -1204,3 +1204,25 @@ body {
     margin: 0 !important;
   }
 }
+
+/* LED laranja vertical à esquerda dos Featured Jobs */
+.jobs .card-orange-glow {
+  position: relative;
+}
+.jobs .card-orange-glow .led-bar-vertical {
+  position: center;
+  left: 0;
+  top: 32px;
+  width: 6px;
+  height: 25px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--led-orange) 60%, var(--led-orange-alt) 100%);
+  box-shadow: 0 0 8px 2px var(--led-orange), 0 0 32px 8px var(--led-orange-alt);
+  opacity: 0.95;
+  z-index: 2;
+  transition: filter 0.3s, box-shadow 0.3s;
+}
+.jobs .card-orange-glow:hover .led-bar-vertical {
+  filter: brightness(1.3) saturate(1.3);
+  box-shadow: 0 0 5px 6px var(--led-orange), 0 0 28px 2px var(--led-orange-alt);
+}
