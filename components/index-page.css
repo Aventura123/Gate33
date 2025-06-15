@@ -79,6 +79,24 @@ body {
 
 body {
   min-height: 100vh;
+  overflow-x: hidden;
+  /* Fix para mobile iOS background fixed */
+  width: 100%;
+  height: 100%;
+}
+
+/* Fix específico para iOS/mobile - background fixed */
+html {
+  height: 100%;
+}
+
+/* Fallback para dispositivos móveis que não suportam background-attachment: fixed */
+@supports not (background-attachment: fixed) {
+  .hero-section-fixed-bg,
+  body {
+    background-attachment: scroll;
+    background-size: 100% auto;
+  }
 }
 
 .hero-section-fixed-bg::before {
@@ -606,7 +624,11 @@ body {
 @media (max-width: 768px) {
   .hero-section-fixed-bg,
   body {
-    background-attachment: scroll;
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    min-height: 100vh;
   }
 }
 
