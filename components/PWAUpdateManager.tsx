@@ -15,6 +15,18 @@ export default function PWAUpdateManager({
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  
+  // Função para detectar dispositivos móveis
+  const isMobileDevice = () => {
+    if (typeof window === 'undefined') return false;
+    
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobileUserAgent = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isSmallScreen = window.innerWidth <= 768;
+    
+    return isMobileUserAgent || (isTouchDevice && isSmallScreen);
+  };
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       // Registrar service worker
@@ -50,9 +62,7 @@ export default function PWAUpdateManager({
         });
 
       // Flag para detectar se o beforeinstallprompt foi disparado
-      let beforeInstallPromptFired = false;
-
-      // Escutar evento de instalação
+      let beforeInstallPromptFired = false;      // Escutar evento de instalação
       const handleBeforeInstallPrompt = (e: any) => {
         console.log('[PWA] beforeinstallprompt event fired');
         e.preventDefault();
@@ -60,10 +70,15 @@ export default function PWAUpdateManager({
         setDeferredPrompt(e);
         setIsInstallable(true);
         
-        // Aguardar um pouco antes de mostrar o prompt para não ser intrusivo
-        setTimeout(() => {
-          setShowInstallPrompt(true);
-        }, 3000);
+        // Só mostrar o prompt em dispositivos móveis
+        if (isMobileDevice()) {
+          // Aguardar um pouco antes de mostrar o prompt para não ser intrusivo
+          setTimeout(() => {
+            setShowInstallPrompt(true);
+          }, 3000);
+        } else {
+          console.log('[PWA] Install prompt não mostrado - não é dispositivo móvel');
+        }
       };
 
       window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -286,10 +301,8 @@ export default function PWAUpdateManager({
             </div>
           </div>
         </div>
-      )}
-
-      {/* Prompt de instalação */}
-      {showInstallPrompt && isInstallable && !wasRecentlyDismissed() && renderInstallPrompt()}
+      )}      {/* Prompt de instalação - apenas em dispositivos móveis */}
+      {showInstallPrompt && isInstallable && !wasRecentlyDismissed() && isMobileDevice() && renderInstallPrompt()}
     </>
   );
 }
