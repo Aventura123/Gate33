@@ -3,7 +3,7 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: false, // Habilitar PWA em desenvolvimento também
+  disable: false, // Enable PWA in all environments for testing
   buildExcludes: [/middleware-manifest\.json$/],
   fallbacks: {
     document: '/offline.html',

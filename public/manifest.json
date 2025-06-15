@@ -11,9 +11,7 @@
   "lang": "pt-BR",
   "dir": "ltr",
   "categories": ["business", "finance", "productivity"],
-  "id": "/",
   "prefer_related_applications": false,
-  "related_applications": [],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",

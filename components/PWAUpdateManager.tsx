@@ -15,11 +15,10 @@ export default function PWAUpdateManager({
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
-
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       // Registrar service worker
-      navigator.serviceWorker.register('/sw.js')
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
         .then((registration) => {
           console.log('[PWA] Service Worker registrado:', registration);
 
@@ -50,14 +49,24 @@ export default function PWAUpdateManager({
           console.error('[PWA] Erro ao registrar Service Worker:', error);
         });
 
+      // Flag para detectar se o beforeinstallprompt foi disparado
+      let beforeInstallPromptFired = false;
+
       // Escutar evento de instalação
-      window.addEventListener('beforeinstallprompt', (e) => {
+      const handleBeforeInstallPrompt = (e: any) => {
         console.log('[PWA] beforeinstallprompt event fired');
         e.preventDefault();
+        beforeInstallPromptFired = true;
         setDeferredPrompt(e);
         setIsInstallable(true);
-        setShowInstallPrompt(true);
-      });
+        
+        // Aguardar um pouco antes de mostrar o prompt para não ser intrusivo
+        setTimeout(() => {
+          setShowInstallPrompt(true);
+        }, 3000);
+      };
+
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
       // Escutar quando o app é instalado
       window.addEventListener('appinstalled', () => {
@@ -74,31 +83,49 @@ export default function PWAUpdateManager({
         const isInWebAppiOS = (window.navigator as any).standalone === true;
         const isInstalled = isStandalone || isInWebAppiOS;
         
+        // Verificar se veio do PWA pela URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromPWA = urlParams.get('source') === 'pwa';
+        
         console.log('[PWA] Status de instalação:', {
           isStandalone,
           isInWebAppiOS,
           isInstalled,
+          fromPWA,
           userAgent: navigator.userAgent
         });
 
-        if (isInstalled) {
+        if (isInstalled || fromPWA) {
           console.log('[PWA] App está rodando como PWA');
           setShowInstallPrompt(false);
           setIsInstallable(false);
-        } else {
-          // Para dispositivos iOS/Safari que não suportam beforeinstallprompt
-          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-          const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-          
-          if (isIOS && isSafari) {
-            console.log('[PWA] Dispositivo iOS detectado - mostrando instruções manuais');
-            // Para iOS, mostrar depois de um delay para não ser intrusivo
-            setTimeout(() => {
-              setShowInstallPrompt(true);
-              setIsInstallable(true);
-            }, 5000);
-          }
+          return;
         }
+
+        // Para dispositivos iOS/Safari que não suportam beforeinstallprompt
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+        
+        // Aguardar um tempo para ver se o beforeinstallprompt dispara
+        setTimeout(() => {
+          if (!beforeInstallPromptFired && !isInstalled) {
+            console.log('[PWA] beforeinstallprompt não disparou - app pode ser instalável');
+            setIsInstallable(true);
+            
+            if (isIOS && isSafari) {
+              console.log('[PWA] Dispositivo iOS detectado - mostrando instruções manuais');
+              // Para iOS, mostrar depois de um delay maior para não ser intrusivo
+              setTimeout(() => {
+                setShowInstallPrompt(true);
+              }, 5000);
+            } else {
+              // Para outros navegadores, assumir que é instalável
+              setTimeout(() => {
+                setShowInstallPrompt(true);
+              }, 8000);
+            }
+          }
+        }, 5000);
       };
 
       // Verificar status inicial
