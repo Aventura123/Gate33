@@ -46,9 +46,7 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
 // Modern FAQ Item Component
 const ModernFAQItem = ({ question, answer, open = false, highlight = false }: { question: string, answer: React.ReactNode, open?: boolean, highlight?: boolean }) => {
   const [isOpen, setIsOpen] = useState(false); // Always start closed
-  return (
-    <div className={`rounded-xl border border-orange-500/20 shadow-md transition-all ${isOpen ? 'border-orange-500 gate33-faq-open' : 'bg-[#181A20] text-white'} ${highlight ? 'font-semibold' : ''}`}
-      style={{ boxShadow: isOpen ? '0 0 16px 0 #ea580c33' : undefined }}>
+  return (    <div className={`rounded-xl border border-orange-500/20 shadow-md transition-all ${isOpen ? 'border-orange-500 gate33-faq-open shadow-orange-500/20' : 'bg-[#181A20] text-white'} ${highlight ? 'font-semibold' : ''}`}>
       <button
         className={`w-full flex justify-between items-center px-5 text-left focus:outline-none transition-colors gate33-faq-btn ${highlight ? 'text-gate33-orange' : 'text-white'}`}
         onClick={() => setIsOpen((v) => !v)}

@@ -25,9 +25,8 @@ module.exports = {
     'bg-gray-500',
     'bg-gray-400',
     // Add any other color classes you use for network dots here
-  ],
-  plugins: [
-    require('@tailwindcss/line-clamp'),
+  ],  plugins: [
+    // @tailwindcss/line-clamp is now included by default in Tailwind v3.3+
   ],
   corePlugins: {
     // Disable webkit text size adjust if not needed

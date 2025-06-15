@@ -1,49 +1,28 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+});
+
+module.exports = withPWA({
   reactStrictMode: true,
-  
-  // Disable source maps in production
   productionBrowserSourceMaps: false,
-    // Configuração para gerenciamento de rotas
   trailingSlash: false,
-    // Configurações para imagens
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'gate33.net',
-      },
-      {
-        protocol: 'https',
-        hostname: 'gate33.me',
-      },
-      {
-        protocol: 'https',
-        hostname: 'coin-images.coingecko.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'assets.coingecko.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'miro.medium.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'support.coingecko.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'styles.redditmedia.com',
-      },
+      { protocol: 'https', hostname: 'gate33.net' },
+      { protocol: 'https', hostname: 'gate33.me' },
+      { protocol: 'https', hostname: 'coin-images.coingecko.com' },
+      { protocol: 'https', hostname: 'assets.coingecko.com' },
+      { protocol: 'https', hostname: 'miro.medium.com' },
+      { protocol: 'https', hostname: 'support.coingecko.com' },
+      { protocol: 'https', hostname: 'styles.redditmedia.com' },
     ],
   },
-  
   distDir: '.next',
   poweredByHeader: false,
-  
-  // Configurações do webpack para desenvolvimento local
   webpack: (config, { dev, isServer }) => {
     if (dev && isServer) {
       config.watchOptions = {
@@ -53,7 +32,6 @@ const nextConfig = {
       };
     }
     
-    // Fix source map issues by setting source maps properly in dev mode
     if (dev) {
       config.devtool = 'eval-source-map';
     } else {
@@ -66,29 +44,16 @@ const nextConfig = {
     
     return config;
   },
-  
-  // Mantendo headers de segurança
   async headers() {
     return [
       {
         source: '/(.*)',
         headers: [
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-XSS-Protection', value: '1; mode=block' },
         ],
       },
     ];
   },
-};
-
-module.exports = nextConfig;
+});
