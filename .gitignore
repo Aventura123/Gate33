@@ -68,3 +68,7 @@ setup-portable.ps1
 /docs/
 docs/*.md
 
+# PWA generation scripts (temporary tools)
+scripts/generate-pwa-icons.js
+scripts/check-icon-sizes.js
+
