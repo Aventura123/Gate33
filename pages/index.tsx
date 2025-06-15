@@ -197,7 +197,7 @@ function Home() {
                 {/* For Builders Section - Centered for even spacing */}
                 <div className="flex justify-center">
                   <div 
-                    className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-col justify-between w-full max-w-[320px] md:w-[98%] group overflow-hidden"
+                    className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-col justify-between w-full md:w-[98%] group overflow-hidden"
                     onMouseEnter={() => setActiveJobCard(0)}
                     onMouseLeave={() => setActiveJobCard(0)}
                   >
@@ -227,7 +227,7 @@ function Home() {
                 {/* For Hodlers Section - Centered for even spacing */}
                 <div className="flex justify-center">
                   <div 
-                    className="rounded-2xl card-orange-glow card-hodlers p-4 md:p-5 h-auto flex flex-col justify-between w-full max-w-[320px] md:w-[98%] group overflow-hidden"
+                    className="rounded-2xl card-orange-glow card-hodlers p-4 md:p-5 h-auto flex flex-col justify-between w-full md:w-[98%] group overflow-hidden"
                     onMouseEnter={() => setActiveJobCard(1)}
                     onMouseLeave={() => setActiveJobCard(0)}
                   >
@@ -252,7 +252,7 @@ function Home() {
                 </div>                {/* For Explorers Section - Centered for even spacing */}
                 <div className="flex justify-center">
                   <div 
-                    className="rounded-2xl card-orange-glow card-explorers p-4 md:p-5 h-auto flex flex-col justify-between w-full max-w-[320px] md:w-[98%] group overflow-hidden"
+                    className="rounded-2xl card-orange-glow card-explorers p-4 md:p-5 h-auto flex flex-col justify-between w-full md:w-[98%] group overflow-hidden"
                     onMouseEnter={() => setActiveJobCard(2)}
                     onMouseLeave={() => setActiveJobCard(0)}
                   >
@@ -415,11 +415,11 @@ function Home() {
               </div>
             </Link>
           </div>
-        </div>
-      </section>
-
-      <main className="min-h-screen bg-gradient-to-b from-black via-black to-black text-white relative overflow-hidden gate33-main-section">
+        </div>      </section>      <main className="min-h-screen text-white relative overflow-hidden gate33-main-section">
         {/* Top orange divider line */}
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>
+        </div>
         
         <section id="about" className="about py-6 md:py-10 px-4 relative">
           <div className="relative z-10 max-w-7xl mx-auto">
@@ -669,8 +669,7 @@ function Home() {
                 <h3 className="font-bold text-white text-sm md:text-base mb-2">Learn2Earn</h3>
                 <p className="text-gray-400 text-xs">Enhance your skills and earn rewards by participating in our Learn2Earn program, where learning converts into real opportunities.</p>
               </div>
-            </div>
-          </div>
+            </div>          </div>
         </section>
 
         {/* PARTNERS/INDUSTRY LEADERS SECTION */}
@@ -705,8 +704,7 @@ function Home() {
               <Link href="/partners" className="text-orange-400 text-sm hover:underline font-medium flex items-center gap-1">
                 View all Partners <span className="ml-1">→</span>
               </Link>
-            </div>
-          </div>
+            </div>          </div>
         </section>
 
         <section id="faq" className="faq py-10 px-4 relative">

@@ -12,6 +12,8 @@
           "-webkit-text-size-adjust"
         ]
       }
-    ]
+    ],
+    "apple-touch-icons": "off",
+    "compat-api/html": "off"
   }
 }
