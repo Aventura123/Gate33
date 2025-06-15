@@ -197,7 +197,7 @@ export default function PWAUpdateManager({
     }
 
     return (
-      <div className="fixed bottom-4 left-4 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
         <div className="flex items-center justify-between">
           <div>
             <h4 className="font-semibold">Instalar Gate33</h4>
