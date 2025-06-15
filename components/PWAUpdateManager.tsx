@@ -14,6 +14,7 @@ export default function PWAUpdateManager({
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
@@ -41,6 +42,9 @@ export default function PWAUpdateManager({
             setUpdateAvailable(true);
             onUpdateAvailable?.();
           }
+
+          // Forçar checagem de atualizações
+          registration.update();
         })
         .catch((error) => {
           console.error('[PWA] Erro ao registrar Service Worker:', error);
@@ -48,8 +52,10 @@ export default function PWAUpdateManager({
 
       // Escutar evento de instalação
       window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('[PWA] beforeinstallprompt event fired');
         e.preventDefault();
         setDeferredPrompt(e);
+        setIsInstallable(true);
         setShowInstallPrompt(true);
       });
 
@@ -57,19 +63,57 @@ export default function PWAUpdateManager({
       window.addEventListener('appinstalled', () => {
         console.log('[PWA] App instalado');
         setShowInstallPrompt(false);
+        setIsInstallable(false);
         setDeferredPrompt(null);
         onUpdateInstalled?.();
       });
 
-      // Verificar se já está instalado
-      window.addEventListener('DOMContentLoaded', () => {
-        if (window.matchMedia('(display-mode: standalone)').matches) {
+      // Verificar se já está instalado ou em modo standalone
+      const checkInstallStatus = () => {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        const isInWebAppiOS = (window.navigator as any).standalone === true;
+        const isInstalled = isStandalone || isInWebAppiOS;
+        
+        console.log('[PWA] Status de instalação:', {
+          isStandalone,
+          isInWebAppiOS,
+          isInstalled,
+          userAgent: navigator.userAgent
+        });
+
+        if (isInstalled) {
           console.log('[PWA] App está rodando como PWA');
+          setShowInstallPrompt(false);
+          setIsInstallable(false);
+        } else {
+          // Para dispositivos iOS/Safari que não suportam beforeinstallprompt
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+          
+          if (isIOS && isSafari) {
+            console.log('[PWA] Dispositivo iOS detectado - mostrando instruções manuais');
+            // Para iOS, mostrar depois de um delay para não ser intrusivo
+            setTimeout(() => {
+              setShowInstallPrompt(true);
+              setIsInstallable(true);
+            }, 5000);
+          }
         }
-      });
+      };
+
+      // Verificar status inicial
+      if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', checkInstallStatus);
+      } else {
+        checkInstallStatus();
+      }
+
+      // Cleanup
+      return () => {
+        window.removeEventListener('DOMContentLoaded', checkInstallStatus);
+      };
     }
   }, [onUpdateAvailable, onUpdateInstalled]);
-
   const handleUpdate = () => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistration().then((registration) => {
@@ -87,14 +131,96 @@ export default function PWAUpdateManager({
 
   const handleInstall = async () => {
     if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const choiceResult = await deferredPrompt.userChoice;
-      console.log('[PWA] Escolha do usuário:', choiceResult);
-      setDeferredPrompt(null);
-      setShowInstallPrompt(false);
+      try {
+        deferredPrompt.prompt();
+        const choiceResult = await deferredPrompt.userChoice;
+        console.log('[PWA] Escolha do usuário:', choiceResult);
+        
+        if (choiceResult.outcome === 'accepted') {
+          console.log('[PWA] Usuário aceitou a instalação');
+        } else {
+          console.log('[PWA] Usuário recusou a instalação');
+        }
+        
+        setDeferredPrompt(null);
+        setShowInstallPrompt(false);
+        setIsInstallable(false);
+      } catch (error) {
+        console.error('[PWA] Erro ao instalar:', error);
+      }
     }
   };
 
+  const handleDismiss = () => {
+    setShowInstallPrompt(false);
+    // Salvar no localStorage para não mostrar novamente por um tempo
+    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+  };
+
+  // Verificar se foi dismissado recentemente (24 horas)
+  const wasRecentlyDismissed = () => {
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    if (!dismissed) return false;
+    
+    const dismissedTime = parseInt(dismissed);
+    const now = Date.now();
+    const dayInMs = 24 * 60 * 60 * 1000;
+    
+    return (now - dismissedTime) < dayInMs;
+  };
+
+  // Renderizar prompt de instalação diferente para iOS
+  const renderInstallPrompt = () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    
+    if (isIOS && isSafari && !deferredPrompt) {
+      return (
+        <div className="fixed bottom-4 left-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
+          <div className="flex items-start justify-between">
+            <div>
+              <h4 className="font-semibold">Instalar Gate33</h4>
+              <p className="text-sm opacity-90 mt-1">
+                Para instalar: toque em <span className="font-bold">⎙</span> e depois em "Adicionar à Tela de Início"
+              </p>
+            </div>
+            <button
+              onClick={handleDismiss}
+              className="text-white/70 hover:text-white text-lg leading-none ml-2"
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="fixed bottom-4 left-4 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="font-semibold">Instalar Gate33</h4>
+            <p className="text-sm opacity-90">Adicione à tela inicial para acesso rápido</p>
+          </div>
+          <div className="ml-4 flex gap-2">
+            <button
+              onClick={handleDismiss}
+              className="text-white/70 hover:text-white text-sm"
+            >
+              Não
+            </button>
+            <button
+              onClick={handleInstall}
+              className="bg-white text-green-600 px-3 py-1 rounded text-sm font-medium"
+            >
+              Instalar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
   return (
     <>
       {/* Notificação de atualização */}
@@ -124,30 +250,7 @@ export default function PWAUpdateManager({
       )}
 
       {/* Prompt de instalação */}
-      {showInstallPrompt && (
-        <div className="fixed bottom-4 left-4 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-semibold">Instalar Gate33</h4>
-              <p className="text-sm opacity-90">Adicione à tela inicial para acesso rápido</p>
-            </div>
-            <div className="ml-4 flex gap-2">
-              <button
-                onClick={() => setShowInstallPrompt(false)}
-                className="text-white/70 hover:text-white text-sm"
-              >
-                Não
-              </button>
-              <button
-                onClick={handleInstall}
-                className="bg-white text-green-600 px-3 py-1 rounded text-sm font-medium"
-              >
-                Instalar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showInstallPrompt && isInstallable && !wasRecentlyDismissed() && renderInstallPrompt()}
     </>
   );
 }
