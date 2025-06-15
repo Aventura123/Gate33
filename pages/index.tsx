@@ -248,9 +248,8 @@ function Home() {
                 </Link>
               </div>
                   </div>
-                </div>
-                {/* For Explorers Section - Centered for even spacing */}
-                <div className="flex justify-center md:col-span-2 lg:col-span-1">
+                </div>                {/* For Explorers Section - Centered for even spacing */}
+                <div className="flex justify-center">
                   <div 
                     className="rounded-2xl card-orange-glow card-explorers p-4 md:p-5 h-auto flex flex-col justify-between w-full max-w-[320px] md:w-[98%] group overflow-hidden"
                     onMouseEnter={() => setActiveJobCard(2)}

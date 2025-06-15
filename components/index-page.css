@@ -916,7 +916,7 @@ html {
     margin-top: 1rem !important;
   }
   .hero-content .grid {
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: 1fr !important;
     gap: 0.7rem !important;
   }
   .hero-content .card-orange-glow {
@@ -941,6 +941,31 @@ html {
   .hero-content .card-orange-glow .flex.justify-center.mb-2 {
     flex-direction: column !important;
     gap: 0.5rem !important;
+  }
+}
+
+/* Ensure all hero cards have consistent mobile behavior */
+@media (max-width: 768px) {
+  .hero-content .grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .hero-content .flex.justify-center {
+    width: 100% !important;
+  }
+  
+  .hero-content .card-orange-glow {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-content .grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
   }
 }
 

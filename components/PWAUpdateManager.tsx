@@ -195,7 +195,6 @@ export default function PWAUpdateManager({
     
     return (now - dismissedTime) < dayInMs;
   };
-
   // Renderizar prompt de instalação diferente para iOS
   const renderInstallPrompt = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -203,74 +202,87 @@ export default function PWAUpdateManager({
     
     if (isIOS && isSafari && !deferredPrompt) {
       return (
-        <div className="fixed bottom-4 left-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <h4 className="font-semibold">Instalar Gate33</h4>
-              <p className="text-sm opacity-90 mt-1">
-                Para instalar: toque em <span className="font-bold">⎙</span> e depois em "Adicionar à Tela de Início"
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-[#0a0a0a] border border-[#ff6b35]/20 text-white p-6 rounded-2xl shadow-2xl w-full max-w-md mx-auto">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-[#ff6b35] to-[#ff8c42] rounded-2xl flex items-center justify-center">
+                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+              </div>
+              <h4 className="text-xl font-bold mb-2 text-white">Install Gate33</h4>
+              <p className="text-sm text-gray-300 mb-6">
+                To install: tap <span className="inline-flex items-center justify-center w-6 h-6 bg-[#ff6b35] rounded text-xs font-bold mx-1">⎙</span> then "Add to Home Screen"
               </p>
+              <button
+                onClick={handleDismiss}
+                className="w-full bg-gradient-to-r from-[#ff6b35] to-[#ff8c42] hover:from-[#ff5722] hover:to-[#ff6b35] text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105"
+              >
+                Got it
+              </button>
             </div>
-            <button
-              onClick={handleDismiss}
-              className="text-white/70 hover:text-white text-lg leading-none ml-2"
-              aria-label="Fechar"
-            >
-              ×
-            </button>
           </div>
         </div>
       );
     }
 
     return (
-      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="font-semibold">Instalar Gate33</h4>
-            <p className="text-sm opacity-90">Adicione à tela inicial para acesso rápido</p>
-          </div>
-          <div className="ml-4 flex gap-2">
-            <button
-              onClick={handleDismiss}
-              className="text-white/70 hover:text-white text-sm"
-            >
-              Não
-            </button>
-            <button
-              onClick={handleInstall}
-              className="bg-white text-green-600 px-3 py-1 rounded text-sm font-medium"
-            >
-              Instalar
-            </button>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <div className="bg-[#0a0a0a] border border-[#ff6b35]/20 text-white p-6 rounded-2xl shadow-2xl w-full max-w-md mx-auto">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-[#ff6b35] to-[#ff8c42] rounded-2xl flex items-center justify-center">
+              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              </svg>
+            </div>
+            <h4 className="text-xl font-bold mb-2 text-white">Install Gate33</h4>
+            <p className="text-sm text-gray-300 mb-6">Add to home screen for quick access</p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleDismiss}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-xl transition-colors duration-200"
+              >
+                Not now
+              </button>
+              <button
+                onClick={handleInstall}
+                className="flex-1 bg-gradient-to-r from-[#ff6b35] to-[#ff8c42] hover:from-[#ff5722] hover:to-[#ff6b35] text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105"
+              >
+                Install
+              </button>
+            </div>
           </div>
         </div>
       </div>
     );
   };
   return (
-    <>
-      {/* Notificação de atualização */}
+    <>      {/* Update notification */}
       {updateAvailable && (
-        <div className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-semibold">Nova versão disponível!</h4>
-              <p className="text-sm opacity-90">Clique para atualizar o Gate33</p>
-            </div>
-            <div className="ml-4 flex gap-2">
-              <button
-                onClick={() => setUpdateAvailable(false)}
-                className="text-white/70 hover:text-white text-sm"
-              >
-                Depois
-              </button>
-              <button
-                onClick={handleUpdate}
-                className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-medium"
-              >
-                Atualizar
-              </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-[#0a0a0a] border border-[#ff6b35]/20 text-white p-6 rounded-2xl shadow-2xl w-full max-w-md mx-auto">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-[#ff6b35] to-[#ff8c42] rounded-2xl flex items-center justify-center">
+                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+              </div>
+              <h4 className="text-xl font-bold mb-2 text-white">New version available!</h4>
+              <p className="text-sm text-gray-300 mb-6">Click to update Gate33 to the latest version</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setUpdateAvailable(false)}
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-xl transition-colors duration-200"
+                >
+                  Later
+                </button>
+                <button
+                  onClick={handleUpdate}
+                  className="flex-1 bg-gradient-to-r from-[#ff6b35] to-[#ff8c42] hover:from-[#ff5722] hover:to-[#ff6b35] text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105"
+                >
+                  Update
+                </button>
+              </div>
             </div>
           </div>
         </div>
