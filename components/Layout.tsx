@@ -134,17 +134,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const timer = setTimeout(() => setLearnDropdownOpen(false), 1000);
     setLearnDropdownTimer(timer);
   };
-
   return (
     <div className="layout">
-      {/* Header with Professional Glassmorphism */}
-      <header
-        className="site-header fixed h-[10vh] left-0 top-0 w-[100vw] z-50 backdrop-blur-[20px] bg-gradient-to-b from-[rgba(15,15,15,0.4)] to-[rgba(15,15,15,0.2)] text-white gate33-header-fullwidth overflow-visible"
-        style={{
-          mask: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.3) 85%, transparent 95%)',
-          WebkitMask: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.3) 85%, transparent 95%)',
-        }}
+      {/* Header with Professional Glassmorphism */}      <header
+        className="site-header fixed h-[10vh] left-0 top-0 w-[100vw] z-50 text-white gate33-header-fullwidth overflow-visible"
       >
+        <div className="header-bg"></div>
         <div className="w-full flex justify-between items-center py-4 px-6 h-16">
           <a href="/" className="logo flex items-center">
             <img src="/images/GATE33-LOGO-wordmark.png" alt="Gate33 Logo" className="h-6" />
@@ -166,9 +161,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </svg>
             )}
           </button>
-          
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex gap-8 items-center relative">
+            {/* Desktop Navigation */}
+          <nav className="hidden md:flex gap-8 items-center relative z-[1000]">
             {/* Jobs Dropdown */}
             <div 
               className="relative"
@@ -178,9 +172,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <button className="flex items-center gap-1 hover:text-orange-500 transition-colors font-verdana text-sm font-bold leading-[18px] tracking-normal text-center">
                 JOBS
                 <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
-              </button>
-              {jobsDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-[70] backdrop-blur-sm"
+              </button>              {jobsDropdownOpen && (
+                <div className="header-dropdown"
                   onMouseEnter={handleJobsEnter}
                   onMouseLeave={handleJobsLeave}
                 >
@@ -192,20 +185,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Tools Dropdown */}
+            </div>            {/* Tools Dropdown */}
             <div 
-              className="relative"
+              className="relative z-[1000]"
               onMouseEnter={handleToolsEnter}
               onMouseLeave={handleToolsLeave}
             >
               <button className="flex items-center gap-1 hover:text-orange-500 transition-colors font-verdana text-sm font-bold leading-[18px] tracking-normal text-center">
                 TOOLS
                 <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
-              </button>
-              {toolsDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-[70] backdrop-blur-sm"
+              </button>              {toolsDropdownOpen && (
+                <div className="header-dropdown"
                   onMouseEnter={handleToolsEnter}
                   onMouseLeave={handleToolsLeave}
                 >
@@ -215,20 +205,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Learn Dropdown */}
+            </div>            {/* Learn Dropdown */}
             <div 
-              className="relative"
+              className="relative z-[1000]"
               onMouseEnter={handleLearnEnter}
               onMouseLeave={handleLearnLeave}
             >
               <button className="flex items-center gap-1 hover:text-orange-500 transition-colors font-verdana text-sm font-bold leading-[18px] tracking-normal text-center">
                 LEARN
                 <img src="/Vectors/Vector.svg" alt="dropdown" className="w-3 h-2" />
-              </button>
-              {learnDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-black/70 border border-white/20 rounded-lg shadow-xl min-w-[200px] z-[70] backdrop-blur-sm"
+              </button>              {learnDropdownOpen && (
+                <div className="header-dropdown"
                   onMouseEnter={handleLearnEnter}
                   onMouseLeave={handleLearnLeave}
                 >
@@ -237,15 +224,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Login/Signup Button */}
+            </div>            {/* Login/Signup Button */}
             {isLoggedIn ? (
-              <UserProfileButton className="ml-4" />
-            ) : (
-              <a 
+              <UserProfileButton className="ml-4 header-button" />
+            ) : (              <a 
                 href="/login" 
-                className="px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors font-medium"
+                className="px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors font-medium header-button login-button"
               >
                 Log In / Sign Up
               </a>
