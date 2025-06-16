@@ -426,9 +426,7 @@ function Home() {
               <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-8 min-w-[200px] rounded-full font-semibold text-sm cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit">
                 Explore Our Crypto Tools
               </Link>
-            </div>
-
-            <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start justify-start">
+            </div>            <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-center justify-center">
               {/* Cards Grid - Full width on mobile */}
               <div className="w-full lg:w-[65%]">
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-1 w-full">
@@ -444,8 +442,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
                         </p>
-                      </div>
-                      <Link href="/crypto-tools/governance-ai" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                      </div>                      <Link href="/crypto-tools#governance-ai" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
                         Try This Out
                       </Link>
                     </div>
@@ -462,8 +459,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
                         </p>
-                      </div>
-                      <Link href="/crypto-tools/market-list" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                      </div>                      <Link href="/crypto-tools#market-list" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
                         Try This Out
                       </Link>
                     </div>
@@ -477,8 +473,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Real-time Bitcoin price data, market sentiment analysis, and useful trading utilities powered by free APIs.
                         </p>
-                      </div>
-                      <Link href="/crypto-tools/bitcoin-analysis" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                      </div>                      <Link href="/crypto-tools#bitcoin-analysis" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
                         Try This Out
                       </Link>
                     </div>
@@ -528,23 +523,19 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Analyze market capitalization data and trends across different cryptocurrencies to make informed investment decisions.
                         </p>
-                      </div>
-                      <Link href="/crypto-tools/market-cap" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                      </div>                      <Link href="/crypto-tools#market-cap" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
                         Try This Out
                       </Link>
                     </div>
                   </div>
                 </div>
               </div>
-              {/* Right text - Desktop only */}
-              <div className="hidden lg:flex flex-shrink-0 w-full lg:w-[35%] flex-col justify-center items-start text-left mt-6 lg:mt-0 lg:pl-6">                <h2 className="text-2xl md:text-3xl font-verdana font-bold text-gate33-orange mb-3 md:mb-4">EXPLORE OUR<br />CRYPTO TOOLS</h2>
+              {/* Right text - Desktop only */}              <div className="hidden lg:flex flex-shrink-0 w-full lg:w-[35%] flex-col justify-center items-start text-left mt-6 lg:mt-0 lg:pl-6">                <h2 className="text-2xl md:text-3xl font-verdana font-bold text-gate33-orange mb-3 md:mb-4">EXPLORE OUR<br />CRYPTO TOOLS</h2>
                 <p className="text-orange-300 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
-                  Crypto Tools offers solutions for analyzing Ethereum wallets. Features include ENS resolution, wallet age assessment, and dust token detection.
-                </p>
-                <p className="text-gray-200 text-xs md:text-sm mb-6 md:mb-8 max-w-xs font-verdana">
-                  Operations are secure in your browser, using public APIs and your Ethereum provider. Private keys remain secure and never exposed.
-                </p>
-                <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-8 md:px-12 min-w-[200px] md:min-w-[230px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit">
+                  Crypto Tools offers solutions for analyzing<br />Ethereum wallets. Features include ENS<br />resolution, wallet age assessment, and<br />dust token detection.
+                </p>                <p className="text-gray-300 text-sm md:text-base mb-6 md:mb-8 max-w-xs font-verdana leading-relaxed">
+                  Operations are secure in your browser, using public<br />APIs and your Ethereum provider. Private keys<br />remain secure and never exposed.
+                </p>                <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-10 md:px-14 min-w-[240px] md:min-w-[280px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit">
                   Explore Our Crypto Tools
                 </Link>
               </div>
