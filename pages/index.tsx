@@ -168,14 +168,13 @@ function Home() {
 
       {/* Hero Section - NEW LAYOUT WITH FIXED BACKGROUND */}
       <section className="hero-section-fixed-bg relative flex flex-col justify-center min-h-[50vh] px-4 pt-14 pb-12 overflow-hidden">
-        <div className="hero-content w-full max-w-6xl mx-auto flex flex-col pt-4">
-          {/* Main title aligned left */}
+        <div className="hero-content w-full max-w-6xl mx-auto flex flex-col pt-4">          {/* Main title aligned left */}
           <h1 className="font-verdana font-bold text-white mb-2 tracking-normal uppercase">
-            <span className="text-[28px] md:text-[42px] leading-[28px] md:leading-[40px] block mb-2">YOUR GATEWAY TO TRUSTED</span>
-            <span className="text-gate33-orange text-[28px] md:text-[42px] leading-[28px] md:leading-[40px] font-bold block mt-1">WEB3 OPPORTUNITIES</span>
+            <span className="text-2xl md:text-5xl leading-tight block mb-2">YOUR GATEWAY TO TRUSTED</span>
+            <span className="text-gate33-orange text-2xl md:text-5xl leading-tight font-bold block mt-1">WEB3 OPPORTUNITIES</span>
           </h1>
           {/* Subtitle aligned left */}
-          <p className="font-verdana font-normal text-base md:text-xl lg:text-2xl text-gray-200 mb-6 md:mb-10 mt-4 md:mt-6 max-w-2xl">
+          <p className="font-verdana font-normal text-lg md:text-xl lg:text-2xl text-gray-200 mb-6 md:mb-10 mt-4 md:mt-6 max-w-2xl">
             Hire, Get Hired, Learn and Build Smarter<br />
             <span className="text-gate33-orange font-semibold">Verified. Secure. Web3-Native.</span>
           </p>
@@ -204,21 +203,19 @@ function Home() {
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
-              </div>
-              <div className="mb-2 text-center">
+              </div>              <div className="mb-2 text-center">
                 <span className="font-verdana uppercase text-sm md:text-lg text-white font-bold tracking-wider mb-1 md:mb-2 block">FOR BUILDERS</span>
-                <h3 className="font-verdana text-gate33-orange font-medium text-sm md:text-base mb-1 md:mb-2">Hire or Get Hired</h3>
-                <p className="font-verdana text-gray-300 text-xs leading-relaxed mb-2">
+                <h3 className="font-verdana text-gate33-orange font-medium text-base md:text-lg mb-1 md:mb-2">Hire or Get Hired</h3>
+                <p className="font-verdana text-gray-300 text-sm leading-relaxed mb-2">
                   Access <span className="text-gate33-orange font-medium">trusted</span> Web3 jobs or post roles with<br className="hidden md:block" />
                   <span className="text-gate33-orange font-medium">escrow protection</span>. Build the future, <span className="text-gate33-orange font-medium">securely</span>.
                 </p>
-              </div>
-              <div className="flex flex-col sm:flex-row justify-center items-center mb-2 gap-2 sm:gap-[9.32px]">
-                <Link href="/jobs" className="font-verdana text-white font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center gate33-btn-orange w-full sm:w-auto">
+              </div>              <div className="flex flex-col sm:flex-row justify-center items-center mb-2 gap-2 sm:gap-[9.32px]">
+                <Link href="/jobs" className="font-verdana text-white font-medium text-sm md:text-base transition-all duration-200 flex items-center justify-center gate33-btn-orange w-full sm:w-auto">
                   Find Jobs
                 </Link>
-                <span className="font-verdana text-white items-center text-xs md:text-[14px] hidden sm:flex">or</span>
-                <Link href="/company-register" className="font-verdana text-white font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center gate33-btn-orange w-full sm:w-auto">
+                <span className="font-verdana text-white items-center text-sm md:text-base hidden sm:flex">or</span>
+                <Link href="/company-register" className="font-verdana text-white font-medium text-sm md:text-base transition-all duration-200 flex items-center justify-center gate33-btn-orange w-full sm:w-auto">
                   Post Jobs
                 </Link>
               </div>
@@ -234,17 +231,15 @@ function Home() {
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
-              </div>
-              <div className="mb-2 text-center">
+              </div>              <div className="mb-2 text-center">
                 <span className="font-verdana uppercase text-sm md:text-lg text-white font-bold tracking-wider mb-1 md:mb-2 block">FOR HODLERS</span>
-                <h3 className="font-verdana text-gate33-orange font-medium text-sm md:text-base mb-1 md:mb-2">Use Crypto Tools</h3>
-                <p className="font-verdana text-gray-300 text-xs leading-relaxed mb-2">
+                <h3 className="font-verdana text-gate33-orange font-medium text-base md:text-lg mb-1 md:mb-2">Use Crypto Tools</h3>
+                <p className="font-verdana text-gray-300 text-sm leading-relaxed mb-2">
                   Analyze the market with <span className="text-gate33-orange font-medium">AI-powered tools</span> and<br className="hidden md:block" />
                   insights. Make informed decisions, <span className="text-gate33-orange font-medium">faster</span>.
                 </p>
-              </div>
-              <div className="flex justify-center mb-2">
-                <Link href="/crypto-tools" className="font-verdana text-white font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center whitespace-nowrap gate33-btn-orange w-full sm:w-auto">
+              </div>              <div className="flex justify-center mb-2">
+                <Link href="/crypto-tools" className="font-verdana text-white font-medium text-sm md:text-base transition-all duration-200 flex items-center justify-center whitespace-nowrap gate33-btn-orange w-full sm:w-auto">
                   Explore Crypto Tools
                 </Link>
               </div>
@@ -259,16 +254,14 @@ function Home() {
               {/* Barra LED horizontal no topo */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
-              </div>
-              <div className="mb-2 text-center">
+              </div>              <div className="mb-2 text-center">
                 <span className="font-verdana uppercase text-sm md:text-lg text-white font-bold tracking-wider mb-1 md:mb-2 block">FOR EXPLORERS</span>
-                <h3 className="font-verdana text-gate33-orange font-medium text-sm md:text-base mb-1 md:mb-2">Learn 2 Earn</h3>
-                <p className="font-verdana text-gray-300 text-xs leading-relaxed mb-2">
+                <h3 className="font-verdana text-gate33-orange font-medium text-base md:text-lg mb-1 md:mb-2">Learn 2 Earn</h3>
+                <p className="font-verdana text-gray-300 text-sm leading-relaxed mb-2">
                   Take <span className="text-gate33-orange font-medium">Web3 Learn2Earn</span> and <span className="text-gate33-orange font-medium">earn token rewards</span>. Grow your knowledge, grow your portfolio.
                 </p>
-              </div>
-              <div className="flex justify-center mb-2">
-                <Link href="/learn2earn" className="font-verdana text-white font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center gate33-btn-orange w-full sm:w-auto">
+              </div>              <div className="flex justify-center mb-2">
+                <Link href="/learn2earn" className="font-verdana text-white font-medium text-sm md:text-base transition-all duration-200 flex items-center justify-center gate33-btn-orange w-full sm:w-auto">
                   Start Learning
                 </Link>
               </div>
@@ -317,12 +310,11 @@ function Home() {
       <section id="jobs" className="jobs py-6 md:py-10 px-4 relative">
         <div className="relative z-10 flex flex-col lg:flex-row max-w-7xl mx-auto gap-6 md:gap-10 items-start lg:items-center justify-center">
           {/* Left column: title, description, button */}
-          <div className="flex-1 min-w-[260px] max-w-md lg:sticky lg:top-32 flex flex-col justify-center h-full text-center lg:text-left">
-            <h2 className="text-2xl md:text-3xl font-bold text-gate33-orange mb-3 md:mb-4">FEATURED JOBS</h2>
-            <p className="text-orange-300 mb-3 md:mb-4 font-medium text-sm md:text-base">
+          <div className="flex-1 min-w-[260px] max-w-md lg:sticky lg:top-32 flex flex-col justify-center h-full text-center lg:text-left">            <h2 className="text-2xl md:text-3xl font-verdana font-bold text-gate33-orange mb-3 md:mb-4">FEATURED JOBS</h2>
+            <p className="text-orange-300 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
               Explore some of the current opportunities available on our platform.
             </p>
-            <p className="text-gray-200 text-xs md:text-sm mb-6 md:mb-8 max-w-xs mx-auto lg:mx-0">
+            <p className="text-gray-200 text-xs md:text-sm mb-6 md:mb-8 max-w-xs mx-auto lg:mx-0 font-verdana">
               Access quality Web3 jobs from verified companies or post roles as a trusted employer. Build your profile, manage applications, and connect securely with top talent in one place.
             </p>
             <Link href="/jobs" className="gate33-btn-orange text-white py-2.5 px-8 md:px-12 min-w-[200px] md:min-w-[230px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit mx-auto lg:mx-0">
@@ -424,12 +416,11 @@ function Home() {
         <section id="about" className="about py-6 md:py-10 px-4 relative">
           <div className="relative z-10 max-w-7xl mx-auto">
             {/* Mobile-first layout: text above cards */}
-            <div className="flex flex-col items-center text-center lg:hidden mb-8">
-              <h2 className="text-2xl font-bold text-gate33-orange mb-3">EXPLORE OUR<br />CRYPTO TOOLS</h2>
-              <p className="text-orange-300 mb-3 font-medium text-sm max-w-sm">
+            <div className="flex flex-col items-center text-center lg:hidden mb-8">              <h2 className="text-2xl font-verdana font-bold text-gate33-orange mb-3">EXPLORE OUR<br />CRYPTO TOOLS</h2>
+              <p className="text-orange-300 mb-3 font-verdana font-medium text-sm max-w-sm">
                 Crypto Tools offers solutions for analyzing Ethereum wallets. Features include ENS resolution, wallet age assessment, and dust token detection.
               </p>
-              <p className="text-gray-200 text-xs mb-6 max-w-xs">
+              <p className="text-gray-200 text-xs mb-6 max-w-xs font-verdana">
                 Operations are secure in your browser, using public APIs and your Ethereum provider. Private keys remain secure and never exposed.
               </p>
               <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-8 min-w-[200px] rounded-full font-semibold text-sm cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit">
@@ -546,12 +537,11 @@ function Home() {
                 </div>
               </div>
               {/* Right text - Desktop only */}
-              <div className="hidden lg:flex flex-shrink-0 w-full lg:w-[35%] flex-col justify-center items-start text-left mt-6 lg:mt-0 lg:pl-6">
-                <h2 className="text-2xl md:text-3xl font-bold text-gate33-orange mb-3 md:mb-4">EXPLORE OUR<br />CRYPTO TOOLS</h2>
-                <p className="text-orange-300 mb-3 md:mb-4 font-medium text-sm md:text-base">
+              <div className="hidden lg:flex flex-shrink-0 w-full lg:w-[35%] flex-col justify-center items-start text-left mt-6 lg:mt-0 lg:pl-6">                <h2 className="text-2xl md:text-3xl font-verdana font-bold text-gate33-orange mb-3 md:mb-4">EXPLORE OUR<br />CRYPTO TOOLS</h2>
+                <p className="text-orange-300 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
                   Crypto Tools offers solutions for analyzing Ethereum wallets. Features include ENS resolution, wallet age assessment, and dust token detection.
                 </p>
-                <p className="text-gray-200 text-xs md:text-sm mb-6 md:mb-8 max-w-xs">
+                <p className="text-gray-200 text-xs md:text-sm mb-6 md:mb-8 max-w-xs font-verdana">
                   Operations are secure in your browser, using public APIs and your Ethereum provider. Private keys remain secure and never exposed.
                 </p>
                 <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-8 md:px-12 min-w-[200px] md:min-w-[230px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit">
@@ -571,9 +561,8 @@ function Home() {
         <section id="learn2earn" className="py-6 md:py-10 px-4 relative">
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 md:gap-10 items-stretch relative z-10">
             {/* Sidebar */}
-            <div className="lg:w-1/3 flex flex-col justify-center mb-6 lg:mb-0 text-center lg:text-left">
-              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 leading-tight">ACTIVE LEARN & EARN<br />OPPORTUNITIES</h2>
-              <p className="text-orange-400 text-sm md:text-base mb-4 md:mb-6 max-w-xs mx-auto lg:mx-0">Complete educational tasks and<br />earn crypto rewards</p>
+            <div className="lg:w-1/3 flex flex-col justify-center mb-6 lg:mb-0 text-center lg:text-left">              <h2 className="text-xl md:text-2xl lg:text-3xl font-verdana font-bold text-white mb-2 leading-tight">ACTIVE LEARN & EARN<br />OPPORTUNITIES</h2>
+              <p className="text-orange-400 text-sm md:text-base mb-4 md:mb-6 max-w-xs mx-auto lg:mx-0 font-verdana">Complete educational tasks and<br />earn crypto rewards</p>
               <button className="gate33-btn-orange text-white py-2.5 px-6 md:px-8 rounded-full font-semibold text-sm md:text-base w-fit mx-auto lg:mx-0">See All Opportunities</button>
             </div>
             {/* Cards Grid */}
@@ -639,43 +628,39 @@ function Home() {
         {/* WHY CHOOSE GATE33 - substitui Trusted Companies */}
         <section id="why-gate33" className="py-6 md:py-10 px-4 relative">
           <div className="max-w-7xl mx-auto relative z-10">
-            {/* Top orange line removed, content pulled up */}
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-gate33-orange mb-2 text-center tracking-wide mt-0">WHY CHOOSE GATE33?</h2>
-            <p className="text-gray-200 max-w-3xl mx-auto mb-8 md:mb-12 text-center text-sm md:text-base leading-relaxed px-4">
+            {/* Top orange line removed, content pulled up */}            <h2 className="text-xl md:text-2xl lg:text-3xl font-verdana font-bold text-gate33-orange mb-2 text-center tracking-wide mt-0">WHY CHOOSE GATE33?</h2>
+            <p className="text-gray-200 max-w-3xl mx-auto mb-8 md:mb-12 text-center text-sm md:text-base leading-relaxed px-4 font-verdana">
               We offer a secure environment where verified companies post genuine job opportunities and qualified candidates can find real opportunities.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10 max-w-5xl mx-auto">
               {/* Verified Companies */}
               <div className="flex flex-col items-center text-center">
-                <span className="mb-3 md:mb-4"><svg width="32" height="32" className="md:w-10 md:h-10" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><path d="M28 15.5l-8.25 9L12 17.5" stroke="#FF6A00" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="20" cy="20" r="13.5" stroke="#FF6A00" strokeWidth="2"/></svg></span>
-                <h3 className="font-bold text-white text-sm md:text-base mb-2">Verified Companies</h3>
-                <p className="text-gray-400 text-xs">All companies on our platform undergo a rigorous verification process to ensure legitimacy and reliability in job postings.</p>
+                <span className="mb-3 md:mb-4"><svg width="32" height="32" className="md:w-10 md:h-10" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><path d="M28 15.5l-8.25 9L12 17.5" stroke="#FF6A00" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="20" cy="20" r="13.5" stroke="#FF6A00" strokeWidth="2"/></svg></span>                <h3 className="font-verdana font-bold text-white text-sm md:text-base mb-2">Verified Companies</h3>
+                <p className="text-gray-400 text-xs font-verdana">All companies on our platform undergo a rigorous verification process to ensure legitimacy and reliability in job postings.</p>
               </div>
               {/* Quality Opportunities */}
               <div className="flex flex-col items-center text-center">
-                <span className="mb-3 md:mb-4"><svg width="32" height="32" className="md:w-10 md:h-10" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><path d="M20 13l2.09 4.24L27 18.27l-3.45 3.36L24.18 27 20 24.27 15.82 27l.63-5.37L13 18.27l4.91-.99L20 13z" stroke="#FF6A00" strokeWidth="2" strokeLinejoin="round"/></svg></span>
-                <h3 className="font-bold text-white text-sm md:text-base mb-2">Quality Opportunities</h3>
-                <p className="text-gray-400 text-xs">Curated high-quality job listings with detailed descriptions, clear benefits, and transparent selection processes.</p>
+                <span className="mb-3 md:mb-4"><svg width="32" height="32" className="md:w-10 md:h-10" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><path d="M20 13l2.09 4.24L27 18.27l-3.45 3.36L24.18 27 20 24.27 15.82 27l.63-5.37L13 18.27l4.91-.99L20 13z" stroke="#FF6A00" strokeWidth="2" strokeLinejoin="round"/></svg></span>                <h3 className="font-verdana font-bold text-white text-sm md:text-base mb-2">Quality Opportunities</h3>
+                <p className="text-gray-400 text-xs font-verdana">Curated high-quality job listings with detailed descriptions, clear benefits, and transparent selection processes.</p>
               </div>
               {/* Data Security */}
               <div className="flex flex-col items-center text-center">
                 <span className="mb-3 md:mb-4"><svg width="32" height="32" className="md:w-10 md:h-10" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><rect x="13" y="18" width="14" height="9" rx="2" stroke="#FF6A00" strokeWidth="2"/><path d="M20 23v2" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round"/></svg></span>
-                <h3 className="font-bold text-white text-sm md:text-base mb-2">Data Security</h3>
-                <p className="text-gray-400 text-xs">Our platform prioritizes the protection of your personal information with advanced security measures to keep your profile and application data safe.</p>
+                <h3 className="font-verdana font-bold text-white text-sm md:text-base mb-2">Data Security</h3>
+                <p className="text-gray-400 text-xs font-verdana">Our platform prioritizes the protection of your personal information with advanced security measures to keep your profile and application data safe.</p>
               </div>
               {/* Learn2Earn */}
               <div className="flex flex-col items-center text-center">
                 <span className="mb-3 md:mb-4"><svg width="32" height="32" className="md:w-10 md:h-10" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><rect x="14" y="13" width="12" height="14" rx="2" stroke="#FF6A00" strokeWidth="2"/><path d="M18 17h4M18 21h4" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round"/></svg></span>
-                <h3 className="font-bold text-white text-sm md:text-base mb-2">Learn2Earn</h3>
-                <p className="text-gray-400 text-xs">Enhance your skills and earn rewards by participating in our Learn2Earn program, where learning converts into real opportunities.</p>
+                <h3 className="font-verdana font-bold text-white text-sm md:text-base mb-2">Learn2Earn</h3>
+                <p className="text-gray-400 text-xs font-verdana">Enhance your skills and earn rewards by participating in our Learn2Earn program, where learning converts into real opportunities.</p>
               </div>
             </div>          </div>
         </section>
 
         {/* PARTNERS/INDUSTRY LEADERS SECTION */}
         <section id="partners" className="py-3 md:py-4 px-4 bg-[#181C22] relative">
-          <div className="max-w-7xl mx-auto relative z-10">
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-center mb-4 md:mb-6 tracking-wide">
+          <div className="max-w-7xl mx-auto relative z-10">            <h2 className="text-xl md:text-2xl lg:text-3xl font-verdana font-bold text-center mb-4 md:mb-6 tracking-wide">
               TRUSTED BY <span className="text-gate33-orange">INDUSTRY LEADERS</span>
             </h2>
             {/* Partner logos carousel - larger cards and round logos */}
