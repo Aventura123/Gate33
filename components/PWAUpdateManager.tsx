@@ -26,13 +26,26 @@ export default function PWAUpdateManager({
     const isSmallScreen = window.innerWidth <= 768;
     
     return isMobileUserAgent || (isTouchDevice && isSmallScreen);
-  };
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      // Registrar service worker
-      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+  };  useEffect(() => {    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      console.log('[PWA] Iniciando configuração PWA...');
+      
+      // Registrar service worker com verificação de existência
+      navigator.serviceWorker.register('/sw.js', { 
+        scope: '/',
+        updateViaCache: 'none' // Force fresh SW fetch
+      })
         .then((registration) => {
-          console.log('[PWA] Service Worker registrado:', registration);
+          console.log('[PWA] Service Worker registrado com sucesso:', registration.scope);
+          console.log('[PWA] Registration object:', registration);
+
+          // Verificar se SW está ativo
+          if (registration.active) {
+            console.log('[PWA] Service Worker está ativo');
+          } else if (registration.installing) {
+            console.log('[PWA] Service Worker está instalando...');
+          } else if (registration.waiting) {
+            console.log('[PWA] Service Worker está aguardando...');
+          }
 
           // Verificar atualizações
           registration.addEventListener('updatefound', () => {
@@ -64,24 +77,25 @@ export default function PWAUpdateManager({
       // Flag para detectar se o beforeinstallprompt foi disparado
       let beforeInstallPromptFired = false;      // Escutar evento de instalação
       const handleBeforeInstallPrompt = (e: any) => {
-        console.log('[PWA] beforeinstallprompt event fired');
+        console.log('[PWA] beforeinstallprompt disparado - PWA é instalável!');
         e.preventDefault();
         beforeInstallPromptFired = true;
         setDeferredPrompt(e);
         setIsInstallable(true);
         
-        // Só mostrar o prompt em dispositivos móveis
-        if (isMobileDevice()) {
+        // Verificar se não foi dismissado recentemente antes de mostrar
+        if (!wasRecentlyDismissed() && !isPWAInstalled()) {
           // Aguardar um pouco antes de mostrar o prompt para não ser intrusivo
           setTimeout(() => {
+            console.log('[PWA] Mostrando prompt de instalação');
             setShowInstallPrompt(true);
           }, 3000);
         } else {
-          console.log('[PWA] Install prompt não mostrado - não é dispositivo móvel');
+          console.log('[PWA] Prompt não mostrado - dismissado recentemente ou já instalado');
         }
       };
 
-      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);      // Escutar quando o app é instalado
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);// Escutar quando o app é instalado
       window.addEventListener('appinstalled', () => {
         console.log('[PWA] App instalado - limpando estado');
         setShowInstallPrompt(false);
@@ -89,9 +103,30 @@ export default function PWAUpdateManager({
         setDeferredPrompt(null);
         // Salvar no localStorage que foi instalado
         localStorage.setItem('pwa-installed', 'true');
-        onUpdateInstalled?.();
-      });// Verificar se já está instalado ou em modo standalone
+        onUpdateInstalled?.();      });
+
+      // Função para limpar estado PWA se necessário
+      const clearPWAState = () => {
+        // Se estamos no navegador normal e não há evidência de PWA instalado
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        const isInWebAppiOS = (window.navigator as any).standalone === true;
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromPWA = urlParams.get('source') === 'pwa';
+        
+        if (!isStandalone && !isInWebAppiOS && !fromPWA) {
+          // Limpar localStorage se não há evidência de PWA
+          const wasMarkedInstalled = localStorage.getItem('pwa-installed') === 'true';
+          if (wasMarkedInstalled) {
+            console.log('[PWA] Limpando estado PWA - não há evidência de instalação');
+            localStorage.removeItem('pwa-installed');
+          }
+        }
+      };
+
+      // Verificar se já está instalado ou em modo standalone
       const checkInstallStatus = () => {
+        // Limpar estado inconsistente primeiro
+        clearPWAState();
         // Usar a nova função de verificação mais robusta
         const isInstalled = isPWAInstalled();
         
@@ -229,29 +264,21 @@ export default function PWAUpdateManager({
     const weekInMs = 7 * 24 * 60 * 60 * 1000; // 7 dias em vez de 1 dia
     
     return (now - dismissedTime) < weekInMs;
-  };
-  // Verificar se PWA já foi instalado
+  };  // Verificar se PWA já foi instalado - versão mais conservadora
   const isPWAInstalled = () => {
     // Verificar se foi marcado como instalado no localStorage
     const wasInstalled = localStorage.getItem('pwa-installed') === 'true';
     
-    // Múltiplas verificações para diferentes casos
+    // Verificações principais para PWA instalado
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isInWebAppiOS = (window.navigator as any).standalone === true;
-    const isMinimalUI = window.matchMedia('(display-mode: minimal-ui)').matches;
-    const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
     
-    // Verificar se veio do PWA pela URL
+    // Verificar se veio do PWA pela URL (mais confiável que display-mode)
     const urlParams = new URLSearchParams(window.location.search);
     const fromPWA = urlParams.get('source') === 'pwa';
     
-    // Verificar se está em um webview (algumas PWAs rodam assim)
-    const isWebView = /(wv|WebView)/i.test(navigator.userAgent);
-    
-    // Para Android Chrome, verificar se está em modo standalone
-    const isAndroidChrome = /Android.*Chrome/i.test(navigator.userAgent) && isStandalone;
-    
-    return wasInstalled || isStandalone || isInWebAppiOS || isMinimalUI || isFullscreen || fromPWA || isAndroidChrome;
+    // Ser mais conservador - só considerar instalado se tiver evidência clara
+    return wasInstalled || isStandalone || isInWebAppiOS || fromPWA;
   };
   // Renderizar prompt de instalação diferente para iOS
   const renderInstallPrompt = () => {
