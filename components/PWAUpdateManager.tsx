@@ -10,11 +10,13 @@ interface PWAUpdateManagerProps {
 export default function PWAUpdateManager({ 
   onUpdateAvailable, 
   onUpdateInstalled 
-}: PWAUpdateManagerProps) {
-  const [updateAvailable, setUpdateAvailable] = useState(false);
+}: PWAUpdateManagerProps) {  const [updateAvailable, setUpdateAvailable] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  
+  // Estado para controlar verificações e evitar popups repetitivos
+  const [installCheckComplete, setInstallCheckComplete] = useState(false);
   
   // Função para detectar dispositivos móveis
   const isMobileDevice = () => {
@@ -88,12 +90,16 @@ export default function PWAUpdateManager({
         setDeferredPrompt(null);
         // Salvar no localStorage que foi instalado
         localStorage.setItem('pwa-installed', 'true');
-        onUpdateInstalled?.();      });
-
-      // Verificar se já está instalado ou em modo standalone
+        onUpdateInstalled?.();      });      // Verificar se já está instalado ou em modo standalone
       const checkInstallStatus = () => {
+        // Evitar múltiplas verificações
+        if (installCheckComplete) {
+          console.log('[PWA] Verificação já completada - ignorando');
+          return;
+        }
+        
         // Usar a nova função de verificação mais robusta
-        const isInstalled = isPWAInstalled();        console.log('[PWA] Status de instalação:', {
+        const isInstalled = isPWAInstalled();console.log('[PWA] Status de instalação:', {
           isInstalled,
           standalone: window.matchMedia('(display-mode: standalone)').matches,
           webAppiOS: (window.navigator as any).standalone === true,
@@ -102,6 +108,7 @@ export default function PWAUpdateManager({
           console.log('[PWA] App está rodando como PWA - não mostrar prompt');
           setShowInstallPrompt(false);
           setIsInstallable(false);
+          setInstallCheckComplete(true);
           return;
         }
 
@@ -110,6 +117,7 @@ export default function PWAUpdateManager({
           console.log('[PWA] Prompt foi dismissado recentemente - não mostrar');
           setShowInstallPrompt(false);
           setIsInstallable(false);
+          setInstallCheckComplete(true);
           return;
         }
 
@@ -130,19 +138,20 @@ export default function PWAUpdateManager({
           if (!beforeInstallPromptFired && !isInstalled) {
             console.log('[PWA] beforeinstallprompt não disparou - app pode ser instalável');
             setIsInstallable(true);
-            
-            if (isIOS && isSafari) {
+              if (isIOS && isSafari) {
               console.log('[PWA] Dispositivo iOS detectado - mostrando instruções manuais');
               // Para iOS, mostrar depois de um delay maior para não ser intrusivo
               setTimeout(() => {
-                if (!isPWAInstalled() && !wasRecentlyDismissed()) {
+                if (!isPWAInstalled() && !wasRecentlyDismissed() && !installCheckComplete) {
                   setShowInstallPrompt(true);
+                  setInstallCheckComplete(true);
                 }
               }, 5000);            } else if (isMobileDevice()) {
               // Para outros navegadores móveis, assumir que é instalável
               setTimeout(() => {
-                if (!isPWAInstalled() && !wasRecentlyDismissed()) {
+                if (!isPWAInstalled() && !wasRecentlyDismissed() && !installCheckComplete) {
                   setShowInstallPrompt(true);
+                  setInstallCheckComplete(true);
                 }
               }, 8000);
             }
