@@ -164,21 +164,18 @@ const ContactForm: React.FC<ContactFormProps> = ({
         <div>
           <label htmlFor="message" className="block text-gray-300 mb-1">
             Message <span className="text-red-400">*</span>
-          </label>
-          <textarea
+          </label>          <textarea
             id="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             className="w-full px-4 py-2 bg-black/60 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows={5}
+            rows={4}
             required
           />
-        </div>
-        
-        <button
+        </div>        <button
           type="submit"
           disabled={isSubmitting}
-          className={`w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition ${
+          className={`py-3 px-4 bg-black text-white font-medium rounded-lg transition hover:bg-gray-800 ${
             isSubmitting ? "opacity-70 cursor-not-allowed" : ""
           }`}
         >
