@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const withPWA = require('next-pwa')({
   dest: 'public',
-  register: false, // Disable auto-registration to avoid conflicts
+  register: true,
   skipWaiting: true,
   disable: false, // Enable PWA in all environments for testing
   buildExcludes: [/middleware-manifest\.json$/],
