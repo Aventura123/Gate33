@@ -392,7 +392,19 @@ html {
   min-height: 25!important;
   max-height: 25!important;
   height: 25!important;
-}/* ===== RESPONSIVE DESIGN ===== */
+}
+
+/* Base animations */
+@keyframes logo3d-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(120px); }
+}
+
+.logo3d-animation {
+  animation: logo3d-float 15s ease-in-out infinite;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
 
 /* ===== MOBILE DEVICES (max-width: 768px) ===== */
 @media (max-width: 768px) {

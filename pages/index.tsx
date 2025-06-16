@@ -47,16 +47,14 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
 const ModernFAQItem = ({ question, answer, open = false, highlight = false }: { question: string, answer: React.ReactNode, open?: boolean, highlight?: boolean }) => {
   const [isOpen, setIsOpen] = useState(false); // Always start closed
   return (
-    <div className={`rounded-xl border border-orange-500/20 shadow-md transition-all ${isOpen ? 'border-orange-500 gate33-faq-open shadow-orange-500/20' : 'bg-[#181A20] text-white'} ${highlight ? 'font-semibold' : ''}`}>
-      <button
-        className={`w-full flex justify-between items-center px-5 text-left focus:outline-none transition-colors gate33-faq-btn ${highlight ? 'text-gate33-orange' : 'text-white'}`}
+    <div className={`rounded-xl border border-orange-500/20 shadow-md transition-all bg-[#181A20] text-white ${isOpen ? 'border-orange-500 shadow-orange-500/20' : ''} ${highlight ? 'font-semibold' : ''}`}>      <button
+        className={`w-full flex justify-between items-center px-5 py-4 text-left focus:outline-none transition-colors gate33-faq-btn ${highlight ? 'text-gate33-orange' : 'text-white'}`}
         onClick={() => setIsOpen((v) => !v)}
       >
-        <span className="text-base font-medium">{question}</span>
+        <h3 className={`text-lg md:text-xl font-verdana font-medium ${isOpen ? 'text-gate33-orange' : 'text-white'}`}>{question}</h3>
         <span className={`ml-4 text-xl font-bold transition-transform ${isOpen ? 'text-white rotate-180' : 'text-gate33-orange'}`}>⌄</span>
-      </button>
-      {isOpen && (
-        <div className="px-5 pb-4 text-base animate-fade-in">
+      </button>      {isOpen && (
+        <div className="px-5 pb-4 text-sm leading-relaxed text-gray-300 animate-fade-in">
           {answer}
         </div>
       )}
@@ -308,9 +306,8 @@ function Home() {
 
       {/* Featured Jobs Section - Novo layout horizontal, cards empilhados à direita */}
       <section id="jobs" className="jobs py-6 md:py-10 px-4 relative">
-        <div className="relative z-10 flex flex-col lg:flex-row max-w-7xl mx-auto gap-6 md:gap-10 items-start lg:items-center justify-center">
-          {/* Left column: title, description, button */}
-          <div className="flex-1 min-w-[260px] max-w-md lg:sticky lg:top-32 flex flex-col justify-center h-full text-center lg:text-left">            <h2 className="text-2xl md:text-3xl font-verdana font-bold text-gate33-orange mb-3 md:mb-4">FEATURED JOBS</h2>
+        <div className="relative z-10 flex flex-col lg:flex-row max-w-7xl mx-auto gap-6 md:gap-10 items-start lg:items-center justify-center">          {/* Left column: title, description, button */}
+          <div className="flex-shrink-0 w-full lg:w-[35%] flex flex-col justify-center items-start text-center lg:text-left lg:pl-4"><h2 className="text-2xl md:text-3xl font-verdana font-bold text-gate33-orange mb-3 md:mb-4">FEATURED JOBS</h2>
             <p className="text-orange-300 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
               Explore some of the current opportunities available on our platform.
             </p>
@@ -320,10 +317,8 @@ function Home() {
             <Link href="/jobs" className="gate33-btn-orange text-white py-2.5 px-8 md:px-12 min-w-[200px] md:min-w-[230px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit mx-auto lg:mx-0">
               Explore The Job-Board
             </Link>
-          </div>
-
-          {/* Right column: stacked job cards */}
-          <div className="flex-1 w-full max-w-2xl flex flex-col gap-4 md:gap-6 relative">
+          </div>          {/* Right column: stacked job cards */}
+          <div className="w-full lg:w-[65%] flex flex-col gap-4 md:gap-6 relative">
             {/* Job Indicators */}
             <div className="job-indicators hidden lg:flex">
               {[0, 1, 2].map((idx) => (
