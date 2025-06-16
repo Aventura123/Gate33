@@ -1297,8 +1297,7 @@ export default function CryptoToolsPage() {
                 aria-label="Fechar menu"
               >
                 &times;
-              </button>
-            )}            <div className="flex flex-col space-y-6 p-4">
+              </button>            )}            <div className="flex flex-col space-y-6 p-4 pt-16 md:pt-20">
               {/* Wallet Connection Section */}
               <div className="p-4">
                 <h3 className="text-orange-400 font-bold mb-3 text-center">Wallet Connection</h3>
@@ -1403,9 +1402,8 @@ export default function CryptoToolsPage() {
           {/* Overlay escuro mobile */}
           {isMobile && sidebarOpen && (
             <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
-          )}
-          {/* Main Content Area */}
-          <div className="flex-1 p-4 md:p-8">
+          )}          {/* Main Content Area */}
+          <div className="flex-1 p-4 md:p-8 pt-16 md:pt-20">
             <div className="text-center mb-10">
               <h1 className="text-4xl font-bold text-orange-500 mb-4">Crypto Tools</h1>
               <div className="text-center mb-6">
