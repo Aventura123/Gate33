@@ -415,9 +415,8 @@ function Home() {
         
         <section id="about" className="about py-6 md:py-10 px-4 relative">
           <div className="relative z-10 max-w-7xl mx-auto">
-            {/* Mobile-first layout: text above cards */}
-            <div className="flex flex-col items-center text-center lg:hidden mb-8">              <h2 className="text-2xl font-verdana font-bold text-gate33-orange mb-3">EXPLORE OUR<br />CRYPTO TOOLS</h2>
-              <p className="text-orange-300 mb-3 font-verdana font-medium text-sm max-w-sm">
+            {/* Mobile-first layout: text above cards */}            <div className="flex flex-col items-center text-center lg:hidden mb-8">              <h2 className="text-2xl font-verdana font-bold text-white mb-3">EXPLORE OUR<br />CRYPTO TOOLS</h2>
+              <p className="text-orange-500 mb-3 font-verdana font-medium text-sm max-w-sm">
                 Crypto Tools offers solutions for analyzing Ethereum wallets. Features include ENS resolution, wallet age assessment, and dust token detection.
               </p>
               <p className="text-gray-200 text-xs mb-6 max-w-xs font-verdana">
@@ -530,10 +529,10 @@ function Home() {
                   </div>
                 </div>
               </div>
-              {/* Right text - Desktop only */}              <div className="hidden lg:flex flex-shrink-0 w-full lg:w-[35%] flex-col justify-center items-start text-left mt-6 lg:mt-0 lg:pl-6">                <h2 className="text-2xl md:text-3xl font-verdana font-bold text-gate33-orange mb-3 md:mb-4">EXPLORE OUR<br />CRYPTO TOOLS</h2>
-                <p className="text-orange-300 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
+              {/* Right text - Desktop only */}              <div className="hidden lg:flex flex-shrink-0 w-full lg:w-[35%] flex-col justify-center items-start text-left mt-6 lg:mt-0 lg:pl-20 xl:pl-24">                <h2 className="text-2xl md:text-3xl font-verdana font-bold text-white mb-3 md:mb-4">EXPLORE OUR<br />CRYPTO TOOLS</h2>
+                <p className="text-orange-500 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
                   Crypto Tools offers solutions for analyzing<br />Ethereum wallets. Features include ENS<br />resolution, wallet age assessment, and<br />dust token detection.
-                </p>                <p className="text-gray-300 text-sm md:text-base mb-6 md:mb-8 max-w-xs font-verdana leading-relaxed">
+                </p><p className="text-gray-300 text-sm md:text-base mb-6 md:mb-8 max-w-xs font-verdana leading-relaxed">
                   Operations are secure in your browser, using public<br />APIs and your Ethereum provider. Private keys<br />remain secure and never exposed.
                 </p>                <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-10 md:px-14 min-w-[240px] md:min-w-[280px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit">
                   Explore Our Crypto Tools
@@ -551,10 +550,9 @@ function Home() {
         {/* LEARN2EARN SECTION - substitui Our Services */}
         <section id="learn2earn" className="py-6 md:py-10 px-4 relative">
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 md:gap-10 items-stretch relative z-10">
-            {/* Sidebar */}
-            <div className="lg:w-1/3 flex flex-col justify-center mb-6 lg:mb-0 text-center lg:text-left">              <h2 className="text-xl md:text-2xl lg:text-3xl font-verdana font-bold text-white mb-2 leading-tight">ACTIVE LEARN & EARN<br />OPPORTUNITIES</h2>
-              <p className="text-orange-400 text-sm md:text-base mb-4 md:mb-6 max-w-xs mx-auto lg:mx-0 font-verdana">Complete educational tasks and<br />earn crypto rewards</p>
-              <button className="gate33-btn-orange text-white py-2.5 px-6 md:px-8 rounded-full font-semibold text-sm md:text-base w-fit mx-auto lg:mx-0">See All Opportunities</button>
+            {/* Sidebar */}            <div className="lg:w-1/3 flex flex-col justify-center mb-6 lg:mb-0 text-center lg:text-left">              <h2 className="text-xl md:text-2xl lg:text-3xl font-verdana font-bold text-white mb-3 leading-tight">ACTIVE LEARN & EARN<br />OPPORTUNITIES</h2>
+              <p className="text-orange-500 text-sm md:text-base mb-5 md:mb-6 max-w-xs mx-auto lg:mx-0 font-verdana leading-relaxed">Complete educational tasks and<br />earn crypto rewards</p>
+              <button className="gate33-btn-orange text-white py-2.5 px-10 md:px-12 rounded-full font-semibold text-sm md:text-base w-fit mx-auto lg:mx-0 min-w-[220px] md:min-w-[240px]">See All Opportunities</button>
             </div>
             {/* Cards Grid */}
             <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 items-stretch">
