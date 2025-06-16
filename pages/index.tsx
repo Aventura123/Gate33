@@ -618,21 +618,19 @@ function Home() {
             {/* Top orange line removed, content pulled up */}            <h2 className="text-xl md:text-2xl lg:text-3xl font-verdana font-bold text-gate33-orange mb-1 text-center tracking-wide mt-0">WHY CHOOSE GATE33?</h2>
             <p className="text-gray-200 max-w-3xl mx-auto mb-3 md:mb-4 text-center text-sm md:text-base leading-relaxed px-4 font-verdana">
               We offer a secure environment where verified companies post genuine job opportunities and qualified candidates can find real opportunities.
-            </p>            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 max-w-6xl mx-auto">
+            </p>            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 lg:gap-10 max-w-7xl mx-auto">
               {/* Verified Companies */}
-              <div className="flex flex-col items-center text-center">
-                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
+              <div className="flex flex-col items-center text-center">                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
                   <Image src="/icons/21. Verified.png" alt="Verified Companies" width={160} height={160} className="w-full h-full object-contain" />
                 </div>
-                <h2 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Verified Companies</h2>
+                <h3 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Verified Companies</h3>
                 <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">All companies on our platform undergo a rigorous verification process to ensure legitimacy and reliability in job postings.</p>
               </div>
               {/* Quality Opportunities */}
-              <div className="flex flex-col items-center text-center">
-                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
+              <div className="flex flex-col items-center text-center">                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
                   <Image src="/icons/Rating.png" alt="Quality Opportunities" width={160} height={160} className="w-full h-full object-contain" />
                 </div>
-                <h2 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Quality Opportunities</h2>
+                <h3 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Quality Opportunities</h3>
                 <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">Curated high-quality job listings with detailed descriptions, clear benefits, and transparent selection processes.</p>
               </div>              {/* Data Security */}
               <div className="flex flex-col items-center text-center">
