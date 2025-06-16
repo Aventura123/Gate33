@@ -8,7 +8,9 @@
   --gate33-orange-hover: #EA580C;
   --gate33-orange-alt: #FB923C;
   --led-orange: #F97316;
-  --led-orange-alt: #FB923C;
+  --led-orange-alt: #E65C00;
+  --led-orange-subtle: rgba(249, 115, 22, 0.7);
+  --led-orange-alt-subtle: rgba(230, 92, 0, 0.5);
   --card-bg: rgba(26, 31, 38, 0.71);
   --card-bg-solid: #1A1F26;
   --overlay-dark: rgba(0, 0, 0, 0.8);
@@ -68,7 +70,7 @@ html {
   border: none;
   border-radius: 2.5rem;
   position: relative;
-  box-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
+  box-shadow: 0 0 18px rgba(249, 115, 22, 0.5);
   transition: all 0.3s ease;
   overflow: hidden;
   -webkit-backdrop-filter: blur(10px);
@@ -98,9 +100,9 @@ html {
 .card-builders:hover,
 .card-hodlers:hover,
 .card-explorers:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.025);
   background: var(--card-bg-solid);
-  box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
+  box-shadow: 0 0 25px rgba(249, 115, 22, 0.7);
 }
 
 .card-orange-glow:hover::before,
@@ -110,14 +112,32 @@ html {
   background: conic-gradient(from 45deg, #FF6A00, #983F00, #000000, #8E3B00, #FF6A00, #000000, #983F00, #FF6A00);
 }
 
-/* ===== LED BAR EFFECTS ===== */
+/* ===== LED BAR EFFECTS (STANDARDIZED) ===== */
+
+/* Horizontal LED Bar (Hero Section) */
 .led-bar {
   width: 26px;
   height: 3px;
-  opacity: 0.6;
+  opacity: 0.9;
   transition: all 0.3s ease;
   position: relative;
-  box-shadow: 0 0 6px rgba(255, 106, 0, 0.4);
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--led-orange) 60%, var(--led-orange-alt) 100%);
+  box-shadow: 0 0 6px 1px var(--led-orange-subtle), 0 0 20px 4px var(--led-orange-alt-subtle);
+  z-index: 2;
+}
+
+/* Vertical LED Bar (Featured Jobs Section) */
+.led-bar-vertical {
+  width: 3px;
+  height: 26px;
+  opacity: 0.9;
+  transition: all 0.3s ease;
+  position: relative;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--led-orange) 60%, var(--led-orange-alt) 100%);
+  box-shadow: 0 0 6px 1px var(--led-orange-subtle), 0 0 20px 4px var(--led-orange-alt-subtle);
+  z-index: 2;
 }
 
 .group:hover .led-bar,
@@ -126,11 +146,18 @@ html {
 .card-explorers:hover .led-bar {
   width: 45px;
   opacity: 1;
-  box-shadow: 
-    0 0 8px var(--led-orange),
-    0 0 16px rgba(255, 140, 0, 0.4),
-    0 0 24px rgba(255, 140, 0, 0.2);
-  filter: brightness(1.1);
+  filter: brightness(1.1) saturate(1.1);
+  box-shadow: 0 0 8px 3px var(--led-orange-subtle), 0 0 24px 6px var(--led-orange-alt-subtle);
+}
+
+.group:hover .led-bar-vertical,
+.card-builders:hover .led-bar-vertical,
+.card-hodlers:hover .led-bar-vertical,
+.card-explorers:hover .led-bar-vertical {
+  height: 45px;
+  opacity: 1;
+  filter: brightness(1.1) saturate(1.1);
+  box-shadow: 0 0 8px 3px var(--led-orange-subtle), 0 0 24px 6px var(--led-orange-alt-subtle);
 }
 
 /* LED diffused light effect on hover */
@@ -143,13 +170,9 @@ html {
   bottom: -100px;
   background: conic-gradient(
     from 0deg,
-    rgba(255, 106, 0, 0.70) 0deg,
-    rgba(255, 106, 0, 0.45) 30deg,
-    rgba(255, 106, 0, 0.18) 90deg,
-    rgba(255, 106, 0, 0.08) 180deg,
-    rgba(255, 106, 0, 0.18) 270deg,
-    rgba(255, 106, 0, 0.45) 330deg,
-    rgba(255, 106, 0, 0.70) 360deg
+    rgba(255, 136, 22, 0.4) 330deg,
+    rgba(255, 136, 22, 0.25) 330deg,
+    rgba(255, 136, 22, 0.05) 360deg
   );
   z-index: 1;
   pointer-events: none;
@@ -267,25 +290,6 @@ html {
 /* ===== FEATURED JOBS SECTION ===== */
 .jobs .card-orange-glow {
   position: relative;
-}
-
-.jobs .card-orange-glow .led-bar-vertical {
-  position: center;
-  left: 0;
-  top: 32px;
-  width: 6px;
-  height: 25px;
-  border-radius: 4px;
-  background: linear-gradient(180deg, var(--led-orange) 60%, var(--led-orange-alt) 100%);
-  box-shadow: 0 0 8px 2px var(--led-orange), 0 0 32px 8px var(--led-orange-alt);
-  opacity: 0.95;
-  z-index: 2;
-  transition: filter 0.3s, box-shadow 0.3s;
-}
-
-.jobs .card-orange-glow:hover .led-bar-vertical {
-  filter: brightness(1.3) saturate(1.3);
-  box-shadow: 0 0 5px 6px var(--led-orange), 0 0 28px 2px var(--led-orange-alt);
 }
 
 /* Horizontal light effect for Featured Jobs cards */
@@ -443,10 +447,15 @@ html {
     height: auto !important;
     min-height: 120px !important;
     padding: 1rem !important;
-  }
-    /* Mantendo apenas overrides essenciais para layout mobile da seção Jobs */
+  }    /* Mantendo apenas overrides essenciais para layout mobile das seções */
   .jobs .led-bar-vertical {
-    width: 3px !important;    height: 20px !important;
+    width: 2px !important;
+    height: 20px !important;
+  }
+
+  .led-bar {
+    width: 20px !important;
+    height: 2px !important;
   }
 
   /* Form adjustments */
@@ -479,10 +488,14 @@ html {
   .card-orange-glow {
     min-height: 200px !important;
   }
-  
-  .led-bar {
-    width: 20px !important;
+    .led-bar {
+    width: 18px !important;
     height: 2px !important;
+  }
+
+  .jobs .led-bar-vertical {
+    width: 2px !important;
+    height: 18px !important;
   }
 
   .card-orange-glow img {
