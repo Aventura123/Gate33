@@ -612,39 +612,45 @@ function Home() {
         {/* Orange divider line after Learn2Earn */}
         <div className="max-w-7xl mx-auto px-4">
           <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>
-        </div>
-
-        {/* WHY CHOOSE GATE33 - substitui Trusted Companies */}
-        <section id="why-gate33" className="py-6 md:py-10 px-4 relative">
+        </div>        {/* WHY CHOOSE GATE33 - substitui Trusted Companies */}
+        <section id="why-gate33" className="py-3 md:py-4 px-4 relative">
           <div className="max-w-7xl mx-auto relative z-10">
-            {/* Top orange line removed, content pulled up */}            <h2 className="text-xl md:text-2xl lg:text-3xl font-verdana font-bold text-gate33-orange mb-2 text-center tracking-wide mt-0">WHY CHOOSE GATE33?</h2>
-            <p className="text-gray-200 max-w-3xl mx-auto mb-8 md:mb-12 text-center text-sm md:text-base leading-relaxed px-4 font-verdana">
+            {/* Top orange line removed, content pulled up */}            <h2 className="text-xl md:text-2xl lg:text-3xl font-verdana font-bold text-gate33-orange mb-1 text-center tracking-wide mt-0">WHY CHOOSE GATE33?</h2>
+            <p className="text-gray-200 max-w-3xl mx-auto mb-3 md:mb-4 text-center text-sm md:text-base leading-relaxed px-4 font-verdana">
               We offer a secure environment where verified companies post genuine job opportunities and qualified candidates can find real opportunities.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10 max-w-5xl mx-auto">
+            </p>            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 max-w-6xl mx-auto">
               {/* Verified Companies */}
               <div className="flex flex-col items-center text-center">
-                <span className="mb-3 md:mb-4"><svg width="32" height="32" className="md:w-10 md:h-10" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><path d="M28 15.5l-8.25 9L12 17.5" stroke="#FF6A00" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="20" cy="20" r="13.5" stroke="#FF6A00" strokeWidth="2"/></svg></span>                <h3 className="font-verdana font-bold text-white text-sm md:text-base mb-2">Verified Companies</h3>
-                <p className="text-gray-400 text-xs font-verdana">All companies on our platform undergo a rigorous verification process to ensure legitimacy and reliability in job postings.</p>
+                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
+                  <Image src="/icons/21. Verified.png" alt="Verified Companies" width={160} height={160} className="w-full h-full object-contain" />
+                </div>
+                <h2 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Verified Companies</h2>
+                <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">All companies on our platform undergo a rigorous verification process to ensure legitimacy and reliability in job postings.</p>
               </div>
               {/* Quality Opportunities */}
               <div className="flex flex-col items-center text-center">
-                <span className="mb-3 md:mb-4"><svg width="32" height="32" className="md:w-10 md:h-10" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><path d="M20 13l2.09 4.24L27 18.27l-3.45 3.36L24.18 27 20 24.27 15.82 27l.63-5.37L13 18.27l4.91-.99L20 13z" stroke="#FF6A00" strokeWidth="2" strokeLinejoin="round"/></svg></span>                <h3 className="font-verdana font-bold text-white text-sm md:text-base mb-2">Quality Opportunities</h3>
-                <p className="text-gray-400 text-xs font-verdana">Curated high-quality job listings with detailed descriptions, clear benefits, and transparent selection processes.</p>
-              </div>
-              {/* Data Security */}
+                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
+                  <Image src="/icons/Rating.png" alt="Quality Opportunities" width={160} height={160} className="w-full h-full object-contain" />
+                </div>
+                <h2 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Quality Opportunities</h2>
+                <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">Curated high-quality job listings with detailed descriptions, clear benefits, and transparent selection processes.</p>
+              </div>              {/* Data Security */}
               <div className="flex flex-col items-center text-center">
-                <span className="mb-3 md:mb-4"><svg width="32" height="32" className="md:w-10 md:h-10" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><rect x="13" y="18" width="14" height="9" rx="2" stroke="#FF6A00" strokeWidth="2"/><path d="M20 23v2" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round"/></svg></span>
-                <h3 className="font-verdana font-bold text-white text-sm md:text-base mb-2">Data Security</h3>
-                <p className="text-gray-400 text-xs font-verdana">Our platform prioritizes the protection of your personal information with advanced security measures to keep your profile and application data safe.</p>
+                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
+                  <Image src="/icons/rat2.png" alt="Data Security" width={160} height={160} className="w-full h-full object-contain" />
+                </div>
+                <h2 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Data Security</h2>
+                <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">Our platform prioritizes the protection of your personal information with advanced security measures to keep your profile and application data safe.</p>
               </div>
               {/* Learn2Earn */}
               <div className="flex flex-col items-center text-center">
-                <span className="mb-3 md:mb-4"><svg width="32" height="32" className="md:w-10 md:h-10" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1A1F26"/><rect x="14" y="13" width="12" height="14" rx="2" stroke="#FF6A00" strokeWidth="2"/><path d="M18 17h4M18 21h4" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round"/></svg></span>
-                <h3 className="font-verdana font-bold text-white text-sm md:text-base mb-2">Learn2Earn</h3>
-                <p className="text-gray-400 text-xs font-verdana">Enhance your skills and earn rewards by participating in our Learn2Earn program, where learning converts into real opportunities.</p>
+                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
+                  <Image src="/icons/rat3.png" alt="Learn2Earn" width={160} height={160} className="w-full h-full object-contain" />
+                </div>
+                <h2 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Learn2Earn</h2>
+                <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">Enhance your skills and earn rewards by participating in our Learn2Earn program, where learning converts into real opportunities.</p>
               </div>
-            </div>          </div>
+            </div></div>
         </section>
 
         {/* PARTNERS/INDUSTRY LEADERS SECTION */}

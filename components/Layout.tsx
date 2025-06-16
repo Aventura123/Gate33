@@ -146,15 +146,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <img src="/images/GATE33-LOGO-wordmark.png" alt="Gate33 Logo" className="h-6" />
           </a>
           
-          {/* Hamburger Menu Button - Only opens the menu */}
+          {/* Hamburger Menu Button - Toggles the menu */}
           <button
             className="md:hidden text-orange-500 focus:outline-none z-50 flex items-center"
-            onClick={() => setMenuOpen(true)}
+            onClick={() => setMenuOpen(!menuOpen)}
           >
             <span className="mr-2 text-sm font-medium">Menu</span>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            {menuOpen ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
           </button>
           
           {/* Desktop Navigation */}
@@ -246,7 +252,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       {/* Mobile Navigation Panel (Slides from right) */}
       <nav
-        className={`fixed top-0 right-0 h-full w-72 max-w-full bg-black/85 z-50 transition-transform duration-300 ease-in-out md:hidden overflow-y-auto mobile-nav-panel backdrop-blur-sm ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-0 right-0 h-full w-72 max-w-full bg-black/85 z-[70] transition-transform duration-300 ease-in-out md:hidden overflow-y-auto mobile-nav-panel backdrop-blur-sm ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Close Button inside the panel */}
         <button
@@ -256,14 +262,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           &times;
         </button>
         
-        {/* Logo in mobile menu */}
-        <div className="flex justify-center my-8">
-          <a href="/" onClick={() => setMenuOpen(false)}>
-            <img src="/images/GATE33-LOGO-wordmark.png" alt="Gate33 Logo" className="h-8" />
-          </a>
-        </div>
-        
-        <div className="flex flex-col px-4 pb-6">
+        <div className="flex flex-col px-4 pb-6 pt-16">
           {/* Home link */}
           <a href="/" className={`block py-2 text-lg font-medium hover:text-orange-500 transition-colors mb-4 border-b border-gray-800 pb-4`} onClick={() => setMenuOpen(false)}>HOME</a>
           
@@ -295,17 +294,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div className="ml-2 border-l border-gray-700 pl-3">
               <a href="/learn2earn" className={getMobileMenuItemClasses('/learn2earn')} onClick={() => setMenuOpen(false)}>LEARN2EARN</a>
             </div>
-          </div>
-          
-          <div className="border-t border-gray-800 my-4"></div>
-          
-          {/* About, Partners, FAQ, Contact links */}
-          <div className="mb-4">
-            <a href="/#about" className="block py-1.5 text-base hover:text-orange-500 transition-colors" onClick={() => setMenuOpen(false)}>About Us</a>
-            <a href="/#services" className="block py-1.5 text-base hover:text-orange-500 transition-colors" onClick={() => setMenuOpen(false)}>Services</a>
-            <a href="/#partners" className="block py-1.5 text-base hover:text-orange-500 transition-colors" onClick={() => setMenuOpen(false)}>Our Partners</a>
-            <a href="/#faq" className="block py-1.5 text-base hover:text-orange-500 transition-colors" onClick={() => setMenuOpen(false)}>FAQ</a>
-            <a href="/#contact" className="block py-1.5 text-base hover:text-orange-500 transition-colors" onClick={() => setMenuOpen(false)}>Contact</a>
           </div>
           
           <div className="border-t border-gray-800 my-2"></div>
