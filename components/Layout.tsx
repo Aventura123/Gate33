@@ -139,7 +139,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div className="layout">
       {/* Header with Professional Glassmorphism */}
       <header
-        className="site-header fixed h-[8vh] left-0 top-0 w-full z-[60] backdrop-blur-[20px] bg-gradient-to-b from-[rgba(15,15,15,0.4)] to-[rgba(15,15,15,0.2)] text-white gate33-header-fullwidth overflow-visible"
+        className="site-header fixed h-[10vh] left-0 top-0 w-[100vw] z-50 backdrop-blur-[20px] bg-gradient-to-b from-[rgba(15,15,15,0.4)] to-[rgba(15,15,15,0.2)] text-white gate33-header-fullwidth overflow-visible"
+        style={{
+          mask: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.3) 85%, transparent 95%)',
+          WebkitMask: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.3) 85%, transparent 95%)',
+        }}
       >
         <div className="w-full flex justify-between items-center py-4 px-6 h-16">
           <a href="/" className="logo flex items-center">

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Debug - Gate33</title>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        body { font-family: monospace; padding: 20px; background: #0f172a; color: white; }
+        .test { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .pass { background: #065f46; }
+        .fail { background: #7f1d1d; }
+        .warn { background: #92400e; }
+        pre { background: #1e293b; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 PWA Debug Tool - Gate33</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function debugPWA() {
+            const results = [];
+            
+            // Test 1: Service Worker
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        results.push({
+                            test: "Service Worker",
+                            status: "pass",
+                            message: `Registrado: ${registration.scope}`
+                        });
+                    } else {
+                        results.push({
+                            test: "Service Worker",
+                            status: "fail",
+                            message: "Não encontrado"
+                        });
+                    }
+                } else {
+                    results.push({
+                        test: "Service Worker",
+                        status: "fail",
+                        message: "Não suportado pelo navegador"
+                    });
+                }
+            } catch (error) {
+                results.push({
+                    test: "Service Worker",
+                    status: "fail",
+                    message: `Erro: ${error.message}`
+                });
+            }
+            
+            // Test 2: Manifest
+            try {
+                const response = await fetch('/manifest.json');
+                if (response.ok) {
+                    const manifest = await response.json();
+                    
+                    // Check required fields
+                    const requiredFields = ['name', 'short_name', 'start_url', 'display', 'icons'];
+                    const missingFields = requiredFields.filter(field => !manifest[field]);
+                    
+                    if (missingFields.length === 0) {
+                        results.push({
+                            test: "Manifest",
+                            status: "pass",
+                            message: `Válido - Display: ${manifest.display}`
+                        });
+                    } else {
+                        results.push({
+                            test: "Manifest",
+                            status: "fail",
+                            message: `Campos faltando: ${missingFields.join(', ')}`
+                        });
+                    }
+                    
+                    // Check icons
+                    const icons192 = manifest.icons.filter(icon => 
+                        icon.sizes.includes('192') && icon.purpose !== 'maskable'
+                    );
+                    const icons512 = manifest.icons.filter(icon => 
+                        icon.sizes.includes('512') && icon.purpose !== 'maskable'
+                    );
+                    
+                    if (icons192.length > 0 && icons512.length > 0) {
+                        results.push({
+                            test: "Ícones PWA",
+                            status: "pass",
+                            message: "Ícones 192x192 e 512x512 encontrados"
+                        });
+                    } else {
+                        results.push({
+                            test: "Ícones PWA",
+                            status: "fail",
+                            message: `192x192: ${icons192.length}, 512x512: ${icons512.length}`
+                        });
+                    }
+                    
+                } else {
+                    results.push({
+                        test: "Manifest",
+                        status: "fail",
+                        message: `HTTP ${response.status}`
+                    });
+                }
+            } catch (error) {
+                results.push({
+                    test: "Manifest",
+                    status: "fail",
+                    message: `Erro: ${error.message}`
+                });
+            }
+            
+            // Test 3: HTTPS
+            const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
+            results.push({
+                test: "HTTPS",
+                status: isSecure ? "pass" : "fail",
+                message: `Protocol: ${location.protocol}`
+            });
+            
+            // Test 4: Install Prompt
+            let installPromptAvailable = false;
+            const checkInstallPrompt = () => {
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    installPromptAvailable = true;
+                    e.preventDefault();
+                    
+                    results.push({
+                        test: "Install Prompt",
+                        status: "pass",
+                        message: "beforeinstallprompt disparado"
+                    });
+                    updateResults();
+                });
+                
+                // Wait 3 seconds to see if prompt fires
+                setTimeout(() => {
+                    if (!installPromptAvailable) {
+                        results.push({
+                            test: "Install Prompt",
+                            status: "warn",
+                            message: "beforeinstallprompt não disparou (pode já estar instalado)"
+                        });
+                        updateResults();
+                    }
+                }, 3000);
+            };
+            
+            // Test 5: Current PWA Status
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isInWebAppiOS = window.navigator.standalone === true;
+            const isPWAInstalled = isStandalone || isInWebAppiOS;
+            
+            results.push({
+                test: "Status PWA",
+                status: isPWAInstalled ? "pass" : "warn",
+                message: isPWAInstalled ? "Rodando como PWA" : "Rodando no navegador"
+            });
+            
+            // Test 6: User Agent
+            results.push({
+                test: "User Agent",
+                status: "pass",
+                message: navigator.userAgent
+            });
+            
+            // Test 7: Display Mode
+            const displayMode = window.matchMedia('(display-mode: standalone)').matches ? 'standalone' :
+                               window.matchMedia('(display-mode: minimal-ui)').matches ? 'minimal-ui' :
+                               window.matchMedia('(display-mode: fullscreen)').matches ? 'fullscreen' :
+                               'browser';
+            
+            results.push({
+                test: "Display Mode",
+                status: displayMode === 'standalone' ? "pass" : "warn",
+                message: displayMode
+            });
+            
+            updateResults();
+            checkInstallPrompt();
+        }
+        
+        function updateResults() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = results.map(result => `
+                <div class="test ${result.status}">
+                    <strong>${result.test}:</strong> ${result.message}
+                </div>
+            `).join('');
+            
+            // Add summary
+            const summary = document.createElement('div');
+            summary.innerHTML = `
+                <h2>📊 Resumo</h2>
+                <pre>${JSON.stringify({
+                    timestamp: new Date().toISOString(),
+                    url: location.href,
+                    userAgent: navigator.userAgent,
+                    displayMode: window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser',
+                    serviceWorkerSupport: 'serviceWorker' in navigator,
+                    manifestUrl: '/manifest.json'
+                }, null, 2)}</pre>
+            `;
+            resultsDiv.appendChild(summary);
+        }
+        
+        let results = [];
+        debugPWA();
+    </script>
+</body>
+</html>
