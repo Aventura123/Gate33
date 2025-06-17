@@ -138,7 +138,7 @@ export default function NFTPage() {
   // Adicionei classes responsivas para exibir um cartão menor em lista com uma imagem menor no lado esquerdo na versão mobile
   return (
     <Layout>
-      <div className="pt-12 sm:pt-16 p-4 min-h-screen bg-gradient-to-b from-black via-zinc-900 to-orange-950 text-white">
+      <div className="pt-16 md:pt-20 pb-12 sm:pb-16 px-4 min-h-screen bg-gradient-to-b from-black via-zinc-900 to-orange-950 text-white">
         <div className="flex flex-col sm:flex-row justify-center items-center mb-8 sm:mb-12">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wide text-center">
             <span className="bg-gradient-to-r from-orange-400 via-orange-600 to-yellow-400 bg-clip-text text-transparent drop-shadow-lg block">

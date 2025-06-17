@@ -211,89 +211,120 @@ export default function InstantJobsPage() {
   return (
     <>
       <Head>
-        <title>Instant Jobs | Gate33</title>
-      </Head>
-      <Layout>
-        <div className="container mx-auto px-4 py-8">
-          {/* Header with distinct design */}
-          <div className="mb-8 bg-gradient-to-r from-orange-800 to-orange-600 p-6 rounded-lg shadow-lg">
-            <h1 className="text-3xl font-bold text-white mb-2">Instant Jobs</h1>
-            <p className="text-white/80">
-              Quick, short-term tasks that you can complete right away. Get paid fast for your skills!
-            </p>
-          </div>
-          
-          {/* Search and filters */}
-          <div className="bg-gray-900 p-6 rounded-lg shadow-md mb-8 border border-gray-800">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {/* Search input */}
-              <div>
-                <label htmlFor="search" className="block text-sm font-medium text-gray-400 mb-1">
-                  Search
-                </label>
-                <input
-                  type="text"
-                  id="search"
-                  placeholder="Search by title or description"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white placeholder:text-gray-500"
-                />
+        <title>Instant Jobs | Gate33</title>      </Head>      <Layout>
+        <div className="min-h-screen bg-gradient-to-b from-black via-[#1a1a1a] to-black pt-16 md:pt-20 pb-12 px-3 sm:px-5 lg:px-8 xl:px-12">
+          <div className="max-w-7xl mx-auto">            {/* Header with distinct design */}
+            <div className="mb-8 bg-gradient-to-r from-orange-900/80 to-orange-600/80 backdrop-blur-sm p-6 rounded-xl shadow-2xl border border-orange-500/30">
+              <div className="flex items-center mb-3">
+                <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white mb-1">Instant Jobs</h1>
+                  <p className="text-orange-100/90">
+                    Quick microtasks & short-term projects. Apply instantly and get paid fast!
+                  </p>
+                </div>
               </div>
-              
-              {/* Category dropdown */}
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-400 mb-1">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white"
-                >
+              <div className="flex flex-wrap gap-3 text-sm text-orange-100/80">
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Quick turnaround
+                </div>
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Fast payments
+                </div>
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Instant applications
+                </div>
+              </div>
+            </div>            {/* Search and filters */}
+            <div className="bg-black/70 backdrop-blur-sm p-6 rounded-xl shadow-2xl border border-orange-500/20 mb-8">
+              <h2 className="text-lg font-semibold text-orange-400 mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filter & Search
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">                {/* Search input */}
+                <div>
+                  <label htmlFor="search" className="block text-sm font-medium text-orange-300 mb-1">
+                    Search Tasks
+                  </label>
+                  <input
+                    type="text"
+                    id="search"
+                    placeholder="Search by title or description..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 transition-all"
+                  />
+                </div>
+                
+                {/* Category dropdown */}
+                <div>
+                  <label htmlFor="category" className="block text-sm font-medium text-orange-300 mb-1">
+                    Category
+                  </label>
+                  <select
+                    id="category"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 transition-all"
+                  >
                   {JOB_CATEGORIES.map((category) => (
                     <option key={category} value={category}>
                       {category}
                     </option>
                   ))}
                 </select>
-              </div>
-              
+              </div>              
               {/* Budget range */}
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Budget Range
+                <label className="block text-sm font-medium text-orange-300 mb-1">
+                  Budget Range ($)
                 </label>
                 <div className="flex items-center space-x-2">
                   <input
                     type="number"
-                    placeholder="Min $"
+                    placeholder="Min"
                     value={minBudget}
                     onChange={(e) => setMinBudget(e.target.value)}
-                    className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white placeholder:text-gray-500"
+                    className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 transition-all"
                   />
-                  <span className="text-gray-500">-</span>
+                  <span className="text-orange-400 font-medium">to</span>
                   <input
                     type="number"
-                    placeholder="Max $"
+                    placeholder="Max"
                     value={maxBudget}
                     onChange={(e) => setMaxBudget(e.target.value)}
-                    className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white placeholder:text-gray-500"
+                    className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 transition-all"
                   />
                 </div>
               </div>
-            </div>
-            
+            </div>            
             {/* Skills filter */}
-            <div>
+            <div className="bg-black/50 backdrop-blur-sm p-4 rounded-xl border border-orange-500/20">
               <button
                 onClick={() => setShowSkillsFilter(!showSkillsFilter)}
-                className="flex items-center text-orange-400 hover:text-orange-300 mt-2"
+                className="flex items-center text-orange-400 hover:text-orange-300 font-medium transition-colors"
               >
-                <span>{showSkillsFilter ? "Hide Skills" : "Filter by Skills"}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                <span>{showSkillsFilter ? "Hide Skills Filter" : "Filter by Skills"}</span>
                 <svg
-                  className={`w-4 h-4 ml-1 transform ${showSkillsFilter ? "rotate-180" : ""}`}
+                  className={`w-4 h-4 ml-2 transform transition-transform ${showSkillsFilter ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -313,10 +344,10 @@ export default function InstantJobsPage() {
                     <button
                       key={skill}
                       onClick={() => toggleSkill(skill)}
-                      className={`px-3 py-1 rounded-full text-sm ${
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
                         selectedSkills.includes(skill)
-                          ? "bg-orange-500 text-white"
-                          : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                          ? "bg-orange-500 text-white shadow-lg"
+                          : "bg-black/50 text-orange-200 hover:bg-orange-500/20 border border-orange-500/30"
                       }`}
                     >
                       {skill}
@@ -325,14 +356,18 @@ export default function InstantJobsPage() {
                 </div>
               )}
             </div>
-          </div>
-          
+          </div>          
           {/* Job listings */}
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-orange-400">
-                Available Instant Jobs ({filteredJobs.length})
-              </h2>
+              <div>
+                <h2 className="text-xl font-bold text-orange-400 mb-1">
+                  Available Tasks
+                </h2>
+                <p className="text-gray-400 text-sm">
+                  {filteredJobs.length} {filteredJobs.length === 1 ? 'task' : 'tasks'} found
+                </p>
+              </div>
               {userId && (
                 <button
                   onClick={() => router.push('/seeker-dashboard')}
@@ -349,74 +384,99 @@ export default function InstantJobsPage() {
                   </svg>
                 </button>
               )}
-            </div>
-            
+            </div>            
             {isLoading ? (
               <div className="flex justify-center my-16">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
               </div>
             ) : filteredJobs.length === 0 ? (
-              <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
-                <p className="text-gray-400 mb-2">No instant jobs found matching your criteria.</p>
-                <p className="text-gray-500">Try adjusting your filters or check back later.</p>
+              <div className="bg-black/50 backdrop-blur-sm border border-orange-500/20 rounded-xl p-8 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-orange-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="text-orange-200 mb-2 text-lg">No instant tasks found</p>
+                <p className="text-orange-300/60">Try adjusting your filters or check back later for new opportunities.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredJobs.map((job) => (
-                  <div 
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredJobs.map((job) => (                  <div 
                     key={job.id}
-                    className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden hover:border-orange-500/30 transition-all duration-200"
+                    className="bg-black/60 backdrop-blur-sm border border-orange-500/30 rounded-lg overflow-hidden hover:border-orange-400 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 group"
                   >
-                    <div className="p-6">
+                    <div className="p-4">
                       {/* Job header */}
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-xl font-medium text-white">{job.title}</h3>
-                          <p className="text-gray-400 text-sm mt-1">{job.companyName ?? ""}</p>
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-white group-hover:text-orange-200 transition-colors line-clamp-1">{job.title}</h3>
+                          {job.companyName && (
+                            <p className="text-orange-300/80 text-sm mt-1 flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                              {job.companyName}
+                            </p>
+                          )}
                         </div>
-                        <span className="bg-orange-500/20 text-orange-400 text-sm font-medium px-3 py-1 rounded-full">
-                          ${job.budget}
-                        </span>
-                      </div>
-                      
-                      {/* Job category tag */}
-                      <div className="mb-4">
-                        <span className="inline-block bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded">
-                          {job.category || 'Uncategorized'}
-                        </span>
+                        <div>
+                          <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold px-3 py-1 rounded-full shadow-lg">
+                            ${job.budget}
+                          </span>
+                        </div>
+                      </div>                      
+                      {/* Job category and type */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {job.category && (
+                          <span className="inline-flex items-center bg-orange-500/20 text-orange-300 text-xs px-2 py-1 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                            {job.category}
+                          </span>
+                        )}
                       </div>
                       
                       {/* Job description */}
-                      <p className="text-gray-300 mb-4 line-clamp-3">{job.description}</p>
+                      <p className="text-gray-300 mb-3 text-sm leading-relaxed line-clamp-2">{job.description}</p>
                       
                       {/* Required skills */}
                       {job.requiredSkills && job.requiredSkills.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {job.requiredSkills.map((skill, index) => (
-                            <span key={index} className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded">
-                              {skill}
-                            </span>
-                          ))}
+                        <div className="mb-3">
+                          <p className="text-orange-300 text-xs font-medium mb-1">Skills:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {job.requiredSkills.slice(0, 3).map((skill, index) => (
+                              <span key={index} className="bg-black/50 border border-orange-500/30 text-orange-200 text-xs px-2 py-1 rounded">
+                                {skill}
+                              </span>
+                            ))}
+                            {job.requiredSkills.length > 3 && (
+                              <span className="text-orange-400 text-xs px-2 py-1">
+                                +{job.requiredSkills.length - 3} more
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )}
                       
                       {/* Apply button */}
-                      <div className="mt-4 flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">
-                          {job.estimatedTime ? `Est. time: ${job.estimatedTime}` : 'Quick task'}
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center text-orange-300/80 text-xs">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {job.estimatedTime ? `${job.estimatedTime}` : 'Quick task'}
+                        </div>
                         
                         <Button
                           onClick={() => handleApply(job.id ?? "")}
                           disabled={isApplying || hasApplied(job.id ?? "")}
-                          className={`px-4 py-2 rounded-md ${
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                             hasApplied(job.id ?? "")
-                              ? "bg-gray-700 text-gray-300 cursor-not-allowed"
-                              : "bg-orange-500 hover:bg-orange-600 text-white"
+                              ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+                              : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl"
                           }`}
                         >
                           {hasApplied(job.id ?? "")
-                            ? "Applied"
+                            ? "✓ Applied"
                             : isApplying
                             ? "Applying..."
                             : "Apply Now"}
@@ -425,10 +485,10 @@ export default function InstantJobsPage() {
                     </div>
                   </div>
                 ))}
-              </div>
-            )}
+              </div>            )}
           </div>
         </div>
+      </div>
       </Layout>
     </>
   );

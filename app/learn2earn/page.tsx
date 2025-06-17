@@ -92,10 +92,9 @@ export default function Learn2EarnPage() {
     
     fetchLearn2Earns();
   }, [filter]);
-
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-black to-orange-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-b from-black to-orange-900 pt-16 md:pt-20 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">

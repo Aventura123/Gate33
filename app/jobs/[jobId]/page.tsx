@@ -33,10 +33,9 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
     };
     fetchJob();
   }, [jobId]);
-
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-black via-[#18181b] to-black py-12 px-3 sm:px-5 lg:px-8 xl:px-12">
+      <div className="min-h-screen bg-gradient-to-b from-black via-[#18181b] to-black pt-16 md:pt-20 pb-12 px-3 sm:px-5 lg:px-8 xl:px-12">
         <div className="max-w-7xl mx-auto mb-4">
           <button 
             onClick={() => router.push('/jobs')}
