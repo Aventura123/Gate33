@@ -226,17 +226,10 @@ async function postToLinkedIn(job: SocialMediaJob): Promise<boolean> {
       `🚀 New job: ${job.title}\nCompany: ${job.companyName}` +
       (job.location ? `\nLocation: ${job.location}` : '') +
       (job.salary ? `\nSalary: ${job.salary}` : '') +
-      `\n\nSee details: https://gate33.net/jobs/${job.id}`;    // Fetch organizationId for company page posting
-    // First try to use the configured organization ID from environment
-    let organizationId = process.env.LINKEDIN_ORGANIZATION_ID || null;
+      `\n\nSee details: https://gate33.net/jobs/${job.id}`;
     
-    if (organizationId) {
-      console.log(`[SocialMedia] Using configured LinkedIn organization ID: ${organizationId}`);
-    } else {
-      // Fallback to automatic detection
-      console.log('[SocialMedia] No configured organization ID, attempting auto-detection...');
-      organizationId = await getLinkedInOrganizationId(LINKEDIN_ACCESS_TOKEN!);
-    }
+    // Fetch organizationId for company page posting
+    const organizationId = await getLinkedInOrganizationId(LINKEDIN_ACCESS_TOKEN!);
     let payload: any;
     let mediaUrn: string | null = null;
     

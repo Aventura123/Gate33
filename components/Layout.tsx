@@ -415,8 +415,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <a href="https://www.linkedin.com/company/gate33" target="_blank" rel="noopener noreferrer" className="block hover:underline">LinkedIn</a>
             </nav>
           </div>
-        </div>
-        <div className="text-center text-black/60 text-xs mt-4 pb-2">
+        </div>        <div className="text-center text-black/60 text-xs mt-4 pb-2">
+          <div className="flex justify-center items-center gap-4 mb-2">
+            <a href="/privacy-policy" className="hover:underline">Privacy Policy</a>
+            <span>•</span>
+            <a href="/terms-of-service" className="hover:underline">Terms of Service</a>
+            <span>•</span>
+            <a href="/legal-compliance" className="hover:underline">Legal Compliance</a>
+          </div>
           © 2025 Gate33. All Rights Reserved.
         </div>
       </footer>

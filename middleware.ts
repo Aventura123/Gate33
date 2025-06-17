@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AdminRole } from './hooks/useAdminPermissions';
+import { CookieManager } from './utils/cookieManager';
 
 // Secret key for JWT - ideally, this should be in an environment variable
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key_here';
@@ -17,6 +18,19 @@ function verifyToken(token: string) {  try {
   } catch (error) {
     console.error("Error verifying token:", error);
     return { isValid: false, payload: null };
+  }
+}
+
+// Function to check cookie consent for analytics/marketing
+function checkCookieConsent(request: NextRequest): boolean {
+  const consent = request.cookies.get('gate33-cookie-consent')?.value;
+  if (!consent) return false;
+  
+  try {
+    const consentData = JSON.parse(consent);
+    return consentData.necessary; // At minimum, necessary cookies must be accepted
+  } catch {
+    return false;
   }
 }
 

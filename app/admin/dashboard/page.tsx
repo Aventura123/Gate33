@@ -1788,13 +1788,12 @@ const fetchEmployersList = async () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-        )}
-        {/* Sidebar */}
+        )}        {/* Sidebar */}
         <aside
           className={
             isMobile
-              ? `fixed top-0 left-0 h-full w-64 bg-black/90 z-50 transform transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} overflow-y-auto`
-              : 'w-1/4 bg-black/70 p-6 flex flex-col items-start min-h-screen'
+              ? `fixed top-0 left-0 h-full w-64 bg-black/90 z-50 transform transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} overflow-y-auto pt-16`
+              : 'w-1/4 bg-black/70 p-6 pt-16 md:pt-20 flex flex-col items-start min-h-screen'
           }
           id="admin-dashboard-sidebar"
         >
@@ -2303,9 +2302,8 @@ const fetchEmployersList = async () => {
             className="fixed inset-0 bg-black/60 z-40"
             onClick={() => setMobileMenuOpen(false)}
           />
-        )}
-        {/* Main content area - compact and center titles on mobile */}
-        <div className={isMobile ? 'flex-1 p-2 pt-16 w-full' : 'flex-1 p-6'}>
+        )}        {/* Main content area - compact and center titles on mobile */}
+        <div className={isMobile ? 'flex-1 p-2 pt-16 w-full' : 'flex-1 p-6 pt-16 md:pt-20'}>
           <div className={isMobile ? 'max-w-md mx-auto' : ''}>
             {permissionsLoading && (
               <div className="w-full flex justify-center items-center py-10">
