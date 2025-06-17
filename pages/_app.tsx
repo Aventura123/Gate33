@@ -116,8 +116,8 @@ export default function App({ Component, pageProps }: { Component: React.Compone
       <Head>
         <title>{metadata.title}</title>
         <meta name="description" content={metadata.description} />
-        <link rel="icon" href="/favicon.png" type="image/png" />
-        <link rel="shortcut icon" href="/favicon.png" type="image/png" />
+        <link rel="icon" href="/favicon-32x32.png" type="image/png" />
+        <link rel="shortcut icon" href="/favicon-32x32.png" type="image/png" />
       </Head>
       <QueryClientProvider client={queryClient}>
         <Layout>

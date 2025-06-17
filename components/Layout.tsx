@@ -303,14 +303,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
           )}
         </div>
-      </nav>
-
-      {/* Main Content with spacing for glassmorphism header */}
-      <main className="px-0 sm:px-0 md:px-0 lg:px-0 w-full mt-[2vh]">{children}</main>
+      </nav>      {/* Main Content with spacing for glassmorphism header */}
+      <main className="px-0 sm:px-0 md:px-0 lg:px-0 w-full">{children}</main>
 
       {/* Advertisement Popup */}
-      <AdPopup />      {/* Modern Footer - Only show contact form on index page */}
-      <footer id="main-footer" className="bg-[#FF6A00] text-black pt-10 pb-2 border-t-4 border-orange-500 mt-2">
+      <AdPopup />
+
+      {/* Modern Footer - Only show contact form on index page */}
+      <footer id="main-footer" className="bg-[#FF6A00] text-black pt-10 pb-2 border-t-4 border-orange-500 mt-10">
         {pathname === '/' && (
           <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-10">
             {/* Left: Contact Info & Socials */}

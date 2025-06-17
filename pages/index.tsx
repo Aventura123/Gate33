@@ -165,7 +165,7 @@ function Home() {
       </div>
 
       {/* Hero Section - NEW LAYOUT WITH FIXED BACKGROUND */}
-      <section className="hero-section-fixed-bg relative flex flex-col justify-center min-h-[50vh] px-4 pt-14 pb-12 overflow-hidden">
+      <section className="hero-section-fixed-bg relative flex flex-col justify-center min-h-[50vh] px-4 pt-16 md:pt-20 pb-12 overflow-hidden">
         <div className="hero-content w-full max-w-6xl mx-auto flex flex-col pt-4">          {/* Main title aligned left */}
           <h1 className="font-verdana font-bold text-white mb-2 tracking-normal uppercase">
             <span className="text-2xl md:text-5xl leading-tight block mb-2">YOUR GATEWAY TO TRUSTED</span>
@@ -402,7 +402,7 @@ function Home() {
               </div>
             </Link>
           </div>
-        </div>      </section>      <main className="min-h-screen text-white relative overflow-hidden gate33-main-section">
+        </div>      </section>      <main className="min-h-screen text-white relative overflow-hidden gate33-main-section pt-16 md:pt-20 p-4 md:p-8">
         {/* Top orange divider line */}
         <div className="max-w-7xl mx-auto px-4">
           <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>

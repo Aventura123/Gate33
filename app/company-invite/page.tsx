@@ -190,7 +190,7 @@ const CompanyInvitePage: React.FC = () => {
         ) : (
           // Original Registration Form
           <>        {/* Hero Section */}
-        <div className={`relative ${isMobile ? 'py-6 px-4' : 'py-8 sm:py-12 lg:py-16 px-4'}`}>
+        <div className={`relative pt-16 md:pt-20 ${isMobile ? 'py-6 px-4' : 'py-8 sm:py-12 lg:py-16 px-4'}`}>
           <div className="max-w-4xl mx-auto text-center">
             <div className="bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent mb-6">
               <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl'} font-bold mb-4`}>
