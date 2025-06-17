@@ -630,7 +630,7 @@ const PostJobPage = (): JSX.Element => {
   
     return (
       <div className="w-full">
-        <div className="bg-black/70 rounded-lg shadow-lg p-6">
+        <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">
           {/* Main section title */}
           <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">All Offers</h2>
           <div className="flex gap-6 mb-6 items-end border-b border-orange-900/60">
@@ -1162,13 +1162,13 @@ const InstantJobDetailCard: React.FC<{
           };
         });
         return (
-          <>
+          <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">
             <CompanyWelcome
               name={companyProfile.name}
               industry={companyProfile.industry}
               country={companyProfile.country}
               responsiblePerson={companyProfile.responsiblePerson}
-              isMobile={isMobile} // Passando a propriedade isMobile
+              isMobile={isMobile}
             />
             {/* Quick summary of job offers and counts - optimized for mobile (2x2) */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 my-2 sm:my-6 w-full">
@@ -1199,7 +1199,7 @@ const InstantJobDetailCard: React.FC<{
                 <EvolutionChart data={evolutionData} />
               </div>
             </div>
-          </>
+          </div>
         );
       case "myJobs":
         return (
@@ -1210,7 +1210,7 @@ const InstantJobDetailCard: React.FC<{
         );
       case "newJob":
         return (
-          <div className="bg-black/70 p-4 sm:p-8 rounded-lg shadow-lg max-w-full">
+          <div className="bg-black/70 p-4 sm:p-8 rounded-lg shadow-lg max-w-full pt-16 md:pt-20">
             <h2 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobile ? 'text-center' : ''}`}>Post a New Job</h2>
             <JobPostPayment companyId={companyId} companyProfile={companyProfile} reloadData={reloadData} />
           </div>
@@ -1232,7 +1232,7 @@ const InstantJobDetailCard: React.FC<{
         );
       case "support":
         return (
-          <div className="bg-black/70 p-10 rounded-lg shadow-lg">
+          <div className={`bg-black/70 p-10 rounded-lg shadow-lg`}>
             <h2 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobile ? 'text-center' : ''}`}>Support Tickets</h2>
             {renderSupportTickets()}
           </div>
@@ -1642,7 +1642,7 @@ const InstantJobDetailCard: React.FC<{
                 >
                   <option value="general">General</option>
                   <option value="payment">Payment</option>
-                  <option value="technical">Technical</option>
+                                                    <option value="technical">Technical</option>
                   <option value="other">Other</option>
                 </select>
                 <div className="flex justify-end gap-2">
@@ -1777,7 +1777,7 @@ const InstantJobDetailCard: React.FC<{
 
         {/* Sidebar - With mobile responsiveness */}
         <aside 
-          className={`${isMobile ? 'fixed left-0 top-0 h-full z-40 transform transition-transform duration-300 ease-in-out ' + (mobileMenuOpen ? 'translate-x-0' : '-translate-x-full') : 'relative'} w-full md:w-1/4 bg-black/70 p-6 flex flex-col`}
+          className={`${isMobile ? 'fixed left-0 top-0 h-full z-40 transform transition-transform duration-300 ease-in-out ' + (mobileMenuOpen ? 'translate-x-0' : '-translate-x-full') : 'relative'} w-full md:w-1/4 bg-black/70 p-6 flex flex-col pt-16 md:pt-20`}
         >
           {/* Profile Photo Section */}
           <div className="relative flex flex-col items-center mb-6">
@@ -1911,7 +1911,7 @@ const InstantJobDetailCard: React.FC<{
           {activeTab === 'myJobOffers' ? (
             jobOffersSubTab === 'list' ? renderMyJobs() :
             jobOffersSubTab === 'new' ? (
-              <div className="bg-black/70 p-4 sm:p-8 rounded-lg shadow-lg max-w-full">
+              <div className="bg-black/70 p-4 sm:p-8 rounded-lg shadow-lg max-w-full pt-16 md:pt-20">
                 <h2 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobile ? 'text-center' : ''}`}>Post a New Job</h2>
                 <JobPostPayment companyId={companyId} companyProfile={companyProfile} reloadData={reloadData} />
               </div>

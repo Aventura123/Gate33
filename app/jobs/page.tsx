@@ -450,9 +450,8 @@ export default function JobsPage() {
               Close
             </button>
           </div>
-        </div>
-      )}
-      <div className="bg-gradient-to-b from-black via-[#18181b] to-black min-h-screen text-white">
+        </div>      )}
+      <div className="bg-gradient-to-b from-black via-[#18181b] to-black min-h-screen text-white pt-16 md:pt-20">
         {/* Header Section */}
         <div className="border-b border-orange-500/30 py-8 px-2 sm:py-16 sm:px-4 bg-black/80">
           <div className="mx-auto text-center max-w-xl">
@@ -462,8 +461,7 @@ export default function JobsPage() {
             <p className="text-base xs:text-lg sm:text-xl text-orange-200/80 max-w-full mx-auto">
               Discover the best crypto and blockchain job opportunities at the most innovative companies in Web3.
             </p>
-          </div>
-        </div>
+          </div>        </div>
 
         <div className="container mx-auto py-8 sm:py-12 px-2 sm:px-4 lg:px-8">
           {/* Categoria Tabs */}

@@ -938,7 +938,7 @@ const SeekerDashboard = () => {
     const firstEducation = seekerProfile.education && seekerProfile.education.length > 0 ? seekerProfile.education[0] : null;
 
     return (
-      <div className="bg-black/80 p-8 rounded-xl shadow-2xl w-full max-w-5xl mx-auto">
+      <div className="bg-black/80 p-8 rounded-xl shadow-2xl w-full max-w-5xl mx-auto pt-16 md:pt-20">
         {/* Top Section: Photo, Name, Title */}
         <div className="flex flex-col md:flex-row items-center gap-8 mb-6">
           {/* Profile photo */}
@@ -1542,7 +1542,7 @@ const SeekerDashboard = () => {
                 <textarea name="skills" value={seekerProfile.skills ?? ""} onChange={handleProfileChange} placeholder="Your Skills (comma-separated, e.g., React, Node.js, Solidity)" rows={3} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"></textarea>
                 
                 {/* Projects */}
-                <div>
+                                              <div>
                   <label className="block text-sm text-gray-400 mb-2">Projects</label>
                   {(seekerProfile.projects ?? []).map((proj, idx) => (
                     <div key={idx} className="flex flex-col md:flex-row gap-2 mb-2">
@@ -2160,7 +2160,7 @@ const SeekerDashboard = () => {
         
         {/* Sidebar - Changes for mobile responsiveness */}
         <aside 
-          className={`${isMobile ? 'fixed left-0 top-0 h-full z-40 transform transition-transform duration-300 ease-in-out ' + (mobileMenuOpen ? 'translate-x-0' : '-translate-x-full') : 'relative'} w-full md:w-1/4 bg-black/70 p-6 flex flex-col`}
+          className={`${isMobile ? 'fixed left-0 top-0 h-full z-40 transform transition-transform duration-300 ease-in-out ' + (mobileMenuOpen ? 'translate-x-0' : '-translate-x-full') : 'relative'} w-full md:w-1/4 bg-black/70 p-6 flex flex-col pt-16 md:pt-20`}
         >
           {/* Profile Photo Section */}
           <div className="relative flex flex-col items-center mb-6">

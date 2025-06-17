@@ -140,7 +140,8 @@ const CompanyInvitePage: React.FC = () => {
     }
   };return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-orange-900 to-black">        {showSuccessCard ? (
+      <div className="min-h-screen bg-gradient-to-br from-orange-900 to-black pt-16 md:pt-20 p-4 md:p-8">
+        {showSuccessCard ? (
           // Success Card - Thank You Message
           <div className="min-h-screen flex items-center justify-center px-4 py-8">
             <div className="max-w-2xl mx-auto text-center">
@@ -190,7 +191,7 @@ const CompanyInvitePage: React.FC = () => {
         ) : (
           // Original Registration Form
           <>        {/* Hero Section */}
-        <div className={`relative pt-16 md:pt-20 ${isMobile ? 'py-6 px-4' : 'py-8 sm:py-12 lg:py-16 px-4'}`}>
+        <div className={`relative ${isMobile ? 'py-6 px-4' : 'py-8 sm:py-12 lg:py-16 px-4'}`}>
           <div className="max-w-4xl mx-auto text-center">
             <div className="bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent mb-6">
               <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl'} font-bold mb-4`}>

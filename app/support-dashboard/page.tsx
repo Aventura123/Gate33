@@ -1288,10 +1288,9 @@ const SupportDashboard: React.FC = () => {
             <p>Verifying your permissions</p>
           </div>
         </div>
-      ) : (
-        <main className="min-h-screen flex bg-gradient-to-br from-blue-900 to-black text-white">
+      ) : (        <main className="min-h-screen flex bg-gradient-to-br from-blue-900 to-black text-white">
           {/* Sidebar */}
-          <aside className="w-1/4 bg-black/70 p-6 flex flex-col items-start min-h-screen">
+          <aside className="w-1/4 bg-black/70 p-6 pt-16 md:pt-20 flex flex-col items-start min-h-screen">
             <h2 className="text-blue-400 text-xl font-bold mb-6">Support Dashboard</h2>
             <ul className="space-y-4 w-full">
               <li>
@@ -1400,7 +1399,7 @@ const SupportDashboard: React.FC = () => {
             </div>
           </aside>
           {/* Main Content */}
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-6 pt-16 md:pt-20">
             {/* Jobs - List */}
             {activeTab === "jobs" && activeSubTab === "list" && (
               <div>
@@ -1812,7 +1811,7 @@ const SupportDashboard: React.FC = () => {
                                     <div className="flex items-center">
                                       <span className="animate-pulse inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>
                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9" />
                                       </svg>
                                     </div>
                                   )}
