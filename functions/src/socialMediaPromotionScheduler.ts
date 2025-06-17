@@ -30,9 +30,8 @@ async function validateLinkedInToken(token: string): Promise<boolean> {
             Authorization: `Bearer ${token}`
           }
         });
-        
-        const scopes = tokenInfo.data?.scope?.split(' ') || [];
-        const requiredScopes = ['openid', 'profile', 'w_member_social', 'email'];
+          const scopes = tokenInfo.data?.scope?.split(' ') || [];
+        const requiredScopes = ['r_basicprofile', 'w_organization_social', 'r_organization_admin'];
         const hasAllScopes = requiredScopes.every(scope => scopes.includes(scope));
         
         if (hasAllScopes) {
@@ -86,6 +85,114 @@ async function getLinkedInPersonId(token: string): Promise<string | null> {
 }
 
 /**
+ * Gets the LinkedIn organization ID for company page posting
+ * @param token LinkedIn API access token
+ */
+async function getLinkedInOrganizationId(token: string): Promise<string | null> {
+  try {
+    // First, get organizations where user is admin
+    const response = await axios.get('https://api.linkedin.com/v2/organizationAcls?q=roleAssignee', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Restli-Protocol-Version': '2.0.0'
+      }
+    });
+    
+    // Find the first organization where user has admin rights
+    const organizations = response.data.elements || [];
+    const adminOrg = organizations.find((org: any) => 
+      org.role === 'ADMINISTRATOR' || org.role === 'MANAGER'
+    );
+    
+    if (adminOrg) {
+      // Extract organization ID from the organization URN
+      const orgUrn = adminOrg.organization;
+      const orgId = orgUrn.replace('urn:li:organization:', '');
+      console.log('[SocialMedia] Found LinkedIn organization ID:', orgId);
+      return orgId;
+    }
+    
+    console.error('[SocialMedia] No organization found with admin rights');
+    return null;
+  } catch (err: any) {
+    if (err && err.response && err.response.data) {
+      console.error('[SocialMedia] Error fetching LinkedIn organization ID:', err.response.data);
+    } else {
+      console.error('[SocialMedia] Error fetching LinkedIn organization ID:', err);
+    }
+    return null;
+  }
+}
+
+/**
+ * Uploads an image to LinkedIn and returns the media URN
+ * @param imageUrl URL of the image to upload
+ * @param token LinkedIn access token
+ * @param organizationId Organization ID for the upload
+ * @returns Media URN or null if upload fails
+ */
+async function uploadImageToLinkedIn(imageUrl: string, token: string, organizationId?: string): Promise<string | null> {
+  try {
+    console.log('[SocialMedia] Starting LinkedIn image upload process...');
+    
+    // Step 1: Register upload
+    const author = organizationId ? `urn:li:organization:${organizationId}` : await getLinkedInPersonId(token);
+    if (!author) {
+      console.error('[SocialMedia] Could not determine author for image upload');
+      return null;
+    }
+    
+    const registerUploadBody = {
+      registerUploadRequest: {
+        recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
+        owner: typeof author === 'string' && author.startsWith('urn:li:') ? author : `urn:li:person:${author}`,
+        serviceRelationships: [
+          {
+            relationshipType: 'OWNER',
+            identifier: 'urn:li:userGeneratedContent'
+          }
+        ]
+      }
+    };
+
+    const registerResponse = await axios.post(
+      'https://api.linkedin.com/v2/assets?action=registerUpload',
+      registerUploadBody,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );    const uploadMechanism = registerResponse.data.value?.uploadMechanism;
+    const uploadUrl = uploadMechanism?.['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']?.uploadUrl;
+    const asset = registerResponse.data.value?.asset;
+
+    if (!uploadUrl || !asset) {
+      console.error('[SocialMedia] Failed to get upload URL from LinkedIn');
+      return null;
+    }
+
+    // Step 2: Download the image
+    const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const imageBuffer = Buffer.from(imageResponse.data);
+
+    // Step 3: Upload the image binary
+    await axios.post(uploadUrl, imageBuffer, {
+      headers: {
+        'Content-Type': 'application/octet-stream'
+      }
+    });
+
+    console.log('[SocialMedia] Image uploaded successfully to LinkedIn');
+    return asset;
+  } catch (error: any) {
+    console.error('[SocialMedia] Error uploading image to LinkedIn:', error.response?.data || error.message);
+    return null;
+  }
+}
+
+/**
  * Posts a job on LinkedIn using the official API
  * @param job Job to be posted
  */
@@ -102,12 +209,14 @@ async function postToLinkedIn(job: SocialMediaJob): Promise<boolean> {
     if (!job.title || !job.companyName) {
       console.error(`[SocialMedia] Cannot post job ${job.id} to LinkedIn: Missing title or companyName`);
       return false;
-    }    // Validate token has required scopes (openid, profile, w_member_social, email)
+    }
+    
+    // Validate token has required scopes
     const tokenValid = await validateLinkedInToken(LINKEDIN_ACCESS_TOKEN);
     if (!tokenValid) {
       console.error(
         '[SocialMedia] LinkedIn token validation failed - required scopes: ' +
-        'openid, profile, w_member_social, email'
+        'r_basicprofile, w_organization_social, r_organization_admin'
       );
       return false;
     }
@@ -117,35 +226,88 @@ async function postToLinkedIn(job: SocialMediaJob): Promise<boolean> {
       `🚀 New job: ${job.title}\nCompany: ${job.companyName}` +
       (job.location ? `\nLocation: ${job.location}` : '') +
       (job.salary ? `\nSalary: ${job.salary}` : '') +
-      `\n\nSee details: https://gate33.net/jobs/${job.id}`;
-    const hasMedia = !!job.mediaUrl;
-
-    // Fetch personId dynamically
-    const personId = await getLinkedInPersonId(LINKEDIN_ACCESS_TOKEN!);
-    if (!personId) {
-      console.error('[SocialMedia] Could not fetch LinkedIn person ID.');
-      return false;
+      `\n\nSee details: https://gate33.net/jobs/${job.id}`;    // Fetch organizationId for company page posting
+    // First try to use the configured organization ID from environment
+    let organizationId = process.env.LINKEDIN_ORGANIZATION_ID || null;
+    
+    if (organizationId) {
+      console.log(`[SocialMedia] Using configured LinkedIn organization ID: ${organizationId}`);
+    } else {
+      // Fallback to automatic detection
+      console.log('[SocialMedia] No configured organization ID, attempting auto-detection...');
+      organizationId = await getLinkedInOrganizationId(LINKEDIN_ACCESS_TOKEN!);
     }
-
-    // Build the payload for LinkedIn (personal profile)
-    const payload: any = {
-      author: `urn:li:person:${personId}`,
-      lifecycleState: 'PUBLISHED',
-      specificContent: {
-        'com.linkedin.ugc.ShareContent': {
-          shareCommentary: {
-            text: postText
-          },
-          shareMediaCategory: hasMedia ? 'IMAGE' : 'NONE',
-          ...(hasMedia ? {
-            media: [{ status: 'READY', originalUrl: job.mediaUrl }]
-          } : {})
-        }
-      },
-      visibility: {
-        'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC'
+    let payload: any;
+    let mediaUrn: string | null = null;
+    
+    // Try to upload image if mediaUrl is provided
+    if (job.mediaUrl) {
+      console.log('[SocialMedia] Attempting to upload image to LinkedIn...');
+      mediaUrn = await uploadImageToLinkedIn(job.mediaUrl, LINKEDIN_ACCESS_TOKEN!, organizationId || undefined);
+      if (mediaUrn) {
+        console.log('[SocialMedia] Image uploaded successfully, URN:', mediaUrn);
+      } else {
+        console.log('[SocialMedia] Image upload failed, posting text-only');
       }
-    };
+    }
+    
+    if (!organizationId) {
+      console.error('[SocialMedia] Could not fetch LinkedIn organization ID. Fallback to personal posting.');
+      // Fallback to personal posting if organization not found
+      const personId = await getLinkedInPersonId(LINKEDIN_ACCESS_TOKEN!);
+      if (!personId) {
+        console.error('[SocialMedia] Could not fetch LinkedIn person ID either.');
+        return false;
+      }
+      
+      // Build the payload for LinkedIn (personal profile fallback)
+      payload = {
+        author: `urn:li:person:${personId}`,
+        lifecycleState: 'PUBLISHED',
+        specificContent: {
+          'com.linkedin.ugc.ShareContent': {
+            shareCommentary: {
+              text: postText
+            },
+            shareMediaCategory: mediaUrn ? 'IMAGE' : 'NONE',
+            ...(mediaUrn ? {
+              media: [{
+                status: 'READY',
+                media: mediaUrn
+              }]
+            } : {})
+          }
+        },
+        visibility: {
+          'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC'
+        }
+      };
+      console.log('[SocialMedia] Using personal profile for posting');
+    } else {
+      // Build the payload for LinkedIn (organization page)
+      payload = {
+        author: `urn:li:organization:${organizationId}`,
+        lifecycleState: 'PUBLISHED',
+        specificContent: {
+          'com.linkedin.ugc.ShareContent': {
+            shareCommentary: {
+              text: postText
+            },
+            shareMediaCategory: mediaUrn ? 'IMAGE' : 'NONE',
+            ...(mediaUrn ? {
+              media: [{
+                status: 'READY',
+                media: mediaUrn
+              }]
+            } : {})
+          }
+        },
+        visibility: {
+          'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC'
+        }
+      };
+      console.log(`[SocialMedia] Using organization ${organizationId} for posting`);
+    }
     // Log token status (not the actual token)
     console.log(`[SocialMedia] LinkedIn token exists: ${!!LINKEDIN_ACCESS_TOKEN}`);
     console.log(`[SocialMedia] LinkedIn token length: ${LINKEDIN_ACCESS_TOKEN ? LINKEDIN_ACCESS_TOKEN.length : 0}`);
