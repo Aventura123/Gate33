@@ -261,7 +261,7 @@ const SeekerDashboard = () => {
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   // State for settings sub-tab - MOVED UP HERE
-  const [settingsTab, setSettingsTab] = useState<'profile' | 'notifications'>('profile');
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'general'>('profile');
   // State for notification preferences - MOVED UP with the settingsTab
   const [notificationPrefs, setNotificationPrefs] = useState({
     supportReplies: true,
@@ -894,23 +894,30 @@ const SeekerDashboard = () => {
       }
     }
   }, [selectedJobId, instantJobs, availableInstantJobs]);
-
   // Render My Applications Tab Content
   const renderMyApplications = () => {
     if (applications.length === 0) {
-      return <p className="text-gray-300">You have not applied to any jobs yet.</p>;
+      return (
+        <div className="bg-black/70 p-4 md:p-10 pt-16 md:pt-20 rounded-lg shadow-lg">
+          <h2 className="text-3xl font-semibold text-orange-500 mb-6">My Applications</h2>
+          <p className="text-gray-300">You have not applied to any jobs yet.</p>
+        </div>
+      );
     }
     return (
-      <div className="space-y-4">
-        {applications.map((app) => (
-          <div key={app.id} className="bg-black/50 p-4 rounded-lg">
-            <h3 className="text-orange-500 font-bold">{app.jobTitle}</h3>
-            <p className="text-gray-400 text-sm">Company: {app.companyName}</p>
-            <p className="text-gray-300 text-sm">Applied on: {app.applicationDate}</p>
-            <p className="text-gray-300 text-sm">Status: <span className="font-semibold">{app.status}</span></p>
-            {/* Add link to job details page if available */}
-          </div>
-        ))}
+      <div className="bg-black/70 p-4 md:p-10 pt-16 md:pt-20 rounded-lg shadow-lg">
+        <h2 className="text-3xl font-semibold text-orange-500 mb-6">My Applications</h2>
+        <div className="space-y-4">
+          {applications.map((app) => (
+            <div key={app.id} className="bg-black/50 p-4 rounded-lg">
+              <h3 className="text-orange-500 font-bold">{app.jobTitle}</h3>
+              <p className="text-gray-400 text-sm">Company: {app.companyName}</p>
+              <p className="text-gray-300 text-sm">Applied on: {app.applicationDate}</p>
+              <p className="text-gray-300 text-sm">Status: <span className="font-semibold">{app.status}</span></p>
+              {/* Add link to job details page if available */}
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
@@ -1272,11 +1279,10 @@ const SeekerDashboard = () => {
       </div>
     );
   };
-
   // Render Settings Tab Content (Editable Form)
   const renderSettings = () => {
     return (
-      <div className="bg-black/70 p-10 rounded-lg shadow-lg">
+      <div className="bg-black/70 p-4 md:p-10 pt-16 md:pt-20 rounded-lg shadow-lg">
         <h2 className="text-3xl font-semibold text-orange-500 mb-6">Settings</h2>
         <div className="flex gap-4 mb-6">
           <button
@@ -1284,12 +1290,11 @@ const SeekerDashboard = () => {
             onClick={() => setSettingsTab('profile')}
           >
             Profile
-          </button>
-          <button
-            className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${settingsTab === 'notifications' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
-            onClick={() => setSettingsTab('notifications')}
+          </button>          <button
+            className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${settingsTab === 'general' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
+            onClick={() => setSettingsTab('general')}
           >
-            Notifications
+            General
           </button>
         </div>
         {settingsTab === 'profile' && (
@@ -1677,181 +1682,336 @@ const SeekerDashboard = () => {
             <div>
               <button type="submit" disabled={isLoadingProfile} className={`bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-colors hover:bg-orange-300 border-none w-full mt-5 ${isLoadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}>{isLoadingProfile ? 'Saving...' : 'Save Profile'}</button>
             </div>
-          </form>
-        )}
-        {settingsTab === 'notifications' && (
-          <form className="space-y-6 max-w-lg" onSubmit={handleSaveNotificationPrefs}>
-            <div>
-              <label className="flex items-center gap-2 text-white">
-                <input type="checkbox" checked={notificationPrefs.supportReplies} onChange={e => setNotificationPrefs(p => ({...p, supportReplies: e.target.checked}))} />
-                Receive support replies notifications
-              </label>
+          </form>        )}        {settingsTab === 'general' && (
+          <div className="max-w-6xl">
+            {/* Two unified cards layout following Gate33 standards */}
+            <div className="space-y-6 md:space-y-10">              {/* Top Unified Card: Notifications & Privacy */}
+              <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                  {/* Left: Notification Preferences */}
+                  <div>
+                    <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Notification Preferences</h3>
+                    <form className="space-y-4 md:space-y-6" onSubmit={handleSaveNotificationPrefs}>
+                      <div className="space-y-4">
+                        <div className="flex items-center">
+                          <label className="flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={notificationPrefs.supportReplies} 
+                              onChange={e => setNotificationPrefs(p => ({...p, supportReplies: e.target.checked}))}
+                              className="mr-2 h-5 w-5 accent-orange-500"
+                            />
+                            <span className="text-gray-300 text-sm font-medium">Receive support replies notifications</span>
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={notificationPrefs.instantJobs} 
+                              onChange={e => setNotificationPrefs(p => ({...p, instantJobs: e.target.checked}))}
+                              className="mr-2 h-5 w-5 accent-orange-500"
+                            />
+                            <span className="text-gray-300 text-sm font-medium">Receive Instant Jobs notifications</span>
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={notificationPrefs.marketing} 
+                              onChange={e => setNotificationPrefs(p => ({...p, marketing: e.target.checked}))}
+                              className="mr-2 h-5 w-5 accent-orange-500"
+                            />
+                            <span className="text-gray-300 text-sm font-medium">Receive marketing communications</span>
+                          </label>
+                        </div>
+                      </div>
+                      <button 
+                        type="submit" 
+                        disabled={savingPrefs}
+                        className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm w-full md:w-auto"
+                      >
+                        {savingPrefs ? 'Saving...' : 'Save Preferences'}
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Right: Privacy Settings */}
+                  <div>
+                    <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Privacy Settings</h3>
+                    <div className="space-y-4 md:space-y-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center">
+                          <label className="flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              defaultChecked
+                              className="mr-2 h-5 w-5 accent-orange-500"
+                            />
+                            <span className="text-gray-300 text-sm font-medium">Make my profile visible to employers</span>
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              defaultChecked
+                              className="mr-2 h-5 w-5 accent-orange-500"
+                            />
+                            <span className="text-gray-300 text-sm font-medium">Allow direct messages from employers</span>
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox"
+                              className="mr-2 h-5 w-5 accent-orange-500"
+                            />
+                            <span className="text-gray-300 text-sm font-medium">Show my activity status</span>
+                          </label>
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-semibold shadow text-sm w-full md:w-auto"
+                      >
+                        Save Privacy Settings
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>              {/* Bottom Unified Card: Password & Account Management */}
+              <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                  {/* Left: Change Password */}
+                  <div>
+                    <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Change Password</h3>
+                    <form className="space-y-4 md:space-y-6">
+                      <div>
+                        <label htmlFor="currentPassword" className="block text-sm font-semibold text-gray-300 mb-1">
+                          Current Password
+                        </label>
+                        <input 
+                          id="currentPassword"
+                          type="password" 
+                          className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                          placeholder="Enter current password"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="newPassword" className="block text-sm font-semibold text-gray-300 mb-1">
+                          New Password
+                        </label>
+                        <input 
+                          id="newPassword"
+                          type="password" 
+                          className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                          placeholder="Enter new password"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-300 mb-1">
+                          Confirm New Password
+                        </label>
+                        <input 
+                          id="confirmPassword"
+                          type="password" 
+                          className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                          placeholder="Confirm new password"
+                        />
+                      </div>
+                      <button 
+                        type="submit" 
+                        className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-semibold shadow text-sm w-full md:w-auto"
+                      >
+                        Update Password
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Right: Account Management */}
+                  <div>
+                    <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Account Management</h3>
+                    <div className="space-y-4 md:space-y-6">
+                      <div className="bg-black/30 border border-gray-700 rounded-lg p-4">
+                        <h4 className="text-base font-bold text-gray-300 mb-2">Export Account Data</h4>
+                        <p className="text-xs text-gray-400 mb-3">Download a copy of all your account data and activity.</p>
+                        <button className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold">
+                          Request Data Export
+                        </button>
+                      </div>
+                      
+                      <div className="bg-red-900/50 border border-red-500 rounded-lg p-4">
+                        <h4 className="text-base font-bold text-red-400 mb-2">Danger Zone</h4>
+                        <p className="text-xs text-gray-400 mb-3">Permanently delete your account and all associated data. This action cannot be undone.</p>
+                        <button className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold">
+                          Delete Account
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="flex items-center gap-2 text-white">
-                <input type="checkbox" checked={notificationPrefs.instantJobs} onChange={e => setNotificationPrefs(p => ({...p, instantJobs: e.target.checked}))} />
-                Receive Instant Jobs notifications
-              </label>
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-white">
-                <input type="checkbox" checked={notificationPrefs.marketing} onChange={e => setNotificationPrefs(p => ({...p, marketing: e.target.checked}))} />
-                Receive marketing communications
-              </label>
-            </div>
-            <button type="submit" className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 disabled:opacity-60" disabled={savingPrefs}>
-              {savingPrefs ? 'Saving...' : 'Save Preferences'}
-            </button>
-          </form>
+          </div>
         )}
       </div>
     );
   };
-
   // Render Instant Jobs Tab Content
   const renderInstantJobsTab = () => {
-    if (activeSection === 'available') {
-      return (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold text-orange-500">Available Instant Jobs</h2>
-            <button
-              onClick={() => setActiveSection('myJobs')}
-              className="bg-gray-700 text-white py-2 px-4 rounded hover:bg-gray-600"
-            >
-              View My Jobs
-            </button>
-          </div>
-          
-          {availableInstantJobs.length === 0 ? (
-            <p className="text-gray-300">No instant jobs available at the moment.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {availableInstantJobs.map(job => (
-                <InstantJobCard 
-                  key={job.id ?? ""}
-                  job={job}
-                  onClick={() => {
-                    setSelectedJobId(job.id ?? "");
-                    setActiveSection('detail');
-                  }}
-                  onApply={() => handleApplyForJob(job.id ?? "")}
-                  isCompanyView={false}
-                />
-              ))}
+    const renderContent = () => {
+      if (activeSection === 'available') {
+        return (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold text-orange-500">Available Instant Jobs</h2>
+              <button
+                onClick={() => setActiveSection('myJobs')}
+                className="bg-gray-700 text-white py-2 px-4 rounded hover:bg-gray-600"
+              >
+                View My Jobs
+              </button>
             </div>
-          )}
-          
-          <div className="mt-6">
-            <button
-              onClick={() => router.push('/instant-jobs')}
-              className="bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600"
-            >
-              Search All Instant Jobs
-            </button>
-          </div>
-        </div>
-      );
-    } else if (activeSection === 'myJobs') {
-      return (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold text-orange-500">My Instant Jobs</h2>
-            <button
-              onClick={() => setActiveSection('available')}
-              className="bg-gray-700 text-white py-2 px-4 rounded hover:bg-gray-600"
-            >
-              View Available Jobs
-            </button>
-          </div>
-          
-          {myApplications.length === 0 ? (
-            <p className="text-gray-300">You haven't applied to any instant jobs yet.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {myApplications.map(application => (
-                <div key={application.id} className="bg-black/50 p-4 rounded-lg">
-                  <h3 className="text-orange-500 font-bold">{application.jobTitle}</h3>
-                  <p className="text-gray-400 text-sm">Applied on: {new Date(application.appliedAt?.toDate()).toLocaleDateString()}</p>
-                  <p className="text-gray-300 text-sm">Status: <span className="font-semibold">{application.status}</span></p>
-                  <button
+            
+            {availableInstantJobs.length === 0 ? (
+              <p className="text-gray-300">No instant jobs available at the moment.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {availableInstantJobs.map(job => (
+                  <InstantJobCard 
+                    key={job.id ?? ""}
+                    job={job}
                     onClick={() => {
-                      setSelectedJobId(application.jobId);
+                      setSelectedJobId(job.id ?? "");
                       setActiveSection('detail');
                     }}
-                    className="mt-2 bg-gray-700 text-white py-1 px-3 rounded hover:bg-gray-600 text-sm"
-                  >
-                    View Details
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    } else if (activeSection === 'detail' && selectedJob) {
-      return (
-        <div className="space-y-4">
-          <button
-            onClick={() => {
-              setActiveSection(instantJobs.some(job => job.id === selectedJobId) ? 'myJobs' : 'available');
-              setSelectedJobId(null);
-              setSelectedJob(null);
-            }}
-            className="mb-4 text-gray-300 hover:text-white flex items-center"
-          >
-            <span>← Back to {instantJobs.some(job => job.id === selectedJobId) ? 'My Jobs' : 'Available Jobs'}</span>
-          </button>
-          
-          <div className="bg-black/50 p-6 rounded-lg">
-            <h2 className="text-2xl font-semibold text-orange-500 mb-2">{selectedJob.title}</h2>
-            <p className="text-gray-300 mb-4">{selectedJob.description}</p>
+                    onApply={() => handleApplyForJob(job.id ?? "")}
+                    isCompanyView={false}
+                  />
+                ))}
+              </div>
+            )}
             
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-gray-400 text-sm">Price:</p>
-                <p className="text-white font-semibold">{selectedJob.budget} {selectedJob.currency}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Duration:</p>
-                <p className="text-white font-semibold">{selectedJob.estimatedTime ?? '-'} hours</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Status:</p>
-                <p className="text-white font-semibold">{selectedJob.status}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Category:</p>
-                <p className="text-white font-semibold">{selectedJob.category || 'Not specified'}</p>
-              </div>
-            </div>
-            
-            {selectedJob.status === 'open' ? (
+            <div className="mt-6">
               <button
-                onClick={() => handleApplyForJob(selectedJob.id ?? "")}
-                disabled={isApplyingForJob}
-                className="w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:bg-gray-500"
+                onClick={() => router.push('/instant-jobs')}
+                className="bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600"
               >
-                {isApplyingForJob ? 'Applying...' : 'Apply for this Job'}
+                Search All Instant Jobs
               </button>
+            </div>
+          </div>
+        );
+      } else if (activeSection === 'myJobs') {
+        return (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold text-orange-500">My Instant Jobs</h2>
+              <button
+                onClick={() => setActiveSection('available')}
+                className="bg-gray-700 text-white py-2 px-4 rounded hover:bg-gray-600"
+              >
+                View Available Jobs
+              </button>
+            </div>
+            
+            {myApplications.length === 0 ? (
+              <p className="text-gray-300">You haven't applied to any instant jobs yet.</p>
             ) : (
-              <div className="mt-6">
-                <h3 className="text-xl font-semibold text-orange-300 mb-3">Messages</h3>
-                <MessageSystem 
-                  messages={jobMessages}
-                  currentUserId={seekerId}
-                  onSendMessage={handleSendMessage}
-                  isLoading={isSendingMessage}
-                  currentUserType="worker"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {myApplications.map(application => (
+                  <div key={application.id} className="bg-black/50 p-4 rounded-lg">
+                    <h3 className="text-orange-500 font-bold">{application.jobTitle}</h3>
+                    <p className="text-gray-400 text-sm">Applied on: {new Date(application.appliedAt?.toDate()).toLocaleDateString()}</p>
+                    <p className="text-gray-300 text-sm">Status: <span className="font-semibold">{application.status}</span></p>
+                    <button
+                      onClick={() => {
+                        setSelectedJobId(application.jobId);
+                        setActiveSection('detail');
+                      }}
+                      className="mt-2 bg-gray-700 text-white py-1 px-3 rounded hover:bg-gray-600 text-sm"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        </div>
-      );
-    }
-    
-    return null;
+        );
+      } else if (activeSection === 'detail' && selectedJob) {
+        return (
+          <div className="space-y-4">
+            <button
+              onClick={() => {
+                setActiveSection(instantJobs.some(job => job.id === selectedJobId) ? 'myJobs' : 'available');
+                setSelectedJobId(null);
+                setSelectedJob(null);
+              }}
+              className="mb-4 text-gray-300 hover:text-white flex items-center"
+            >
+              <span>← Back to {instantJobs.some(job => job.id === selectedJobId) ? 'My Jobs' : 'Available Jobs'}</span>
+            </button>
+            
+            <div className="bg-black/50 p-6 rounded-lg">
+              <h2 className="text-2xl font-semibold text-orange-500 mb-2">{selectedJob.title}</h2>
+              <p className="text-gray-300 mb-4">{selectedJob.description}</p>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-gray-400 text-sm">Price:</p>
+                  <p className="text-white font-semibold">{selectedJob.budget} {selectedJob.currency}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Duration:</p>
+                  <p className="text-white font-semibold">{selectedJob.estimatedTime ?? '-'} hours</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Status:</p>
+                  <p className="text-white font-semibold">{selectedJob.status}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Category:</p>
+                  <p className="text-white font-semibold">{selectedJob.category || 'Not specified'}</p>
+                </div>
+              </div>
+              
+              {selectedJob.status === 'open' ? (
+                <button
+                  onClick={() => handleApplyForJob(selectedJob.id ?? "")}
+                  disabled={isApplyingForJob}
+                  className="w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:bg-gray-500"
+                >
+                  {isApplyingForJob ? 'Applying...' : 'Apply for this Job'}
+                </button>
+              ) : (
+                <div className="mt-6">
+                  <h3 className="text-xl font-semibold text-orange-300 mb-3">Messages</h3>
+                  <MessageSystem 
+                    messages={jobMessages}
+                    currentUserId={seekerId}
+                    onSendMessage={handleSendMessage}
+                    isLoading={isSendingMessage}
+                    currentUserType="worker"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+      
+      return null;
+    };
+
+    return (
+      <div className="bg-black/70 p-4 md:p-10 pt-16 md:pt-20 rounded-lg shadow-lg">
+        <h2 className="text-3xl font-semibold text-orange-500 mb-6">Instant Jobs</h2>
+        {renderContent()}
+      </div>
+    );
   };
 
   // Helper function to get status color
@@ -2255,9 +2415,8 @@ const SeekerDashboard = () => {
               Logout
             </button>
           </nav>
-        </aside>
-        {/* Main Content Area */}
-        <section className="w-full md:w-3/4 p-6 overflow-y-auto">
+        </aside>        {/* Main Content Area */}
+        <section className="w-full md:w-3/4 p-4 md:p-8 pt-16 md:pt-20 overflow-y-auto">
           {/* Maintain the render of main contents */}
           {activeTab === "myProfile" && renderMyProfile()}
           {activeTab === "myApplications" && renderMyApplications()}
