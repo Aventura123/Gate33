@@ -1353,14 +1353,14 @@ const SeekerDashboard = () => {
                 <div>
                   <label htmlFor="email" className="block text-sm font-semibold text-gray-300 mb-1">
                     Email
-                  </label>
-                  <input 
+                  </label>                  <input 
                     id="email"
                     type="email" 
                     name="email" 
                     value={seekerProfile.email ?? ""} 
                     className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm opacity-60" 
                     readOnly 
+                    autoComplete="email"
                     title="Email cannot be changed here" 
                   />
                   <p className="text-xs text-gray-400 mt-1">Email cannot be changed here</p>
@@ -1369,13 +1369,13 @@ const SeekerDashboard = () => {
                 <div>
                   <label htmlFor="birthDate" className="block text-sm font-semibold text-gray-300 mb-1">
                     Birth Date
-                  </label>
-                  <input 
+                  </label>                  <input 
                     id="birthDate"
                     type="date" 
                     name="birthDate" 
                     value={seekerProfile.birthDate ?? ""} 
-                    onChange={handleProfileChange} 
+                    onChange={handleProfileChange}
+                    autoComplete="bday"
                     className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
                   />
                   <p className="text-xs text-gray-400 mt-1">Birth Date (for age verification)</p>
@@ -1461,16 +1461,17 @@ const SeekerDashboard = () => {
                   />
                 </div>
                 {/* Phone with country code */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-1">
+                <div>                  <label htmlFor="phone" className="block text-sm font-semibold text-gray-300 mb-1">
                     Phone Number
                   </label>
                   <div className="flex gap-2">
                     <select 
+                      id="phoneCountryCode"
                       name="phoneCountryCode" 
                       value={seekerProfile.phoneCountryCode ?? "+1"} 
                       onChange={handleProfileChange} 
                       className="px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm w-28"
+                      aria-label="Country code"
                     >
                       <option value="+1">+1 (US)</option>
                       <option value="+44">+44 (UK)</option>
@@ -1498,14 +1499,15 @@ const SeekerDashboard = () => {
                       <option value="+48">+48 (PL)</option>
                       <option value="+40">+40 (RO)</option>
                       <option value="+90">+90 (TR)</option>
-                    </select>
-                    <input 
-                      type="text" 
+                    </select>                    <input 
+                      id="phone"
+                      type="tel" 
                       name="phone" 
                       value={seekerProfile.phone ?? ""} 
                       onChange={handleProfileChange} 
                       placeholder="Phone (optional)" 
-                      className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                      className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                      autoComplete="tel" 
                     />
                   </div>
                 </div>
@@ -1579,12 +1581,13 @@ const SeekerDashboard = () => {
                 <div>
                   <label htmlFor="cvUpload" className="block text-sm font-semibold text-gray-300 mb-1">
                     Upload CV
-                  </label>
-                  <input
+                  </label>                  <input
                     id="cvUpload"
+                    name="cvUpload"
                     type="file"
                     accept=".pdf,.doc,.docx,.odt,.rtf,.txt"
                     onChange={handleCVUpload}
+                    aria-label="Upload your CV"
                     className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-orange-500 file:text-white file:text-sm hover:file:bg-orange-600"
                   />
                   <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, ODT, RTF, TXT files accepted</p>
@@ -1633,14 +1636,14 @@ const SeekerDashboard = () => {
             <div className="mb-6 md:mb-8">
               <label htmlFor="bio" className="block text-sm font-semibold text-gray-300 mb-1">
                 Short Bio
-              </label>
-              <textarea
+              </label>              <textarea
                 id="bio"
                 name="bio"
                 value={seekerProfile.bio ?? ""}
                 onChange={handleProfileChange}
                 placeholder="Write a short professional bio (optional)"
                 rows={5}
+                autoComplete="off"
                 className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
               ></textarea>
               <p className="text-xs text-gray-400 mt-1">A brief description of your professional background and goals</p>
@@ -3336,28 +3339,33 @@ const SeekerDashboard = () => {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-1">Subject <span className="text-red-400">*</span></label>
+                  <div>                    <label htmlFor="ticketSubject" className="block text-sm text-gray-300 mb-1">Subject <span className="text-red-400">*</span></label>
                     <input
+                      id="ticketSubject"
+                      name="ticketSubject"
                       type="text"
                       className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
                       value={ticketSubject}
                       onChange={e => setTicketSubject(e.target.value)}
+                      autoComplete="off"
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-1">Description <span className="text-red-400">*</span></label>
+                  <div>                    <label htmlFor="ticketDescription" className="block text-sm text-gray-300 mb-1">Description <span className="text-red-400">*</span></label>
                     <textarea
+                      id="ticketDescription"
+                      name="ticketDescription"
                       className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
                       value={ticketDescription}
                       onChange={e => setTicketDescription(e.target.value)}
+                      autoComplete="off"
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-1">Attachment (optional)</label>
+                  <div>                    <label htmlFor="ticketAttachment" className="block text-sm text-gray-300 mb-1">Attachment (optional)</label>
                     <input
+                      id="ticketAttachment"
+                      name="ticketAttachment"
                       type="file"
                       className="w-full text-white"
                       onChange={handleTicketFileChange}

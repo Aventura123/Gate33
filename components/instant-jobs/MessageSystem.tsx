@@ -195,14 +195,20 @@ const MessageSystem: React.FC<MessageSystemProps> = ({
       
       {/* Send form */}
       <form onSubmit={handleSendMessage} className="flex flex-col space-y-2 mt-auto">
-        <textarea
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message..."
-          className="w-full p-3 bg-black/50 border border-gray-700 rounded-lg text-white resize-none"
-          rows={2}
-          disabled={isLoading}
-        />
+        <div className="flex flex-col">
+          <label htmlFor="messageText" className="sr-only">Message</label>          <textarea
+            id="messageText"
+            name="messageText"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Type your message..."
+            className="w-full p-3 bg-black/50 border border-gray-700 rounded-lg text-white resize-none"
+            rows={2}
+            disabled={isLoading}
+            autoComplete="off"
+            aria-label="Message text"
+          />
+        </div>
         <div className="flex space-x-2">
           <input
             ref={fileInputRef}
@@ -211,12 +217,16 @@ const MessageSystem: React.FC<MessageSystemProps> = ({
             className="hidden"
             onChange={handleFileChange}
             disabled={isLoading}
+            id="fileAttachments"
+            name="fileAttachments"
+            aria-label="File attachments"
           />
           <Button
             type="button"
             onClick={handleAttachClick}
             className="bg-gray-700 hover:bg-gray-600 text-white"
             disabled={isLoading}
+            aria-label="Attach files"
           >
             <Paperclip className="w-4 h-4 mr-1" />
             Attach Files
@@ -225,6 +235,7 @@ const MessageSystem: React.FC<MessageSystemProps> = ({
             type="submit"
             className="bg-orange-500 hover:bg-orange-600 text-white flex-grow"
             disabled={isLoading || (!newMessage.trim() && files.length === 0)}
+            aria-label="Send message"
           >
             {isLoading ? 'Sending...' : 'Send'}
           </Button>
