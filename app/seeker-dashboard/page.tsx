@@ -958,7 +958,7 @@ const SeekerDashboard = () => {
 
     // Data for experience and education
     const firstExperience = seekerProfile.experience && seekerProfile.experience.length > 0 ? seekerProfile.experience[0] : null;    const firstEducation = seekerProfile.education && seekerProfile.education.length > 0 ? seekerProfile.education[0] : null;    return (
-      <div className="bg-black/60 rounded-lg border border-orange-900/30 p-6 pt-16 md:pt-20 shadow-lg w-full max-w-5xl mx-auto">
+      <div className="bg-black/60 rounded-lg border border-orange-900/30 p-6 pt-16 md:pt-20 shadow-lg">
         {/* Top Section: Photo, Name, Title */}
         <div className="flex flex-col md:flex-row items-center gap-8 mb-6">
           {/* Profile photo */}
