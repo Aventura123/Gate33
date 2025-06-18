@@ -460,8 +460,7 @@ html {
     width: 100% !important;
     height: auto !important;
     min-height: 120px !important;
-    padding: 1rem !important;
-  }    /* Mantendo apenas overrides essenciais para layout mobile das seções */
+    padding: 1rem !important;  }    /* Keeping only essential overrides for mobile section layout */
   .jobs .led-bar-vertical {
     width: 2px !important;
     height: 20px !important;

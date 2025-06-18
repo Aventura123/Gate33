@@ -196,9 +196,8 @@ function Home() {
                   <div 
                     className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-col justify-between w-full md:w-[98%] group overflow-hidden"
                     onMouseEnter={() => setActiveJobCard(0)}
-                    onMouseLeave={() => setActiveJobCard(0)}
-                  >
-              {/* Barra LED horizontal no topo */}
+                    onMouseLeave={() => setActiveJobCard(0)}                  >
+              {/* Horizontal LED bar at the top */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>              <div className="mb-2 text-center">
@@ -224,9 +223,8 @@ function Home() {
                   <div 
                     className="rounded-2xl card-orange-glow card-hodlers p-4 md:p-5 h-auto flex flex-col justify-between w-full md:w-[98%] group overflow-hidden"
                     onMouseEnter={() => setActiveJobCard(1)}
-                    onMouseLeave={() => setActiveJobCard(0)}
-                  >
-              {/* Barra LED horizontal no topo */}
+                    onMouseLeave={() => setActiveJobCard(0)}                  >
+              {/* Horizontal LED bar at the top */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>              <div className="mb-2 text-center">
@@ -247,9 +245,8 @@ function Home() {
                   <div 
                     className="rounded-2xl card-orange-glow card-explorers p-4 md:p-5 h-auto flex flex-col justify-between w-full md:w-[98%] group overflow-hidden"
                     onMouseEnter={() => setActiveJobCard(2)}
-                    onMouseLeave={() => setActiveJobCard(0)}
-                  >
-              {/* Barra LED horizontal no topo */}
+                    onMouseLeave={() => setActiveJobCard(0)}                  >
+              {/* Horizontal LED bar at the top */}
               <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <div className="led-bar bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50"></div>
               </div>              <div className="mb-2 text-center">
@@ -272,8 +269,7 @@ function Home() {
       </section>
       {showDevNotice && (
         <DevNoticePopup onClose={() => setShowDevNotice(false)} />
-      )}
-      {/* EVEN MORE...COMING SOON Section com alinhamento centrado */}
+      )}      {/* EVEN MORE...COMING SOON Section with centered alignment */}
       <div className="w-full mt-0.5 mb-1.5">
         <div
           className="coming-soon-card rounded-[40px] py-6 md:py-8 px-4 md:px-10 shadow-lg shadow-black/10 relative overflow-hidden w-full max-w-6xl mx-auto text-center bg-[#F97316]"
@@ -302,9 +298,7 @@ function Home() {
             </form>
           </div>
         </div>
-      </div>
-
-      {/* Featured Jobs Section - Novo layout horizontal, cards empilhados à direita */}
+      </div>      {/* Featured Jobs Section - New horizontal layout, cards stacked on the right */}
       <section id="jobs" className="jobs py-6 md:py-10 px-4 relative">
         <div className="relative z-10 flex flex-col lg:flex-row max-w-7xl mx-auto gap-6 md:gap-10 items-start lg:items-center justify-center">          {/* Left column: title, description, button */}
           <div className="flex-shrink-0 w-full lg:w-[35%] flex flex-col justify-center items-start text-center lg:text-left lg:pl-4"><h2 className="text-2xl md:text-3xl font-verdana font-bold text-gate33-orange mb-3 md:mb-4">FEATURED JOBS</h2>
@@ -332,11 +326,10 @@ function Home() {
             {/* Card 1: Blockchain Developer */}
             <Link 
               href="/jobs" 
-              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"
-              onMouseEnter={() => setActiveJobCard(0)}
+              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"              onMouseEnter={() => setActiveJobCard(0)}
               onMouseLeave={() => setActiveJobCard(-1)}
             >
-              {/* Efeito de luz vertical tipo lanterna */}
+              {/* Vertical lantern-style light effect */}
               <div className="lamp-light-vertical"></div>
               {/* Vertical LED bar on the left + light effect only on hover */}
               <div className="flex flex-col justify-center items-center mr-3 md:mr-5 relative">
@@ -356,11 +349,10 @@ function Home() {
             {/* Card 2: Digital Marketing Analyst */}
             <Link 
               href="/jobs" 
-              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"
-              onMouseEnter={() => setActiveJobCard(1)}
+              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"              onMouseEnter={() => setActiveJobCard(1)}
               onMouseLeave={() => setActiveJobCard(-1)}
             >
-              {/* Efeito de luz vertical tipo lanterna */}
+              {/* Vertical lantern-style light effect */}
               <div className="lamp-light-vertical"></div>
               {/* Vertical LED bar on the left + light effect only on hover */}
               <div className="flex flex-col justify-center items-center mr-3 md:mr-5 relative">
@@ -380,11 +372,10 @@ function Home() {
             {/* Card 3: Security Specialist */}
             <Link 
               href="/jobs" 
-              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"
-              onMouseEnter={() => setActiveJobCard(2)}
+              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"              onMouseEnter={() => setActiveJobCard(2)}
               onMouseLeave={() => setActiveJobCard(-1)}
             >
-              {/* Efeito de luz vertical tipo lanterna */}
+              {/* Vertical lantern-style light effect */}
               <div className="lamp-light-vertical"></div>
               {/* Vertical LED bar on the left + light effect only on hover */}
               <div className="flex flex-col justify-center items-center mr-3 md:mr-5 relative">
@@ -684,18 +675,16 @@ function Home() {
           <div className="relative z-10">
             <h2 className="text-3xl font-bold text-gate33-orange mb-6 text-center">FAQS</h2>
             <p className="text-center text-gray-300 mb-8 max-w-2xl mx-auto">We get asked these questions a lot so if you have questions of your own it’s best to start here. Not helpful? No worries you can ask us your own below.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {/* Coluna 1 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">              {/* Column 1 */}
               <div className="flex flex-col gap-4">
                 <ModernFAQItem question="What is Gate33?" answer="Gate33 is a platform that connects talent and companies in the Web3 space, ensuring trust, security, and innovation through blockchain technology." />
                 <ModernFAQItem question="How does Learn2Earn work?" open highlight answer={<span>Gate33 differentiates itself through three main factors:<br /><br />1. Rigorous company verification;<br />2. Use of blockchain technology to ensure data security;<br />3. Learn2Earn system that allows candidates to earn tokens while improving their professional skills. Additionally, we are developing a revolutionary new feature that will transform how talent connects with opportunities.</span>} />
                 <ModernFAQItem question="Is Gate33 available worldwide?" answer="Yes, Gate33 is available to users and companies globally." />
                 <ModernFAQItem question="How do I get started with Gate33?" answer="Simply sign up on our platform, complete your profile, and start exploring opportunities or posting jobs." />
-              </div>
-              {/* Coluna 2 */}
+              </div>              {/* Column 2 */}
               <div className="flex flex-col gap-4">
                 <ModernFAQItem question="What is Gate33?" answer="Gate33 is a platform that connects talent and companies in the Web3 space, ensuring trust, security, and innovation through blockchain technology." />
-                <ModernFAQItem question="How does Learn2Earn work?" answer={<span>Gate33 differentiates itself através de três fatores principais:<br /><br />1. Verificação rigorosa das empresas;<br />2. Uso da tecnologia blockchain para garantir a segurança dos dados;<br />3. Sistema Learn2Earn que permite aos candidatos ganhar tokens enquanto aprimoram suas habilidades profissionais. Além disso, estamos desenvolvendo um recurso revolucionário que transformará a conexão entre talentos e oportunidades.</span>} />
+                <ModernFAQItem question="How does Learn2Earn work?" answer={<span>Gate33 differentiates itself through three main factors:<br /><br />1. Rigorous company verification;<br />2. Use of blockchain technology to ensure data security;<br />3. Learn2Earn system that allows candidates to earn tokens while improving their professional skills. Additionally, we are developing a revolutionary feature that will transform the connection between talent and opportunities.</span>} />
                 <ModernFAQItem question="Is Gate33 available worldwide?" answer="Yes, Gate33 is available to users and companies globally." />
               </div>
             </div>
