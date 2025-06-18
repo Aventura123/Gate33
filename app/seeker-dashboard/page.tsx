@@ -3176,8 +3176,7 @@ const SeekerDashboard = () => {
     return () => clearInterval(interval);
   }, [seekerId]);
   return (    <Layout>
-      <main className="min-h-screen bg-gradient-to-br from-orange-900 to-black text-white flex relative">
-        {/* Mobile menu toggle button */}
+      <main className="min-h-screen bg-gradient-to-br from-orange-900 to-black text-white flex relative">        {/* Mobile menu toggle button */}
         {isMobile && (
           <button 
             className="fixed top-20 left-4 z-50 bg-orange-500 text-white p-2 rounded-full shadow-lg"
@@ -3194,106 +3193,124 @@ const SeekerDashboard = () => {
               </svg>
             )}
           </button>
-        )}
-        
-        {/* Sidebar - Changes for mobile responsiveness */}
-        <aside 
-          className={`${isMobile ? 'fixed left-0 top-0 h-full z-40 transform transition-transform duration-300 ease-in-out ' + (mobileMenuOpen ? 'translate-x-0' : '-translate-x-full') : 'relative'} w-full md:w-1/4 bg-black/70 p-6 flex flex-col pt-16 md:pt-20`}
+        )}          {/* Sidebar - Changes for mobile responsiveness */}        <aside
+          className={
+            isMobile
+              ? `fixed top-0 left-0 h-full w-64 bg-black/90 z-50 transform transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} overflow-y-auto pt-16`
+              : 'w-1/4 bg-black/70 p-6 pt-16 md:pt-20 flex flex-col items-start min-h-screen'
+          }
+          id="seeker-dashboard-sidebar"
         >
-          {/* Profile Photo Section */}
-          <div className="relative flex flex-col items-center mb-6">
-            <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
-              {(isUploading || isLoadingProfile) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
-                </div>
-              )}
-              <img
-                src={userPhoto || "/images/default-avatar.png"}
-                alt="Profile"
-                className="w-full h-full object-cover rounded-full cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => document.getElementById('profile-photo-upload')?.click()}
-                title="Click to change profile photo"
-              />
-              <input 
-                type="file"
-                id="profile-photo-upload"
-                accept="image/*"
-                onChange={handleUserPhotoChange}
-                className="hidden"
-                aria-label="Upload profile photo"
-              />
-            </div>
-            {/* Notification bell absolutely positioned top right */}
-            <div className="absolute top-2 right-2 z-20">
-              <NotificationBell unreadCount={unreadCount} onClick={() => setShowNotifications(true)} />
-            </div>
-            <h2 className="text-xl font-semibold text-orange-400 w-full text-center mt-2">{seekerProfile.name || "User"}</h2>
-            <p className="text-gray-400 text-sm truncate w-full text-center">{seekerProfile.email}</p>
-            {/* Discreet Connect Wallet Button */}
-            <div className="flex justify-center">
-              <WalletButton
-                onConnect={(address) => setWalletAddress(address)}
-                onDisconnect={() => setWalletAddress(null)}
-                className="mt-2 mb-4 px-3 py-1 text-xs"
-              />
-            </div>
-          </div>
-          {/* Navigation Menu */}
-          <nav className="flex-1">
-            <ul className="space-y-2">
-              <li>
-                <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "myProfile" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
-                  onClick={() => handleTabChange("myProfile")}
-                >
-                  My Profile
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "myApplications" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
-                  onClick={() => handleTabChange("myApplications")}
-                >
-                  My Applications
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
-                  onClick={() => handleTabChange("instantJobs")}
-                >
-                  Instant Jobs
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "settings" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
-                  onClick={() => handleTabChange("settings")}
-                >
-                  Settings
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "support" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
-                  onClick={() => handleTabChange("support")}
-                >
-                  Support
-                </button>
-              </li>
-            </ul>
+          {/* Mobile close button */}
+          {isMobile && (
             <button
-              onClick={handleLogout}
-              className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center justify-center"
+              className="absolute top-4 right-4 z-50 bg-orange-500 text-white p-2 rounded-full shadow-lg focus:outline-none"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-label="Close menu"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4a1 1 0 10-2 0v4.586l-1.293-1.293a1 1 0 00-1.414 1.414l-3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L14 11.586V7z" clipRule="evenodd" />
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Logout
             </button>
-          </nav>
-        </aside>        {/* Main Content Area */}
+          )}          <div className={`flex flex-col items-center w-full ${isMobile ? 'pt-16 pb-8' : 'mb-6'}`}>
+            {/* User Photo with notification bell to the right */}
+            <div className="relative w-full flex justify-center">
+              <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
+                {(isUploading || isLoadingProfile) && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+                  </div>
+                )}
+                <img
+                  src={userPhoto || "/images/default-avatar.png"}
+                  alt="Profile Picture"
+                  className="w-full h-full object-cover rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => document.getElementById('profile-photo-upload')?.click()}
+                  title="Click to change profile photo"
+                />
+                <input
+                  type="file"
+                  id="profile-photo-upload"
+                  accept="image/*"
+                  onChange={handleUserPhotoChange}
+                  className="hidden"
+                  aria-label="Upload profile photo"
+                />
+              </div>
+              {/* Notification bell positioned to the right of the photo */}
+              <div className="absolute left-[90%] top-0 z-20">
+                <NotificationBell unreadCount={unreadCount} onClick={() => setShowNotifications(true)} />
+              </div>
+            </div>
+            {/* Seeker Dashboard Title */}
+            <h2 className="text-orange-400 text-xl font-bold mb-2">Seeker Dashboard</h2>
+            {/* User Name and Info */}
+            <div className="text-center mb-6">
+              <p className="text-lg font-semibold text-white">{`Welcome ${seekerProfile.name || "User"}!`}</p>
+              <p className="text-sm text-orange-400">{seekerProfile.email}</p>
+              
+              {/* Wallet Button */}
+              <div className="mt-4">
+                <WalletButton 
+                  onConnect={(address) => setWalletAddress(address)}
+                  onDisconnect={() => setWalletAddress(null)}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm py-1.5"
+                  showNetworkSelector={true}
+                />
+              </div>
+            </div>
+          </div>          {/* Navigation - reduce button size and spacing on mobile */}
+          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>
+            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "myProfile" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                onClick={() => handleTabChange("myProfile")}
+              >
+                My Profile
+              </button>
+            </li>
+            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "myApplications" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                onClick={() => handleTabChange("myApplications")}
+              >
+                My Applications
+              </button>
+            </li>
+            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                onClick={() => handleTabChange("instantJobs")}
+              >
+                Instant Jobs
+              </button>
+            </li>
+            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "settings" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                onClick={() => handleTabChange("settings")}
+              >
+                Settings
+              </button>
+            </li>
+            <li>
+              <button
+                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "support" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                onClick={() => handleTabChange("support")}
+              >
+                Support
+              </button>
+            </li>          </ul>
+          <button
+            onClick={handleLogout}
+            className="w-full mt-8 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center justify-center"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </button>
+        </aside>{/* Main Content Area */}
         <section className="w-full md:w-3/4 p-4 md:p-8 pt-16 md:pt-20 overflow-y-auto">
           {/* Maintain the render of main contents */}
           {activeTab === "myProfile" && renderMyProfile()}
