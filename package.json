@@ -8,11 +8,10 @@
   },
   "engines": {
     "node": ">=20.0.0"
-  },
-  "scripts": {
-    "dev": "next dev",
+  },  "scripts": {    "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "migrate-seekers": "node scripts/migrate-seekers-to-auth.js",
     "git:init": "git init",
     "git:add": "git add .",
     "git:commit": "git commit -m",
