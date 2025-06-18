@@ -1278,152 +1278,300 @@ const SeekerDashboard = () => {
         </div>
       </div>
     );
-  };
-  // Render Settings Tab Content (Editable Form)
+  };  // Render Settings Tab Content (Editable Form)
   const renderSettings = () => {
     return (
-      <div className="bg-black/70 p-4 md:p-10 pt-16 md:pt-20 rounded-lg shadow-lg">
-        <h2 className="text-3xl font-semibold text-orange-500 mb-6">Settings</h2>
-        <div className="flex gap-4 mb-6">
+      <div className="bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700 hover:border-orange-500 transition-colors">
+        <h2 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Settings</h2>
+        <div className="flex gap-4 mb-6 md:mb-8">
           <button
-            className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${settingsTab === 'profile' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
+            className={`py-2 px-4 rounded-lg font-semibold text-sm transition-colors ${settingsTab === 'profile' ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-800 hover:bg-gray-700 text-gray-100'}`}
             onClick={() => setSettingsTab('profile')}
           >
             Profile
-          </button>          <button
-            className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${settingsTab === 'general' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
+          </button>
+          <button
+            className={`py-2 px-4 rounded-lg font-semibold text-sm transition-colors ${settingsTab === 'general' ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-800 hover:bg-gray-700 text-gray-100'}`}
             onClick={() => setSettingsTab('general')}
           >
             General
           </button>
-        </div>
-        {settingsTab === 'profile' && (
+        </div>        {settingsTab === 'profile' && (
           <form onSubmit={handleProfileSubmit}>
             {/* Personal Data */}
-            <h3 className="text-lg font-bold text-orange-400 mb-4">Personal Data</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+            <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Personal Data</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-6 md:mb-10">
               {/* COLUMN 1 - Personal Info */}
-              <div className="space-y-6 col-span-1 md:col-span-1">
+              <div className="space-y-4 md:space-y-6 col-span-1 md:col-span-1">
                 {/* Name */}
-                <input type="text" name="name" value={seekerProfile.name ?? ""} onChange={handleProfileChange} placeholder="First Name" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
-                {/* Surname */}
-                <input type="text" name="surname" value={seekerProfile.surname ?? ""} onChange={handleProfileChange} placeholder="Surname" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" required />
-                {/* Email (Read Only) */}
-                <input type="email" name="email" value={seekerProfile.email ?? ""} placeholder="Email" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" readOnly title="Email cannot be changed here" />
-                {/* Birth Date */}
-                <input type="date" name="birthDate" value={seekerProfile.birthDate ?? ""} onChange={handleProfileChange} placeholder="Birth Date" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                <span className="text-xs text-gray-400">Birth Date (for age verification)</span>
-                {/* Gender */}
-                <select name="gender" value={seekerProfile.gender ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm">
-                  <option value="">Gender (optional)</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                  <option value="prefer_not_to_say">Prefer not to say</option>
-                </select>
-                {/* Nationality */}
-                <input type="text" name="nationality" value={seekerProfile.nationality ?? ""} onChange={handleProfileChange} placeholder="Nationality" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-              </div>
-              
-              {/* COLUMN 2 - Contact & Location */}
-              <div className="space-y-6 col-span-1 md:col-span-1">
-                {/* Location */}
-                <input type="text" name="location" value={seekerProfile.location ?? ""} onChange={handleProfileChange} placeholder="Location (e.g., City, Country)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Address (optional) */}
-                <input type="text" name="address" value={seekerProfile.address ?? ""} onChange={handleProfileChange} placeholder="Full Address (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Zip Code */}
-                <input type="text" name="zipCode" value={seekerProfile.zipCode ?? ""} onChange={handleProfileChange} placeholder="Zip Code (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Phone with country code */}
-                <div className="flex gap-2">
-                  <select name="phoneCountryCode" value={seekerProfile.phoneCountryCode ?? "+1"} onChange={handleProfileChange} className="p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-28">
-                    <option value="+1">+1 (US)</option>
-                    <option value="+44">+44 (UK)</option>
-                    <option value="+351">+351 (PT)</option>
-                    <option value="+55">+55 (BR)</option>
-                    <option value="+33">+33 (FR)</option>
-                    <option value="+49">+49 (DE)</option>
-                    <option value="+34">+34 (ES)</option>
-                    <option value="+39">+39 (IT)</option>
-                    <option value="+91">+91 (IN)</option>
-                    <option value="+81">+81 (JP)</option>
-                    <option value="+86">+86 (CN)</option>
-                    <option value="+7">+7 (RU)</option>
-                    <option value="+61">+61 (AU)</option>
-                    <option value="+258">+258 (MZ)</option>
-                    <option value="+244">+244 (AO)</option>
-                    <option value="+27">+27 (ZA)</option>
-                    <option value="+358">+358 (FI)</option>
-                    <option value="+47">+47 (NO)</option>
-                    <option value="+46">+46 (SE)</option>
-                    <option value="+41">+41 (CH)</option>
-                    <option value="+31">+31 (NL)</option>
-                    <option value="+32">+32 (BE)</option>
-                    <option value="+420">+420 (CZ)</option>
-                    <option value="+48">+48 (PL)</option>
-                    <option value="+40">+40 (RO)</option>
-                    <option value="+90">+90 (TR)</option>
-                  </select>
-                  <input type="text" name="phone" value={seekerProfile.phone ?? ""} onChange={handleProfileChange} placeholder="Phone (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                </div>
-                {/* Alternative Contact with country code */}
-                <div className="flex gap-2">
-                  <select
-                    name="altContactCountryCode"
-                    value={seekerProfile.altContactCountryCode ?? "+1"}
-                    onChange={handleProfileChange}
-                    className="p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-28"
-                  >
-                    <option value="+1">+1 (US)</option>
-                    <option value="+44">+44 (UK)</option>
-                    <option value="+351">+351 (PT)</option>
-                    <option value="+55">+55 (BR)</option>
-                    <option value="+33">+33 (FR)</option>
-                    <option value="+49">+49 (DE)</option>
-                    <option value="+34">+34 (ES)</option>
-                    <option value="+39">+39 (IT)</option>
-                    <option value="+91">+91 (IN)</option>
-                    <option value="+81">+81 (JP)</option>
-                    <option value="+86 (CN)">+86 (CN)</option>
-                    <option value="+7">+7 (RU)</option>
-                    <option value="+61">+61 (AU)</option>
-                    <option value="+258">+258 (MZ)</option>
-                    <option value="+244">+244 (AO)</option>
-                    <option value="+27">+27 (ZA)</option>
-                    <option value="+358">+358 (FI)</option>
-                    <option value="+47">+47 (NO)</option>
-                    <option value="+46">+46 (SE)</option>
-                    <option value="+41">+41 (CH)</option>
-                    <option value="+31">+31 (NL)</option>
-                    <option value="+32">+32 (BE)</option>
-                    <option value="+420">+420 (CZ)</option>
-                    <option value="+48">+48 (PL)</option>
-                    <option value="+40">+40 (RO)</option>
-                    <option value="+90">+90 (TR)</option>
-                  </select>
-                  <input
-                    type="text"
-                    name="altContact"
-                    value={seekerProfile.altContact ?? ""}
-                    onChange={handleProfileChange}
-                    placeholder="Alternative Contact (optional)"
-                    className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                <div>
+                  <label htmlFor="name" className="block text-sm font-semibold text-gray-300 mb-1">
+                    First Name
+                  </label>
+                  <input 
+                    id="name"
+                    type="text" 
+                    name="name" 
+                    value={seekerProfile.name ?? ""} 
+                    onChange={handleProfileChange} 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                    required 
                   />
                 </div>
-              </div>
-              
-              {/* COLUMN 3 - Profile Content */}
-              <div className="space-y-6 col-span-1 md:col-span-1">
+                {/* Surname */}
+                <div>
+                  <label htmlFor="surname" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Surname
+                  </label>
+                  <input 
+                    id="surname"
+                    type="text" 
+                    name="surname" 
+                    value={seekerProfile.surname ?? ""} 
+                    onChange={handleProfileChange} 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                    required 
+                  />
+                </div>
+                {/* Email (Read Only) */}
+                <div>
+                  <label htmlFor="email" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Email
+                  </label>
+                  <input 
+                    id="email"
+                    type="email" 
+                    name="email" 
+                    value={seekerProfile.email ?? ""} 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm opacity-60" 
+                    readOnly 
+                    title="Email cannot be changed here" 
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Email cannot be changed here</p>
+                </div>
+                {/* Birth Date */}
+                <div>
+                  <label htmlFor="birthDate" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Birth Date
+                  </label>
+                  <input 
+                    id="birthDate"
+                    type="date" 
+                    name="birthDate" 
+                    value={seekerProfile.birthDate ?? ""} 
+                    onChange={handleProfileChange} 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Birth Date (for age verification)</p>
+                </div>
+                {/* Gender */}
+                <div>
+                  <label htmlFor="gender" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Gender
+                  </label>
+                  <select 
+                    id="gender"
+                    name="gender" 
+                    value={seekerProfile.gender ?? ""} 
+                    onChange={handleProfileChange} 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  >
+                    <option value="">Gender (optional)</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer_not_to_say">Prefer not to say</option>
+                  </select>
+                </div>
+                {/* Nationality */}
+                <div>
+                  <label htmlFor="nationality" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Nationality
+                  </label>
+                  <input 
+                    id="nationality"
+                    type="text" 
+                    name="nationality" 
+                    value={seekerProfile.nationality ?? ""} 
+                    onChange={handleProfileChange} 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
+                </div>
+              </div>              {/* COLUMN 2 - Contact & Location */}
+              <div className="space-y-4 md:space-y-6 col-span-1 md:col-span-1">
+                {/* Location */}
+                <div>
+                  <label htmlFor="location" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Location
+                  </label>
+                  <input 
+                    id="location"
+                    type="text" 
+                    name="location" 
+                    value={seekerProfile.location ?? ""} 
+                    onChange={handleProfileChange} 
+                    placeholder="e.g., City, Country" 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
+                </div>
+                {/* Address (optional) */}
+                <div>
+                  <label htmlFor="address" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Full Address
+                  </label>
+                  <input 
+                    id="address"
+                    type="text" 
+                    name="address" 
+                    value={seekerProfile.address ?? ""} 
+                    onChange={handleProfileChange} 
+                    placeholder="Full Address (optional)" 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
+                </div>
+                {/* Zip Code */}
+                <div>
+                  <label htmlFor="zipCode" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Zip Code
+                  </label>
+                  <input 
+                    id="zipCode"
+                    type="text" 
+                    name="zipCode" 
+                    value={seekerProfile.zipCode ?? ""} 
+                    onChange={handleProfileChange} 
+                    placeholder="Zip Code (optional)" 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
+                </div>
+                {/* Phone with country code */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-1">
+                    Phone Number
+                  </label>
+                  <div className="flex gap-2">
+                    <select 
+                      name="phoneCountryCode" 
+                      value={seekerProfile.phoneCountryCode ?? "+1"} 
+                      onChange={handleProfileChange} 
+                      className="px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm w-28"
+                    >
+                      <option value="+1">+1 (US)</option>
+                      <option value="+44">+44 (UK)</option>
+                      <option value="+351">+351 (PT)</option>
+                      <option value="+55">+55 (BR)</option>
+                      <option value="+33">+33 (FR)</option>
+                      <option value="+49">+49 (DE)</option>
+                      <option value="+34">+34 (ES)</option>
+                      <option value="+39">+39 (IT)</option>
+                      <option value="+91">+91 (IN)</option>
+                      <option value="+81">+81 (JP)</option>
+                      <option value="+86">+86 (CN)</option>
+                      <option value="+7">+7 (RU)</option>
+                      <option value="+61">+61 (AU)</option>
+                      <option value="+258">+258 (MZ)</option>
+                      <option value="+244">+244 (AO)</option>
+                      <option value="+27">+27 (ZA)</option>
+                      <option value="+358">+358 (FI)</option>
+                      <option value="+47">+47 (NO)</option>
+                      <option value="+46">+46 (SE)</option>
+                      <option value="+41">+41 (CH)</option>
+                      <option value="+31">+31 (NL)</option>
+                      <option value="+32">+32 (BE)</option>
+                      <option value="+420">+420 (CZ)</option>
+                      <option value="+48">+48 (PL)</option>
+                      <option value="+40">+40 (RO)</option>
+                      <option value="+90">+90 (TR)</option>
+                    </select>
+                    <input 
+                      type="text" 
+                      name="phone" 
+                      value={seekerProfile.phone ?? ""} 
+                      onChange={handleProfileChange} 
+                      placeholder="Phone (optional)" 
+                      className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                    />
+                  </div>
+                </div>
+                {/* Alternative Contact with country code */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-1">
+                    Alternative Contact
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      name="altContactCountryCode"
+                      value={seekerProfile.altContactCountryCode ?? "+1"}
+                      onChange={handleProfileChange}
+                      className="px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm w-28"
+                    >
+                      <option value="+1">+1 (US)</option>
+                      <option value="+44">+44 (UK)</option>
+                      <option value="+351">+351 (PT)</option>
+                      <option value="+55">+55 (BR)</option>
+                      <option value="+33">+33 (FR)</option>
+                      <option value="+49">+49 (DE)</option>
+                      <option value="+34">+34 (ES)</option>
+                      <option value="+39">+39 (IT)</option>
+                      <option value="+91">+91 (IN)</option>
+                      <option value="+81">+81 (JP)</option>
+                      <option value="+86 (CN)">+86 (CN)</option>
+                      <option value="+7">+7 (RU)</option>
+                      <option value="+61">+61 (AU)</option>
+                      <option value="+258">+258 (MZ)</option>
+                      <option value="+244">+244 (AO)</option>
+                      <option value="+27">+27 (ZA)</option>
+                      <option value="+358">+358 (FI)</option>
+                      <option value="+47">+47 (NO)</option>
+                      <option value="+46">+46 (SE)</option>
+                      <option value="+41">+41 (CH)</option>
+                      <option value="+31">+31 (NL)</option>
+                      <option value="+32">+32 (BE)</option>
+                      <option value="+420">+420 (CZ)</option>
+                      <option value="+48">+48 (PL)</option>
+                      <option value="+40">+40 (RO)</option>
+                      <option value="+90">+90 (TR)</option>
+                    </select>
+                    <input
+                      type="text"
+                      name="altContact"
+                      value={seekerProfile.altContact ?? ""}
+                      onChange={handleProfileChange}
+                      placeholder="Alternative Contact (optional)"
+                      className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                    />
+                  </div>
+                </div>
+              </div>              {/* COLUMN 3 - Profile Content */}
+              <div className="space-y-4 md:space-y-6 col-span-1 md:col-span-1">
                 {/* Interest Area */}
-                <input type="text" name="interestArea" value={seekerProfile.interestArea ?? ""} onChange={handleProfileChange} placeholder="Interest Area (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                <div>
+                  <label htmlFor="interestArea" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Interest Area
+                  </label>
+                  <input 
+                    id="interestArea"
+                    type="text" 
+                    name="interestArea" 
+                    value={seekerProfile.interestArea ?? ""} 
+                    onChange={handleProfileChange} 
+                    placeholder="Interest Area (optional)" 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
+                </div>
                 {/* CV Upload */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Upload CV (PDF, DOC, etc.)</label>
+                  <label htmlFor="cvUpload" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Upload CV
+                  </label>
                   <input
+                    id="cvUpload"
                     type="file"
                     accept=".pdf,.doc,.docx,.odt,.rtf,.txt"
                     onChange={handleCVUpload}
-                    className="w-full text-white bg-black/50 border border-orange-500/30 rounded-lg p-2"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-orange-500 file:text-white file:text-sm hover:file:bg-orange-600"
                   />
+                  <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, ODT, RTF, TXT files accepted</p>
                   {isUploading && <span className="text-xs text-orange-400 ml-2">Uploading...</span>}
                   {seekerProfile.resumeUrl && (
                     <div className="mt-1">
@@ -1434,255 +1582,967 @@ const SeekerDashboard = () => {
                   )}
                 </div>
                 {/* Resume Link */}
-                <input
-                  type="url"
-                  name="resumeUrl"
-                  value={seekerProfile.resumeUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="Resume Link (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
+                <div>
+                  <label htmlFor="resumeUrl" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Resume Link
+                  </label>
+                  <input
+                    id="resumeUrl"
+                    type="url"
+                    name="resumeUrl"
+                    value={seekerProfile.resumeUrl ?? ""}
+                    onChange={handleProfileChange}
+                    placeholder="Resume Link (optional)"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  />
+                </div>
                 {/* Presentation Video Link */}
-                <input
-                  type="url"
-                  name="presentationVideoUrl"
-                  value={seekerProfile.presentationVideoUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="Presentation Video Link (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
+                <div>
+                  <label htmlFor="presentationVideoUrl" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Presentation Video
+                  </label>
+                  <input
+                    id="presentationVideoUrl"
+                    type="url"
+                    name="presentationVideoUrl"
+                    value={seekerProfile.presentationVideoUrl ?? ""}
+                    onChange={handleProfileChange}
+                    placeholder="Presentation Video Link (optional)"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  />
+                </div>
               </div>
-            </div>
-            
+            </div>            
             {/* Bio - After personal data */}
-            <div className="mb-8">
-              <label className="block text-sm text-gray-400 mb-2">Short Bio</label>
+            <div className="mb-6 md:mb-8">
+              <label htmlFor="bio" className="block text-sm font-semibold text-gray-300 mb-1">
+                Short Bio
+              </label>
               <textarea
+                id="bio"
                 name="bio"
                 value={seekerProfile.bio ?? ""}
                 onChange={handleProfileChange}
                 placeholder="Write a short professional bio (optional)"
                 rows={5}
-                className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
               ></textarea>
-            </div>
-            
+              <p className="text-xs text-gray-400 mt-1">A brief description of your professional background and goals</p>
+            </div>            
             {/* Social Networks */}
-            <h3 className="text-lg font-bold text-orange-400 mb-4">Social Networks</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-              <div className="space-y-6">
+            <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Social Networks</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-10">
+              <div className="space-y-4 md:space-y-6">
                 {/* LinkedIn */}
-                <input
-                  type="url"
-                  name="linkedinUrl"
-                  value={seekerProfile.linkedinUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="LinkedIn URL (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
+                <div>
+                  <label htmlFor="linkedinUrl" className="block text-sm font-semibold text-gray-300 mb-1">
+                    LinkedIn URL
+                  </label>
+                  <input
+                    id="linkedinUrl"
+                    type="url"
+                    name="linkedinUrl"
+                    value={seekerProfile.linkedinUrl ?? ""}
+                    onChange={handleProfileChange}
+                    placeholder="LinkedIn URL (optional)"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  />
+                </div>
                 {/* Twitter */}
-                <input
-                  type="url"
-                  name="twitterUrl"
-                  value={seekerProfile.twitterUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="Twitter URL (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
+                <div>
+                  <label htmlFor="twitterUrl" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Twitter URL
+                  </label>
+                  <input
+                    id="twitterUrl"
+                    type="url"
+                    name="twitterUrl"
+                    value={seekerProfile.twitterUrl ?? ""}
+                    onChange={handleProfileChange}
+                    placeholder="Twitter URL (optional)"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  />
+                </div>
               </div>
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 {/* Website */}
-                <input
-                  type="url"
-                  name="websiteUrl"
-                  value={seekerProfile.websiteUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="Website URL (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
+                <div>
+                  <label htmlFor="websiteUrl" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Website URL
+                  </label>
+                  <input
+                    id="websiteUrl"
+                    type="url"
+                    name="websiteUrl"
+                    value={seekerProfile.websiteUrl ?? ""}
+                    onChange={handleProfileChange}
+                    placeholder="Website URL (optional)"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  />
+                </div>
                 {/* Telegram */}
-                <input
-                  type="url"
-                  name="telegramUrl"
-                  value={seekerProfile.telegramUrl ?? ""}
-                  onChange={handleProfileChange}
-                  placeholder="Telegram URL (optional)"
-                  className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                />
+                <div>
+                  <label htmlFor="telegramUrl" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Telegram URL
+                  </label>
+                  <input
+                    id="telegramUrl"
+                    type="url"
+                    name="telegramUrl"
+                    value={seekerProfile.telegramUrl ?? ""}
+                    onChange={handleProfileChange}
+                    placeholder="Telegram URL (optional)"
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  />
+                </div>
               </div>
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 {/* Instagram URL */}
-                <input type="url" name="instagramUrl" value={seekerProfile.instagramUrl ?? ""} onChange={handleProfileChange} placeholder="Instagram URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                <div>
+                  <label htmlFor="instagramUrl" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Instagram URL
+                  </label>
+                  <input 
+                    id="instagramUrl"
+                    type="url" 
+                    name="instagramUrl" 
+                    value={seekerProfile.instagramUrl ?? ""} 
+                    onChange={handleProfileChange} 
+                    placeholder="Instagram URL (optional)" 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
+                </div>
                 {/* Facebook URL */}
-                <input type="url" name="facebookUrl" value={seekerProfile.facebookUrl ?? ""} onChange={handleProfileChange} placeholder="Facebook URL (optional)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                <div>
+                  <label htmlFor="facebookUrl" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Facebook URL
+                  </label>
+                  <input 
+                    id="facebookUrl"
+                    type="url" 
+                    name="facebookUrl" 
+                    value={seekerProfile.facebookUrl ?? ""} 
+                    onChange={handleProfileChange} 
+                    placeholder="Facebook URL (optional)" 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
+                </div>
               </div>
-            </div>
-            
+            </div>            
             {/* Languages */}
-            <div className="mb-10">
-              <label className="block text-sm text-gray-400 mb-2">Languages</label>
-              {(seekerProfile.languages ?? []).map((lang, idx) => (
-                <div key={idx} className="flex gap-2 mb-2">
-                  <input type="text" name={`language-${idx}`} value={lang.language} onChange={e => { const updated = [...(seekerProfile.languages ?? [])]; updated[idx] = { ...updated[idx], language: e.target.value }; setSeekerProfile({ ...seekerProfile, languages: updated }); }} placeholder="Language (e.g., English)" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                  <select name={`proficiency-${idx}`} value={lang.proficiency} onChange={e => { const updated = [...(seekerProfile.languages ?? [])]; updated[idx] = { ...updated[idx], proficiency: e.target.value }; setSeekerProfile({ ...seekerProfile, languages: updated }); }} className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm">
-                    <option value="">Proficiency</option>
-                    <option value="Native">Native</option>
-                    <option value="Fluent">Fluent</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Basic">Basic</option>
-                  </select>
-                  <button type="button" onClick={() => { const updated = [...(seekerProfile.languages ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, languages: updated }); }} className="text-red-400 ml-2">Remove</button>
-                </div>
-              ))}
-              <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, languages: [...(seekerProfile.languages ?? []), { language: '', proficiency: '' }] }); }} className="text-orange-400 mt-2">+ Add Language</button>
-            </div>
-            
-            {/* Career */}
-            <h3 className="text-lg font-bold text-orange-400 mb-4">Career</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-              <div className="space-y-6">
-                {/* Professional Title */}
-                <input type="text" name="title" value={seekerProfile.title ?? ""} onChange={handleProfileChange} placeholder="Professional Title (e.g., Frontend Developer)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-                {/* Skills */}
-                <textarea name="skills" value={seekerProfile.skills ?? ""} onChange={handleProfileChange} placeholder="Your Skills (comma-separated, e.g., React, Node.js, Solidity)" rows={3} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"></textarea>
-                
-                {/* Projects */}
-                                              <div>
-                  <label className="block text-sm text-gray-400 mb-2">Projects</label>
-                  {(seekerProfile.projects ?? []).map((proj, idx) => (
-                    <div key={idx} className="flex flex-col md:flex-row gap-2 mb-2">
-                      <input type="text" name={`proj-name-${idx}`} value={proj.name} onChange={e => { const updated = [...(seekerProfile.projects ?? [])]; updated[idx] = { ...updated[idx], name: e.target.value }; setSeekerProfile({ ...seekerProfile, projects: updated }); }} placeholder="Project Name" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="url" name={`proj-url-${idx}`} value={proj.url} onChange={e => { const updated = [...(seekerProfile.projects ?? [])]; updated[idx] = { ...updated[idx], url: e.target.value }; setSeekerProfile({ ...seekerProfile, projects: updated }); }} placeholder="Project URL" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="text" name={`proj-technologies-${idx}`} value={proj.technologies} onChange={e => { const updated = [...(seekerProfile.projects ?? [])]; updated[idx] = { ...updated[idx], technologies: e.target.value }; setSeekerProfile({ ...seekerProfile, projects: updated }); }} placeholder="Technologies" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <textarea name={`proj-description-${idx}`} value={proj.description} onChange={e => { const updated = [...(seekerProfile.projects ?? [])]; updated[idx] = { ...updated[idx], description: e.target.value }; setSeekerProfile({ ...seekerProfile, projects: updated }); }} placeholder="Description" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <button type="button" onClick={() => { const updated = [...(seekerProfile.projects ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, projects: updated }); }} className="text-red-400 ml-2">Remove</button>
+            <div className="mb-6 md:mb-10">
+              <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Languages</h3>
+              <div className="bg-black/30 border border-gray-700 rounded-xl overflow-hidden">
+                {(seekerProfile.languages ?? []).map((lang, idx) => (
+                  <div key={idx} className="border-b border-gray-700 last:border-b-0">
+                    <div className="p-3 md:p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 items-end">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-300 mb-1">
+                            Language
+                          </label>
+                          <input 
+                            type="text" 
+                            name={`language-${idx}`} 
+                            value={lang.language} 
+                            onChange={e => { 
+                              const updated = [...(seekerProfile.languages ?? [])]; 
+                              updated[idx] = { ...updated[idx], language: e.target.value }; 
+                              setSeekerProfile({ ...seekerProfile, languages: updated }); 
+                            }} 
+                            placeholder="e.g., English" 
+                            className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-300 mb-1">
+                            Proficiency
+                          </label>
+                          <select 
+                            name={`proficiency-${idx}`} 
+                            value={lang.proficiency} 
+                            onChange={e => { 
+                              const updated = [...(seekerProfile.languages ?? [])]; 
+                              updated[idx] = { ...updated[idx], proficiency: e.target.value }; 
+                              setSeekerProfile({ ...seekerProfile, languages: updated }); 
+                            }} 
+                            className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                          >
+                            <option value="">Select Proficiency</option>
+                            <option value="Native">Native</option>
+                            <option value="Fluent">Fluent</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Basic">Basic</option>
+                          </select>
+                        </div>
+                        <div className="flex justify-end">
+                          <button 
+                            type="button" 
+                            onClick={() => { 
+                              const updated = [...(seekerProfile.languages ?? [])]; 
+                              updated.splice(idx, 1); 
+                              setSeekerProfile({ ...seekerProfile, languages: updated }); 
+                            }} 
+                            className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, projects: [...(seekerProfile.projects ?? []), { name: '', url: '', technologies: '', description: '' }] }); }} className="text-orange-400 mt-2">+ Add Project</button>
+                  </div>
+                ))}
+                <div className="p-3 md:p-4">
+                  <button 
+                    type="button" 
+                    onClick={() => { 
+                      setSeekerProfile({ ...seekerProfile, languages: [...(seekerProfile.languages ?? []), { language: '', proficiency: '' }] }); 
+                    }} 
+                    className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
+                  >
+                    + Add Language
+                  </button>
                 </div>
-                
+              </div>
+            </div>            
+            {/* Career */}
+            <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Career</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-10">
+              <div className="space-y-4 md:space-y-6">
+                {/* Professional Title */}
+                <div>
+                  <label htmlFor="title" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Professional Title
+                  </label>
+                  <input 
+                    id="title"
+                    type="text" 
+                    name="title" 
+                    value={seekerProfile.title ?? ""} 
+                    onChange={handleProfileChange} 
+                    placeholder="e.g., Frontend Developer" 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
+                </div>
+                {/* Skills */}
+                <div>
+                  <label htmlFor="skills" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Skills
+                  </label>
+                  <textarea 
+                    id="skills"
+                    name="skills" 
+                    value={seekerProfile.skills ?? ""} 
+                    onChange={handleProfileChange} 
+                    placeholder="Your Skills (comma-separated, e.g., React, Node.js, Solidity)" 
+                    rows={3} 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  ></textarea>
+                  <p className="text-xs text-gray-400 mt-1">Separate skills with commas</p>
+                </div>                
+                {/* Projects */}
+                <div>
+                  <h4 className="text-base font-bold text-gray-300 mb-4">Projects</h4>
+                  <div className="bg-black/30 border border-gray-700 rounded-xl overflow-hidden">
+                    {(seekerProfile.projects ?? []).map((proj, idx) => (
+                      <div key={idx} className="border-b border-gray-700 last:border-b-0">
+                        <div className="p-3 md:p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Project Name
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`proj-name-${idx}`} 
+                                value={proj.name} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.projects ?? [])]; 
+                                  updated[idx] = { ...updated[idx], name: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, projects: updated }); 
+                                }} 
+                                placeholder="Project Name" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Project URL
+                              </label>
+                              <input 
+                                type="url" 
+                                name={`proj-url-${idx}`} 
+                                value={proj.url} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.projects ?? [])]; 
+                                  updated[idx] = { ...updated[idx], url: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, projects: updated }); 
+                                }} 
+                                placeholder="Project URL" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                          </div>
+                          <div className="mb-4">
+                            <label className="block text-sm font-semibold text-gray-300 mb-1">
+                              Technologies
+                            </label>
+                            <input 
+                              type="text" 
+                              name={`proj-technologies-${idx}`} 
+                              value={proj.technologies} 
+                              onChange={e => { 
+                                const updated = [...(seekerProfile.projects ?? [])]; 
+                                updated[idx] = { ...updated[idx], technologies: e.target.value }; 
+                                setSeekerProfile({ ...seekerProfile, projects: updated }); 
+                              }} 
+                              placeholder="Technologies (e.g., React, Node.js)" 
+                              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                            />
+                          </div>
+                          <div className="mb-4">
+                            <label className="block text-sm font-semibold text-gray-300 mb-1">
+                              Description
+                            </label>
+                            <textarea 
+                              name={`proj-description-${idx}`} 
+                              value={proj.description} 
+                              onChange={e => { 
+                                const updated = [...(seekerProfile.projects ?? [])]; 
+                                updated[idx] = { ...updated[idx], description: e.target.value }; 
+                                setSeekerProfile({ ...seekerProfile, projects: updated }); 
+                              }} 
+                              placeholder="Brief description of the project" 
+                              rows={3}
+                              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                            />
+                          </div>
+                          <div className="flex justify-end">
+                            <button 
+                              type="button" 
+                              onClick={() => { 
+                                const updated = [...(seekerProfile.projects ?? [])]; 
+                                updated.splice(idx, 1); 
+                                setSeekerProfile({ ...seekerProfile, projects: updated }); 
+                              }} 
+                              className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
+                            >
+                              Remove Project
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="p-3 md:p-4">
+                      <button 
+                        type="button" 
+                        onClick={() => { 
+                          setSeekerProfile({ ...seekerProfile, projects: [...(seekerProfile.projects ?? []), { name: '', url: '', technologies: '', description: '' }] }); 
+                        }} 
+                        className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
+                      >
+                        + Add Project
+                      </button>
+                    </div>
+                  </div>
+                </div>                
                 {/* Certifications */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Certifications</label>
-                  {(seekerProfile.certifications ?? []).map((cert, idx) => (
-                    <div key={idx} className="flex flex-wrap gap-2 mb-2">
-                      <input type="text" name={`cert-name-${idx}`} value={cert.name} onChange={e => { const updated = [...(seekerProfile.certifications ?? [])]; updated[idx] = { ...updated[idx], name: e.target.value }; setSeekerProfile({ ...seekerProfile, certifications: updated }); }} placeholder="Certification Name" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="text" name={`cert-issuer-${idx}`} value={cert.issuer} onChange={e => { const updated = [...(seekerProfile.certifications ?? [])]; updated[idx] = { ...updated[idx], issuer: e.target.value }; setSeekerProfile({ ...seekerProfile, certifications: updated }); }} placeholder="Issuer" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="text" name={`cert-date-${idx}`} value={cert.date} onChange={e => { const updated = [...(seekerProfile.certifications ?? [])]; updated[idx] = { ...updated[idx], date: e.target.value }; setSeekerProfile({ ...seekerProfile, certifications: updated }); }} placeholder="Date" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="url" name={`cert-url-${idx}`} value={cert.url} onChange={e => { const updated = [...(seekerProfile.certifications ?? [])]; updated[idx] = { ...updated[idx], url: e.target.value }; setSeekerProfile({ ...seekerProfile, certifications: updated }); }} placeholder="Credential URL" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <button type="button" onClick={() => { const updated = [...(seekerProfile.certifications ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, certifications: updated }); }} className="text-red-400 ml-2">Remove</button>
+                  <h4 className="text-base font-bold text-gray-300 mb-4">Certifications</h4>
+                  <div className="bg-black/30 border border-gray-700 rounded-xl overflow-hidden">
+                    {(seekerProfile.certifications ?? []).map((cert, idx) => (
+                      <div key={idx} className="border-b border-gray-700 last:border-b-0">
+                        <div className="p-3 md:p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Certification Name
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`cert-name-${idx}`} 
+                                value={cert.name} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.certifications ?? [])]; 
+                                  updated[idx] = { ...updated[idx], name: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, certifications: updated }); 
+                                }} 
+                                placeholder="Certification Name" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Issuer
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`cert-issuer-${idx}`} 
+                                value={cert.issuer} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.certifications ?? [])]; 
+                                  updated[idx] = { ...updated[idx], issuer: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, certifications: updated }); 
+                                }} 
+                                placeholder="Issuer" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Date
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`cert-date-${idx}`} 
+                                value={cert.date} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.certifications ?? [])]; 
+                                  updated[idx] = { ...updated[idx], date: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, certifications: updated }); 
+                                }} 
+                                placeholder="Date (e.g., 2023)" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Credential URL
+                              </label>
+                              <input 
+                                type="url" 
+                                name={`cert-url-${idx}`} 
+                                value={cert.url} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.certifications ?? [])]; 
+                                  updated[idx] = { ...updated[idx], url: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, certifications: updated }); 
+                                }} 
+                                placeholder="Credential URL (optional)" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <button 
+                              type="button" 
+                              onClick={() => { 
+                                const updated = [...(seekerProfile.certifications ?? [])]; 
+                                updated.splice(idx, 1); 
+                                setSeekerProfile({ ...seekerProfile, certifications: updated }); 
+                              }} 
+                              className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
+                            >
+                              Remove Certification
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="p-3 md:p-4">
+                      <button 
+                        type="button" 
+                        onClick={() => { 
+                          setSeekerProfile({ ...seekerProfile, certifications: [...(seekerProfile.certifications ?? []), { name: '', issuer: '', date: '', url: '' }] }); 
+                        }} 
+                        className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
+                      >
+                        + Add Certification
+                      </button>
                     </div>
-                  ))}
-                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, certifications: [...(seekerProfile.certifications ?? []), { name: '', issuer: '', date: '', url: '' }] }); }} className="text-orange-400 mt-2">+ Add Certification</button>
-                </div>
-                
+                  </div>
+                </div>                
                 {/* Professional References */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Professional References</label>
-                  {(seekerProfile.references ?? []).map((ref, idx) => (
-                    <div key={idx} className="flex flex-col md:flex-row gap-2 mb-2">
-                      <input type="text" name={`ref-name-${idx}`} value={ref.name} onChange={e => { const updated = [...(seekerProfile.references ?? [])]; updated[idx] = { ...updated[idx], name: e.target.value }; setSeekerProfile({ ...seekerProfile, references: updated }); }} placeholder="Name" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="text" name={`ref-contact-${idx}`} value={ref.contact} onChange={e => { const updated = [...(seekerProfile.references ?? [])]; updated[idx] = { ...updated[idx], contact: e.target.value }; setSeekerProfile({ ...seekerProfile, references: updated }); }} placeholder="Contact" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <input type="text" name={`ref-relation-${idx}`} value={ref.relation} onChange={e => { const updated = [...(seekerProfile.references ?? [])]; updated[idx] = { ...updated[idx], relation: e.target.value }; setSeekerProfile({ ...seekerProfile, references: updated }); }} placeholder="Relation" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                      <button type="button" onClick={() => { const updated = [...(seekerProfile.references ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, references: updated }); }} className="text-red-400 ml-2">Remove</button>
+                  <h4 className="text-base font-bold text-gray-300 mb-4">Professional References</h4>
+                  <div className="bg-black/30 border border-gray-700 rounded-xl overflow-hidden">
+                    {(seekerProfile.references ?? []).map((ref, idx) => (
+                      <div key={idx} className="border-b border-gray-700 last:border-b-0">
+                        <div className="p-3 md:p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Name
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`ref-name-${idx}`} 
+                                value={ref.name} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.references ?? [])]; 
+                                  updated[idx] = { ...updated[idx], name: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, references: updated }); 
+                                }} 
+                                placeholder="Full Name" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Contact
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`ref-contact-${idx}`} 
+                                value={ref.contact} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.references ?? [])]; 
+                                  updated[idx] = { ...updated[idx], contact: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, references: updated }); 
+                                }} 
+                                placeholder="Email or Phone" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Relationship
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`ref-relation-${idx}`} 
+                                value={ref.relation} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.references ?? [])]; 
+                                  updated[idx] = { ...updated[idx], relation: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, references: updated }); 
+                                }} 
+                                placeholder="e.g., Former Manager" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <button 
+                              type="button" 
+                              onClick={() => { 
+                                const updated = [...(seekerProfile.references ?? [])]; 
+                                updated.splice(idx, 1); 
+                                setSeekerProfile({ ...seekerProfile, references: updated }); 
+                              }} 
+                              className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
+                            >
+                              Remove Reference
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="p-3 md:p-4">
+                      <button 
+                        type="button" 
+                        onClick={() => { 
+                          setSeekerProfile({ ...seekerProfile, references: [...(seekerProfile.references ?? []), { name: '', contact: '', relation: '' }] }); 
+                        }} 
+                        className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
+                      >
+                        + Add Reference
+                      </button>
                     </div>
-                  ))}
-                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, references: [...(seekerProfile.references ?? []), { name: '', contact: '', relation: '' }] }); }} className="text-orange-400 mt-2">+ Add Reference</button>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="space-y-6">
+              </div>              
+              <div className="space-y-4 md:space-y-6">
                 {/* Professional Experience */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Professional Experience</label>
-                  {(seekerProfile.experience ?? []).map((exp, idx) => (
-                    <div key={idx} className="flex flex-col gap-2 mb-4 bg-black/30 p-3 rounded-lg">
-                      <input type="text" name={`exp-position-${idx}`} value={exp.position} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], position: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Position" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" />
-                      <input type="text" name={`exp-company-${idx}`} value={exp.company} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], company: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Company" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" />
-                      <div className="flex gap-2">
-                        <input type="text" name={`exp-location-${idx}`} value={exp.location} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], location: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Location" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                        <input type="text" name={`exp-startDate-${idx}`} value={exp.startDate} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], startDate: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Start Date (YYYY-MM)" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
-                        <input type="text" name={`exp-endDate-${idx}`} value={exp.endDate} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], endDate: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="End Date (YYYY-MM or Present)" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm flex-1" />
+                  <h4 className="text-base font-bold text-gray-300 mb-4">Professional Experience</h4>
+                  <div className="bg-black/30 border border-gray-700 rounded-xl overflow-hidden">
+                    {(seekerProfile.experience ?? []).map((exp, idx) => (
+                      <div key={idx} className="border-b border-gray-700 last:border-b-0">
+                        <div className="p-3 md:p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Position
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`exp-position-${idx}`} 
+                                value={exp.position} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.experience ?? [])]; 
+                                  updated[idx] = { ...updated[idx], position: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, experience: updated }); 
+                                }} 
+                                placeholder="Job Position" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Company
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`exp-company-${idx}`} 
+                                value={exp.company} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.experience ?? [])]; 
+                                  updated[idx] = { ...updated[idx], company: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, experience: updated }); 
+                                }} 
+                                placeholder="Company Name" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Location
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`exp-location-${idx}`} 
+                                value={exp.location} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.experience ?? [])]; 
+                                  updated[idx] = { ...updated[idx], location: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, experience: updated }); 
+                                }} 
+                                placeholder="Location" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Start Date
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`exp-startDate-${idx}`} 
+                                value={exp.startDate} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.experience ?? [])]; 
+                                  updated[idx] = { ...updated[idx], startDate: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, experience: updated }); 
+                                }} 
+                                placeholder="YYYY-MM" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                End Date
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`exp-endDate-${idx}`} 
+                                value={exp.endDate} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.experience ?? [])]; 
+                                  updated[idx] = { ...updated[idx], endDate: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, experience: updated }); 
+                                }} 
+                                placeholder="YYYY-MM or Present" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                          </div>
+                          <div className="mb-4">
+                            <label className="block text-sm font-semibold text-gray-300 mb-1">
+                              Description
+                            </label>
+                            <textarea 
+                              name={`exp-description-${idx}`} 
+                              value={exp.description} 
+                              onChange={e => { 
+                                const updated = [...(seekerProfile.experience ?? [])]; 
+                                updated[idx] = { ...updated[idx], description: e.target.value }; 
+                                setSeekerProfile({ ...seekerProfile, experience: updated }); 
+                              }} 
+                              placeholder="Describe your responsibilities and achievements" 
+                              rows={3}
+                              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                            />
+                          </div>
+                          <div className="flex justify-end">
+                            <button 
+                              type="button" 
+                              onClick={() => { 
+                                const updated = [...(seekerProfile.experience ?? [])]; 
+                                updated.splice(idx, 1); 
+                                setSeekerProfile({ ...seekerProfile, experience: updated }); 
+                              }} 
+                              className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
+                            >
+                              Remove Experience
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <textarea name={`exp-description-${idx}`} value={exp.description} onChange={e => { const updated = [...(seekerProfile.experience ?? [])]; updated[idx] = { ...updated[idx], description: e.target.value }; setSeekerProfile({ ...seekerProfile, experience: updated }); }} placeholder="Description" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" rows={3} />
-                      <button type="button" onClick={() => { const updated = [...(seekerProfile.experience ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, experience: updated }); }} className="text-red-400 self-end">Remove Experience</button>
+                    ))}
+                    <div className="p-3 md:p-4">
+                      <button 
+                        type="button" 
+                        onClick={() => { 
+                          setSeekerProfile({ ...seekerProfile, experience: [...(seekerProfile.experience ?? []), { position: '', company: '', location: '', startDate: '', endDate: '', current: false, description: '' }] }); 
+                        }} 
+                        className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
+                      >
+                        + Add Experience
+                      </button>
                     </div>
-                  ))}
-                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, experience: [...(seekerProfile.experience ?? []), { position: '', company: '', location: '', startDate: '', endDate: '', current: false, description: '' }] }); }} className="text-orange-400 mt-2">+ Add Experience</button>
-                </div>
-                
+                  </div>
+                </div>                
                 {/* Education */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Education</label>
-                  {(seekerProfile.education ?? []).map((edu, idx) => (
-                    <div key={idx} className="flex flex-col gap-2 mb-4 bg-black/30 p-3 rounded-lg">
-                      <input type="text" name={`edu-degree-${idx}`} value={edu.degree} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], degree: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Degree" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" />
-                      <input type="text" name={`edu-institution-${idx}`} value={edu.institution} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], institution: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Institution" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" />
-                      <input type="text" name={`edu-year-${idx}`} value={edu.year} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], year: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Year" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" />
-                      <textarea name={`edu-description-${idx}`} value={edu.description} onChange={e => { const updated = [...(seekerProfile.education ?? [])]; updated[idx] = { ...updated[idx], description: e.target.value }; setSeekerProfile({ ...seekerProfile, education: updated }); }} placeholder="Description" className="p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm w-full" rows={2} />
-                      <button type="button" onClick={() => { const updated = [...(seekerProfile.education ?? [])]; updated.splice(idx, 1); setSeekerProfile({ ...seekerProfile, education: updated }); }} className="text-red-400 self-end">Remove Education</button>
+                  <h4 className="text-base font-bold text-gray-300 mb-4">Education</h4>
+                  <div className="bg-black/30 border border-gray-700 rounded-xl overflow-hidden">
+                    {(seekerProfile.education ?? []).map((edu, idx) => (
+                      <div key={idx} className="border-b border-gray-700 last:border-b-0">
+                        <div className="p-3 md:p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Degree
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`edu-degree-${idx}`} 
+                                value={edu.degree} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.education ?? [])]; 
+                                  updated[idx] = { ...updated[idx], degree: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, education: updated }); 
+                                }} 
+                                placeholder="e.g., Bachelor's in Computer Science" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Institution
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`edu-institution-${idx}`} 
+                                value={edu.institution} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.education ?? [])]; 
+                                  updated[idx] = { ...updated[idx], institution: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, education: updated }); 
+                                }} 
+                                placeholder="University/School Name" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                                Year
+                              </label>
+                              <input 
+                                type="text" 
+                                name={`edu-year-${idx}`} 
+                                value={edu.year} 
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.education ?? [])]; 
+                                  updated[idx] = { ...updated[idx], year: e.target.value }; 
+                                  setSeekerProfile({ ...seekerProfile, education: updated }); 
+                                }} 
+                                placeholder="e.g., 2020 or 2018-2022" 
+                                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                              />
+                            </div>
+                          </div>
+                          <div className="mb-4">
+                            <label className="block text-sm font-semibold text-gray-300 mb-1">
+                              Description
+                            </label>
+                            <textarea 
+                              name={`edu-description-${idx}`} 
+                              value={edu.description} 
+                              onChange={e => { 
+                                const updated = [...(seekerProfile.education ?? [])]; 
+                                updated[idx] = { ...updated[idx], description: e.target.value }; 
+                                setSeekerProfile({ ...seekerProfile, education: updated }); 
+                              }} 
+                              placeholder="Key achievements, relevant coursework, etc." 
+                              rows={2}
+                              className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                            />
+                          </div>
+                          <div className="flex justify-end">
+                            <button 
+                              type="button" 
+                              onClick={() => { 
+                                const updated = [...(seekerProfile.education ?? [])]; 
+                                updated.splice(idx, 1); 
+                                setSeekerProfile({ ...seekerProfile, education: updated }); 
+                              }} 
+                              className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
+                            >
+                              Remove Education
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="p-3 md:p-4">
+                      <button 
+                        type="button" 
+                        onClick={() => { 
+                          setSeekerProfile({ ...seekerProfile, education: [...(seekerProfile.education ?? []), { degree: '', institution: '', year: '', description: '' }] }); 
+                        }} 
+                        className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
+                      >
+                        + Add Education
+                      </button>
                     </div>
-                  ))}
-                  <button type="button" onClick={() => { setSeekerProfile({ ...seekerProfile, education: [...(seekerProfile.education ?? []), { degree: '', institution: '', year: '', description: '' }] }); }} className="text-orange-400 mt-2">+ Add Education</button>
+                  </div>
                 </div>
               </div>
-            </div>
-            
+            </div>            
             {/* What I'm Looking For */}
-            <h3 className="text-lg font-bold text-orange-400 mb-4">What I'm Looking For</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-              <div className="space-y-6">
+            <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">What I'm Looking For</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-6 md:mb-10">
+              <div className="space-y-4 md:space-y-6">
                 {/* Availability */}
-                <input type="text" name="availability" value={seekerProfile.availability ?? ""} onChange={handleProfileChange} placeholder="Availability (e.g., Immediate, 15 days notice)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
+                <div>
+                  <label htmlFor="availability" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Availability
+                  </label>
+                  <input 
+                    id="availability"
+                    type="text" 
+                    name="availability" 
+                    value={seekerProfile.availability ?? ""} 
+                    onChange={handleProfileChange} 
+                    placeholder="e.g., Immediate, 15 days notice" 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
+                </div>
                 {/* Salary Expectation */}
-                <input type="text" name="salaryExpectation" value={seekerProfile.salaryExpectation ?? ""} onChange={handleProfileChange} placeholder="Salary Expectation (e.g., $3000-4000/mo)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-              </div>
-              <div className="space-y-6">
-                {/* Contract Type */}
-                <select name="contractType" value={seekerProfile.contractType ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm">
-                  <option value="">Contract Type</option>
-                  <option value="Full Time">Full Time</option>
-                  <option value="Part Time">Part Time</option>
-                  <option value="Other">Other</option>
-                </select>
-                {/* Interest Area (repeated) */}
-                <input type="text" name="interestArea" value={seekerProfile.interestArea ?? ""} onChange={handleProfileChange} placeholder="Interest Area (e.g., Frontend, Blockchain, Design)" className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" />
-              </div>
-              <div className="space-y-6">
-                {/* Work Preference */}
-                <select name="workPreference" value={seekerProfile.workPreference ?? ""} onChange={handleProfileChange} className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm">
-                  <option value="">Work Preference</option>
-                  <option value="Remote">Remote</option>
-                  <option value="Hybrid">Hybrid</option>
-                  <option value="Onsite">Onsite</option>
-                </select>
-                {/* Extra Preferences */}
-                <div className="flex flex-wrap gap-4 mt-4">
-                  <label className="flex items-center gap-2 text-white">
+                <div>
+                  <label htmlFor="salaryExpectation" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Salary Expectation
                   </label>
-                  <label className="flex items-center gap-2 text-white">
-                    <input type="checkbox" name="willingToRelocate" checked={!!seekerProfile.willingToRelocate} onChange={e => setSeekerProfile({ ...seekerProfile, willingToRelocate: e.target.checked })} /> Willing to Relocate
-                  </label>
-                  <label className="flex items-center gap-2 text-white">
-                    <input type="checkbox" name="cryptoPaymentPreference" checked={!!seekerProfile.cryptoPaymentPreference} onChange={e => setSeekerProfile({ ...seekerProfile, cryptoPaymentPreference: e.target.checked })} /> Accept Crypto Payment
-                  </label>
+                  <input 
+                    id="salaryExpectation"
+                    type="text" 
+                    name="salaryExpectation" 
+                    value={seekerProfile.salaryExpectation ?? ""} 
+                    onChange={handleProfileChange} 
+                    placeholder="e.g., $3000-4000/mo" 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
                 </div>
               </div>
-            </div>
-            
+              <div className="space-y-4 md:space-y-6">
+                {/* Contract Type */}
+                <div>
+                  <label htmlFor="contractType" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Contract Type
+                  </label>
+                  <select 
+                    id="contractType"
+                    name="contractType" 
+                    value={seekerProfile.contractType ?? ""} 
+                    onChange={handleProfileChange} 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  >
+                    <option value="">Select Contract Type</option>
+                    <option value="Full Time">Full Time</option>
+                    <option value="Part Time">Part Time</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                {/* Interest Area (repeated) */}
+                <div>
+                  <label htmlFor="interestAreaLookingFor" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Interest Area
+                  </label>
+                  <input 
+                    id="interestAreaLookingFor"
+                    type="text" 
+                    name="interestArea" 
+                    value={seekerProfile.interestArea ?? ""} 
+                    onChange={handleProfileChange} 
+                    placeholder="e.g., Frontend, Blockchain, Design" 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                  />
+                </div>
+              </div>
+              <div className="space-y-4 md:space-y-6">
+                {/* Work Preference */}
+                <div>
+                  <label htmlFor="workPreference" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Work Preference
+                  </label>
+                  <select 
+                    id="workPreference"
+                    name="workPreference" 
+                    value={seekerProfile.workPreference ?? ""} 
+                    onChange={handleProfileChange} 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  >
+                    <option value="">Select Work Preference</option>
+                    <option value="Remote">Remote</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="Onsite">Onsite</option>
+                  </select>
+                </div>
+                {/* Extra Preferences */}
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <label className="flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        name="willingToRelocate" 
+                        checked={!!seekerProfile.willingToRelocate} 
+                        onChange={e => setSeekerProfile({ ...seekerProfile, willingToRelocate: e.target.checked })}
+                        className="mr-2 h-5 w-5 accent-orange-500"
+                      /> 
+                      <span className="text-gray-300 text-sm font-medium">Willing to Relocate</span>
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <label className="flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        name="cryptoPaymentPreference" 
+                        checked={!!seekerProfile.cryptoPaymentPreference} 
+                        onChange={e => setSeekerProfile({ ...seekerProfile, cryptoPaymentPreference: e.target.checked })}
+                        className="mr-2 h-5 w-5 accent-orange-500"
+                      /> 
+                      <span className="text-gray-300 text-sm font-medium">Accept Crypto Payment</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>            
             {/* Profile Sharing */}
-            <div className="mb-8">
-              <label className="flex items-center gap-2 text-white">
-                <input type="checkbox" name="shareProfile" checked={!!seekerProfile.shareProfile} onChange={e => setSeekerProfile({ ...seekerProfile, shareProfile: e.target.checked })} />
-                Allow your full profile to be shared with hiring companies?
-              </label>
+            <div className="mb-6 md:mb-8">
+              <div className="flex items-center">
+                <label className="flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    name="shareProfile" 
+                    checked={!!seekerProfile.shareProfile} 
+                    onChange={e => setSeekerProfile({ ...seekerProfile, shareProfile: e.target.checked })}
+                    className="mr-2 h-5 w-5 accent-orange-500"
+                  />
+                  <span className="text-gray-300 text-sm font-medium">Allow your full profile to be shared with hiring companies?</span>
+                </label>
+              </div>
+              <p className="text-xs text-gray-400 mt-1 ml-7">This helps companies find and contact you directly</p>
             </div>
             
             {/* Save Button */}
             <div>
-              <button type="submit" disabled={isLoadingProfile} className={`bg-orange-500 text-white py-3 px-8 rounded-full font-semibold text-lg cursor-pointer transition-colors hover:bg-orange-300 border-none w-full mt-5 ${isLoadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}>{isLoadingProfile ? 'Saving...' : 'Save Profile'}</button>
+              <button 
+                type="submit" 
+                disabled={isLoadingProfile} 
+                className={`bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm w-full md:w-auto ${isLoadingProfile ? 'cursor-not-allowed' : ''}`}
+              >
+                {isLoadingProfile ? 'Saving...' : 'Save Profile'}
+              </button>
             </div>
-          </form>        )}        {settingsTab === 'general' && (
+          </form>
+        )}
+        {settingsTab === 'general' && (
           <div className="max-w-6xl">
             {/* Two unified cards layout following Gate33 standards */}
             <div className="space-y-6 md:space-y-10">              {/* Top Unified Card: Notifications & Privacy */}
@@ -2296,9 +3156,8 @@ const SeekerDashboard = () => {
     interval = setInterval(fetchUnread, 10000);
     return () => clearInterval(interval);
   }, [seekerId]);
-
   return (    <Layout>
-      <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex relative">
+      <main className="min-h-screen bg-gradient-to-br from-orange-900 to-black text-white flex relative">
         {/* Mobile menu toggle button */}
         {isMobile && (
           <button 
