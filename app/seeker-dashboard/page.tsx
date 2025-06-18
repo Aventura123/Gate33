@@ -896,25 +896,41 @@ const SeekerDashboard = () => {
   }, [selectedJobId, instantJobs, availableInstantJobs]);
   // Render My Applications Tab Content
   const renderMyApplications = () => {
-    if (applications.length === 0) {
-      return (
-        <div className="bg-black/70 p-4 md:p-10 pt-16 md:pt-20 rounded-lg shadow-lg">
-          <h2 className="text-3xl font-semibold text-orange-500 mb-6">My Applications</h2>
-          <p className="text-gray-300">You have not applied to any jobs yet.</p>
+    if (applications.length === 0) {      return (
+        <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">
+          <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">My Applications</h2>
+          <div className="text-center py-8">
+            <p className="text-gray-300">You haven't applied to any jobs yet.</p>
+            <button
+              onClick={() => router.push('/jobs')}
+              className="mt-4 bg-orange-900 text-white py-2 px-4 rounded hover:bg-orange-600"
+            >
+              Browse Jobs
+            </button>
+          </div>
         </div>
       );
-    }
-    return (
-      <div className="bg-black/70 p-4 md:p-10 pt-16 md:pt-20 rounded-lg shadow-lg">
-        <h2 className="text-3xl font-semibold text-orange-500 mb-6">My Applications</h2>
-        <div className="space-y-4">
+    }    return (
+      <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">
+        <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">My Applications</h2>
+        <div className="space-y-3">
           {applications.map((app) => (
-            <div key={app.id} className="bg-black/50 p-4 rounded-lg">
-              <h3 className="text-orange-500 font-bold">{app.jobTitle}</h3>
-              <p className="text-gray-400 text-sm">Company: {app.companyName}</p>
-              <p className="text-gray-300 text-sm">Applied on: {app.applicationDate}</p>
-              <p className="text-gray-300 text-sm">Status: <span className="font-semibold">{app.status}</span></p>
-              {/* Add link to job details page if available */}
+            <div key={app.id} className="bg-black/60 rounded-lg border border-orange-900/30 transition-all duration-200 cursor-pointer hover:shadow-lg p-4">
+              <h3 className="font-semibold text-orange-400">{app.jobTitle}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                <div>
+                  <span className="block text-xs text-orange-300">Company</span>
+                  <span className="text-gray-200">{app.companyName}</span>
+                </div>
+                <div>
+                  <span className="block text-xs text-orange-300">Applied on</span>
+                  <span className="text-gray-200">{app.applicationDate}</span>
+                </div>
+                <div>
+                  <span className="block text-xs text-orange-300">Status</span>
+                  <span className="px-1.5 md:px-2 py-0.5 rounded-full text-xs bg-orange-900/50 text-orange-300 border border-orange-700">{app.status}</span>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -941,11 +957,8 @@ const SeekerDashboard = () => {
     if (seekerProfile.behanceUrl) mainLinks.push({ href: seekerProfile.behanceUrl, label: 'Behance', icon: '🎨' });
 
     // Data for experience and education
-    const firstExperience = seekerProfile.experience && seekerProfile.experience.length > 0 ? seekerProfile.experience[0] : null;
-    const firstEducation = seekerProfile.education && seekerProfile.education.length > 0 ? seekerProfile.education[0] : null;
-
-    return (
-      <div className="bg-black/80 p-8 rounded-xl shadow-2xl w-full max-w-5xl mx-auto pt-16 md:pt-20">
+    const firstExperience = seekerProfile.experience && seekerProfile.experience.length > 0 ? seekerProfile.experience[0] : null;    const firstEducation = seekerProfile.education && seekerProfile.education.length > 0 ? seekerProfile.education[0] : null;    return (
+      <div className="bg-black/60 rounded-lg border border-orange-900/30 p-6 pt-16 md:pt-20 shadow-lg w-full max-w-5xl mx-auto">
         {/* Top Section: Photo, Name, Title */}
         <div className="flex flex-col md:flex-row items-center gap-8 mb-6">
           {/* Profile photo */}
@@ -1279,32 +1292,35 @@ const SeekerDashboard = () => {
       </div>
     );
   };  // Render Settings Tab Content (Editable Form)
-  const renderSettings = () => {
-    return (
-      <div className="bg-black/30 p-4 md:p-6 rounded-xl mb-6 md:mb-10 border border-gray-700 hover:border-orange-500 transition-colors">
-        <h2 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Settings</h2>
-        <div className="flex gap-4 mb-6 md:mb-8">
+  const renderSettings = () => {    return (
+      <div className="bg-black/70 rounded-lg shadow-lg p-6">
+        <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">Settings</h2>        <div className="flex gap-6 mb-6 items-end border-b border-orange-900/60">
           <button
-            className={`py-2 px-4 rounded-lg font-semibold text-sm transition-colors ${settingsTab === 'profile' ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-800 hover:bg-gray-700 text-gray-100'}`}
+            className={`relative text-base font-semibold mr-2 transition-colors pb-1 ${settingsTab === 'profile' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
             onClick={() => setSettingsTab('profile')}
           >
             Profile
+            {settingsTab === 'profile' && (
+              <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
+            )}
           </button>
           <button
-            className={`py-2 px-4 rounded-lg font-semibold text-sm transition-colors ${settingsTab === 'general' ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-800 hover:bg-gray-700 text-gray-100'}`}
+            className={`relative text-base font-semibold transition-colors pb-1 ${settingsTab === 'general' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
             onClick={() => setSettingsTab('general')}
           >
             General
+            {settingsTab === 'general' && (
+              <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
+            )}
           </button>
-        </div>        {settingsTab === 'profile' && (
+        </div>{settingsTab === 'profile' && (
           <form onSubmit={handleProfileSubmit}>
             {/* Personal Data */}
             <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Personal Data</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-6 md:mb-10">
               {/* COLUMN 1 - Personal Info */}
               <div className="space-y-4 md:space-y-6 col-span-1 md:col-span-1">
-                {/* Name */}
-                <div>
+                {/* Name */}                <div>
                   <label htmlFor="name" className="block text-sm font-semibold text-gray-300 mb-1">
                     First Name
                   </label>
@@ -1314,7 +1330,7 @@ const SeekerDashboard = () => {
                     name="name" 
                     value={seekerProfile.name ?? ""} 
                     onChange={handleProfileChange} 
-                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
+                    className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm" 
                     required 
                   />
                 </div>
@@ -3281,22 +3297,26 @@ const SeekerDashboard = () => {
           {activeTab === "myApplications" && renderMyApplications()}
           {activeTab === "instantJobs" && renderInstantJobsTab()}
           {activeTab === "settings" && renderSettings()}
-          {activeTab === "support" && (
-            <div className="bg-black/70 p-10 rounded-lg shadow-lg">
-              <h2 className="text-3xl font-semibold text-orange-500 mb-6">Support</h2>
-              {/* Tabs for New Ticket and My Tickets */}
-              <div className="flex gap-4 mb-6">
+          {activeTab === "support" && (            <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">
+              <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">Support</h2>{/* Tabs for New Ticket and My Tickets */}
+              <div className="flex gap-6 mb-6 items-end border-b border-orange-900/60">
                 <button
-                  className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${activeSupportTab === 'new' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
+                  className={`relative text-base font-semibold mr-2 transition-colors pb-1 ${activeSupportTab === 'new' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
                   onClick={() => setActiveSupportTab('new')}
                 >
                   New Ticket
+                  {activeSupportTab === 'new' && (
+                    <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
+                  )}
                 </button>
                 <button
-                  className={`py-2 px-6 rounded-lg font-semibold text-sm transition-colors ${activeSupportTab === 'my' ? 'bg-orange-500 text-white' : 'bg-black/30 text-orange-400 hover:bg-orange-600/20'}`}
+                  className={`relative text-base font-semibold transition-colors pb-1 ${activeSupportTab === 'my' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
                   onClick={() => setActiveSupportTab('my')}
                 >
                   My Tickets
+                  {activeSupportTab === 'my' && (
+                    <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
+                  )}
                 </button>
               </div>
               
@@ -3304,9 +3324,8 @@ const SeekerDashboard = () => {
               {activeSupportTab === 'new' && (
                 <form onSubmit={handleSubmitTicket} className="space-y-6 max-w-lg">
                   <div>
-                    <label className="block text-sm text-gray-300 mb-1">Platform Area/Function <span className="text-red-400">*</span></label>
-                    <select
-                      className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
+                    <label className="block text-sm text-gray-300 mb-1">Platform Area/Function <span className="text-red-400">*</span></label>                    <select
+                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
                       value={ticketArea}
                       onChange={e => setTicketArea(e.target.value)}
                       required
@@ -3404,11 +3423,10 @@ const SeekerDashboard = () => {
                             <div className="text-gray-400">No messages yet.</div>
                           ) : (
                             <div className="space-y-3">
-                              {ticketMessages.map(msg => (
-                                <div key={msg.id} className={`flex ${msg.senderType === 'seeker' ? 'justify-end' : 'justify-start'}`}>
-                                  <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.senderType === 'seeker' ? 'bg-orange-500 text-white' : msg.isSystemMessage ? 'bg-gray-700/50 text-gray-300 italic' : 'bg-gray-700 text-gray-100'}`}>
+                              {ticketMessages.map(msg => (                              <div key={msg.id} className={`flex ${msg.senderType === 'seeker' ? 'justify-end' : 'justify-start'}`}>
+                                  <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.senderType === 'seeker' ? 'bg-orange-500 text-white' : msg.isSystemMessage ? 'bg-black/60 text-gray-300 italic' : 'bg-black/70 border border-orange-900/30 text-gray-200'}`}>
                                     {msg.message}
-                                    <div className="text-xs text-gray-300 mt-1 text-right">{new Date(msg.createdAt).toLocaleString()}</div>
+                                    <div className="text-xs text-gray-400 mt-1 text-right">{new Date(msg.createdAt).toLocaleString()}</div>
                                   </div>
                                 </div>
                               ))}
@@ -3419,19 +3437,17 @@ const SeekerDashboard = () => {
                         
                         {/* Message Input Form */}
                         {selectedTicket.status === 'open' && canSendMessage && (
-                          <form onSubmit={handleSendTicketMessage} className="flex gap-2 mt-auto">
-                            <input
+                          <form onSubmit={handleSendTicketMessage} className="flex gap-2 mt-auto">                            <input
                               type="text"
-                              className="flex-1 p-2 rounded bg-black/40 border border-orange-500/30 text-white"
+                              className="flex-1 p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
                               placeholder="Type your message..."
                               value={newMessage}
                               onChange={e => setNewMessage(e.target.value)}
                               disabled={sendingMessage}
                               required
-                            />
-                            <button
+                            />                            <button
                               type="submit"
-                              className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-60"
+                              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm"
                               disabled={sendingMessage || !newMessage.trim()}
                             >
                               {sendingMessage ? 'Sending...' : 'Send'}
