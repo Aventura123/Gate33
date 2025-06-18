@@ -119,6 +119,10 @@ export default function App({ Component, pageProps }: { Component: React.Compone
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="shortcut icon" href="/favicon-32x32.png" type="image/png" />
+        {/* PWA Fix Script - Only on homepage */}
+        {router.pathname === '/' && (
+          <script src="/pwa-homepage-fix.js" defer />
+        )}
       </Head>
       <QueryClientProvider client={queryClient}>
         <Layout>

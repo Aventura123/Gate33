@@ -3,10 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import Layout from '../components/Layout';
 import ContactForm from '../components/ContactForm';
 import DevNoticePopup from '../components/DevNoticePopup';
-import '../components/index-page.css';
-import '../styles/job-indicators.css';
 
 interface Partner {
   id: string;
@@ -151,18 +150,18 @@ function Home() {
   };
 
 
-
   return (
-    <>
-      {/* Card Indicators */}
-      <div className="card-indicators hidden lg:flex">
-        {cardSections.map((section) => (
-          <div
-            key={section.id}
-            className={`card-indicator ${activeJobCard === section.id ? 'active' : ''}`}
-          />
-        ))}
-      </div>
+    <Layout>
+      <>
+        {/* Card Indicators */}
+        <div className="card-indicators hidden lg:flex">
+          {cardSections.map((section) => (
+            <div
+              key={section.id}
+              className={`card-indicator ${activeJobCard === section.id ? 'active' : ''}`}
+            />
+          ))}
+        </div>
 
       {/* Hero Section - NEW LAYOUT WITH FIXED BACKGROUND */}
       <section className="hero-section-fixed-bg relative flex flex-col justify-center min-h-[50vh] px-4 pt-16 md:pt-20 pb-12 overflow-hidden">
@@ -710,14 +709,14 @@ function Home() {
               className="border-0"
               defaultSubject="Contact from Gate33 Website"
               showSubjectField={false}
-              onSuccess={() => {
-                setShowContactModal(false);
+              onSuccess={() => {                setShowContactModal(false);
               }}
             />
           </div>
         </div>
       )}
-    </>
+      </>
+    </Layout>
   );
 }
 
