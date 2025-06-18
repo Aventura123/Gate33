@@ -1,10 +1,21 @@
 /** @type {import('next').NextConfig} */
+// Production-only PWA configuration
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: false, // Enable PWA in all environments for testing
-  buildExcludes: [/middleware-manifest\.json$/],
+  disable: false, // Always enable PWA - we only work in production
+  // Prevent multiple GenerateSW calls
+  mode: 'production',
+  cacheOnFrontEndNav: true,
+  reloadOnOnline: true,
+  buildExcludes: [
+    /middleware-manifest\.json$/,
+    /app-build-manifest\.json$/,
+    /server\/.*\.js$/,
+    /\.map$/
+  ],
+  publicExcludes: ['!robots.txt', '!sitemap.xml'],
   fallbacks: {
     document: '/offline.html',
   },
@@ -71,6 +82,26 @@ module.exports = withPWA({
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
   trailingSlash: false,
+  // Production-only optimizations
+  compress: true,
+  generateEtags: true,
+  httpAgentOptions: {
+    keepAlive: true,
+  },  // Next.js 15 optimizations
+  experimental: {
+    optimizePackageImports: ['@headlessui/react', '@heroicons/react'],
+  },
+  // Turbopack configuration (stable in Next.js 15)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+  },compiler: {
+    removeConsole: true, // Always remove console logs - production only
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'gate33.net' },
@@ -83,25 +114,49 @@ module.exports = withPWA({
     ],
   },
   distDir: '.next',
-  poweredByHeader: false,
-  webpack: (config, { dev, isServer }) => {
-    if (dev && isServer) {
-      config.watchOptions = {
-        ...config.watchOptions,
-        poll: 1000,
-        aggregateTimeout: 300,
-      };
-    }
-    
-    if (dev) {
-      config.devtool = 'eval-source-map';
-    } else {
-      config.devtool = false;
-    }
-    
+  poweredByHeader: false,  webpack: (config, { isServer, dev }) => {
+    // Production-only webpack optimizations
+    config.devtool = false;
     config.infrastructureLogging = {
       level: 'error',
     };
+    
+    // Prevent multiple service worker compilations and GenerateSW warnings
+    if (!isServer && !dev) {
+      config.optimization = {
+        ...config.optimization,
+        minimize: true,
+        splitChunks: {
+          ...config.optimization.splitChunks,
+          cacheGroups: {
+            ...config.optimization.splitChunks.cacheGroups,
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+            },
+          },
+        },
+      };
+      
+      // Ensure PWA plugin runs only once
+      const hasWorkboxPlugin = config.plugins.some(plugin => 
+        plugin.constructor.name === 'GenerateSW' || 
+        plugin.constructor.name === 'InjectManifest'
+      );
+      
+      if (hasWorkboxPlugin) {
+        config.plugins = config.plugins.filter((plugin, index, arr) => {
+          const isWorkboxPlugin = plugin.constructor.name === 'GenerateSW' || 
+                                 plugin.constructor.name === 'InjectManifest';
+          if (isWorkboxPlugin) {
+            // Keep only the first occurrence
+            return arr.findIndex(p => p.constructor.name === plugin.constructor.name) === index;
+          }
+          return true;
+        });
+      }
+    }
     
     return config;
   },
