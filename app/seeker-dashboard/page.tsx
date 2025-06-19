@@ -13,6 +13,8 @@ import WalletButton from '../../components/WalletButton';
 import { web3Service } from "../../services/web3Service";
 import NotificationsPanel, { NotificationBell } from '../../components/ui/NotificationsPanel';
 
+const isProduction = process.env.NEXT_PUBLIC_DEPLOY_STAGE === "production";
+
 // Function to create a notification for seeker
 async function createSeekerNotification({
   userId,
@@ -895,10 +897,10 @@ const SeekerDashboard = () => {
     }
   }, [selectedJobId, instantJobs, availableInstantJobs]);
   // Render My Applications Tab Content
-  const renderMyApplications = () => {
-    if (applications.length === 0) {      return (
-        <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">
-          <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">My Applications</h2>
+  const renderMyApplications = () => {    if (applications.length === 0) {      return (
+        <div className="bg-black/70 rounded-lg shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-orange-500 mb-4 text-center">My Applications</h2>
+          <div className="border-b border-orange-900/60 mb-6"></div>
           <div className="text-center py-8">
             <p className="text-gray-300">You haven't applied to any jobs yet.</p>
             <button
@@ -911,8 +913,9 @@ const SeekerDashboard = () => {
         </div>
       );
     }    return (
-      <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">
-        <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">My Applications</h2>
+      <div className="bg-black/70 rounded-lg shadow-lg p-6">
+        <h2 className="text-2xl font-bold text-orange-500 mb-4 text-center">My Applications</h2>
+        <div className="border-b border-orange-900/60 mb-6"></div>
         <div className="space-y-3">
           {applications.map((app) => (
             <div key={app.id} className="bg-black/60 rounded-lg border border-orange-900/30 transition-all duration-200 cursor-pointer hover:shadow-lg p-4">
@@ -2737,9 +2740,22 @@ const SeekerDashboard = () => {
         )}
       </div>
     );
-  };
-  // Render Instant Jobs Tab Content
+  };  // Render Instant Jobs Tab Content
   const renderInstantJobsTab = () => {
+    // Block instant jobs in production
+    if (isProduction) {
+      return (
+        <div className="bg-black/70 rounded-lg shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-orange-500 mb-4 text-center">Instant Jobs</h2>
+          <div className="border-b border-orange-900/60 mb-6"></div>
+          <div className="text-center py-8">
+            <h1 className="text-4xl font-bold mb-4 text-orange-500">Coming Soon</h1>
+            <p className="text-lg text-gray-300">This feature will be available soon.</p>
+          </div>
+        </div>
+      );
+    }
+
     const renderContent = () => {
       if (activeSection === 'available') {
         return (
@@ -2883,11 +2899,10 @@ const SeekerDashboard = () => {
       }
       
       return null;
-    };
-
-    return (
-      <div className="bg-black/70 p-4 md:p-10 pt-16 md:pt-20 rounded-lg shadow-lg">
-        <h2 className="text-3xl font-semibold text-orange-500 mb-6">Instant Jobs</h2>
+    };    return (
+      <div className="bg-black/70 p-6 rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold text-orange-500 mb-4 text-center">Instant Jobs</h2>
+        <div className="border-b border-orange-900/60 mb-6"></div>
         {renderContent()}
       </div>
     );
@@ -3316,9 +3331,10 @@ const SeekerDashboard = () => {
           {activeTab === "myProfile" && renderMyProfile()}
           {activeTab === "myApplications" && renderMyApplications()}
           {activeTab === "instantJobs" && renderInstantJobsTab()}
-          {activeTab === "settings" && renderSettings()}
-          {activeTab === "support" && (            <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">
-              <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">Support</h2>{/* Tabs for New Ticket and My Tickets */}
+          {activeTab === "settings" && renderSettings()}          {activeTab === "support" && (            <div className="bg-black/70 rounded-lg shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-orange-500 mb-4 text-center">Support</h2>
+              <div className="border-b border-orange-900/60 mb-6"></div>
+              {/* Tabs for New Ticket and My Tickets */}
               <div className="flex gap-6 mb-6 items-end border-b border-orange-900/60">
                 <button
                   className={`relative text-base font-semibold mr-2 transition-colors pb-1 ${activeSupportTab === 'new' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
