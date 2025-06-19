@@ -655,7 +655,19 @@ function Home() {
                   >
                     <span className="sr-only">{`Visit ${partner.name}`}</span>
                     <div className="rounded-full bg-[#222] flex items-center justify-center w-[70px] h-[70px] md:w-[90px] md:h-[90px]">
-                      <Image src={partner.logoUrl} alt={partner.name} width={60} height={60} className="md:w-20 md:h-20 object-contain rounded-full" />
+                      <Image
+                        src={partner.logoUrl || "/favicon2x.png"}
+                        alt={partner.name}
+                        width={60}
+                        height={60}
+                        className="md:w-20 md:h-20 object-contain rounded-full"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          if (target.src !== window.location.origin + "/favicon2x.png") {
+                            target.src = "/favicon2x.png";
+                          }
+                        }}
+                      />
                     </div>
                   </a>
                 ))

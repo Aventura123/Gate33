@@ -111,6 +111,7 @@ module.exports = withPWA({
       { protocol: 'https', hostname: 'miro.medium.com' },
       { protocol: 'https', hostname: 'support.coingecko.com' },
       { protocol: 'https', hostname: 'styles.redditmedia.com' },
+      { protocol: 'https', hostname: 'firebasestorage.googleapis.com' }, // Adicionado Firebase Storage
     ],
   },
   distDir: '.next',
