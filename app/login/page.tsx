@@ -2,11 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import "../../components/global.css"; // Ensure global styles are applied
+import "../../components/global.css";
 import Link from "next/link";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../lib/firebase";
-import bcrypt from "bcryptjs";
 import Layout from '../../components/Layout';
 import { AuthProvider, useAuth } from '../../components/AuthProvider';
 
@@ -133,141 +130,113 @@ function SeekerLoginForm() {
   );
 }
 
-function UnifiedLoginPage() {
-  const [activeTab, setActiveTab] = useState<"seeker" | "company">("seeker");
-  
-  // Company State
-  const [companyUsername, setCompanyUsername] = useState("");
+// Componente separado para o login das companies que usa Firebase Auth
+function CompanyLoginForm() {
+  const { loginWithEmail } = useAuth();
+  const [companyEmail, setCompanyEmail] = useState("");
   const [companyPassword, setCompanyPassword] = useState("");
-    const [error, setError] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // Handle company login remains the same
   const handleCompanyLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
+
+    if (!companyEmail || !companyPassword) {
+      setError("Please enter both email and password.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Check if username/email exists in admins collection (block admin login for both forms)
-      const adminsRef = collection(db, "admins");
-      const adminsQ = query(adminsRef, where("email", "==", companyUsername));
-      const adminsSnapshot = await getDocs(adminsQ);
-      if (!adminsSnapshot.empty) {
-        setError("This email is not registered for login on this page.");
-        setIsLoading(false);
-        return;
-      }
-      // Check if username/email exists in seekers collection
-      const seekersRef = collection(db, "seekers");
-      const seekersQ = query(seekersRef, where("email", "==", companyUsername));
-      const seekersSnapshot = await getDocs(seekersQ);
-      if (!seekersSnapshot.empty) {
-        setError("This email is not registered for login on this page.");
-        setIsLoading(false);
-        return;
-      }
-      // Sends email and password to the backend normally
-      const res = await fetch("/api/company/login", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({ email: companyUsername, password: companyPassword })
-      });
-
-      console.log("Response status:", res.status);
-      const data = await res.json();
-      console.log("Response received:", data);
-
-      if (res.ok) {
-        console.log("Login successful!");
-
-        // Save token in localStorage
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-          console.log("Token saved in localStorage");
-          
-          // Extract company ID from token if possible (it's often base64 encoded)
-          try {
-            const decodedToken = atob(data.token);
-            localStorage.setItem("companyId", decodedToken);
-            console.log("CompanyId extracted from token:", decodedToken);
-          } catch (err) {
-            console.warn("Couldn't decode token to extract companyId:", err);
-          }
-        }
-
-        // FIX: Look for data in the 'company' property instead of 'userData'
-        if (data.company) {
-          console.log("Company data found:", data.company);
-          localStorage.setItem("companyId", data.company.id);
-          localStorage.setItem("companyName", data.company.name || companyUsername);
-          
-          if (data.company.photo) {
-            localStorage.setItem("companyPhoto", data.company.photo);
-          }
-        } 
-        // Also check the old userData format (for compatibility)
-        else if (data.userData) {
-          console.log("Company data found in userData:", data.userData);
-          localStorage.setItem("companyId", data.userData.id);
-          localStorage.setItem("companyName", data.userData.name || data.userData.username || companyUsername);
-          
-          if (data.userData.photoURL) {
-            localStorage.setItem("companyPhoto", data.userData.photoURL);
-          } else if (data.userData.photo) {
-            localStorage.setItem("companyPhoto", data.userData.photo);
-          }
-        } 
-        else {
-          console.warn("User data not found in response - using username as fallback");
-          // If we can't find structured data, at least save the username
-          localStorage.setItem("companyName", companyUsername);
-        }
-
-        console.log("Data saved in localStorage:", {
-          companyId: localStorage.getItem("companyId"),
-          companyName: localStorage.getItem("companyName"),
-          companyPhoto: localStorage.getItem("companyPhoto"),
-        });
-
-        document.cookie = "isAuthenticated=true; path=/; max-age=86400"; // 24 hours
-        console.log("Authentication cookie set, redirecting to dashboard");
-        router.replace("/company-dashboard");
-      } else {
-        console.error("Login error:", data.error);
-        setError(data.error || "Username or password invalid");
-      }
+      await loginWithEmail(companyEmail, companyPassword, 'company');
+      router.replace("/company-dashboard");
     } catch (err: any) {
-      console.error("Login error:", err);
-      setError("An error occurred. Please try again.");
+      console.error("Error during company login:", err);
+      setError(err.message || "Invalid email or password or company not approved.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Layout>
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-black to-orange-900 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="absolute top-4 left-4">
-          <Link href="/" className="flex items-center text-white hover:text-orange-300 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-            </svg>
-            Back to Home
-          </Link>
+    <form onSubmit={handleCompanyLogin} className="p-8">
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <span className="block sm:inline">{error}</span>
         </div>
-        
+      )}
+      
+      <div className="mb-6">
+        <label htmlFor="company-email" className="block text-sm font-medium text-gray-700 mb-1">
+          Email
+        </label>
+        <input
+          id="company-email"
+          type="email"
+          placeholder="Enter your company email"
+          value={companyEmail}
+          onChange={(e) => setCompanyEmail(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-black"
+          required
+        />
+      </div>
+      
+      <div className="mb-6">
+        <label htmlFor="company-password" className="block text-sm font-medium text-gray-700 mb-1">
+          Password
+        </label>
+        <input
+          id="company-password"
+          type="password"
+          placeholder="Enter your password"
+          value={companyPassword}
+          onChange={(e) => setCompanyPassword(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-black"
+          required
+        />
+      </div>
+      
+      <div className="mt-2 text-right">
+        <Link href="/forgot-password" className="text-xs text-orange-500 hover:text-orange-700 font-medium">
+          Forgot password?
+        </Link>
+      </div>
+      
+      <div>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className={`w-full bg-orange-500 text-white py-3 px-4 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors font-medium ${
+            isLoading ? "opacity-70 cursor-not-allowed" : ""
+          }`}
+        >
+          {isLoading ? "Logging in..." : "Login as Company"}
+        </button>
+      </div>
+      
+      <div className="mt-6 text-center">
+        <p className="text-gray-600">
+          Don't have a company account?{" "}
+          <Link href="/company-register" className="text-orange-500 hover:text-orange-700 font-medium">
+            Sign up
+          </Link>
+        </p>
+      </div>
+    </form>
+  );
+}
+
+function UnifiedLoginPage() {
+  const [activeTab, setActiveTab] = useState<"seeker" | "company">("seeker");
+
+  return (
+    <Layout>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-orange-900 text-white p-4">
         <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white">Client Login</h2>
-            <p className="mt-2 text-sm text-gray-200">Choose your account type to get started</p>
-          </div>
-          
-          {/* Account Type Selection Cards */}
-          <div className="flex justify-center gap-4 mb-6">
+          <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
             <div 
               className={`cursor-pointer flex flex-col items-center p-4 rounded-lg ${
                 activeTab === "seeker" 
@@ -308,68 +277,9 @@ function UnifiedLoginPage() {
             
             {/* Company Login Form */}
             {activeTab === "company" && (
-              <form onSubmit={handleCompanyLogin} className="p-8">
-                {error && (
-                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <span className="block sm:inline">{error}</span>
-                  </div>
-                )}
-                
-                <div className="mb-6">
-                  <label htmlFor="company-username" className="block text-sm font-medium text-gray-700 mb-1">
-                    Username
-                  </label>
-                  <input
-                    id="company-username"
-                    type="text"
-                    placeholder="Enter your company username"
-                    value={companyUsername}
-                    onChange={(e) => setCompanyUsername(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-black"
-                    required
-                  />
-                </div>
-                
-                <div className="mb-6">
-                  <label htmlFor="company-password" className="block text-sm font-medium text-gray-700 mb-1">
-                    Password
-                  </label>
-                  <input
-                    id="company-password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={companyPassword}
-                    onChange={(e) => setCompanyPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-black"
-                    required
-                  />
-                </div>
-                <div className="mt-2 text-right">
-                  <Link href="/forgot-password" className="text-xs text-orange-500 hover:text-orange-700 font-medium">
-                    Forgot password?
-                  </Link>
-                </div>
-                <div>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className={`w-full bg-orange-500 text-white py-3 px-4 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors font-medium ${
-                      isLoading ? "opacity-70 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {isLoading ? "Logging in..." : "Login as Company"}
-                  </button>
-                </div>
-                
-                <div className="mt-6 text-center">
-                  <p className="text-gray-600">
-                    Don't have a company account?{" "}
-                    <Link href="/company-register" className="text-orange-500 hover:text-orange-700 font-medium">
-                      Sign up
-                    </Link>
-                  </p>
-                </div>
-              </form>
+              <AuthProvider>
+                <CompanyLoginForm />
+              </AuthProvider>
             )}
           </div>
         </div>

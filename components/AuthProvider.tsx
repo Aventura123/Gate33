@@ -54,11 +54,10 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
       setUser(user);
       
       // Try to determine user role from localStorage
-      if (user) {
-        // Try to determine role based on tokens in localStorage
+      if (user) {        // Try to determine role based on tokens in localStorage
         if (localStorage.getItem('seekerToken')) {
           setUserRole('seeker');
-        } else if (localStorage.getItem('token') || localStorage.getItem('companyId')) {
+        } else if (localStorage.getItem('companyToken') || localStorage.getItem('token') || localStorage.getItem('companyId')) {
           setUserRole('company');
         } else if (localStorage.getItem('adminToken')) {
           setUserRole('admin');
@@ -126,22 +125,34 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
   const loginWithEmail = async (email: string, password: string, role: UserRole = 'seeker') => {
     setError(null);
     try {
-      // Only seekers use Firebase Auth for now
       if (role === 'seeker') {
         const result = await signInWithEmailAndPassword(auth, email, password);
-        // Store token for seekers
         localStorage.setItem('seekerToken', btoa(result.user.uid));
         setUserRole('seeker');
         return result.user;
+      } else if (role === 'company') {
+        const result = await signInWithEmailAndPassword(auth, email, password);
+        // Buscar dados da company no Firestore
+        const companyRef = doc(db, 'companies', result.user.uid);
+        const companySnap = await getDoc(companyRef);
+        if (!companySnap.exists()) {
+          throw new Error('Company not found.');
+        }
+        const companyData = companySnap.data();
+        if (!companyData.approved && companyData.status !== 'approved') {
+          throw new Error('Company account is pending approval by admin.');
+        }
+        localStorage.setItem('companyToken', btoa(result.user.uid));
+        setUserRole('company');
+        return result.user;
       } else {
-        throw new Error(`Email authentication via Firebase is only available for seeker accounts`);
+        throw new Error(`Email authentication via Firebase is only available for seeker or company accounts`);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to login with email and password');
       throw err;
     }
   };
-
   const signup = async (email: string, password: string, userData: any, role: UserRole = 'seeker') => {
     setError(null);
     try {
@@ -180,15 +191,17 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
       throw err;
     }
   };
-
   const logout = async () => {
     setError(null);
     try {
-      // If it's a Firebase-authenticated user (seeker)
+      // If it's a Firebase-authenticated user (seeker or company)
       if (userRole === 'seeker') {
         await signOut(auth);
         localStorage.removeItem('seekerToken');
       } else if (userRole === 'company') {
+        await signOut(auth);
+        localStorage.removeItem('companyToken');
+        // Also remove legacy tokens if they exist
         localStorage.removeItem('token');
         localStorage.removeItem('companyId');
         localStorage.removeItem('companyName');
@@ -206,11 +219,10 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
       throw err;
     }
   };
-
   const resetPassword = async (email: string) => {
     setError(null);
     try {
-      // Firebase password reset (only for seeker)
+      // Firebase password reset (for seeker and company)
       await sendPasswordResetEmail(auth, email);
     } catch (err: any) {
       setError(err.message || 'Failed to send password reset email');
@@ -227,13 +239,18 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
         displayName,
         ...(photoURL && { photoURL })
       });
-      
-      // Also update in Firestore based on user role
+        // Also update in Firestore based on user role
       if (userRole === 'seeker' && auth.currentUser) {
         const userRef = doc(db, "seekers", auth.currentUser.uid);
         await updateDoc(userRef, {
           name: displayName.split(' ')[0],
           surname: displayName.split(' ').slice(1).join(' '),
+          ...(photoURL && { photoURL })
+        });
+      } else if (userRole === 'company' && auth.currentUser) {
+        const userRef = doc(db, "companies", auth.currentUser.uid);
+        await updateDoc(userRef, {
+          companyName: displayName,
           ...(photoURL && { photoURL })
         });
       }

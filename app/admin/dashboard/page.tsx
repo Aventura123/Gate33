@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { collection, addDoc, deleteDoc, doc, getDocs, updateDoc, getDoc, setDoc, query, where } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
 import { getStorage, ref, uploadBytes, deleteObject, getDownloadURL } from "firebase/storage";
-import { getAuth } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import bcrypt from "bcryptjs";
 import { AdminRole, useAdminPermissions } from "../../../hooks/useAdminPermissions";
 import { ethers } from "ethers";
@@ -329,8 +329,7 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
     fetchRejectedCompanies();
   }, []);
 
-  const auth = getAuth();
-  const handleApproveCompany = async (companyId: string) => {
+  const auth = getAuth();  const handleApproveCompany = async (companyId: string) => {
     setApproving(companyId);
     try {
       if (!db) {
@@ -359,43 +358,36 @@ const AdminDashboard: React.FC = () => {  const router = useRouter();
         companySize,
         username = email, // Use email as username if not defined
         name = companyName // Use companyName as name if not defined
-      } = companyData;
-
-      // Check if the password is already encrypted
-      let hashedPassword = password;
+      } = companyData;      // Create user in Firebase Auth
+      const auth = getAuth();
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const authUid = userCredential.user.uid;
       
-      // If the password does not appear to be in bcrypt format (starts with $2a$ or $2b$)
-      if (!(password.startsWith('$2a$') || password.startsWith('$2b$'))) {
-        // Encrypt the password using bcrypt
-        const salt = await bcrypt.genSalt(10);
-        hashedPassword = await bcrypt.hash(password, salt);
-        console.log("Password successfully encrypted for company approval");
-      } else {
-        console.log("Password is already in encrypted format");
-      }
+      console.log("Company user created in Auth with UID:", authUid);
 
-      // Prepare the data object ensuring all necessary fields are present
+      // Prepare the data object for Firestore
       const approvedCompanyData = {
         ...companyData,         // Keep all original fields
         username: username,     // Ensure username exists (using email as fallback)
         email: email,           // Ensure email is present
         name: name,             // Ensure name is present
         companyName: companyName, // Ensure companyName is present
-        password: hashedPassword, // Ensure password is encrypted
+        authUid: authUid,       // Store the Auth UID
         approvedAt: new Date().toISOString(),
         status: "approved",
-        approved: true
+        approved: true,
+        authProvider: "email"
       };
 
       console.log("Approved company data:", {
-        id: companyId,
+        id: authUid,
         email: email,
-        username: username, // Log the username that will be used for login
+        username: username,
         companyName: companyName
       });
 
-      // Save to the companies collection
-      const approvedCompanyRef = doc(db, "companies", companyId);
+      // Save to the companies collection using Auth UID as document ID
+      const approvedCompanyRef = doc(db, "companies", authUid);
       await setDoc(approvedCompanyRef, approvedCompanyData);
 
       // Remove from the pendingCompanies collection
