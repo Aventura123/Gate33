@@ -478,4 +478,13 @@ const SeekerSignupPage: React.FC = () => {
   );
 };
 
-export default SeekerSignupPage;
+// Wrap the main component with AuthProvider
+const SeekerSignupPageWithAuth = () => {
+  return (
+    <AuthProvider>
+      <SeekerSignupPage />
+    </AuthProvider>
+  );
+};
+
+export default SeekerSignupPageWithAuth;
