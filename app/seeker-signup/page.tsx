@@ -12,8 +12,8 @@ import { AuthProvider, useAuth } from '../../components/AuthProvider'; // Import
 
 const isProduction = process.env.NEXT_PUBLIC_DEPLOY_STAGE === "production";
 
-// Componente separado para o signup dos seekers que usa Firebase Auth
-function SeekerSignupForm() {
+// Separate component for seekers login that uses Firebase Auth
+function SeekerLoginForm() {
   const { signup, loginWithGoogle } = useAuth();
   
   const [email, setEmail] = useState("");

@@ -32,7 +32,12 @@ export async function fetchNativeTokenBalances(address: string = SERVICE_WALLET_
     if (response.ok) {
       const data = await response.json();
       if (data.balances && Array.isArray(data.balances)) {
-        return data.balances;
+        // Filter duplicates - keep only the last entry for each network
+        const uniqueBalances = new Map<string, NativeTokenBalance>();
+        data.balances.forEach((balance: NativeTokenBalance) => {
+          uniqueBalances.set(balance.network, balance);
+        });
+        return Array.from(uniqueBalances.values());
       }
     }
     

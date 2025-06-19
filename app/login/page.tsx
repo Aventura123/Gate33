@@ -7,7 +7,7 @@ import Link from "next/link";
 import Layout from '../../components/Layout';
 import { AuthProvider, useAuth } from '../../components/AuthProvider';
 
-// Componente separado para o login dos seekers que usa Firebase Auth
+// Separate component for seekers login that uses Firebase Auth
 function SeekerLoginForm() {
   const { loginWithEmail, loginWithGoogle } = useAuth();
   const [seekerEmail, setSeekerEmail] = useState("");
@@ -130,7 +130,7 @@ function SeekerLoginForm() {
   );
 }
 
-// Componente separado para o login das companies que usa Firebase Auth
+// Separate component for companies login that uses Firebase Auth
 function CompanyLoginForm() {
   const { loginWithEmail } = useAuth();
   const [companyEmail, setCompanyEmail] = useState("");
