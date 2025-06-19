@@ -43,6 +43,8 @@ const AdminPartnersManager: React.FC = () => {
     description: "",
     website: ""
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Mobile detection effect
   useEffect(() => {
@@ -98,31 +100,32 @@ const AdminPartnersManager: React.FC = () => {
 
   const handleAddPartner = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!newPartner.name || !newPartner.logoUrl) {
-      alert("Partner name and logo URL are required");
+    if (!newPartner.name || !logoFile) {
+      alert("Partner name and logo image are required");
       return;
     }
-
+    setUploadingLogo(true);
     try {
+      // Upload logo to Firebase Storage
+      const storage = (await import("../../lib/firebase")).storage || (await import("firebase/storage"));
+      const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+      const fileRef = ref(storage, `partners/${Date.now()}-${logoFile.name}`);
+      await uploadBytes(fileRef, logoFile);
+      const logoUrl = await getDownloadURL(fileRef);
+      // Save partner with logoUrl
       await addDoc(collection(db, "partners"), {
         ...newPartner,
+        logoUrl,
         createdAt: new Date().toISOString()
       });
-      
-      // Reset form
-      setNewPartner({
-        name: "",
-        logoUrl: "",
-        description: "",
-        website: ""
-      });
-      
-      // Refresh partners list
+      setNewPartner({ name: "", logoUrl: "", description: "", website: "" });
+      setLogoFile(null);
       fetchPartners();
     } catch (error) {
       console.error("Error adding partner:", error);
       alert("Failed to add partner. Please try again.");
+    } finally {
+      setUploadingLogo(false);
     }
   };
   const handleDeletePartner = async (id: string) => {
@@ -213,14 +216,15 @@ const AdminPartnersManager: React.FC = () => {
             </div>
             
             <div>
-              <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-300 mb-1`}>Logo URL*</label>
+              <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-300 mb-1`}>Logo Image*</label>
               <input
-                type="text"
+                type="file"
+                accept="image/*"
                 className={`w-full ${isMobile ? 'px-2 py-2 text-xs' : 'px-3 py-2 text-sm'} bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none`}
-                value={newPartner.logoUrl}
-                onChange={(e) => setNewPartner({...newPartner, logoUrl: e.target.value})}
+                onChange={e => setLogoFile(e.target.files?.[0] || null)}
                 required
               />
+              {uploadingLogo && <span className="text-xs text-orange-400 ml-2">Uploading...</span>}
             </div>
             
             <div>
@@ -278,7 +282,7 @@ const AdminPartnersManager: React.FC = () => {
                         alt={partner.name} 
                         className="max-w-full max-h-full object-contain"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/logo2.png'; // Fallback image
+                          (e.target as HTMLImageElement).src = '/favicon2x.png'; // Fallback image
                         }}
                       />
                     </div>
@@ -339,11 +343,11 @@ const AdminPartnersManager: React.FC = () => {
                       <div className={`flex items-center ${isMobile ? 'space-x-2' : 'space-x-3'}`}>
                         <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} bg-black/50 rounded-md border border-gray-600 flex items-center justify-center overflow-hidden flex-shrink-0`}>
                           <img 
-                            src={vipCompany.logoUrl || '/logo2.png'} 
+                            src={vipCompany.logoUrl || '/favicon2x.png'} 
                             alt={vipCompany.companyName} 
                             className="max-w-full max-h-full object-contain"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/logo2.png'; // Fallback image
+                              (e.target as HTMLImageElement).src = '/favicon2x.png'; // Fallback image
                             }}
                           />
                         </div>
