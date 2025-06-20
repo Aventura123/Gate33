@@ -6,9 +6,9 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   disable: false, // Always enable PWA - we only work in production
   // Prevent multiple GenerateSW calls
-  mode: 'production',
-  cacheOnFrontEndNav: true,
-  reloadOnOnline: true,  buildExcludes: [
+  mode: 'production',  cacheOnFrontEndNav: true,
+  reloadOnOnline: true,
+  buildExcludes: [
     /middleware-manifest\.json$/,
     /app-build-manifest\.json$/,
     /dynamic-css-manifest\.json$/,
@@ -85,13 +85,14 @@ module.exports = withPWA({
   productionBrowserSourceMaps: false,
   trailingSlash: false,
   // Production-only optimizations
-  compress: true,
-  generateEtags: true,
+  compress: true,  generateEtags: true,
   httpAgentOptions: {
     keepAlive: true,
-  },  // Next.js 15 optimizations
+  },
+  // Next.js 15 optimizations
   experimental: {
     optimizePackageImports: ['@headlessui/react', '@heroicons/react'],
+    optimizeCss: true,
   },
   // Turbopack configuration (stable in Next.js 15)
   turbopack: {
@@ -101,7 +102,8 @@ module.exports = withPWA({
         as: '*.js',
       },
     },
-  },compiler: {
+  },
+  compiler: {
     removeConsole: true, // Always remove console logs - production only
   },
   images: {
@@ -115,9 +117,9 @@ module.exports = withPWA({
       { protocol: 'https', hostname: 'styles.redditmedia.com' },
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com' }, // Adicionado Firebase Storage
     ],
-  },
-  distDir: '.next',
-  poweredByHeader: false,  webpack: (config, { isServer, dev }) => {
+  },  distDir: '.next',
+  poweredByHeader: false,
+  webpack: (config, { isServer, dev }) => {
     // Production-only webpack optimizations
     config.devtool = false;
     config.infrastructureLogging = {
@@ -160,8 +162,7 @@ module.exports = withPWA({
         });
       }
     }
-    
-    return config;
+      return config;
   },  async headers() {
     return [
       {
@@ -176,12 +177,26 @@ module.exports = withPWA({
         source: '/_next/static/css/(.*)',
         headers: [
           { key: 'Content-Type', value: 'text/css; charset=utf-8' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
       {
         source: '/_next/static/js/(.*)',
         headers: [
           { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/_next/static/chunks/(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/_next/static/media/(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
     ];
