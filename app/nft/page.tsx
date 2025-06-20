@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Layout from "../../components/Layout"; // Import the Layout component
+import FullScreenLayout from "../../components/FullScreenLayout";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
@@ -134,10 +134,9 @@ export default function NFTPage() {
     console.log("Sort option changed:", sortOption);
     console.log("Filtered NFTs:", filteredNFTs);
   }, [sortOption, filteredNFTs]);
-
   // Adicionei classes responsivas para exibir um cartão menor em lista com uma imagem menor no lado esquerdo na versão mobile
   return (
-    <Layout>
+    <FullScreenLayout>
       <div className="pt-16 md:pt-20 pb-12 sm:pb-16 px-4 min-h-screen bg-gradient-to-b from-black via-zinc-900 to-orange-950 text-white">
         <div className="flex flex-col sm:flex-row justify-center items-center mb-8 sm:mb-12">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wide text-center">
@@ -198,9 +197,8 @@ export default function NFTPage() {
         {filteredNFTs.length === 0 && (
           <div className="text-center text-orange-400 text-lg font-semibold py-12">
             No NFTs found.
-          </div>
-        )}
+          </div>        )}
       </div>
-    </Layout>
+    </FullScreenLayout>
   );
 }

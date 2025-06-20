@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, JSX, useCallback, useRef } from "react";
-import Layout from "../../components/Layout"; // Assuming Layout component exists and is suitable
+import FullScreenLayout from "../../components/FullScreenLayout";
 import { useRouter } from "next/navigation";
 import { collection, getDocs, doc, getDoc, updateDoc, query, where, addDoc, serverTimestamp, onSnapshot, orderBy } from "firebase/firestore"; // Add necessary imports
 import { db } from "../../lib/firebase"; // Assuming db instance is correctly configured
@@ -3189,8 +3189,7 @@ const SeekerDashboard = () => {
     fetchUnread();
     interval = setInterval(fetchUnread, 10000);
     return () => clearInterval(interval);
-  }, [seekerId]);
-  return (    <Layout>
+  }, [seekerId]);  return (    <FullScreenLayout>
       <main className="min-h-screen bg-gradient-to-br from-orange-900 to-black text-white flex relative">        {/* Mobile menu toggle button */}
         {isMobile && (
           <button 
@@ -3520,10 +3519,9 @@ const SeekerDashboard = () => {
           userId={seekerId}
           open={showNotifications}
           onClose={() => setShowNotifications(false)}
-          overlay
-        />
+          overlay        />
       </main>
-    </Layout>
+    </FullScreenLayout>
   );
 };
 

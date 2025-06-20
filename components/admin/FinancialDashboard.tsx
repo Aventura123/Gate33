@@ -90,7 +90,7 @@ const FinancialDashboard: React.FC = () => {
   const [configL2L, setConfigL2L] = useState<any>(null);
   // Chart state
   const [chartType, setChartType] = useState<'jobs'|'instantjobs'|'l2l'|'all'>('all');
-  const [expensesTab, setExpensesTab] = useState<'dashboard' | 'expensives'>('dashboard');
+  const [expensesTab, setExpensesTab] = useState<'dashboard' | 'expenses'>('dashboard');
   const [expenses, setExpenses] = useState<any[]>([]);  const [newExpense, setNewExpense] = useState({
     name: '',
     amount: '',
@@ -628,20 +628,20 @@ const FinancialDashboard: React.FC = () => {
     } catch (err) {
       alert('Error editing expense.');
     }
-  };  // Carregar despesas ao abrir a aba
+  };  // Load expenses when the tab is opened
   useEffect(() => {
-    if (expensesTab === 'expensives') fetchExpenses();
+    if (expensesTab === 'expenses') fetchExpenses();
   }, [expensesTab]);
 
-  // Função para converter USD para EUR (taxa fixa de exemplo)
+  // Function to convert USD to EUR (example fixed rate)
   const convertToEUR = (amount: number, currency: string): number => {
     if (currency === 'USD') {
-      return amount * 0.92; // 1 USD = 0.92 EUR (taxa fixa de exemplo)
+      return amount * 0.92; // 1 USD = 0.92 EUR (example fixed rate)
     }
-    return amount; // Já está em EUR
+    return amount; // Already in EUR
   };
 
-  // Função para calcular o total anual de despesas em EUR
+  // Function to calculate the annual total of expenses in EUR
   const calculateAnnualExpensesTotal = (): number => {
     const year = new Date().getFullYear();
     let total = 0;
@@ -652,19 +652,19 @@ const FinancialDashboard: React.FC = () => {
       const amountInEUR = convertToEUR(exp.amount, exp.currency || 'EUR');
       
       if (exp.type === 'monthly') {
-        // Para despesas mensais, adiciona a partir do mês de início até dezembro
+        // For monthly expenses, add from the start month to December
         const startMonth = expenseDate.getMonth();
         const monthsRemaining = 12 - startMonth;
         total += amountInEUR * monthsRemaining;
       } else if (exp.type === 'annual' && expenseDate.getFullYear() === year) {
-        // Para despesas anuais, adiciona apenas uma vez
+        // For annual expenses, add only once
         total += amountInEUR;
       }
     });
     
     return total;
   };
-// Gerar dados para o gráfico de evolução anual
+// Generate data for the annual evolution chart
   const getExpensesProjectionData = () => {
     const year = new Date().getFullYear();
     const monthlyTotals = Array(12).fill(0);
@@ -675,13 +675,13 @@ const FinancialDashboard: React.FC = () => {
       const amountInEUR = convertToEUR(exp.amount, exp.currency || 'EUR');
       
       if (exp.type === 'monthly') {
-        // Para despesas mensais, adiciona a partir do mês de início até dezembro
+        // For monthly expenses, add from the start month to December
         const startMonth = expenseDate.getMonth();
         for (let month = startMonth; month < 12; month++) {
           monthlyTotals[month] += amountInEUR;
         }
       } else if (exp.type === 'annual' && expenseDate.getFullYear() === year) {
-        // Para despesas anuais, adiciona apenas no mês especificado
+        // For annual expenses, add only in the specified month
         monthlyTotals[expenseDate.getMonth()] += amountInEUR;
       }
     });
@@ -709,11 +709,13 @@ const FinancialDashboard: React.FC = () => {
         <button
           className={`px-4 py-2 rounded-lg font-bold ${expensesTab === 'dashboard' ? 'bg-orange-500 text-white' : 'bg-black/70 text-orange-400 border border-orange-700'}`}
           onClick={() => setExpensesTab('dashboard')}
-        >Dashboard</button>        <button
-          className={`px-4 py-2 rounded-lg font-bold ${expensesTab === 'expensives' ? 'bg-orange-500 text-white' : 'bg-black/70 text-orange-400 border border-orange-700'}`}
-          onClick={() => setExpensesTab('expensives')}
+        >Dashboard</button>
+        <button
+          className={`px-4 py-2 rounded-lg font-bold ${expensesTab === 'expenses' ? 'bg-orange-500 text-white' : 'bg-black/70 text-orange-400 border border-orange-700'}`}
+          onClick={() => setExpensesTab('expenses')}
         >Expenses</button>
-      </div>      {expensesTab === 'dashboard' && (
+      </div>
+      {expensesTab === 'dashboard' && (
         <>
           {/* Config summary cards for each payment system */}
           {configJobs && renderConfigCard(configJobs, 'Jobs')}
@@ -908,7 +910,7 @@ const FinancialDashboard: React.FC = () => {
             </div>
           )}
         </>
-      )}      {expensesTab === 'expensives' && (
+      )}      {expensesTab === 'expenses' && (
         <div className="bg-black/70 rounded-lg p-4">
           <h2 className="text-2xl font-bold text-orange-400 mb-4">Expenses</h2>
           
@@ -1343,7 +1345,7 @@ const renderConfigCard = (config: any, label: string) => (
       <div className="mb-1"><span className="font-semibold text-orange-300">Service Fee:</span> {config?.serviceFee}%</div>
       <div className="mb-1"><span className="font-semibold text-orange-300">Transaction Timeout:</span> {config?.transactionTimeout/1000} seconds</div>
       <div className="mb-1"><span className="font-semibold text-orange-300">Contracts:</span> ETH: {config?.contracts?.ethereum} | Polygon: {config?.contracts?.polygon} | BSC: {config?.contracts?.binance}</div>
-      <div className="mb-1"><span className="font-semibold text-orange-300">Last Update:</span> {config?.updatedAt ? (typeof config.updatedAt === 'object' && 'seconds' in config.updatedAt ? new Date(config.updatedAt.seconds * 1000).toLocaleString() : new Date(config.updatedAt).toLocaleString()) : 'N/A'}</div>
+      <div className="mb-1"><span className="font-semibold text-orange-300">Last Update:</span> { config?.updatedAt ? (typeof config.updatedAt === 'object' && 'seconds' in config.updatedAt ? new Date(config.updatedAt.seconds * 1000).toLocaleString() : new Date(config.updatedAt).toLocaleString()) : 'N/A'}</div>
     </div>
   </div>
 );

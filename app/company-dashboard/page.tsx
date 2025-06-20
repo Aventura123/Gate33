@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, JSX, useCallback } from "react";
-import Layout from "../../components/Layout";
+import FullScreenLayout from "../../components/FullScreenLayout";
 import { useRouter } from "next/navigation";
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, updateDoc, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
 import { db } from "../../lib/firebase";
@@ -1752,9 +1752,8 @@ const InstantJobDetailCard: React.FC<{
     };
     fetchTotalApplications();
   }, [jobs, db]);
-
   return (
-    <Layout>
+    <FullScreenLayout>
       <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex relative">
         {/* Mobile menu toggle button */}
         {isMobile && (
@@ -1923,10 +1922,9 @@ const InstantJobDetailCard: React.FC<{
           companyId={companyId}
           open={showNotifications}
           onClose={() => setShowNotifications(false)}
-          overlay
-        />
+          overlay        />
       </main>
-    </Layout>
+    </FullScreenLayout>
   );
 };
 

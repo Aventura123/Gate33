@@ -6,7 +6,7 @@ import jazzicon from '@metamask/jazzicon';
 // Firebase imports removidos - não mais necessários para FlexCard
 import WalletButton from '../../components/WalletButton';
 import { web3Service } from '../../services/web3Service';
-import Layout from '../../components/Layout';
+import FullScreenLayout from '../../components/FullScreenLayout';
 import { Tab } from '@headlessui/react';
 import SearchFilterBar from './components/SearchFilterBar';
 import ComparisonSection from './components/ComparisonSection';
@@ -1247,9 +1247,8 @@ export default function CryptoToolsPage() {
 
   const selectedCryptosWithTypes = selectedCryptos.map((crypto: { id: string }) =>
     cryptoData.find((c: { id: string }) => c.id === crypto.id)!
-  );
-  return (
-    <Layout>
+  );  return (
+    <FullScreenLayout>
       <SidebarStyles />
       <style jsx global>{`
         .crypto-tools-main-container {
@@ -1670,9 +1669,8 @@ export default function CryptoToolsPage() {
                 All operations are executed securely within your browser, leveraging public APIs and your Ethereum provider connection. Private keys are never transmitted or exposed at any stage, ensuring maximum user privacy and security.
               </p>
             </div>
-          </div>
-        </div>
+          </div>        </div>
       </div>
-    </Layout>
+    </FullScreenLayout>
   );
 }

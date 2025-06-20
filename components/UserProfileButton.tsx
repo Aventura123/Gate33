@@ -332,9 +332,8 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
       ref={dropdownRef}
       onMouseEnter={isMobile ? undefined : handleMouseEnter}
       onMouseLeave={isMobile ? undefined : handleMouseLeave}
-    >
-      <div
-        className="flex items-center gap-2 cursor-pointer"
+    >      <div
+        className="flex items-center gap-2 cursor-pointer whitespace-nowrap"
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
       >
         <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-orange-500">
@@ -348,12 +347,11 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
               target.src = '/logo.png';
             }}
           />
-        </div>
-        <span className={`text-sm font-medium text-white ${isMobile ? 'inline' : 'hidden md:inline'}`}>
+        </div>        <span className={`text-sm font-medium text-white flex-shrink-0 ${isMobile ? 'inline' : 'hidden md:inline'}`}>
           {/* Log the name being displayed for debugging */}
           {(() => {
             console.log("Displaying user name:", userInfo.name);
-            return userInfo.name.length > 12 ? `${userInfo.name.substring(0, 12)}...` : userInfo.name;
+            return userInfo.name;
           })()}
         </span>
       </div>
