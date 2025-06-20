@@ -633,22 +633,27 @@ const FinancialDashboard: React.FC = () => {
   useEffect(() => {
     if (expensesTab === 'expensives') fetchExpenses();
   }, [expensesTab]);
-
   // Gerar dados para o gráfico de evolução anual
   const getExpensesProjectionData = () => {
-    // Agrupa por mês, soma mensal e anual
-    const months = Array.from({ length: 12 }, (_, i) => i);
     const year = new Date().getFullYear();
     const monthlyTotals = Array(12).fill(0);
+    
     expenses.forEach(exp => {
       if (!exp.date) return;
-      const d = new Date(exp.date);
+      const expenseDate = new Date(exp.date);
+      
       if (exp.type === 'monthly') {
-        for (let m = 0; m < 12; m++) monthlyTotals[m] += exp.amount;
-      } else if (exp.type === 'annual' && d.getFullYear() === year) {
-        monthlyTotals[d.getMonth()] += exp.amount;
+        // Para despesas mensais, adiciona a partir do mês de início até dezembro
+        const startMonth = expenseDate.getMonth();
+        for (let month = startMonth; month < 12; month++) {
+          monthlyTotals[month] += exp.amount;
+        }
+      } else if (exp.type === 'annual' && expenseDate.getFullYear() === year) {
+        // Para despesas anuais, adiciona apenas no mês especificado
+        monthlyTotals[expenseDate.getMonth()] += exp.amount;
       }
     });
+    
     return {
       labels: [
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
