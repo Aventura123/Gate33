@@ -26,8 +26,7 @@ export default function CookieConsent({ onAccept, onDecline }: CookieConsentProp
       const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
     }
-  }, []);
-  const handleAcceptAll = () => {
+  }, []);  const handleAcceptAll = () => {
     const consentData = {
       necessary: true,
       functional: true,
@@ -67,9 +66,7 @@ export default function CookieConsent({ onAccept, onDecline }: CookieConsentProp
     
     setIsVisible(false);
     onDecline?.();
-  };
-
-  const handleSavePreferences = () => {
+  };  const handleSavePreferences = () => {
     const consentData = {
       ...preferences,
       timestamp: new Date().toISOString(),
