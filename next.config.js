@@ -88,11 +88,10 @@ module.exports = withPWA({
   compress: true,  generateEtags: true,
   httpAgentOptions: {
     keepAlive: true,
-  },
-  // Next.js 15 optimizations
+  },  // Next.js 15 optimizations
   experimental: {
     optimizePackageImports: ['@headlessui/react', '@heroicons/react'],
-    optimizeCss: true,
+    optimizeCss: false, // Disabled to prevent critters conflict
   },
   // Turbopack configuration (stable in Next.js 15)
   turbopack: {
@@ -118,13 +117,22 @@ module.exports = withPWA({
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com' }, // Adicionado Firebase Storage
     ],
   },  distDir: '.next',
-  poweredByHeader: false,
-  webpack: (config, { isServer, dev }) => {
+  poweredByHeader: false,  webpack: (config, { isServer, dev }) => {
     // Production-only webpack optimizations
     config.devtool = false;
     config.infrastructureLogging = {
       level: 'error',
     };
+    
+    // Fix for jsonwebtoken and Edge Runtime compatibility
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        "crypto": false,
+        "stream": false,
+        "util": false,
+      };
+    }
     
     // Prevent multiple service worker compilations and GenerateSW warnings
     if (!isServer && !dev) {
