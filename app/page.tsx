@@ -307,7 +307,7 @@ function Home() {
             <p className="text-gray-200 text-xs md:text-sm mb-6 md:mb-8 max-w-xs mx-auto lg:mx-0 font-verdana">
               Access quality Web3 jobs from verified companies or post roles as a trusted employer. Build your profile, manage applications, and connect securely with top talent in one place.
             </p>
-            <Link href="/jobs" className="gate33-btn-orange text-white py-2.5 px-8 md:px-12 min-w-[200px] md:min-w-[230px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit mx-auto lg:mx-0">
+            <Link href="/jobs" className="gate33-btn-orange text-white py-2.5 px-8 md:px-12 min-w-[240px] md:min-w-[270px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit mx-auto lg:mx-0 whitespace-nowrap">
               Explore The Job-Board
             </Link>
           </div>          {/* Right column: stacked job cards */}
