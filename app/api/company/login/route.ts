@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '../../../../lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { compare } from 'bcrypt';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
 // Endpoint de autenticação da empresa
 export async function POST(request: Request) {
@@ -28,25 +28,29 @@ export async function POST(request: Request) {
     const companyDoc = querySnapshot.docs[0];
     const companyData = companyDoc.data();
     
-    // Compare the password with the stored hash
-    const passwordValid = await compare(password, companyData.passwordHash);
-    
-    if (!passwordValid) {
+    // Use Firebase Auth to authenticate
+    const auth = getAuth();
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Get the Firebase ID token
+      const idToken = await user.getIdToken();
+      
+      return NextResponse.json({
+        success: true,
+        token: idToken,
+        company: {
+          id: companyDoc.id,
+          name: companyData.name,
+          email: companyData.email,
+          firebaseUid: user.uid
+        }
+      });
+    } catch (authError: any) {
+      console.error('Firebase auth error:', authError);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
-
-    // Return success with company ID as token (simple approach)
-    const token = Buffer.from(companyDoc.id).toString('base64');
-    
-    return NextResponse.json({
-      success: true,
-      token,
-      company: {
-        id: companyDoc.id,
-        name: companyData.name,
-        email: companyData.email,
-      }
-    });
   } catch (error) {
     console.error('Error during authentication:', error);
     return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });

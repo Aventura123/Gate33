@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "../../components/global.css";
 import Link from "next/link";
@@ -132,9 +132,8 @@ function SeekerLoginForm() {
   );
 }
 
-// Separate component for companies login that uses Firebase Auth
+// Separate component for companies login that uses the company API
 function CompanyLoginForm() {
-  const { loginWithEmail } = useAuth();
   const [companyEmail, setCompanyEmail] = useState("");
   const [companyPassword, setCompanyPassword] = useState("");
   const [error, setError] = useState("");
@@ -153,11 +152,45 @@ function CompanyLoginForm() {
     }
 
     try {
-      await loginWithEmail(companyEmail, companyPassword, 'company');
-      router.replace("/company-dashboard");
+      // Use the company API endpoint for authentication
+      const res = await fetch("/api/company/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({ email: companyEmail, password: companyPassword })
+      });
+
+      const data = await res.json();      if (res.ok) {
+        // Save token and company data in localStorage
+        if (data.company) {
+          // O dashboard espera que o token seja o ID da empresa codificado em base64
+          const companyIdToken = btoa(data.company.id);
+          localStorage.setItem("token", companyIdToken);
+          localStorage.setItem("companyId", data.company.id);
+          localStorage.setItem("companyName", data.company.name || companyEmail);
+          
+          if (data.company.firebaseUid) {
+            localStorage.setItem("companyFirebaseUid", data.company.firebaseUid);
+          }
+          
+          // Também salva o Firebase token se precisar para outras operações
+          if (data.token) {
+            localStorage.setItem("firebaseToken", data.token);
+          }
+        }
+
+        // Set authentication cookie
+        document.cookie = "isAuthenticated=true; path=/; max-age=86400"; // 24 hours
+        
+        router.replace("/company-dashboard");
+      }else {
+        setError(data.error || "Invalid email or password or company not approved.");
+      }
     } catch (err: any) {
       console.error("Error during company login:", err);
-      setError(err.message || "Invalid email or password or company not approved.");
+      setError("An error occurred during login. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -170,11 +203,11 @@ function CompanyLoginForm() {
           <span className="block sm:inline">{error}</span>
         </div>
       )}
-      
       <div className="mb-6">
         <label htmlFor="company-email" className="block text-sm font-medium text-gray-700 mb-1">
           Email
-        </label>        <input
+        </label>
+        <input
           id="company-email"
           type="email"
           name="email"
@@ -186,11 +219,11 @@ function CompanyLoginForm() {
           required
         />
       </div>
-      
       <div className="mb-6">
         <label htmlFor="company-password" className="block text-sm font-medium text-gray-700 mb-1">
           Password
-        </label>        <input
+        </label>
+        <input
           id="company-password"
           type="password"
           name="password"
@@ -202,25 +235,20 @@ function CompanyLoginForm() {
           required
         />
       </div>
-      
       <div className="mt-2 text-right">
         <Link href="/forgot-password" className="text-xs text-orange-500 hover:text-orange-700 font-medium">
           Forgot password?
         </Link>
       </div>
-      
-      <div>
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={`w-full bg-orange-500 text-white py-3 px-4 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors font-medium ${
-            isLoading ? "opacity-70 cursor-not-allowed" : ""
-          }`}
-        >
-          {isLoading ? "Logging in..." : "Login as Company"}
-        </button>
-      </div>
-      
+      <button
+        type="submit"
+        disabled={isLoading}
+        className={`w-full bg-orange-500 text-white py-3 px-4 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors font-medium ${
+          isLoading ? "opacity-70 cursor-not-allowed" : ""
+        }`}
+      >
+        {isLoading ? "Logging in..." : "Login as Company"}
+      </button>
       <div className="mt-6 text-center">
         <p className="text-gray-600">
           Don't have a company account?{" "}
@@ -233,7 +261,7 @@ function CompanyLoginForm() {
   );
 }
 
-function UnifiedLoginPage() {
+function LoginContent() {
   const [activeTab, setActiveTab] = useState<"seeker" | "company">("seeker");
 
   return (
@@ -274,21 +302,25 @@ function UnifiedLoginPage() {
             <div className="bg-orange-500 p-1"></div>
               {/* Seeker Login Form */}
             {activeTab === "seeker" && (
-              <AuthProvider>
-                <SeekerLoginForm />
-              </AuthProvider>
+              <SeekerLoginForm />
             )}
             
             {/* Company Login Form */}
             {activeTab === "company" && (
-              <AuthProvider>
-                <CompanyLoginForm />
-              </AuthProvider>
+              <CompanyLoginForm />
             )}
           </div>
         </div>
       </div>
     </Layout>
+  );
+}
+
+function UnifiedLoginPage() {
+  return (
+    <AuthProvider>
+      <LoginContent />
+    </AuthProvider>
   );
 }
 

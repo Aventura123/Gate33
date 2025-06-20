@@ -16,7 +16,7 @@ import {
   reauthenticateWithCredential,
   updatePassword
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 // Import firebase app reference
 import firebase, { auth, db } from '../lib/firebase';
@@ -120,28 +120,55 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
       setError(err.message || 'Failed to login with Google');
       throw err;
     }
-  };
-
-  const loginWithEmail = async (email: string, password: string, role: UserRole = 'seeker') => {
+  };  const loginWithEmail = async (email: string, password: string, role: UserRole = 'seeker') => {
+    console.log(`AuthProvider.loginWithEmail called with email: ${email}, role: ${role}`);
     setError(null);
     try {
       if (role === 'seeker') {
+        console.log('Attempting seeker login...');
         const result = await signInWithEmailAndPassword(auth, email, password);
         localStorage.setItem('seekerToken', btoa(result.user.uid));
         setUserRole('seeker');
-        return result.user;
-      } else if (role === 'company') {
+        return result.user;      } else if (role === 'company') {
         const result = await signInWithEmailAndPassword(auth, email, password);
+        console.log('Firebase auth successful for company, checking Firestore...');
+        
         // Buscar dados da company no Firestore
         const companyRef = doc(db, 'companies', result.user.uid);
         const companySnap = await getDoc(companyRef);
-        if (!companySnap.exists()) {
-          throw new Error('Company not found.');
+          if (!companySnap.exists()) {
+          console.log('Company document not found, looking by email...');
+          // Procurar por email se não encontrar pelo UID
+          const companiesRef = collection(db, 'companies');
+          const emailQuery = query(companiesRef, where('email', '==', email));
+          const emailSnap = await getDocs(emailQuery);
+          
+          if (!emailSnap.empty) {
+            console.log('Found company by email, migrating...');
+            const existingCompanyData = emailSnap.docs[0].data();
+            const existingCompanyId = emailSnap.docs[0].id;
+            
+            // Migrar dados para o novo UID
+            await setDoc(companyRef, {
+              ...existingCompanyData,
+              firebaseAuthUid: result.user.uid,
+              migratedAt: new Date()
+            });
+            
+            console.log('Company migrated successfully');
+          } else {
+            throw new Error('Company not found in database.');
+          }
         }
-        const companyData = companySnap.data();
-        if (!companyData.approved && companyData.status !== 'approved') {
-          throw new Error('Company account is pending approval by admin.');
+        
+        // Re-fetch company data
+        const finalCompanySnap = await getDoc(companyRef);
+        const companyData = finalCompanySnap.data();
+        
+        if (!companyData?.approved && companyData?.status !== 'approved') {
+          throw new Error('Company account is pending approval by administrator.');
         }
+        
         localStorage.setItem('companyToken', btoa(result.user.uid));
         setUserRole('company');
         return result.user;
@@ -149,8 +176,22 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
         throw new Error(`Email authentication via Firebase is only available for seeker or company accounts`);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to login with email and password');
-      throw err;
+      console.error('LoginWithEmail error:', err);// Translate common Firebase errors
+      let errorMessage = err.message;
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        errorMessage = 'Invalid email or password.';
+      } else if (err.code === 'auth/user-not-found') {
+        errorMessage = 'User not found.';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email format.';
+      } else if (err.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled.';
+      } else if (err.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed attempts. Please try again later.';
+      }
+      
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   };
   const signup = async (email: string, password: string, userData: any, role: UserRole = 'seeker') => {
