@@ -21,9 +21,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
-        <GoogleAnalytics />
+        {/* <GoogleAnalytics /> REMOVIDO DO HEAD */}
       </head>
       <body>
+        <GoogleAnalytics />
         <WalletProvider>
           {children}
           <PWAUpdateManager />
