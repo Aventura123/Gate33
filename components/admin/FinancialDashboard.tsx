@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, Fragment } from "react";
-import { collection, getDocs, query, where, Timestamp, orderBy, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, Timestamp, orderBy, doc, getDoc, addDoc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { Dialog, Transition } from "@headlessui/react";
-import { Line } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,9 +16,10 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  BarElement // <-- Adicionado
 } from 'chart.js';
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement); // <-- Adicionado BarElement
 
 // Interface for financial data
 interface RevenueItem {
@@ -89,6 +90,17 @@ const FinancialDashboard: React.FC = () => {
   const [configL2L, setConfigL2L] = useState<any>(null);
   // Chart state
   const [chartType, setChartType] = useState<'jobs'|'instantjobs'|'l2l'|'all'>('all');
+  const [expensesTab, setExpensesTab] = useState<'dashboard' | 'expensives'>('dashboard');
+  const [expenses, setExpenses] = useState<any[]>([]);  const [newExpense, setNewExpense] = useState({
+    name: '',
+    amount: '',
+    currency: 'EUR',
+    type: 'monthly',
+    date: '',
+    category: '',
+    notes: ''
+  });
+  const [expensesLoading, setExpensesLoading] = useState(false);
   // Function to fetch financial data
   const fetchRevenueData = async () => {
     setIsLoading(true);
@@ -566,201 +578,377 @@ const FinancialDashboard: React.FC = () => {
         }
       ]
     };
-  };  return (
+  };  // Função para buscar despesas do Firestore
+  const fetchExpenses = async () => {
+    setExpensesLoading(true);
+    try {
+      if (!db) throw new Error('Firestore is not initialized');
+      const expensesSnapshot = await getDocs(collection(db, 'expenses'));
+      const expensesList = expensesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setExpenses(expensesList);
+    } catch (err) {
+      setExpenses([]);
+    } finally {
+      setExpensesLoading(false);
+    }
+  };
+  // Função para adicionar nova despesa
+  const handleAddExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (!db) throw new Error('Firestore is not initialized');
+      const docRef = await addDoc(collection(db, 'expenses'), {
+        ...newExpense,
+        amount: parseFloat(newExpense.amount),
+        createdAt: new Date().toISOString(),
+      });
+      setNewExpense({ name: '', amount: '', currency: 'EUR', type: 'monthly', date: '', category: '', notes: '' });
+      fetchExpenses();
+    } catch (err) {
+      alert('Error adding expense.');
+    }
+  };
+  // Função para remover despesa
+  const handleDeleteExpense = async (id: string) => {
+    if (!window.confirm('Remove this expense?')) return;
+    try {
+      if (!db) throw new Error('Firestore is not initialized');
+      await deleteDoc(doc(db, 'expenses', id));
+      fetchExpenses();
+    } catch (err) {
+      alert('Error removing expense.');
+    }
+  };
+  // Função para editar despesa (inline, simples)
+  const handleEditExpense = async (id: string, field: string, value: any) => {
+    try {
+      if (!db) throw new Error('Firestore is not initialized');
+      await updateDoc(doc(db, 'expenses', id), { [field]: field === 'amount' ? parseFloat(value) : value });
+      fetchExpenses();
+    } catch (err) {
+      alert('Error editing expense.');
+    }
+  };
+  // Carregar despesas ao abrir a aba
+  useEffect(() => {
+    if (expensesTab === 'expensives') fetchExpenses();
+  }, [expensesTab]);
+
+  // Gerar dados para o gráfico de evolução anual
+  const getExpensesProjectionData = () => {
+    // Agrupa por mês, soma mensal e anual
+    const months = Array.from({ length: 12 }, (_, i) => i);
+    const year = new Date().getFullYear();
+    const monthlyTotals = Array(12).fill(0);
+    expenses.forEach(exp => {
+      if (!exp.date) return;
+      const d = new Date(exp.date);
+      if (exp.type === 'monthly') {
+        for (let m = 0; m < 12; m++) monthlyTotals[m] += exp.amount;
+      } else if (exp.type === 'annual' && d.getFullYear() === year) {
+        monthlyTotals[d.getMonth()] += exp.amount;
+      }
+    });
+    return {
+      labels: [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ],
+      datasets: [
+        {
+          label: 'Projected Expenses',
+          data: monthlyTotals,
+          backgroundColor: 'rgba(245,158,66,0.7)',
+          borderColor: '#f59e42',
+          borderWidth: 2,
+        }
+      ]
+    };
+  };
+
+  return (
     <div className="p-3 md:p-6 bg-black/60 rounded-xl border border-gray-700">
-      {/* Config summary cards for each payment system */}
-      {configJobs && renderConfigCard(configJobs, 'Jobs')}
-      {configInstantJobs && renderConfigCard(configInstantJobs, 'InstantJobs')}{/* Filters - optimized for mobile */}      
-      <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">Period</label>
-          <select
-            value={filterPeriod}
-            onChange={handlePeriodChange}
-            className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
-          >
-            <option value="all">All data</option>
-            <option value="month">Last month</option>
-            <option value="quarter">Last 3 months</option>
-            <option value="year">Last year</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">Currency</label>
-          <select
-            value={filterCurrency}
-            onChange={handleCurrencyChange}
-            className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
-          >
-            <option value="all">All currencies</option>
-            {currencies.map(currency => (
-              <option key={currency} value={currency}>{currency}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">Start Date</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">End Date</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
-          />
-        </div>
-      </div>      {/* Advanced filter and tabs - optimized for mobile */}
-      <div className="mb-6">
-        <div className="flex mb-3 gap-2">
-          <button
-            className={`flex-1 px-3 py-2 rounded-lg font-semibold shadow text-xs md:text-sm ${activeTab==='confirmed' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`}
-            onClick={()=>setActiveTab('confirmed')}
-          >Confirmed</button>
-          <button
-            className={`flex-1 px-3 py-2 rounded-lg font-semibold shadow text-xs md:text-sm ${activeTab==='pending_failed' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`}
-            onClick={()=>setActiveTab('pending_failed')}
-          >Pending/Failed</button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
-          <input
-            type="text"
-            placeholder="Filter by Job ID"
-            value={filterJobId}
-            onChange={e=>setFilterJobId(e.target.value)}
-            className="p-2 text-sm rounded-lg bg-black/70 text-white border border-gray-700 hover:border-orange-500"
-          />
-          <input
-            type="text"
-            placeholder="Filter by Company ID"
-            value={filterCompanyId}
-            onChange={e=>setFilterCompanyId(e.target.value)}
-            className="p-2 text-sm rounded-lg bg-black/70 text-white border border-gray-700 hover:border-orange-500"
-          />
-          <input
-            type="text"
-            placeholder="Filter by Wallet Address"
-            value={filterWallet}
-            onChange={e=>setFilterWallet(e.target.value)}
-            className="p-2 text-sm rounded-lg bg-black/70 text-white border border-gray-700 hover:border-orange-500"
-          />
-        </div>
-      </div>{/* Wallet summary - optimized for mobile */}
-      <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-        <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
-          <div className="font-bold text-orange-400 text-sm md:text-base mb-1">FeeCollector</div>
-          <div className="text-white text-sm md:text-base overflow-hidden text-ellipsis">{walletSummary.feeCollector?.toFixed(6) || 0}</div>
-        </div>
-        <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
-          <div className="font-bold text-orange-400 text-sm md:text-base mb-1">Development</div>
-          <div className="text-white text-sm md:text-base overflow-hidden text-ellipsis">{walletSummary.development?.toFixed(6) || 0}</div>
-        </div>
-        <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
-          <div className="font-bold text-orange-400 text-sm md:text-base mb-1">Charity</div>
-          <div className="text-white text-sm md:text-base overflow-hidden text-ellipsis">{walletSummary.charity?.toFixed(6) || 0}</div>
-        </div>
-        <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
-          <div className="font-bold text-orange-400 text-sm md:text-base mb-1">Evolution</div>
-          <div className="text-white text-sm md:text-base overflow-hidden text-ellipsis">{walletSummary.evolution?.toFixed(6) || 0}</div>
-        </div>
-      </div>{/* Summary cards - improved for mobile with smaller padding and font sizes */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-8">
-        <div className="bg-black/70 border border-purple-700 p-3 md:p-6 rounded-xl shadow">
-          <h3 className="text-orange-500 text-base md:text-xl font-bold mb-1 md:mb-3">Total Revenue</h3>
-          <p className="text-white text-lg md:text-2xl font-bold">{summary.totalRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
-        </div>
-        <div className="bg-black/70 border border-blue-700 p-3 md:p-6 rounded-xl shadow">
-          <h3 className="text-orange-500 text-base md:text-xl font-bold mb-1 md:mb-3">Instant Jobs</h3>
-          <p className="text-white text-lg md:text-2xl font-bold">{summary.instantJobsRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
-        </div>
-        <div className="bg-black/70 border border-green-700 p-3 md:p-6 rounded-xl shadow">
-          <h3 className="text-orange-500 text-base md:text-xl font-bold mb-1 md:mb-3">Job Postings</h3>
-          <p className="text-white text-lg md:text-2xl font-bold">{summary.jobPostingsRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
-        </div>
-        <div className="bg-black/70 border border-orange-700 p-3 md:p-6 rounded-xl shadow">
-          <h3 className="text-orange-500 text-base md:text-xl font-bold mb-1 md:mb-3">Learn2Earn</h3>
-          <p className="text-white text-lg md:text-2xl font-bold">{summary.learn2earnRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
-        </div>
-        <div className="bg-black/70 border border-red-700 p-3 md:p-6 rounded-xl shadow">
-          <h3 className="text-orange-500 text-base md:text-xl font-bold mb-1 md:mb-3">Other</h3>
-          <p className="text-white text-lg md:text-2xl font-bold">{summary.otherRevenue.toFixed(2)} {filterCurrency !== 'all' ? filterCurrency : ''}</p>
-        </div>
-      </div>      {/* Evolution Chart - optimized for mobile */}
-      <div className="mb-10 bg-black/60 p-3 md:p-6 rounded-xl border border-gray-700 shadow">
-        <h3 className="text-lg md:text-xl font-bold text-orange-500 mb-3 md:mb-4">Revenue Evolution</h3>
-        <div className="grid grid-cols-4 gap-1 md:flex md:gap-3 mb-4">
-          <button className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-semibold ${chartType==='all' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`} onClick={()=>setChartType('all')}>All</button>
-          <button className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-semibold ${chartType==='jobs' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`} onClick={()=>setChartType('jobs')}>Jobs</button>
-          <button className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-semibold ${chartType==='instantjobs' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`} onClick={()=>setChartType('instantjobs')}>InstantJobs</button>
-          <button className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-semibold ${chartType==='l2l' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`} onClick={()=>setChartType('l2l')}>L2Earn</button>
-        </div>
-        <div className="chart-container bg-black/30 p-2 md:p-4 rounded-lg">
-          <Line 
-            data={getChartData()} 
-            options={{
+      <div className="flex gap-2 mb-6">
+        <button
+          className={`px-4 py-2 rounded-lg font-bold ${expensesTab === 'dashboard' ? 'bg-orange-500 text-white' : 'bg-black/70 text-orange-400 border border-orange-700'}`}
+          onClick={() => setExpensesTab('dashboard')}
+        >Dashboard</button>        <button
+          className={`px-4 py-2 rounded-lg font-bold ${expensesTab === 'expensives' ? 'bg-orange-500 text-white' : 'bg-black/70 text-orange-400 border border-orange-700'}`}
+          onClick={() => setExpensesTab('expensives')}
+        >Expenses</button>
+      </div>      {expensesTab === 'dashboard' && (
+        <>
+          {/* Config summary cards for each payment system */}
+          {configJobs && renderConfigCard(configJobs, 'Jobs')}
+          {configInstantJobs && renderConfigCard(configInstantJobs, 'InstantJobs')}
+
+          {/* Filters - optimized for mobile */}      
+          <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">Period</label>
+              <select
+                value={filterPeriod}
+                onChange={handlePeriodChange}
+                className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
+              >
+                <option value="all">All data</option>
+                <option value="month">Last month</option>
+                <option value="quarter">Last 3 months</option>
+                <option value="year">Last year</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">Currency</label>
+              <select
+                value={filterCurrency}
+                onChange={handleCurrencyChange}
+                className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
+              >
+                <option value="all">All currencies</option>
+                {currencies.map(currency => (
+                  <option key={currency} value={currency}>{currency}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">Start Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">End Date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full p-2 text-sm md:text-base bg-black/70 border border-gray-700 hover:border-orange-500 rounded-lg text-white"
+              />
+            </div>
+          </div>
+
+          {/* Advanced filter and tabs - optimized for mobile */}
+          <div className="mb-6">
+            <div className="flex mb-3 gap-2">
+              <button
+                className={`flex-1 px-3 py-2 rounded-lg font-semibold shadow text-xs md:text-sm ${activeTab==='confirmed' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`}
+                onClick={()=>setActiveTab('confirmed')}
+              >Confirmed</button>
+              <button
+                className={`flex-1 px-3 py-2 rounded-lg font-semibold shadow text-xs md:text-sm ${activeTab==='pending_failed' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-black/70 hover:bg-black/80 text-gray-300 border border-gray-700'}`}
+                onClick={()=>setActiveTab('pending_failed')}
+              >Pending/Failed</button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
+              <input
+                type="text"
+                placeholder="Filter by Job ID"
+                value={filterJobId}
+                onChange={e=>setFilterJobId(e.target.value)}
+                className="p-2 text-sm rounded-lg bg-black/70 text-white border border-gray-700 hover:border-orange-500"
+              />
+              <input
+                type="text"
+                placeholder="Filter by Company ID"
+                value={filterCompanyId}
+                onChange={e=>setFilterCompanyId(e.target.value)}
+                className="p-2 text-sm rounded-lg bg-black/70 text-white border border-gray-700 hover:border-orange-500"
+              />
+              <input
+                type="text"
+                placeholder="Filter by Wallet Address"
+                value={filterWallet}
+                onChange={e=>setFilterWallet(e.target.value)}
+                className="p-2 text-sm rounded-lg bg-black/70 text-white border border-gray-700 hover:border-orange-500"
+              />
+            </div>
+          </div>
+
+          {/* Wallet summary - optimized for mobile */}
+          <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+            <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
+              <h4 className="text-sm font-semibold text-orange-300 mb-1">FeeCollector</h4>
+              <p className="text-lg md:text-xl font-bold">{walletSummary.feeCollector?.toFixed(6) || '0.000000'}</p>
+            </div>
+            <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
+              <h4 className="text-sm font-semibold text-orange-300 mb-1">Development</h4>
+              <p className="text-lg md:text-xl font-bold">{walletSummary.development?.toFixed(6) || '0.000000'}</p>
+            </div>
+            <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
+              <h4 className="text-sm font-semibold text-orange-300 mb-1">Charity</h4>
+              <p className="text-lg md:text-xl font-bold">{walletSummary.charity?.toFixed(6) || '0.000000'}</p>
+            </div>
+            <div className="bg-black/30 p-3 md:p-4 rounded-lg border border-gray-700 text-white shadow">
+              <h4 className="text-sm font-semibold text-orange-300 mb-1">Evolution</h4>
+              <p className="text-lg md:text-xl font-bold">{walletSummary.evolution?.toFixed(6) || '0.000000'}</p>
+            </div>
+          </div>
+
+          {/* Summary cards - improved for mobile with smaller padding and font sizes */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-8">
+            <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/60 p-3 md:p-4 rounded-lg border border-blue-700 text-white shadow">
+              <h4 className="text-xs md:text-sm font-semibold text-blue-300 mb-1">Total Revenue</h4>
+              <p className="text-lg md:text-xl font-bold">{summary.totalRevenue.toFixed(2)}</p>
+            </div>
+            <div className="bg-gradient-to-br from-cyan-900/40 to-cyan-800/60 p-3 md:p-4 rounded-lg border border-cyan-700 text-white shadow">
+              <h4 className="text-xs md:text-sm font-semibold text-cyan-300 mb-1">Instant Jobs</h4>
+              <p className="text-lg md:text-xl font-bold">{summary.instantJobsRevenue.toFixed(2)}</p>
+            </div>
+            <div className="bg-gradient-to-br from-green-900/40 to-green-800/60 p-3 md:p-4 rounded-lg border border-green-700 text-white shadow">
+              <h4 className="text-xs md:text-sm font-semibold text-green-300 mb-1">Job Postings</h4>
+              <p className="text-lg md:text-xl font-bold">{summary.jobPostingsRevenue.toFixed(2)}</p>
+            </div>
+            <div className="bg-gradient-to-br from-red-900/40 to-red-800/60 p-3 md:p-4 rounded-lg border border-red-700 text-white shadow">
+              <h4 className="text-xs md:text-sm font-semibold text-red-300 mb-1">Learn2Earn</h4>
+              <p className="text-lg md:text-xl font-bold">{summary.learn2earnRevenue.toFixed(2)}</p>
+            </div>
+            <div className="bg-gradient-to-br from-purple-900/40 to-purple-800/60 p-3 md:p-4 rounded-lg border border-purple-700 text-white shadow">
+              <h4 className="text-xs md:text-sm font-semibold text-purple-300 mb-1">Other</h4>
+              <p className="text-lg md:text-xl font-bold">{summary.otherRevenue.toFixed(2)}</p>
+            </div>
+          </div>
+
+          {/* Chart controls and chart */}
+          <div className="mb-8 bg-black/30 rounded-xl border border-gray-700 p-4">
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                className={`px-3 py-1 text-xs rounded ${chartType === 'all' ? 'bg-orange-500 text-white' : 'bg-black/70 text-orange-400 border border-orange-700'}`}
+                onClick={() => setChartType('all')}
+              >All</button>
+              <button
+                className={`px-3 py-1 text-xs rounded ${chartType === 'jobs' ? 'bg-orange-500 text-white' : 'bg-black/70 text-orange-400 border border-orange-700'}`}
+                onClick={() => setChartType('jobs')}
+              >Jobs</button>
+              <button
+                className={`px-3 py-1 text-xs rounded ${chartType === 'instantjobs' ? 'bg-orange-500 text-white' : 'bg-black/70 text-orange-400 border border-orange-700'}`}
+                onClick={() => setChartType('instantjobs')}
+              >InstantJobs</button>
+              <button
+                className={`px-3 py-1 text-xs rounded ${chartType === 'l2l' ? 'bg-orange-500 text-white' : 'bg-black/70 text-orange-400 border border-orange-700'}`}
+                onClick={() => setChartType('l2l')}
+              >Learn2Earn</button>
+            </div>
+            <Line data={getChartData()} options={{
               responsive: true,
-              maintainAspectRatio: true,
               plugins: {
-                legend: { 
-                  position: 'top' as const,
-                  labels: {
-                    boxWidth: 10,
-                    font: { size: window.innerWidth < 768 ? 8 : 11 }
-                  }
-                },
-                title: { 
-                  display: false
-                }
+                legend: { display: true, position: 'top' as const },
+                title: { display: true, text: 'Revenue Evolution' }
               },
-              scales: {
-                y: { 
-                  beginAtZero: true,
-                  ticks: { font: { size: window.innerWidth < 768 ? 8 : 10 } }
-                },
-                x: {
-                  ticks: { 
-                    font: { size: window.innerWidth < 768 ? 8 : 10 },
-                    maxRotation: 45,
-                    minRotation: 45
-                  }
-                }
-              }
-            }} 
-          />
+              scales: { y: { beginAtZero: true } }
+            }} />
+          </div>
+
+          {/* Export buttons */}
+          <div className="mb-6 flex flex-wrap gap-2">
+            <button
+              onClick={exportToExcel}
+              disabled={isExporting}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm disabled:opacity-50"
+            >
+              {isExporting ? 'Exporting...' : 'Export to Excel'}
+            </button>
+            <button
+              onClick={exportToPdf}
+              disabled={isExporting}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm disabled:opacity-50"
+            >
+              {isExporting ? 'Exporting...' : 'Export to PDF'}
+            </button>
+          </div>
+
+          {/* Alert for many transactions */}
+          {showTooManyAlert && (
+            <div className="mb-6 bg-yellow-900/20 border border-yellow-700 rounded-lg p-4">
+              <div className="flex items-center">
+                <div className="text-yellow-400 text-sm">
+                  <strong>Performance Warning:</strong> You are viewing a large number of transactions. Consider using date filters for better performance.
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}      {expensesTab === 'expensives' && (
+        <div className="bg-black/70 rounded-lg p-4">
+          <h2 className="text-2xl font-bold text-orange-400 mb-4">Expenses</h2>
+          <form onSubmit={handleAddExpense} className="grid grid-cols-1 md:grid-cols-7 gap-2 mb-4">
+            <input type="text" placeholder="Name" required className="p-2 rounded bg-black/60 text-white border border-gray-700" value={newExpense.name} onChange={e => setNewExpense({ ...newExpense, name: e.target.value })} />
+            <input type="number" placeholder="Amount" required className="p-2 rounded bg-black/60 text-white border border-gray-700" value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })} />
+            <select className="p-2 rounded bg-black/60 text-white border border-gray-700" value={newExpense.currency} onChange={e => setNewExpense({ ...newExpense, currency: e.target.value })}>
+              <option value="EUR">€ EUR</option>
+              <option value="USD">$ USD</option>
+            </select>
+            <select className="p-2 rounded bg-black/60 text-white border border-gray-700" value={newExpense.type} onChange={e => setNewExpense({ ...newExpense, type: e.target.value })}>
+              <option value="monthly">Monthly</option>
+              <option value="annual">Annual</option>
+            </select>
+            <input type="date" required className="p-2 rounded bg-black/60 text-white border border-gray-700" value={newExpense.date} onChange={e => setNewExpense({ ...newExpense, date: e.target.value })} />
+            <input type="text" placeholder="Category" className="p-2 rounded bg-black/60 text-white border border-gray-700" value={newExpense.category} onChange={e => setNewExpense({ ...newExpense, category: e.target.value })} />
+            <input type="text" placeholder="Notes" className="p-2 rounded bg-black/60 text-white border border-gray-700" value={newExpense.notes} onChange={e => setNewExpense({ ...newExpense, notes: e.target.value })} />
+            <button type="submit" className="col-span-1 md:col-span-7 bg-orange-500 text-white rounded px-4 py-2 font-bold mt-2">Add Expense</button>
+          </form>
+          <div className="overflow-x-auto mb-6">
+            <table className="min-w-full text-sm text-left text-gray-300">
+              <thead>
+                <tr className="bg-black/80 text-orange-300">
+                  <th className="p-2">Name</th>
+                  <th className="p-2">Amount</th>
+                  <th className="p-2">Currency</th>
+                  <th className="p-2">Type</th>
+                  <th className="p-2">Date</th>
+                  <th className="p-2">Category</th>
+                  <th className="p-2">Notes</th>
+                  <th className="p-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expensesLoading ? (
+                  <tr><td colSpan={8} className="text-center p-4">Loading...</td></tr>
+                ) : expenses.length === 0 ? (
+                  <tr><td colSpan={8} className="text-center p-4">No expenses registered.</td></tr>
+                ) : expenses.map(exp => (
+                  <tr key={exp.id} className="border-b border-gray-700">
+                    <td className="p-2"><input className="bg-transparent w-full" value={exp.name} onChange={e => handleEditExpense(exp.id, 'name', e.target.value)} /></td>
+                    <td className="p-2"><input className="bg-transparent w-full" type="number" value={exp.amount} onChange={e => handleEditExpense(exp.id, 'amount', e.target.value)} /></td>
+                    <td className="p-2">
+                      <select className="bg-transparent" value={exp.currency || 'EUR'} onChange={e => handleEditExpense(exp.id, 'currency', e.target.value)}>
+                        <option value="EUR">€ EUR</option>
+                        <option value="USD">$ USD</option>
+                      </select>
+                    </td>
+                    <td className="p-2">
+                      <select className="bg-transparent" value={exp.type} onChange={e => handleEditExpense(exp.id, 'type', e.target.value)}>
+                        <option value="monthly">Monthly</option>
+                        <option value="annual">Annual</option>
+                      </select>
+                    </td>
+                    <td className="p-2"><input className="bg-transparent w-full" type="date" value={exp.date} onChange={e => handleEditExpense(exp.id, 'date', e.target.value)} /></td>
+                    <td className="p-2"><input className="bg-transparent w-full" value={exp.category} onChange={e => handleEditExpense(exp.id, 'category', e.target.value)} /></td>
+                    <td className="p-2"><input className="bg-transparent w-full" value={exp.notes} onChange={e => handleEditExpense(exp.id, 'notes', e.target.value)} /></td>
+                    <td className="p-2"><button className="text-red-400 hover:text-red-600" onClick={() => handleDeleteExpense(exp.id)}>Remove</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>          <div className="bg-black/80 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-orange-300 mb-2">Annual Expenses Projection (Current Year)</h3>
+            <div className="h-[300px]">
+              <Bar data={getExpensesProjectionData()} options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+              }} />
+            </div>
+          </div>
         </div>
-      </div>      {/* Export buttons - further simplified for mobile */}
-      <div className="grid grid-cols-2 gap-3 md:flex md:gap-4 mb-6 md:mb-8">
-        <button
-          onClick={exportToExcel}
-          disabled={isExporting || isLoading}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-3 md:px-4 py-2 rounded disabled:opacity-60 font-medium shadow text-xs md:text-sm flex items-center justify-center"
-        >
-          <svg className="h-4 w-4 md:h-5 md:w-5 mr-1 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Export Excel
-        </button>
-        
-        <button
-          onClick={exportToPdf}
-          disabled={isExporting || isLoading}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-3 md:px-4 py-2 rounded disabled:opacity-60 font-medium shadow text-xs md:text-sm flex items-center justify-center"
-        >
-          <svg className="h-4 w-4 md:h-5 md:w-5 mr-1 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Export PDF
-        </button>
-      </div>
-      {/* Transaction table with status filter and advanced filters */}      <div className="bg-black/30 rounded-xl border border-gray-700 p-3 md:p-6">
-        <h3 className="text-lg md:text-xl font-bold text-orange-500 mb-3 md:mb-4">Transaction Details</h3>
+      )}      {/* Transaction table with status filter and advanced filters - only show in dashboard tab */}
+      {expensesTab === 'dashboard' && (
+        <div className="bg-black/30 rounded-xl border border-gray-700 p-3 md:p-6">
+          <h3 className="text-lg md:text-xl font-bold text-orange-500 mb-3 md:mb-4">Transaction Details</h3>
         {isLoading ? (
           <div className="text-center py-10">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
@@ -990,94 +1178,98 @@ const FinancialDashboard: React.FC = () => {
                 );
               })()}
             </div>
-          </div>
-        )}
-      </div>      {/* Transaction Detail Modal */}
-      <Transition.Root show={isModalOpen} as={Fragment}>
-        <Dialog as="div" className="fixed z-50 inset-0 overflow-y-auto" onClose={closeModal}>
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0"
-              enterTo="opacity-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-            >
-              <div className="fixed inset-0 bg-black bg-opacity-60 transition-opacity" />
-            </Transition.Child>
-            <span className="inline-block align-middle h-screen" aria-hidden="true">&#8203;</span>
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >              <div className="inline-block bg-black/70 rounded-xl px-8 py-6 text-left overflow-hidden shadow-xl transform transition-all align-middle max-w-lg w-full border border-gray-700">
-                <Dialog.Title as="h3" className="text-xl leading-6 font-bold text-orange-500 mb-6">
-                  Transaction Distribution
-                </Dialog.Title>
-                {selectedTransaction && selectedTransaction.distribution ? (
-                  <div>
-                    <div className="mb-2">
-                      <span className="font-semibold text-gray-300">Total amount:</span> {selectedTransaction.amount} {selectedTransaction.currency}
-                    </div>
-                    <div className="mb-2">
-                      <span className="font-semibold text-gray-300">Transaction ID:</span> {selectedTransaction.transactionHash}
-                    </div>
-                    <div className="mb-4">
-                      <span className="font-semibold text-gray-300">Distribution:</span>
-                      <ul className="mt-2 text-sm text-gray-200">
-                        <li>
-                          <span className="font-semibold">FeeCollector:</span> {selectedTransaction.distribution.feeCollector?.amount?.toFixed(6)} {selectedTransaction.currency} <br />
-                          <span className="text-xs text-gray-400">{selectedTransaction.distribution.feeCollector?.address}</span>
-                        </li>
-                        <li className="mt-2">
-                          <span className="font-semibold">Development:</span> {selectedTransaction.distribution.development?.amount?.toFixed(6)} {selectedTransaction.currency} <br />
-                          <span className="text-xs text-gray-400">{selectedTransaction.distribution.development?.address}</span>
-                        </li>
-                        <li className="mt-2">
-                          <span className="font-semibold">Charity:</span> {selectedTransaction.distribution.charity?.amount?.toFixed(6)} {selectedTransaction.currency} <br />
-                          <span className="text-xs text-gray-400">{selectedTransaction.distribution.charity?.address}</span>
-                        </li>
-                        <li className="mt-2">
-                          <span className="font-semibold">Evolution:</span> {selectedTransaction.distribution.evolution?.amount?.toFixed(6)} {selectedTransaction.currency} <br />
-                          <span className="text-xs text-gray-400">{selectedTransaction.distribution.evolution?.address}</span>
-                        </li>
-                        <li className="mt-2">
-                          <span className="font-semibold">Total distributed:</span> {selectedTransaction.distribution.totalDistributed?.toFixed(6)} {selectedTransaction.currency}
-                        </li>
-                        <li className="mt-2">
-                          <span className="font-semibold">Main recipient:</span> {selectedTransaction.distribution.mainRecipient?.amount?.toFixed(6)} {selectedTransaction.currency}
-                        </li>
-                      </ul>
-                    </div>
-                    {selectedTransaction.distributionPercentages && (
-                      <div className="mb-2 text-xs text-gray-400">
-                        <span className="font-semibold text-gray-300">Percentages used:</span> <br />
-                        Fee: {selectedTransaction.distributionPercentages.feePercentage / 10}% | Development: {selectedTransaction.distributionPercentages.developmentPercentage / 10}% | Charity: {selectedTransaction.distributionPercentages.charityPercentage / 10}% | Evolution: {selectedTransaction.distributionPercentages.evolutionPercentage / 10}%
+          </div>        )}
+        </div>
+      )}      {/* Transaction Detail Modal - only show in dashboard tab */}
+      {expensesTab === 'dashboard' && (
+        <Transition.Root show={isModalOpen} as={Fragment}>
+          <Dialog as="div" className="fixed z-50 inset-0 overflow-y-auto" onClose={closeModal}>
+            <div className="flex items-center justify-center min-h-screen px-4">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <div className="fixed inset-0 bg-black bg-opacity-60 transition-opacity" />
+              </Transition.Child>
+              <span className="inline-block align-middle h-screen" aria-hidden="true">&#8203;</span>
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >              <div className="inline-block bg-black/70 rounded-xl px-8 py-6 text-left overflow-hidden shadow-xl transform transition-all align-middle max-w-lg w-full border border-gray-700">
+                  <Dialog.Title as="h3" className="text-xl leading-6 font-bold text-orange-500 mb-6">
+                    Transaction Distribution
+                  </Dialog.Title>
+                  {selectedTransaction && selectedTransaction.distribution ? (
+                    <div>
+                      <div className="mb-2">
+                        <span className="font-semibold text-gray-300">Total amount:</span> {selectedTransaction.amount} {selectedTransaction.currency}
                       </div>
-                    )}
+                      <div className="mb-2">
+                        <span className="font-semibold text-gray-300">Transaction ID:</span> {selectedTransaction.transactionHash}
+                      </div>
+                      <div className="mb-4">
+                        <span className="font-semibold text-gray-300">Distribution:</span>
+                        <ul className="mt-2 text-sm text-gray-200">
+                          <li>
+                            <span className="font-semibold">FeeCollector:</span> {selectedTransaction.distribution.feeCollector?.amount?.toFixed(6)} {selectedTransaction.currency} <br />
+                            <span className="text-xs text-gray-400">{selectedTransaction.distribution.feeCollector?.address}</span>
+                          </li>
+                          <li className="mt-2">
+                            <span className="font-semibold">Development:</span> {selectedTransaction.distribution.development?.amount?.toFixed(6)} {selectedTransaction.currency} <br />
+                            <span className="text-xs text-gray-400">{selectedTransaction.distribution.development?.address}</span>
+                          </li>
+                          <li className="mt-2">
+                            <span className="font-semibold">Charity:</span> {selectedTransaction.distribution.charity?.amount?.toFixed(6)} {selectedTransaction.currency} <br />
+                            <span className="text-xs text-gray-400">{selectedTransaction.distribution.charity?.address}</span>
+                          </li>
+                          <li className="mt-2">
+                            <span className="font-semibold">Evolution:</span> {selectedTransaction.distribution.evolution?.amount?.toFixed(6)} {selectedTransaction.currency} <br />
+                            <span className="text-xs text-gray-400">{selectedTransaction.distribution.evolution?.address}</span>
+                          </li>
+                          <li className="mt-2">
+                            <span className="font-semibold">Total distributed:</span> {selectedTransaction.distribution.totalDistributed?.toFixed(6)} {selectedTransaction.currency}
+                          </li>
+                          <li className="mt-2">
+                            <span className="font-semibold">Main recipient:</span> {selectedTransaction.distribution.mainRecipient?.amount?.toFixed(6)} {selectedTransaction.currency}
+                          </li>
+                        </ul>
+                      </div>
+                      {selectedTransaction.distributionPercentages && (
+                        <div className="mb-2 text-xs text-gray-400">
+                          <span className="font-semibold text-gray-300">Percentages used:</span> <br />
+                          Fee: {selectedTransaction.distributionPercentages.feePercentage / 10}% | Development: {selectedTransaction.distributionPercentages.developmentPercentage / 10}% | Charity: {selectedTransaction.distributionPercentages.charityPercentage / 10}% | Evolution: {selectedTransaction.distributionPercentages.evolutionPercentage / 10}%
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-gray-400">No distribution data for this transaction.</div>
+                  )}                  <div className="mt-8 flex justify-end">
+                    <button
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm"
+                      onClick={closeModal}
+                    >
+                      Close
+                    </button>
                   </div>
-                ) : (
-                  <div className="text-gray-400">No distribution data for this transaction.</div>
-                )}                <div className="mt-8 flex justify-end">
-                  <button
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm"
-                    onClick={closeModal}
-                  >
-                    Close
-                  </button>
                 </div>
-              </div>
-            </Transition.Child>
-          </div>
-        </Dialog>
-      </Transition.Root>      {/* Show total count */}
-      {!isLoading && !error && revenue.length > 0 && (
+              </Transition.Child>
+            </div>
+          </Dialog>
+        </Transition.Root>
+      )}
+
+      {/* Show total count - only in dashboard tab */}
+      {expensesTab === 'dashboard' && !isLoading && !error && revenue.length > 0 && (
         <div className="mt-4 text-right text-gray-400 text-sm">
           Showing {revenue.filter(item => filterCurrency === 'all' || item.currency === filterCurrency).length} transactions
         </div>
