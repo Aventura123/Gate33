@@ -17,9 +17,10 @@ export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
-}) {  return (
+}) {
+  return (
     <html lang="pt-BR">
-      <body>
+      <head>
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=G-V6ZLMK2WR3`}
           strategy="afterInteractive"
@@ -32,6 +33,8 @@ export default function RootLayout({
             gtag('config', 'G-V6ZLMK2WR3');
           `}
         </Script>
+      </head>
+      <body>
         <WalletProvider>
           {children}
           <PWAUpdateManager />
