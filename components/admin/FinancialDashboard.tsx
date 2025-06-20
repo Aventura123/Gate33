@@ -628,12 +628,43 @@ const FinancialDashboard: React.FC = () => {
     } catch (err) {
       alert('Error editing expense.');
     }
-  };
-  // Carregar despesas ao abrir a aba
+  };  // Carregar despesas ao abrir a aba
   useEffect(() => {
     if (expensesTab === 'expensives') fetchExpenses();
   }, [expensesTab]);
-  // Gerar dados para o gráfico de evolução anual
+
+  // Função para converter USD para EUR (taxa fixa de exemplo)
+  const convertToEUR = (amount: number, currency: string): number => {
+    if (currency === 'USD') {
+      return amount * 0.92; // 1 USD = 0.92 EUR (taxa fixa de exemplo)
+    }
+    return amount; // Já está em EUR
+  };
+
+  // Função para calcular o total anual de despesas em EUR
+  const calculateAnnualExpensesTotal = (): number => {
+    const year = new Date().getFullYear();
+    let total = 0;
+    
+    expenses.forEach(exp => {
+      if (!exp.date) return;
+      const expenseDate = new Date(exp.date);
+      const amountInEUR = convertToEUR(exp.amount, exp.currency || 'EUR');
+      
+      if (exp.type === 'monthly') {
+        // Para despesas mensais, adiciona a partir do mês de início até dezembro
+        const startMonth = expenseDate.getMonth();
+        const monthsRemaining = 12 - startMonth;
+        total += amountInEUR * monthsRemaining;
+      } else if (exp.type === 'annual' && expenseDate.getFullYear() === year) {
+        // Para despesas anuais, adiciona apenas uma vez
+        total += amountInEUR;
+      }
+    });
+    
+    return total;
+  };
+// Gerar dados para o gráfico de evolução anual
   const getExpensesProjectionData = () => {
     const year = new Date().getFullYear();
     const monthlyTotals = Array(12).fill(0);
@@ -641,16 +672,17 @@ const FinancialDashboard: React.FC = () => {
     expenses.forEach(exp => {
       if (!exp.date) return;
       const expenseDate = new Date(exp.date);
+      const amountInEUR = convertToEUR(exp.amount, exp.currency || 'EUR');
       
       if (exp.type === 'monthly') {
         // Para despesas mensais, adiciona a partir do mês de início até dezembro
         const startMonth = expenseDate.getMonth();
         for (let month = startMonth; month < 12; month++) {
-          monthlyTotals[month] += exp.amount;
+          monthlyTotals[month] += amountInEUR;
         }
       } else if (exp.type === 'annual' && expenseDate.getFullYear() === year) {
         // Para despesas anuais, adiciona apenas no mês especificado
-        monthlyTotals[expenseDate.getMonth()] += exp.amount;
+        monthlyTotals[expenseDate.getMonth()] += amountInEUR;
       }
     });
     
@@ -661,7 +693,7 @@ const FinancialDashboard: React.FC = () => {
       ],
       datasets: [
         {
-          label: 'Projected Expenses',
+          label: 'Projected Expenses (EUR)',
           data: monthlyTotals,
           backgroundColor: 'rgba(245,158,66,0.7)',
           borderColor: '#f59e42',
@@ -879,6 +911,14 @@ const FinancialDashboard: React.FC = () => {
       )}      {expensesTab === 'expensives' && (
         <div className="bg-black/70 rounded-lg p-4">
           <h2 className="text-2xl font-bold text-orange-400 mb-4">Expenses</h2>
+          
+          {/* Total anual de despesas */}
+          <div className="mb-6 bg-gradient-to-br from-orange-900/40 to-orange-800/60 p-4 rounded-lg border border-orange-700 text-white shadow">
+            <h4 className="text-sm font-semibold text-orange-300 mb-1">Annual Total Expenses</h4>
+            <p className="text-2xl font-bold">€{calculateAnnualExpensesTotal().toFixed(2)}</p>
+            <p className="text-xs text-gray-300 mt-1">All values converted to EUR (USD * 0.92)</p>
+          </div>
+
           <form onSubmit={handleAddExpense} className="grid grid-cols-1 md:grid-cols-7 gap-2 mb-4">
             <input type="text" placeholder="Name" required className="p-2 rounded bg-black/60 text-white border border-gray-700" value={newExpense.name} onChange={e => setNewExpense({ ...newExpense, name: e.target.value })} />
             <input type="number" placeholder="Amount" required className="p-2 rounded bg-black/60 text-white border border-gray-700" value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })} />
@@ -913,11 +953,17 @@ const FinancialDashboard: React.FC = () => {
                 {expensesLoading ? (
                   <tr><td colSpan={8} className="text-center p-4">Loading...</td></tr>
                 ) : expenses.length === 0 ? (
-                  <tr><td colSpan={8} className="text-center p-4">No expenses registered.</td></tr>
-                ) : expenses.map(exp => (
+                  <tr><td colSpan={8} className="text-center p-4">No expenses registered.</td></tr>                ) : expenses.map(exp => (
                   <tr key={exp.id} className="border-b border-gray-700">
                     <td className="p-2"><input className="bg-transparent w-full" value={exp.name} onChange={e => handleEditExpense(exp.id, 'name', e.target.value)} /></td>
-                    <td className="p-2"><input className="bg-transparent w-full" type="number" value={exp.amount} onChange={e => handleEditExpense(exp.id, 'amount', e.target.value)} /></td>
+                    <td className="p-2">
+                      <div className="flex flex-col">
+                        <input className="bg-transparent w-full" type="number" value={exp.amount} onChange={e => handleEditExpense(exp.id, 'amount', e.target.value)} />
+                        {exp.currency === 'USD' && (
+                          <span className="text-xs text-gray-400">≈ €{convertToEUR(exp.amount, exp.currency).toFixed(2)}</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="p-2">
                       <select className="bg-transparent" value={exp.currency || 'EUR'} onChange={e => handleEditExpense(exp.id, 'currency', e.target.value)}>
                         <option value="EUR">€ EUR</option>

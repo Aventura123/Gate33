@@ -7,7 +7,7 @@ import AdPopup from './AdPopup';
 import UserProfileButton from './UserProfileButton';
 import ContactForm from './ContactForm';
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const FullScreenLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -140,7 +140,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         className="site-header fixed h-[10vh] left-0 top-0 w-[100vw] z-50 text-white gate33-header-fullwidth overflow-visible"
       >
         <div className="header-bg"></div>
-        <div className="w-full max-w-7xl mx-auto flex justify-between items-center py-4 px-4 h-16">
+        <div className="w-full flex justify-between items-center py-4 px-6 h-16">
           <a href="/" className="logo flex items-center">
             <img src="/images/GATE33-LOGO-wordmark.png" alt="Gate33 Logo" className="h-6" />
           </a>
@@ -430,5 +430,4 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 };
 
-export default Layout;
-
+export default FullScreenLayout;

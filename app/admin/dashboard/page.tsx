@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import Layout from "../../../components/Layout";
+import Layout from "../../../components/FullScreenLayout";
 import { useRouter } from 'next/navigation';
 import { collection, addDoc, deleteDoc, doc, getDocs, updateDoc, getDoc, setDoc, query, where } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
