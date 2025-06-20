@@ -14,54 +14,36 @@ const GA_TRACKING_ID = 'G-V6ZLMK2WR3';
 
 export default function GoogleAnalytics() {
   useEffect(() => {
-    // Check if user has consented to analytics cookies
-    const updateGAConsent = (analyticsConsent: boolean) => {
+    // Função simples para atualizar consentimento
+    const updateConsent = (analyticsGranted: boolean) => {
       if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('consent', 'update', {
-          analytics_storage: analyticsConsent ? 'granted' : 'denied'
+          analytics_storage: analyticsGranted ? 'granted' : 'denied',
+          ad_storage: analyticsGranted ? 'granted' : 'denied'
         });
       }
-    };
-
-    const checkConsentAndInitGA = () => {
+    };    const checkConsentAndInitGA = () => {
       const consent = localStorage.getItem('gate33-cookie-consent');
       if (consent) {
         const consentData = JSON.parse(consent);
-        updateGAConsent(consentData.analytics);
-      } else {
-        // No consent yet, set default to denied
-        if (typeof window !== 'undefined' && window.gtag) {
-          window.gtag('consent', 'default', {
-            analytics_storage: 'denied'
-          });
-        }
+        updateConsent(consentData.analytics);
       }
     };
 
-    // Check consent when component mounts
+    // Verificar consentimento quando o componente monta
     checkConsentAndInitGA();
 
-    // Listen for storage changes (when user accepts/declines cookies)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'gate33-cookie-consent') {
-        checkConsentAndInitGA();
-      }
-    };
-
-    // Listen for custom cookie consent events (immediate updates)
+    // Escutar mudanças no consentimento de cookies
     const handleCookieConsentChanged = (e: CustomEvent) => {
-      updateGAConsent(e.detail.analytics);
+      updateConsent(e.detail.analytics);
     };
 
-    window.addEventListener('storage', handleStorageChange);
     window.addEventListener('cookieConsentChanged', handleCookieConsentChanged as EventListener);
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('cookieConsentChanged', handleCookieConsentChanged as EventListener);
     };
   }, []);
-
   return (
     <>
       <Script
@@ -74,9 +56,10 @@ export default function GoogleAnalytics() {
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
           
-          // Set default consent to denied
+          // Configurar modo de consentimento para GDPR
           gtag('consent', 'default', {
-            analytics_storage: 'denied'
+            analytics_storage: 'denied',
+            ad_storage: 'denied'
           });
           
           gtag('config', '${GA_TRACKING_ID}');
