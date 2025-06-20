@@ -27,7 +27,6 @@ export default function CookieConsent({ onAccept, onDecline }: CookieConsentProp
       return () => clearTimeout(timer);
     }
   }, []);
-
   const handleAcceptAll = () => {
     const consentData = {
       necessary: true,
@@ -39,6 +38,12 @@ export default function CookieConsent({ onAccept, onDecline }: CookieConsentProp
     };
     
     localStorage.setItem('gate33-cookie-consent', JSON.stringify(consentData));
+    
+    // Dispatch custom event for immediate GA update
+    window.dispatchEvent(new CustomEvent('cookieConsentChanged', { 
+      detail: { analytics: true } 
+    }));
+    
     setIsVisible(false);
     onAccept?.();
   };
@@ -54,6 +59,12 @@ export default function CookieConsent({ onAccept, onDecline }: CookieConsentProp
     };
     
     localStorage.setItem('gate33-cookie-consent', JSON.stringify(consentData));
+    
+    // Dispatch custom event for immediate GA update
+    window.dispatchEvent(new CustomEvent('cookieConsentChanged', { 
+      detail: { analytics: false } 
+    }));
+    
     setIsVisible(false);
     onDecline?.();
   };
@@ -66,6 +77,12 @@ export default function CookieConsent({ onAccept, onDecline }: CookieConsentProp
     };
     
     localStorage.setItem('gate33-cookie-consent', JSON.stringify(consentData));
+    
+    // Dispatch custom event for immediate GA update
+    window.dispatchEvent(new CustomEvent('cookieConsentChanged', { 
+      detail: { analytics: preferences.analytics } 
+    }));
+    
     setIsVisible(false);
     
     // Trigger appropriate callback based on preferences
