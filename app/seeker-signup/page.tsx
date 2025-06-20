@@ -100,10 +100,12 @@ function SeekerLoginForm() {
             <input
               type="text"
               id="firstName"
+              name="firstName"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Your First Name"
               className="w-full p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+              autoComplete="given-name"
               required
             />
           </div>
@@ -114,10 +116,12 @@ function SeekerLoginForm() {
             <input
               type="text"
               id="lastName"
+              name="lastName"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Your Last Name"
               className="w-full p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+              autoComplete="family-name"
               required
             />
           </div>
@@ -132,6 +136,7 @@ function SeekerLoginForm() {
                 value={phoneNumber}
                 onChange={setPhoneNumber as (value: string | undefined) => void}
                 placeholder="Enter phone number"
+                inputProps={{ name: 'phoneNumber', autoComplete: 'tel' }}
               />
             </div>
           </div>
@@ -142,10 +147,12 @@ function SeekerLoginForm() {
             <input
               type="email"
               id="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               className="w-full p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+              autoComplete="email"
               required
             />
           </div>
@@ -156,10 +163,12 @@ function SeekerLoginForm() {
             <input
               type="password"
               id="password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="********"
               className="w-full p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+              autoComplete="new-password"
               required
             />
           </div>
@@ -170,10 +179,12 @@ function SeekerLoginForm() {
             <input
               type="password"
               id="confirmPassword"
+              name="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="********"
               className="w-full p-2 bg-white border border-orange-500/30 rounded-lg text-black text-sm"
+              autoComplete="new-password"
               required
             />
           </div>
@@ -336,10 +347,12 @@ const SeekerSignupPage: React.FC = () => {
               <input
                 type="text"
                 id="firstName"
+                name="firstName"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Your First Name"
                 className="w-full p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                autoComplete="given-name"
                 required
               />
             </div>
@@ -350,10 +363,12 @@ const SeekerSignupPage: React.FC = () => {
               <input
                 type="text"
                 id="lastName"
+                name="lastName"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Your Last Name"
                 className="w-full p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                autoComplete="family-name"
                 required
               />
             </div>
@@ -368,6 +383,7 @@ const SeekerSignupPage: React.FC = () => {
                   value={phoneNumber}
                   onChange={setPhoneNumber as (value: string | undefined) => void}
                   placeholder="Enter phone number"
+                  inputProps={{ name: 'phoneNumber', autoComplete: 'tel' }}
                 />
               </div>
             </div>
@@ -378,10 +394,12 @@ const SeekerSignupPage: React.FC = () => {
               <input
                 type="email"
                 id="email"
+                name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 className="w-full p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                autoComplete="email"
                 required
               />
             </div>
@@ -392,10 +410,12 @@ const SeekerSignupPage: React.FC = () => {
               <input
                 type="password"
                 id="password"
+                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="********"
                 className="w-full p-2 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
+                autoComplete="new-password"
                 required
               />
             </div>
@@ -406,10 +426,12 @@ const SeekerSignupPage: React.FC = () => {
               <input
                 type="password"
                 id="confirmPassword"
+                name="confirmPassword"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="********"
                 className="w-full p-2 bg-white border border-orange-500/30 rounded-lg text-black text-sm"
+                autoComplete="new-password"
                 required
               />
             </div>

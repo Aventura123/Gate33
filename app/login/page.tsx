@@ -49,14 +49,15 @@ function SeekerLoginForm() {
       <div className="mb-6">
         <label htmlFor="seeker-email" className="block text-sm font-medium text-gray-700 mb-1">
           Email
-        </label>
-        <input
+        </label>        <input
           id="seeker-email"
           type="email"
+          name="email"
           placeholder="Enter your email"
           value={seekerEmail}
           onChange={(e) => setSeekerEmail(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-black"
+          autoComplete="email"
           required
         />
       </div>
@@ -64,14 +65,15 @@ function SeekerLoginForm() {
       <div className="mb-6">
         <label htmlFor="seeker-password" className="block text-sm font-medium text-gray-700 mb-1">
           Password
-        </label>
-        <input
+        </label>        <input
           id="seeker-password"
           type="password"
+          name="password"
           placeholder="Enter your password"
           value={seekerPassword}
           onChange={(e) => setSeekerPassword(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-black"
+          autoComplete="current-password"
           required
         />
       </div>
@@ -172,14 +174,15 @@ function CompanyLoginForm() {
       <div className="mb-6">
         <label htmlFor="company-email" className="block text-sm font-medium text-gray-700 mb-1">
           Email
-        </label>
-        <input
+        </label>        <input
           id="company-email"
           type="email"
+          name="email"
           placeholder="Enter your company email"
           value={companyEmail}
           onChange={(e) => setCompanyEmail(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-black"
+          autoComplete="work email"
           required
         />
       </div>
@@ -187,14 +190,15 @@ function CompanyLoginForm() {
       <div className="mb-6">
         <label htmlFor="company-password" className="block text-sm font-medium text-gray-700 mb-1">
           Password
-        </label>
-        <input
+        </label>        <input
           id="company-password"
           type="password"
+          name="password"
           placeholder="Enter your password"
           value={companyPassword}
           onChange={(e) => setCompanyPassword(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-black"
+          autoComplete="current-password"
           required
         />
       </div>

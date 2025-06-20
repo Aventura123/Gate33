@@ -164,36 +164,33 @@ const CompanyRegisterPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-xl w-full max-w-5xl flex flex-col md:flex-row gap-8">
           {/* Company Data */}
           <div className="flex-1 flex flex-col gap-3 min-w-0">
-            <h2 className="text-2xl font-bold mb-2 text-orange-500">Company Data</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <input type="text" name="companyName" placeholder="Company Name" value={formData.companyName} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="text" name="industry" placeholder="Industry" value={formData.industry} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="text" name="taxId" placeholder="Tax ID / VAT" value={formData.taxId} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="text" name="registrationNumber" placeholder="Registration Number" value={formData.registrationNumber} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="text" name="country" placeholder="Country" value={formData.country} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="text" name="address" placeholder="Address" value={formData.address} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="number" name="employees" placeholder="Employees" value={formData.employees} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="number" name="yearsActive" placeholder="Years Active" value={formData.yearsActive} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="email" name="email" placeholder="Company Email" value={formData.email} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="url" name="website" placeholder="Website" value={formData.website} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="url" name="linkedin" placeholder="LinkedIn (optional)" value={formData.linkedin} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" />
-              <input type="text" name="telegram" placeholder="Telegram (optional)" value={formData.telegram} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" />
-              <input type="text" name="twitter" placeholder="Twitter (optional)" value={formData.twitter} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" />
-              <input type="text" name="facebook" placeholder="Facebook (optional)" value={formData.facebook} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" />
-              <input type="text" name="instagram" placeholder="Instagram (optional)" value={formData.instagram} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" />
-            </div>
-            <textarea name="description" placeholder="Company Description" value={formData.description} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm mt-2" rows={2} required />
+            <h2 className="text-2xl font-bold mb-2 text-orange-500">Company Data</h2>            <div className="grid grid-cols-2 gap-3">
+              <input type="text" id="companyName" name="companyName" placeholder="Company Name" value={formData.companyName} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="organization" required />
+              <input type="text" id="industry" name="industry" placeholder="Industry" value={formData.industry} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="organization-title" required />
+              <input type="text" id="taxId" name="taxId" placeholder="Tax ID / VAT" value={formData.taxId} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="off" required />
+              <input type="text" id="registrationNumber" name="registrationNumber" placeholder="Registration Number" value={formData.registrationNumber} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="off" required />
+              <input type="text" id="country" name="country" placeholder="Country" value={formData.country} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="country-name" required />
+              <input type="text" id="address" name="address" placeholder="Address" value={formData.address} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="street-address" required />
+              <input type="number" id="employees" name="employees" placeholder="Employees" value={formData.employees} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="off" required />
+              <input type="number" id="yearsActive" name="yearsActive" placeholder="Years Active" value={formData.yearsActive} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="off" required />
+              <input type="email" id="email" name="email" placeholder="Company Email" value={formData.email} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="work email" required />
+              <input type="url" id="website" name="website" placeholder="Website" value={formData.website} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="url" required />
+              <input type="url" id="linkedin" name="linkedin" placeholder="LinkedIn (optional)" value={formData.linkedin} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="url" />
+              <input type="text" id="telegram" name="telegram" placeholder="Telegram (optional)" value={formData.telegram} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="off" />
+              <input type="text" id="twitter" name="twitter" placeholder="Twitter (optional)" value={formData.twitter} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="url" />
+              <input type="text" id="facebook" name="facebook" placeholder="Facebook (optional)" value={formData.facebook} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="url" />
+              <input type="text" id="instagram" name="instagram" placeholder="Instagram (optional)" value={formData.instagram} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="url" />
+            </div>            <textarea id="description" name="description" placeholder="Company Description" value={formData.description} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm mt-2" rows={2} autoComplete="off" required />
             <div className="flex flex-col mt-2">
-              <label className="text-sm font-medium text-gray-700 mb-1">Company Logo (required, 1 file)</label>
-              <input type="file" name="logo" accept="image/*" onChange={handleFileChange} className="p-2 border rounded text-black bg-white text-sm" required />
+              <label htmlFor="logo" className="text-sm font-medium text-gray-700 mb-1">Company Logo (required, 1 file)</label>
+              <input type="file" id="logo" name="logo" accept="image/*" onChange={handleFileChange} className="p-2 border rounded text-black bg-white text-sm" required />
             </div>
           </div>
           {/* Responsible Person Data */}
           <div className="flex-1 flex flex-col gap-3 min-w-0">
-            <h2 className="text-2xl font-bold mb-2 text-orange-500">Responsible Person</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <input type="text" name="responsibleName" placeholder="Full Name" value={formData.responsibleName} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="email" name="responsibleEmail" placeholder="Email" value={formData.responsibleEmail} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
+            <h2 className="text-2xl font-bold mb-2 text-orange-500">Responsible Person</h2>            <div className="grid grid-cols-2 gap-3">
+              <input type="text" id="responsibleName" name="responsibleName" placeholder="Full Name" value={formData.responsibleName} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="name" required />
+              <input type="email" id="responsibleEmail" name="responsibleEmail" placeholder="Email" value={formData.responsibleEmail} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="email" required />
               <div className="col-span-2">
                 <PhoneInput
                   country={'pt'}
@@ -201,17 +198,17 @@ const CompanyRegisterPage: React.FC = () => {
                   onChange={phone => setFormData({ ...formData, responsiblePhone: phone })}
                   inputClass="w-full p-2 border rounded text-black bg-white text-sm"
                   inputStyle={{ width: '100%' }}
-                  inputProps={{ name: 'responsiblePhone', required: true }}
+                  inputProps={{ name: 'responsiblePhone', id: 'responsiblePhone', required: true, autoComplete: 'tel' }}
                   placeholder="Phone"
                 />
               </div>
-              <input type="text" name="responsiblePosition" placeholder="Position" value={formData.responsiblePosition} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
-              <input type="password" name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" required />
+              <input type="text" id="responsiblePosition" name="responsiblePosition" placeholder="Position" value={formData.responsiblePosition} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="organization-title" required />
+              <input type="password" id="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="new-password" required />
+              <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm" autoComplete="new-password" required />
             </div>
-            <textarea name="comments" placeholder="Observations / Comments (optional)" value={formData.comments} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm mt-2" rows={3} />            <div className="flex flex-col mt-2">
-              <label className="text-sm font-medium text-gray-700 mb-1">Official Document (optional, PDF or image)</label>
-              <input type="file" name="docFile" accept="application/pdf,image/*" onChange={handleDocFileChange} className="p-2 border rounded text-black bg-white text-sm" />
+            <textarea id="comments" name="comments" placeholder="Observations / Comments (optional)" value={formData.comments} onChange={handleChange} className="p-2 border rounded text-black bg-white text-sm mt-2" rows={3} autoComplete="off" />            <div className="flex flex-col mt-2">
+              <label htmlFor="docFile" className="text-sm font-medium text-gray-700 mb-1">Official Document (optional, PDF or image)</label>
+              <input type="file" id="docFile" name="docFile" accept="application/pdf,image/*" onChange={handleDocFileChange} className="p-2 border rounded text-black bg-white text-sm" />
             </div>
             {message && (
               <div className="mt-2">
