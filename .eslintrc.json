@@ -1,0 +1,16 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "linebreak-style": "off",
+    "max-len": ["error", { "code": 200, "ignoreUrls": true, "ignoreStrings": true, "ignoreTemplateLiterals": true }],
+    "@next/next/no-img-element": "off",
+    "@next/next/no-html-link-for-pages": "off"
+  },
+  "ignorePatterns": [
+    ".next/**",
+    "out/**",
+    "public/**",
+    "node_modules/**",
+    "functions/lib/**"
+  ]
+}

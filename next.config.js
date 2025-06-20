@@ -6,8 +6,11 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   disable: false, // Always enable PWA - we only work in production
   // Prevent multiple GenerateSW calls
-  mode: 'production',  cacheOnFrontEndNav: true,
+  mode: 'production',
+  cacheOnFrontEndNav: true,
   reloadOnOnline: true,
+  // Increase file size limit to handle larger chunks
+  maximumFileSizeToCacheInBytes: 5000000, // 5MB
   buildExcludes: [
     /middleware-manifest\.json$/,
     /app-build-manifest\.json$/,
@@ -15,7 +18,13 @@ const withPWA = require('next-pwa')({
     /server\/.*\.js$/,
     /\.map$/,
     /_buildManifest\.js$/,
-    /_ssgManifest\.js$/
+    /_ssgManifest\.js$/,
+    // Exclude large vendor chunks from precaching
+    /vendors-.*\.js$/,
+    /ethers-.*\.js$/,
+    /walletconnect-.*\.js$/,
+    /web3modal-.*\.js$/,
+    /charts-.*\.js$/,
   ],
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
   fallbacks: {
@@ -85,15 +94,72 @@ module.exports = withPWA({
   productionBrowserSourceMaps: false,
   trailingSlash: false,
   // Production-only optimizations
-  compress: true,  generateEtags: true,
+  compress: true,
+  generateEtags: true,
   httpAgentOptions: {
     keepAlive: true,
-  },  // Next.js 15 optimizations
+  },
+  // Next.js 15 optimizations
   experimental: {
     optimizePackageImports: ['@headlessui/react', '@heroicons/react'],
     optimizeCss: false, // Disabled to prevent critters conflict
   },
-  // Turbopack configuration (stable in Next.js 15)
+  // Bundle optimization para reduzir o chunk de vendors
+  webpack: (config, { dev, isServer }) => {
+    if (!dev && !isServer) {
+      // Split chunks para bibliotecas Web3 grandes
+      config.optimization.splitChunks = {
+        ...config.optimization.splitChunks,
+        cacheGroups: {
+          ...config.optimization.splitChunks.cacheGroups,
+          // Separar ethers.js em chunk próprio
+          ethers: {
+            name: 'ethers',
+            test: /[\\/]node_modules[\\/]ethers[\\/]/,
+            chunks: 'all',
+            priority: 30,
+          },
+          // Separar WalletConnect em chunk próprio
+          walletconnect: {
+            name: 'walletconnect',
+            test: /[\\/]node_modules[\\/]@walletconnect[\\/]/,
+            chunks: 'all',
+            priority: 30,
+          },
+          // Separar Web3Modal/Wagmi em chunk próprio
+          web3modal: {
+            name: 'web3modal',
+            test: /[\\/]node_modules[\\/](@web3modal|@reown|@wagmi|viem|wagmi)[\\/]/,
+            chunks: 'all',
+            priority: 30,
+          },
+          // Chunk para charts
+          charts: {
+            name: 'charts',
+            test: /[\\/]node_modules[\\/](chart\.js|react-chartjs-2|apexcharts|react-apexcharts|recharts|lightweight-charts)[\\/]/,
+            chunks: 'all',
+            priority: 20,
+          },
+          // Chunk para UI libraries
+          ui: {
+            name: 'ui',
+            test: /[\\/]node_modules[\\/](@headlessui|@heroicons|framer-motion|styled-components)[\\/]/,
+            chunks: 'all',
+            priority: 15,
+          },
+          // Manter vendors default mas com limite menor
+          default: {
+            name: 'vendors',
+            test: /[\\/]node_modules[\\/]/,
+            chunks: 'all',
+            priority: 10,
+            maxSize: 1500000, // 1.5MB limit
+          }
+        }
+      };
+    }
+    return config;
+  },  // Turbopack configuration (stable in Next.js 15)
   turbopack: {
     rules: {
       '*.svg': {

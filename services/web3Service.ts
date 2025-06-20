@@ -42,7 +42,6 @@ class Web3Service {
   isInitializing: boolean = false;
   connectionError: string | null = null;
   wcV2Provider: any = null;
-
   // Network configurations imported from the configuration file
   networks = NETWORK_CONFIG;
 
@@ -53,7 +52,8 @@ class Web3Service {
 
   /**
    * Gets the name of a network from its chainId
-   */  private getNetworkNameForChainId(chainId: number): string {
+   */
+  private getNetworkNameForChainId(chainId: number): string {
     // Remove BSC Testnet (97) logic
     if (chainId === 1) return 'Ethereum Mainnet';
     if (chainId === 56) return 'Binance Smart Chain';

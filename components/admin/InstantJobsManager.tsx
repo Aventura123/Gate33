@@ -320,10 +320,8 @@ const InstantJobsManager: React.FC = () => {
         await instantJobsEscrowService.init(normalizedNetwork, true);
         await loadContractDataWithNetwork(normalizedNetwork);
         await loadJobsWithNetwork(normalizedNetwork);
-      }
-    };
+      }    };
     updateForNetwork();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNetwork]);
   
   // Check wallet connection e carrega dados quando a wallet conecta
