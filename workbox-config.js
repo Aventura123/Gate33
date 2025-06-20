@@ -2,12 +2,15 @@
 module.exports = {
   globDirectory: '.next/',
   globPatterns: [
-    '**/*.{js,css,html,png,jpg,jpeg,gif,svg,woff,woff2,eot,ttf,otf}'
+    'static/**/*.{js,css,png,jpg,jpeg,gif,svg,woff,woff2}',
+    'server/app/**/*.{js,html}',
+    '!**/*-manifest.json' // Exclude manifest files that might not exist
   ],
   swDest: 'public/sw.js',
   skipWaiting: true,
   clientsClaim: true,
   maximumFileSizeToCacheInBytes: 5000000, // 5MB
+  ignoreURLParametersMatching: [/^utm_/, /^fbclid$/],
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/fonts\.(?:gstatic)\.com\/.*/i,

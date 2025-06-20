@@ -17,12 +17,9 @@ export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
-}) {
-  return (
+}) {  return (
     <html lang="pt-BR">
-      <head>
-        {/* <GoogleAnalytics /> REMOVIDO DO HEAD */}
-      </head>
+      <head></head>
       <body>
         <GoogleAnalytics />
         <WalletProvider>

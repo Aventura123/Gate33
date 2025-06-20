@@ -8,12 +8,14 @@ const withPWA = require('next-pwa')({
   // Prevent multiple GenerateSW calls
   mode: 'production',
   cacheOnFrontEndNav: true,
-  reloadOnOnline: true,
-  buildExcludes: [
+  reloadOnOnline: true,  buildExcludes: [
     /middleware-manifest\.json$/,
     /app-build-manifest\.json$/,
+    /dynamic-css-manifest\.json$/,
     /server\/.*\.js$/,
-    /\.map$/
+    /\.map$/,
+    /_buildManifest\.js$/,
+    /_ssgManifest\.js$/
   ],
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
   fallbacks: {
