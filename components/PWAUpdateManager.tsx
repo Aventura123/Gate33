@@ -170,17 +170,28 @@ export default function PWAUpdateManager({
         clearInterval(statusCheckInterval);
       };
     }
-  }, [onUpdateAvailable, onUpdateInstalled]);
-  const handleUpdate = () => {
+  }, [onUpdateAvailable, onUpdateInstalled]);  const handleUpdate = () => {
+    console.log('[PWA] Update button clicked');
+    setUpdateAvailable(false);
+    
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistration().then((registration) => {
         if (registration?.waiting) {
+          console.log('[PWA] Found waiting service worker, sending skip waiting message');
+          
+          // Listen for controller change first
+          const handleControllerChange = () => {
+            console.log('[PWA] Controller changed, reloading page');
+            window.location.reload();
+          };
+          
+          navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange, { once: true });
+          
+          // Send message to waiting service worker to skip waiting
           registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          registration.waiting.addEventListener('statechange', () => {
-            if (registration.waiting?.state === 'activated') {
-              window.location.reload();
-            }
-          });
+        } else {
+          console.log('[PWA] No waiting service worker found, just reloading');
+          window.location.reload();
         }
       });
     }

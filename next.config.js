@@ -162,8 +162,7 @@ module.exports = withPWA({
     }
     
     return config;
-  },
-  async headers() {
+  },  async headers() {
     return [
       {
         source: '/(.*)',
@@ -171,6 +170,18 @@ module.exports = withPWA({
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
+        ],
+      },
+      {
+        source: '/_next/static/css/(.*)',
+        headers: [
+          { key: 'Content-Type', value: 'text/css; charset=utf-8' },
+        ],
+      },
+      {
+        source: '/_next/static/js/(.*)',
+        headers: [
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
         ],
       },
     ];
