@@ -628,11 +628,24 @@ const SeekerDashboard = () => {
     const { name, value } = e.target;
     setSeekerProfile({ ...seekerProfile, [name]: value ?? "" });
   };
-
   // Handle seeker photo upload (adapt API endpoint and form data)
   const handleUserPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && seekerId) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file.');
+        return;
+      }
+      
+      // Validate file size (5MB max)
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+      if (file.size > MAX_FILE_SIZE) {
+        alert('File size must be less than 5MB.');
+        return;
+      }
+
+      // Show preview immediately
       const reader = new FileReader();
       reader.onloadend = () => setUserPhoto(reader.result as string);
       reader.readAsDataURL(file);
@@ -640,26 +653,46 @@ const SeekerDashboard = () => {
       setIsUploading(true);
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("seekerId", seekerId); // Use seekerId
+      formData.append("seekerId", seekerId);
 
       try {
-        // Adjust API endpoint for seekers
         const response = await fetch("/api/seeker/photo", {
           method: "POST",
           body: formData,
         });
         const responseData = await response.json();
-        if (!response.ok) throw new Error(responseData.message || "Failed to upload photo");
-        setUserPhoto(responseData.url); // Update photo with URL from server
+        
+        if (!response.ok) {
+          throw new Error(responseData.message || "Failed to upload photo");
+        }
+        
+        // Update photo with URL from server
+        setUserPhoto(responseData.url);
+        
+        // Update the seeker profile state with the new photo URL
+        setSeekerProfile(prev => ({
+          ...prev,
+          photoUrl: responseData.url,
+          photoURL: responseData.url
+        }));
+        
         console.log("Seeker photo upload successful!");
-        // No need to call reloadData() here if only photo changed, unless other profile data depends on it
+        
+        // Optional: Show success message
+        // You can add a toast notification here if you have a notification system
+        
       } catch (error: any) {
         console.error("Error uploading seeker photo:", error);
         alert(`Failed to upload photo: ${error.message || "Unknown error"}`);
-        // Revert photo preview if upload fails? Optional.
-        fetchSeekerPhoto(seekerId); // Refetch original photo on error
+        
+        // Revert photo preview if upload fails
+        if (seekerId) {
+          fetchSeekerPhoto(seekerId);
+        }
       } finally {
         setIsUploading(false);
+        // Clear the input value to allow uploading the same file again
+        e.target.value = '';
       }
     }
   };
@@ -1195,16 +1228,34 @@ const SeekerDashboard = () => {
     const firstExperience = seekerProfile.experience && seekerProfile.experience.length > 0 ? seekerProfile.experience[0] : null;    const firstEducation = seekerProfile.education && seekerProfile.education.length > 0 ? seekerProfile.education[0] : null;    return (
       <div className="bg-black/60 rounded-lg border border-orange-900/30 p-6 pt-16 md:pt-20 shadow-lg">
         {/* Top Section: Photo, Name, Title */}
-        <div className="flex flex-col md:flex-row items-center gap-8 mb-6">
-          {/* Profile photo */}
+        <div className="flex flex-col md:flex-row items-center gap-8 mb-6">          {/* Profile photo */}
           <div className="relative">
             <img
               src={userPhoto || "/images/default-avatar.png"}
               alt="Profile"
-              className="w-40 h-40 rounded-full border-4 border-orange-500 object-cover shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => document.getElementById('profile-photo-upload')?.click()}
-              title="Click to change profile photo"
+              className={`w-40 h-40 rounded-full border-4 border-orange-500 object-cover shadow-lg cursor-pointer hover:opacity-80 transition-opacity ${isUploading ? 'opacity-50' : ''}`}
+              onClick={() => !isUploading && document.getElementById('profile-photo-upload')?.click()}
+              title={isUploading ? "Uploading..." : "Click to change profile photo"}
             />
+            
+            {/* Upload indicator */}
+            {isUploading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+              </div>
+            )}
+            
+            {/* Camera icon overlay */}
+            {!isUploading && (
+              <div className="absolute bottom-2 right-2 bg-orange-500 rounded-full p-2 shadow-lg hover:bg-orange-600 transition-colors cursor-pointer"
+                   onClick={() => document.getElementById('profile-photo-upload')?.click()}
+                   title="Change profile photo">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            )}
           </div>
           
           {/* Main information */}
@@ -3764,13 +3815,21 @@ const SeekerDashboard = () => {
               )}
             </div>
           )}
-        </section>
-        {/* Notification panel (right side overlay) */}
+        </section>        {/* Notification panel (right side overlay) */}
         <NotificationsPanel
           userId={seekerId}
           open={showNotifications}
           onClose={() => setShowNotifications(false)}
           overlay        />
+        
+        {/* Hidden file input for profile photo upload */}
+        <input
+          id="profile-photo-upload"
+          type="file"
+          accept="image/*"
+          onChange={handleUserPhotoChange}
+          style={{ display: 'none' }}
+        />
       </main>
     </FullScreenLayout>
   );
