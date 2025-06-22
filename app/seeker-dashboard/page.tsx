@@ -310,7 +310,6 @@ const SeekerDashboard = () => {
   // Add this new state for job applications
   const [myApplications, setMyApplications] = useState<any[]>([]);
   const [isApplyingForJob, setIsApplyingForJob] = useState(false);
-  
   // Support ticket form state
   const [ticketArea, setTicketArea] = useState("");
   const [ticketSubject, setTicketSubject] = useState("");
@@ -691,9 +690,7 @@ const SeekerDashboard = () => {
         setIsUploading(false);
       }
     }
-  };
-
-  // Handle seeker logout
+  };  // Handle seeker logout
   const handleLogout = () => {
     localStorage.removeItem("seekerToken"); // Remove seekerToken
     router.replace("/login");
@@ -3467,7 +3464,7 @@ const SeekerDashboard = () => {
           className={
             isMobile
               ? `fixed top-0 left-0 h-full w-64 bg-black/90 z-50 transform transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} overflow-y-auto pt-16`
-              : 'w-1/4 bg-black/70 p-6 pt-16 md:pt-20 flex flex-col items-start min-h-screen'
+              : 'w-1/4 bg-black/70 p-6 pt-22 md:pt-24 flex flex-col items-start min-h-screen'
           }
           id="seeker-dashboard-sidebar"
         >
@@ -3482,67 +3479,101 @@ const SeekerDashboard = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-          )}          <div className={`flex flex-col items-center w-full ${isMobile ? 'pt-16 pb-8' : 'mb-6'}`}>            {/* Header with notification bell and centered welcome message */}
-            <div className="relative w-full flex flex-col items-center mb-6">
-              {/* Notification bell positioned at the top right */}
-              <div className="self-end mb-2">
+          )}          <div className={`flex flex-col items-center w-full ${isMobile ? 'pt-16 pb-8' : 'mb-8'}`}>            {/* Header with notification bell and welcome message with divider */}
+            <div className="relative w-full flex items-center justify-between mb-6 px-4">
+              {/* Welcome Message with User Name - Left aligned, same line */}
+              <div className="flex items-center space-x-2 text-left" style={{ fontFamily: 'Verdana, sans-serif' }}>
+                <span className="text-xl font-semibold text-orange-500">Welcome</span>
+                <span className="text-xl font-semibold text-orange-500">
+                  {(seekerProfile.name || "User").split(' ')[0]}
+                </span>
+              </div>
+              
+              {/* Vertical divider and Notification bell - Right aligned */}
+              <div className="flex items-center">
+                <div className="w-px h-8 bg-gray-600 mr-4"></div>
                 <NotificationBell unreadCount={unreadCount} onClick={() => setShowNotifications(true)} />
               </div>
-              {/* User Name - Centered */}
-              <div className="text-center">
-                <p className="text-lg font-semibold text-white">{`Welcome ${seekerProfile.name || "User"}!`}</p>
-              </div>
             </div>
-          </div>{/* Navigation - reduce button size and spacing on mobile */}
-          <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>
+          </div>{/* Navigation */}
+          <ul className={`w-full block ${isMobile ? 'space-y-2 px-4' : 'space-y-2'}`}>
             <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "myProfile" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2.5 px-4 rounded-md transition-all duration-200 focus:outline-none ${
+                  activeTab === "myProfile" 
+                    ? "bg-orange-500/20 text-orange-400 border-l-4 border-orange-500" 
+                    : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"
+                }`}
                 onClick={() => handleTabChange("myProfile")}
               >
-                My Profile
+                <span className="text-sm font-medium">My Profile</span>
               </button>
             </li>
             <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "myApplications" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2.5 px-4 rounded-md transition-all duration-200 focus:outline-none ${
+                  activeTab === "myApplications" 
+                    ? "bg-orange-500/20 text-orange-400 border-l-4 border-orange-500" 
+                    : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"
+                }`}
                 onClick={() => handleTabChange("myApplications")}
               >
-                My Applications
+                <span className="text-sm font-medium">My Applications</span>
               </button>
-            </li>
-            <li>
+            </li>            <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "instantJobs" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
-                onClick={() => handleTabChange("instantJobs")}
+                className={`w-full text-left py-2.5 px-4 rounded-md transition-all duration-200 focus:outline-none ${
+                  activeTab === "instantJobs" 
+                    ? "bg-orange-500/20 text-orange-400 border-l-4 border-orange-500" 
+                    : isProduction 
+                      ? "text-gray-500 cursor-not-allowed" 
+                      : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"
+                }`}
+                onClick={isProduction ? undefined : () => handleTabChange("instantJobs")}
+                disabled={isProduction}
               >
-                Instant Jobs
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-sm font-medium">Instant Jobs</span>
+                  {isProduction && (
+                    <span className="text-xs bg-orange-600 text-white px-2 py-0.5 rounded-full font-medium">
+                      Coming Soon
+                    </span>
+                  )}
+                </div>
               </button>
             </li>
             <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "settings" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2.5 px-4 rounded-md transition-all duration-200 focus:outline-none ${
+                  activeTab === "settings" 
+                    ? "bg-orange-500/20 text-orange-400 border-l-4 border-orange-500" 
+                    : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"
+                }`}
                 onClick={() => handleTabChange("settings")}
               >
-                Settings
+                <span className="text-sm font-medium">Settings</span>
               </button>
             </li>
             <li>
               <button
-                className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "support" ? "bg-orange-500 text-white" : "bg-black/50 text-gray-300 hover:text-orange-500"}`}
+                className={`w-full text-left py-2.5 px-4 rounded-md transition-all duration-200 focus:outline-none ${
+                  activeTab === "support" 
+                    ? "bg-orange-500/20 text-orange-400 border-l-4 border-orange-500" 
+                    : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"
+                }`}
                 onClick={() => handleTabChange("support")}
               >
-                Support
+                <span className="text-sm font-medium">Support</span>
               </button>
-            </li>          </ul>
-          <button
+            </li>
+          </ul>          <button
             onClick={handleLogout}
-            className="w-full mt-8 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center justify-center"
+            className="w-full mt-auto mb-4 bg-red-600 text-white hover:bg-red-700 py-2.5 px-4 rounded-md flex items-center justify-center transition-all duration-200 font-medium"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            Logout
+            <span className="text-sm font-medium">Logout</span>
           </button>
         </aside>{/* Main Content Area */}
         <section className="w-full md:w-3/4 p-4 md:p-8 pt-16 md:pt-20 overflow-y-auto">
