@@ -56,36 +56,47 @@ $cachePaths = @(
 foreach ($path in $cachePaths) {
     if (Test-Path $path) {
         Remove-Item $path -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "✅ Cache limpo: $([System.IO.Path]::GetFileName($path))" -ForegroundColor Green
+        Write-Host "Cache limpo: $([System.IO.Path]::GetFileName($path))" -ForegroundColor Green
     }
 }
 
-# 4. Criar configuração otimizada
-Write-Host "`n4. Aplicando configuração otimizada..." -ForegroundColor Yellow
-$config = @{
-    "typescript.preferences.includePackageJsonAutoImports" = "off"
-    "typescript.suggest.autoImports" = $false
-    "editor.suggest.showInlineDetails" = $false
-    "telemetry.telemetryLevel" = "off"
-    "git.autoRepositoryDetection" = $false
-    "extensions.autoUpdate" = $false
-    "files.watcherExclude" = @{
-        "**/node_modules/**" = $true
-        "**/.git/**" = $true
-        "**/dist/**" = $true
-        "**/.next/**" = $true
-    }
-    "editor.minimap.enabled" = $false
-    "breadcrumbs.enabled" = $false
+# 4. Configurar memória permanente para 12GB
+Write-Host "`n4. Configurando memória permanente do VS Code para 12GB..." -ForegroundColor Yellow
+
+# Configurar argv.json global (aplicável a todas as instâncias do VS Code)
+$globalArgvPath = "$env:APPDATA\Code\User\argv.json"
+$globalArgvDir = Split-Path $globalArgvPath -Parent
+
+if (!(Test-Path $globalArgvDir)) {
+    New-Item -ItemType Directory -Path $globalArgvDir -Force | Out-Null
 }
 
-$vscodeDir = ".\.vscode"
-if (!(Test-Path $vscodeDir)) {
-    New-Item -ItemType Directory -Path $vscodeDir -Force | Out-Null
+$argv = @{
+    "max-memory" = "12288"  # 12GB em MB
+    "max-old-space-size" = "12288"
+    "max-semi-space-size" = "512" 
+    "initial-old-space-size" = "4096"
+    "gc-interval" = "100"
+    "enable-logging" = $false
 }
 
-$config | ConvertTo-Json -Depth 3 | Out-File -FilePath "$vscodeDir\settings.json" -Encoding UTF8 -Force
-Write-Host "✅ Configuração otimizada aplicada" -ForegroundColor Green
+$argv | ConvertTo-Json -Depth 2 | Out-File -FilePath $globalArgvPath -Encoding UTF8 -Force
+Write-Host "Configuracao de memoria global aplicada: $globalArgvPath" -ForegroundColor Green
+
+# Criar atalho personalizado do VS Code com parametros de memoria
+Write-Host "`n4.1. Criando atalho personalizado..." -ForegroundColor Yellow
+$desktopPath = [Environment]::GetFolderPath("Desktop")
+$shortcutPath = "$desktopPath\VS Code (12GB).lnk"
+
+# Script para criar atalho
+$WshShell = New-Object -comObject WScript.Shell
+$Shortcut = $WshShell.CreateShortcut($shortcutPath)
+$Shortcut.TargetPath = "code"
+$Shortcut.Arguments = "--max-memory=12288 --max-old-space-size=12288 --max-semi-space-size=512 --gc-interval=100"
+$Shortcut.Description = "VS Code com 12GB de memória"
+$Shortcut.Save()
+
+Write-Host "Atalho criado na area de trabalho: VS Code (12GB).lnk" -ForegroundColor Green
 
 # 5. Finalizar processos VS Code
 Write-Host "`n5. Finalizando VS Code..." -ForegroundColor Yellow
@@ -105,11 +116,32 @@ $usedPercent = [math]::Round((($totalGB - $freeGB) / $totalGB) * 100, 1)
 
 Write-Host "Total: ${totalGB}GB | Livre: ${freeGB}GB | Uso: ${usedPercent}%" -ForegroundColor Cyan
 
-# 7. Recomendações
-Write-Host "`n=== RECOMENDAÇÕES ===" -ForegroundColor Cyan
+# 7. Recomendacoes
+Write-Host "`n=== RECOMENDACOES ===" -ForegroundColor Cyan
 Write-Host "1. Reinicie o VS Code agora" -ForegroundColor White
-Write-Host "2. Abra apenas arquivos necessários" -ForegroundColor White
-Write-Host "3. Se persistir, desative extensões: Ctrl+Shift+X" -ForegroundColor White
-Write-Host "4. Monitor contínuo: Get-Process *Code* | Select ProcessName,@{N='MB';E={[math]::Round(\$_.WorkingSet/1MB,2)}}" -ForegroundColor White
+Write-Host "2. Abra apenas arquivos necessarios" -ForegroundColor White
+Write-Host "3. Se persistir, desative extensoes: Ctrl+Shift+X" -ForegroundColor White
+Write-Host "4. Monitor continuo: Get-Process *Code* | Select ProcessName,@{N='MB';E={[math]::Round(\$_.WorkingSet/1MB,2)}}" -ForegroundColor White
 
-Write-Host "`n✅ Correções aplicadas!" -ForegroundColor Green
+# 8. Criar script de inicializacao com 12GB
+Write-Host "`n8. Criando script de inicializacao otimizado..." -ForegroundColor Yellow
+$launchScript = @"
+@echo off
+REM Script para iniciar VS Code com 12GB de memoria
+REM Usar este script ao inves do atalho normal
+
+echo Iniciando VS Code com configuracao de 12GB...
+code --max-memory=12288 --max-old-space-size=12288 --max-semi-space-size=512 --gc-interval=100 %*
+"@
+
+$launchScript | Out-File -FilePath ".\vscode-12gb.bat" -Encoding ASCII -Force
+Write-Host "Script criado: vscode-12gb.bat" -ForegroundColor Green
+Write-Host "   Use este script para iniciar o VS Code com 12GB" -ForegroundColor Cyan
+
+Write-Host "`n=== CONFIGURACAO DE MEMORIA 12GB APLICADA ===" -ForegroundColor Green
+Write-Host "- Argumentos de inicializacao configurados" -ForegroundColor White
+Write-Host "- Configuracao global aplicada (argv.json)" -ForegroundColor White
+Write-Host "- Script de inicializacao criado (vscode-12gb.bat)" -ForegroundColor White
+Write-Host "- Atalho criado na area de trabalho" -ForegroundColor White
+
+Write-Host "`nCorrecoes aplicadas com sucesso!" -ForegroundColor Green

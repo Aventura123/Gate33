@@ -136,7 +136,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
                              
             return {
               name: adminName,
-              photo: adminData?.photoURL || localStorage.getItem("userPhoto") || "/logo.png",
+              photo: adminData?.photoURL || localStorage.getItem("userPhoto") || "/images/default-avatar.png",
               role: formattedRole,
               type: 'admin' as const
             };
@@ -148,7 +148,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
             const supportData = await fetchUserDataFromFirebase('support', userId);
             return {
               name: supportData?.name || userName || "Support",
-              photo: supportData?.photoURL || localStorage.getItem("userPhoto") || "/logo.png",
+              photo: supportData?.photoURL || localStorage.getItem("userPhoto") || "/images/default-avatar.png",
               role: "Support",
               type: 'support' as const
             };
@@ -167,7 +167,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
             if (seekerData) {
               return {
                 name: seekerData.name || "User",
-                photo: seekerData.photoURL || "/logo.png",
+                photo: seekerData.photoURL || "/images/default-avatar.png",
                 role: "Job Seeker",
                 type: 'seeker' as const
               };
@@ -187,7 +187,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
             console.log("Company data obtained from Firebase:", companyData);
             return {
               name: companyData.name || "Company",
-              photo: companyData.photoURL || companyData.photo || "/logo.png",
+              photo: companyData.photoURL || companyData.photo || "/images/default-avatar.png",
               role: "Company",
               type: 'company' as const
             };
@@ -195,7 +195,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
             // Fallback to localStorage data if Firebase fails
             return {
               name: localStorage.getItem("companyName") || "Company",
-              photo: localStorage.getItem("companyPhoto") || "/logo.png",
+              photo: localStorage.getItem("companyPhoto") || "/images/default-avatar.png",
               role: "Company",
               type: 'company' as const
             };
@@ -344,7 +344,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.onerror = null;
-              target.src = '/logo.png';
+              target.src = '/images/default-avatar.png';
             }}
           />
         </div>        <span className={`text-sm font-medium text-white flex-shrink-0 ${isMobile ? 'inline' : 'hidden md:inline'}`}>
