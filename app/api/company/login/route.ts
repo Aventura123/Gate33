@@ -5,14 +5,14 @@ import { db } from '../../../../lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
-// Endpoint de autenticação da empresa
+// Company authentication endpoint
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { email, password } = body;
 
     if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+      return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
     }
 
     // Query companies collection to find a company with the provided email
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
     }
 
     // Get the first document (email should be unique)
@@ -48,11 +48,11 @@ export async function POST(request: Request) {
         }
       });
     } catch (authError: any) {
-      console.error('Firebase auth error:', authError);
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      console.error('Firebase authentication error:', authError);
+      return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
     }
   } catch (error) {
     console.error('Error during authentication:', error);
-    return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
+    return NextResponse.json({ error: 'Authentication failed.' }, { status: 500 });
   }
 }

@@ -3,8 +3,9 @@
 import React, { useState, useEffect, JSX, useCallback, useRef } from "react";
 import FullScreenLayout from "../../components/FullScreenLayout";
 import { useRouter } from "next/navigation";
-import { collection, getDocs, doc, getDoc, updateDoc, query, where, addDoc, serverTimestamp, onSnapshot, orderBy } from "firebase/firestore"; // Add necessary imports
-import { db } from "../../lib/firebase"; // Assuming db instance is correctly configured
+import { collection, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, addDoc, serverTimestamp, onSnapshot, orderBy, writeBatch } from "firebase/firestore"; // Add necessary imports
+import { db, auth } from "../../lib/firebase"; // Import auth for password and account operations
+import { updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from "firebase/auth";
 import instantJobsService, { InstantJob, JobMessage } from '../../services/instantJobsService';
 import InstantJobCard from '../../components/instant-jobs/InstantJobCard';
 import MessageSystem from '../../components/instant-jobs/MessageSystem';
@@ -263,13 +264,20 @@ const SeekerDashboard = () => {
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   // State for settings sub-tab - MOVED UP HERE
-  const [settingsTab, setSettingsTab] = useState<'profile' | 'general'>('profile');
-  // State for notification preferences - MOVED UP with the settingsTab
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'general'>('profile');  // State for notification preferences - MOVED UP with the settingsTab
   const [notificationPrefs, setNotificationPrefs] = useState({
     supportReplies: true,
     instantJobs: true,
     marketing: false
   });
+  
+  // State for privacy settings
+  const [privacySettings, setPrivacySettings] = useState({
+    profileVisible: true,
+    allowDirectMessages: true,
+    showActivityStatus: false
+  });
+  
   const [savingPrefs, setSavingPrefs] = useState(false);
 
   // Add Web3 state
@@ -500,6 +508,22 @@ const SeekerDashboard = () => {
         };
 
         setSeekerProfile(profileData);
+        
+        // Load notification preferences
+        if (data.notificationPreferences) {
+          setNotificationPrefs(prev => ({
+            ...prev,
+            ...data.notificationPreferences
+          }));
+        }
+        
+        // Load privacy settings
+        if (data.privacySettings) {
+          setPrivacySettings(prev => ({
+            ...prev,
+            ...data.privacySettings
+          }));
+        }
       } else {
         console.log("No such seeker document!");
         setSeekerProfile({ 
@@ -725,20 +749,70 @@ const SeekerDashboard = () => {
     } finally {
       setIsLoadingProfile(false);
     }
-  };
-
-  // Handle saving notification preferences
-  const handleSaveNotificationPrefs = async (e: React.FormEvent) => {
+  };  // Handle saving both notification preferences and privacy settings
+  const handleSavePreferences = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!seekerId || !db) return;
     setSavingPrefs(true);
     try {
+      // Save preferences to seeker profile
       await updateDoc(doc(db, 'seekers', seekerId), {
-        notificationPreferences: notificationPrefs
+        notificationPreferences: notificationPrefs,
+        privacySettings: privacySettings
       });
-      alert('Notification preferences saved successfully!');
+
+      // Handle job alert subscription when marketing communications is enabled
+      if (notificationPrefs.marketing && seekerProfile.email) {
+        try {
+          // Check if email already exists in jobAlertSubscribers
+          const subscribersRef = collection(db, 'jobAlertSubscribers');
+          const emailQuery = query(subscribersRef, where('email', '==', seekerProfile.email));
+          const emailSnapshot = await getDocs(emailQuery);
+          
+          if (emailSnapshot.empty) {
+            // Add email to jobAlertSubscribers if not already present
+            await addDoc(subscribersRef, {
+              email: seekerProfile.email,
+              seekerId: seekerId,
+              name: seekerProfile.name || seekerProfile.fullName || '',
+              subscribedAt: new Date().toISOString(),
+              active: true,
+              source: 'seeker_dashboard'
+            });
+            console.log('Email added to job alert subscribers');
+          } else {
+            // Update existing subscription to ensure it's active
+            const existingDoc = emailSnapshot.docs[0];
+            await updateDoc(doc(db, 'jobAlertSubscribers', existingDoc.id), {
+              active: true,
+              updatedAt: new Date().toISOString()
+            });
+            console.log('Job alert subscription updated to active');
+          }
+        } catch (subscriptionError) {
+          console.error('Error managing job alert subscription:', subscriptionError);
+          // Don't fail the main save operation for subscription errors
+        }      } else if (!notificationPrefs.marketing && seekerProfile.email) {
+        try {
+          // Remove email from job alert subscribers when marketing communications is disabled
+          const subscribersRef = collection(db, 'jobAlertSubscribers');
+          const emailQuery = query(subscribersRef, where('email', '==', seekerProfile.email));
+          const emailSnapshot = await getDocs(emailQuery);
+          
+          if (!emailSnapshot.empty) {
+            const existingDoc = emailSnapshot.docs[0];
+            await deleteDoc(doc(db, 'jobAlertSubscribers', existingDoc.id));
+            console.log('Email removed from job alert subscribers');
+          }
+        } catch (unsubscribeError) {
+          console.error('Error removing email from job alert subscribers:', unsubscribeError);
+          // Don't fail the main save operation for unsubscribe errors
+        }
+      }
+
+      alert('Preferences saved successfully!');
     } catch (err) {
-      console.error("Error saving notification preferences:", err);
+      console.error("Error saving preferences:", err);
       alert('Error saving preferences. Please try again.');
     } finally {
       setSavingPrefs(false);
@@ -1592,16 +1666,8 @@ const SeekerDashboard = () => {
                     onChange={handleCVUpload}
                     aria-label="Upload your CV"
                     className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-orange-500 file:text-white file:text-sm hover:file:bg-orange-600"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, ODT, RTF, TXT files accepted</p>
+                  />                  <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, ODT, RTF, TXT files accepted</p>
                   {isUploading && <span className="text-xs text-orange-400 ml-2">Uploading...</span>}
-                  {seekerProfile.resumeUrl && (
-                    <div className="mt-1">
-                      <a href={seekerProfile.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-xs">
-                        View uploaded CV
-                      </a>
-                    </div>
-                  )}
                 </div>
                 {/* Resume Link */}
                 <div>
@@ -2420,19 +2486,17 @@ const SeekerDashboard = () => {
             {/* What I'm Looking For */}
             <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">What I'm Looking For</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-6 md:mb-10">
-              <div className="space-y-4 md:space-y-6">
-                {/* Availability */}
+              <div className="space-y-4 md:space-y-6">                {/* Availability */}
                 <div>
                   <label htmlFor="availability" className="block text-sm font-semibold text-gray-300 mb-1">
-                    Availability
+                    Availability Date
                   </label>
                   <input 
                     id="availability"
-                    type="text" 
+                    type="date" 
                     name="availability" 
                     value={seekerProfile.availability ?? ""} 
                     onChange={handleProfileChange} 
-                    placeholder="e.g., Immediate, 15 days notice" 
                     className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
                   />
                 </div>
@@ -2569,101 +2633,105 @@ const SeekerDashboard = () => {
             {/* Two unified cards layout following Gate33 standards */}
             <div className="space-y-6 md:space-y-10">              {/* Top Unified Card: Notifications & Privacy */}
               <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                  {/* Left: Notification Preferences */}
-                  <div>
-                    <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Notification Preferences</h3>
-                    <form className="space-y-4 md:space-y-6" onSubmit={handleSaveNotificationPrefs}>
-                      <div className="space-y-4">
-                        <div className="flex items-center">
-                          <label className="flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              checked={notificationPrefs.supportReplies} 
-                              onChange={e => setNotificationPrefs(p => ({...p, supportReplies: e.target.checked}))}
-                              className="mr-2 h-5 w-5 accent-orange-500"
-                            />
-                            <span className="text-gray-300 text-sm font-medium">Receive support replies notifications</span>
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              checked={notificationPrefs.instantJobs} 
-                              onChange={e => setNotificationPrefs(p => ({...p, instantJobs: e.target.checked}))}
-                              className="mr-2 h-5 w-5 accent-orange-500"
-                            />
-                            <span className="text-gray-300 text-sm font-medium">Receive Instant Jobs notifications</span>
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              checked={notificationPrefs.marketing} 
-                              onChange={e => setNotificationPrefs(p => ({...p, marketing: e.target.checked}))}
-                              className="mr-2 h-5 w-5 accent-orange-500"
-                            />
-                            <span className="text-gray-300 text-sm font-medium">Receive marketing communications</span>
-                          </label>
+                <form onSubmit={handleSavePreferences}>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                    {/* Left: Notification Preferences */}
+                    <div>
+                      <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Notification Preferences</h3>
+                      <div className="space-y-4 md:space-y-6">
+                        <div className="space-y-4">
+                          <div className="flex items-center">
+                            <label className="flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={notificationPrefs.supportReplies} 
+                                onChange={e => setNotificationPrefs(p => ({...p, supportReplies: e.target.checked}))}
+                                className="mr-2 h-5 w-5 accent-orange-500"
+                              />
+                              <span className="text-gray-300 text-sm font-medium">Receive support replies notifications</span>
+                            </label>
+                          </div>
+                          <div className="flex items-center">
+                            <label className="flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={notificationPrefs.instantJobs} 
+                                onChange={e => setNotificationPrefs(p => ({...p, instantJobs: e.target.checked}))}
+                                className="mr-2 h-5 w-5 accent-orange-500"
+                              />
+                              <span className="text-gray-300 text-sm font-medium">Receive Instant Jobs notifications</span>
+                            </label>
+                          </div>
+                          <div className="flex items-center">
+                            <label className="flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={notificationPrefs.marketing} 
+                                onChange={e => setNotificationPrefs(p => ({...p, marketing: e.target.checked}))}
+                                className="mr-2 h-5 w-5 accent-orange-500"
+                              />
+                              <span className="text-gray-300 text-sm font-medium">Receive marketing communications</span>
+                            </label>
+                          </div>
                         </div>
                       </div>
-                      <button 
-                        type="submit" 
-                        disabled={savingPrefs}
-                        className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm w-full md:w-auto"
-                      >
-                        {savingPrefs ? 'Saving...' : 'Save Preferences'}
-                      </button>
-                    </form>
-                  </div>
+                    </div>
 
-                  {/* Right: Privacy Settings */}
-                  <div>
-                    <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Privacy Settings</h3>
-                    <div className="space-y-4 md:space-y-6">
-                      <div className="space-y-4">
-                        <div className="flex items-center">
-                          <label className="flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              defaultChecked
-                              className="mr-2 h-5 w-5 accent-orange-500"
-                            />
-                            <span className="text-gray-300 text-sm font-medium">Make my profile visible to employers</span>
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              defaultChecked
-                              className="mr-2 h-5 w-5 accent-orange-500"
-                            />
-                            <span className="text-gray-300 text-sm font-medium">Allow direct messages from employers</span>
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox"
-                              className="mr-2 h-5 w-5 accent-orange-500"
-                            />
-                            <span className="text-gray-300 text-sm font-medium">Show my activity status</span>
-                          </label>
+                    {/* Right: Privacy Settings */}
+                    <div>
+                      <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Privacy Settings</h3>
+                      <div className="space-y-4 md:space-y-6">
+                        <div className="space-y-4">
+                          <div className="flex items-center">
+                            <label className="flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={privacySettings.profileVisible}
+                                onChange={e => setPrivacySettings(p => ({...p, profileVisible: e.target.checked}))}
+                                className="mr-2 h-5 w-5 accent-orange-500"
+                              />
+                              <span className="text-gray-300 text-sm font-medium">Make my profile visible to employers</span>
+                            </label>
+                          </div>
+                          <div className="flex items-center">
+                            <label className="flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={privacySettings.allowDirectMessages}
+                                onChange={e => setPrivacySettings(p => ({...p, allowDirectMessages: e.target.checked}))}
+                                className="mr-2 h-5 w-5 accent-orange-500"
+                              />
+                              <span className="text-gray-300 text-sm font-medium">Allow direct messages from employers</span>
+                            </label>
+                          </div>
+                          <div className="flex items-center">
+                            <label className="flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox"
+                                checked={privacySettings.showActivityStatus}
+                                onChange={e => setPrivacySettings(p => ({...p, showActivityStatus: e.target.checked}))}
+                                className="mr-2 h-5 w-5 accent-orange-500"
+                              />
+                              <span className="text-gray-300 text-sm font-medium">Show my activity status</span>
+                            </label>
+                          </div>
                         </div>
                       </div>
-                      <button 
-                        type="button" 
-                        className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-semibold shadow text-sm w-full md:w-auto"
-                      >
-                        Save Privacy Settings
-                      </button>
                     </div>
                   </div>
-                </div>
-              </div>              {/* Bottom Unified Card: Password & Account Management */}
+                  
+                  {/* Single Save Button */}
+                  <div className="mt-6 flex justify-center">
+                    <button 
+                      type="submit" 
+                      disabled={savingPrefs}
+                      className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm"
+                    >
+                      {savingPrefs ? 'Saving...' : 'Save All Preferences'}
+                    </button>
+                  </div>
+                </form>
+              </div>{/* Bottom Unified Card: Password & Account Management */}
               <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
                   {/* Left: Change Password */}
@@ -3226,54 +3294,18 @@ const SeekerDashboard = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-          )}          <div className={`flex flex-col items-center w-full ${isMobile ? 'pt-16 pb-8' : 'mb-6'}`}>
-            {/* User Photo with notification bell to the right */}
-            <div className="relative w-full flex justify-center">
-              <div className="relative w-24 h-24 rounded-full border-4 border-orange-500 mb-4">
-                {(isUploading || isLoadingProfile) && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
-                  </div>
-                )}
-                <img
-                  src={userPhoto || "/images/default-avatar.png"}
-                  alt="Profile Picture"
-                  className="w-full h-full object-cover rounded-full cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => document.getElementById('profile-photo-upload')?.click()}
-                  title="Click to change profile photo"
-                />
-                <input
-                  type="file"
-                  id="profile-photo-upload"
-                  accept="image/*"
-                  onChange={handleUserPhotoChange}
-                  className="hidden"
-                  aria-label="Upload profile photo"
-                />
-              </div>
-              {/* Notification bell positioned to the right of the photo */}
-              <div className="absolute left-[90%] top-0 z-20">
+          )}          <div className={`flex flex-col items-center w-full ${isMobile ? 'pt-16 pb-8' : 'mb-6'}`}>            {/* Header with notification bell and centered welcome message */}
+            <div className="relative w-full flex flex-col items-center mb-6">
+              {/* Notification bell positioned at the top right */}
+              <div className="self-end mb-2">
                 <NotificationBell unreadCount={unreadCount} onClick={() => setShowNotifications(true)} />
               </div>
-            </div>
-            {/* Seeker Dashboard Title */}
-            <h2 className="text-orange-400 text-xl font-bold mb-2">Seeker Dashboard</h2>
-            {/* User Name and Info */}
-            <div className="text-center mb-6">
-              <p className="text-lg font-semibold text-white">{`Welcome ${seekerProfile.name || "User"}!`}</p>
-              <p className="text-sm text-orange-400">{seekerProfile.email}</p>
-              
-              {/* Wallet Button */}
-              <div className="mt-4">
-                <WalletButton 
-                  onConnect={(address) => setWalletAddress(address)}
-                  onDisconnect={() => setWalletAddress(null)}
-                  className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm py-1.5"
-                  showNetworkSelector={true}
-                />
+              {/* User Name - Centered */}
+              <div className="text-center">
+                <p className="text-lg font-semibold text-white">{`Welcome ${seekerProfile.name || "User"}!`}</p>
               </div>
             </div>
-          </div>          {/* Navigation - reduce button size and spacing on mobile */}
+          </div>{/* Navigation - reduce button size and spacing on mobile */}
           <ul className={`w-full block ${isMobile ? 'space-y-2 px-2' : 'space-y-4'}`}>
             <li>
               <button

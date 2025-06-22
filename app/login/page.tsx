@@ -165,7 +165,7 @@ function CompanyLoginForm() {
       const data = await res.json();      if (res.ok) {
         // Save token and company data in localStorage
         if (data.company) {
-          // O dashboard espera que o token seja o ID da empresa codificado em base64
+          // The dashboard expects the token to be the company ID encoded in base64
           const companyIdToken = btoa(data.company.id);
           localStorage.setItem("token", companyIdToken);
           localStorage.setItem("companyId", data.company.id);
@@ -175,7 +175,7 @@ function CompanyLoginForm() {
             localStorage.setItem("companyFirebaseUid", data.company.firebaseUid);
           }
           
-          // Também salva o Firebase token se precisar para outras operações
+          // Also save the Firebase token if needed for other operations
           if (data.token) {
             localStorage.setItem("firebaseToken", data.token);
           }
@@ -185,7 +185,7 @@ function CompanyLoginForm() {
         document.cookie = "isAuthenticated=true; path=/; max-age=86400"; // 24 hours
         
         router.replace("/company-dashboard");
-      }else {
+      } else {
         setError(data.error || "Invalid email or password or company not approved.");
       }
     } catch (err: any) {
