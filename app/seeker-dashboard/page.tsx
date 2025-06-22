@@ -277,8 +277,19 @@ const SeekerDashboard = () => {
     allowDirectMessages: true,
     showActivityStatus: false
   });
-  
-  const [savingPrefs, setSavingPrefs] = useState(false);
+    const [savingPrefs, setSavingPrefs] = useState(false);
+
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+
+  // Account deletion states
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   // Add Web3 state
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -813,9 +824,159 @@ const SeekerDashboard = () => {
       alert('Preferences saved successfully!');
     } catch (err) {
       console.error("Error saving preferences:", err);
-      alert('Error saving preferences. Please try again.');
-    } finally {
+      alert('Error saving preferences. Please try again.');    } finally {
       setSavingPrefs(false);
+    }
+  };
+
+  // Handle password change
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    // Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("All password fields are required.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError("New password must be at least 6 characters long.");
+      return;
+    }
+
+    if (!auth.currentUser) {
+      setPasswordError("No authenticated user found. Please log in again.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      // Re-authenticate user with current password
+      const credential = EmailAuthProvider.credential(
+        auth.currentUser.email!,
+        currentPassword
+      );
+      await reauthenticateWithCredential(auth.currentUser, credential);
+
+      // Update password
+      await updatePassword(auth.currentUser, newPassword);
+
+      setPasswordSuccess("Password updated successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      console.error("Error changing password:", error);
+      if (error.code === 'auth/wrong-password') {
+        setPasswordError("Current password is incorrect.");
+      } else if (error.code === 'auth/weak-password') {
+        setPasswordError("New password is too weak.");
+      } else if (error.code === 'auth/requires-recent-login') {
+        setPasswordError("Please log out and log in again before changing your password.");
+      } else {
+        setPasswordError("Failed to update password. Please try again.");
+      }
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  // Handle account deletion
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== "DELETE") {
+      alert("Please type 'DELETE' to confirm account deletion.");
+      return;
+    }
+
+    if (!confirm("Are you absolutely sure you want to delete your account? This action cannot be undone and will permanently delete all your data.")) {
+      return;
+    }
+
+    if (!auth.currentUser || !seekerId) {
+      alert("No authenticated user found. Please log in again.");
+      return;
+    }
+
+    setIsDeletingAccount(true);
+
+    try {
+      // Delete all user data from Firestore
+      const batch = writeBatch(db);
+
+      // Delete seeker profile
+      const seekerRef = doc(db, "seekers", seekerId);
+      batch.delete(seekerRef);
+
+      // Delete job applications
+      const applicationsQuery = query(collection(db, "applications"), where("seekerId", "==", seekerId));
+      const applicationsSnapshot = await getDocs(applicationsQuery);
+      applicationsSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      // Delete instant job applications
+      const instantJobApplicationsQuery = query(collection(db, "instantJobApplications"), where("workerId", "==", seekerId));
+      const instantJobApplicationsSnapshot = await getDocs(instantJobApplicationsQuery);
+      instantJobApplicationsSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      // Delete support tickets
+      const supportTicketsQuery = query(collection(db, "supportTickets"), where("seekerId", "==", seekerId));
+      const supportTicketsSnapshot = await getDocs(supportTicketsQuery);
+      supportTicketsSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      // Delete support messages
+      const supportMessagesQuery = query(collection(db, "supportMessages"), where("senderId", "==", seekerId));
+      const supportMessagesSnapshot = await getDocs(supportMessagesQuery);
+      supportMessagesSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      // Delete notifications
+      const notificationsQuery = query(collection(db, "notifications"), where("userId", "==", seekerId));
+      const notificationsSnapshot = await getDocs(notificationsQuery);
+      notificationsSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      // Delete job alert subscriptions
+      const jobAlertQuery = query(collection(db, "jobAlertSubscribers"), where("seekerId", "==", seekerId));
+      const jobAlertSnapshot = await getDocs(jobAlertQuery);
+      jobAlertSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      // Commit all Firestore deletions
+      await batch.commit();
+
+      // Delete the user from Firebase Auth (this must be done last)
+      await deleteUser(auth.currentUser);
+
+      // Clear local storage and redirect
+      localStorage.removeItem("seekerToken");
+      alert("Your account has been successfully deleted.");
+      router.replace("/");
+
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+      if (error.code === 'auth/requires-recent-login') {
+        alert("Please log out and log in again before deleting your account.");
+      } else {
+        alert("Failed to delete account. Please try again or contact support.");
+      }
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -2733,11 +2894,10 @@ const SeekerDashboard = () => {
                 </form>
               </div>{/* Bottom Unified Card: Password & Account Management */}
               <div className="bg-black/70 border border-orange-700 rounded-xl p-4 md:p-6 mb-6 backdrop-blur-sm">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                  {/* Left: Change Password */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">                  {/* Left: Change Password */}
                   <div>
                     <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Change Password</h3>
-                    <form className="space-y-4 md:space-y-6">
+                    <form onSubmit={handlePasswordChange} className="space-y-4 md:space-y-6">
                       <div>
                         <label htmlFor="currentPassword" className="block text-sm font-semibold text-gray-300 mb-1">
                           Current Password
@@ -2745,8 +2905,11 @@ const SeekerDashboard = () => {
                         <input 
                           id="currentPassword"
                           type="password" 
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
                           className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                           placeholder="Enter current password"
+                          required
                         />
                       </div>
                       <div>
@@ -2756,8 +2919,11 @@ const SeekerDashboard = () => {
                         <input 
                           id="newPassword"
                           type="password" 
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
                           className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                           placeholder="Enter new password"
+                          required
                         />
                       </div>
                       <div>
@@ -2767,36 +2933,58 @@ const SeekerDashboard = () => {
                         <input 
                           id="confirmPassword"
                           type="password" 
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
                           className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
                           placeholder="Confirm new password"
+                          required
                         />
                       </div>
+                      
+                      {/* Error and Success Messages */}
+                      {passwordError && (
+                        <div className="text-red-400 text-sm">{passwordError}</div>
+                      )}
+                      {passwordSuccess && (
+                        <div className="text-green-400 text-sm">{passwordSuccess}</div>
+                      )}
+                      
                       <button 
                         type="submit" 
-                        className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-semibold shadow text-sm w-full md:w-auto"
+                        disabled={isChangingPassword}
+                        className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm w-full md:w-auto"
                       >
-                        Update Password
+                        {isChangingPassword ? 'Updating...' : 'Update Password'}
                       </button>
                     </form>
-                  </div>
-
-                  {/* Right: Account Management */}
+                  </div>                  {/* Right: Account Management */}
                   <div>
                     <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Account Management</h3>
                     <div className="space-y-4 md:space-y-6">
-                      <div className="bg-black/30 border border-gray-700 rounded-lg p-4">
-                        <h4 className="text-base font-bold text-gray-300 mb-2">Export Account Data</h4>
-                        <p className="text-xs text-gray-400 mb-3">Download a copy of all your account data and activity.</p>
-                        <button className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold">
-                          Request Data Export
-                        </button>
-                      </div>
-                      
                       <div className="bg-red-900/50 border border-red-500 rounded-lg p-4">
                         <h4 className="text-base font-bold text-red-400 mb-2">Danger Zone</h4>
                         <p className="text-xs text-gray-400 mb-3">Permanently delete your account and all associated data. This action cannot be undone.</p>
-                        <button className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold">
-                          Delete Account
+                        
+                        <div className="mb-3">
+                          <label htmlFor="deleteConfirmation" className="block text-sm font-semibold text-gray-300 mb-1">
+                            Type "DELETE" to confirm:
+                          </label>
+                          <input 
+                            id="deleteConfirmation"
+                            type="text" 
+                            value={deleteConfirmation}
+                            onChange={(e) => setDeleteConfirmation(e.target.value)}
+                            className="w-full px-3 py-2 bg-black/40 border border-red-600 rounded-lg text-white focus:ring-2 focus:ring-red-400 focus:outline-none text-sm"
+                            placeholder="Type DELETE here"
+                          />
+                        </div>
+                        
+                        <button 
+                          onClick={handleDeleteAccount}
+                          disabled={isDeletingAccount || deleteConfirmation !== "DELETE"}
+                          className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold"
+                        >
+                          {isDeletingAccount ? 'Deleting Account...' : 'Delete Account'}
                         </button>
                       </div>
                     </div>
