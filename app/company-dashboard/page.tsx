@@ -72,6 +72,7 @@ interface Job {
   description: string;
   category: string;
   company: string;
+  companyId?: string; // Add companyId field
   requiredSkills: string | string[]; // Permitindo ambos os tipos para compatibilidade
   salaryRange: string;
   location: string;
@@ -247,10 +248,13 @@ const PostJobPage = (): JSX.Element => {
   useEffect(() => {
     fetchPricingPlans();
   }, [fetchPricingPlans]);
-
   // Função para buscar os Learn2Earn da empresa
   const fetchLearn2Earn = useCallback(async () => {
-    if (!db || !companyId) return;
+    console.log('[Learn2Earn] Fetching for companyId:', companyId);
+    if (!db || !companyId) {
+      console.log('[Learn2Earn] Skipping fetch - missing db or companyId');
+      return;
+    }
     try {
       const l2eCollection = collection(db, "learn2earn");
       const q = query(l2eCollection, where("companyId", "==", companyId));
@@ -260,8 +264,10 @@ const PostJobPage = (): JSX.Element => {
         ...doc.data(),
         createdAt: doc.data().createdAt || null,
       }));
+      console.log('[Learn2Earn] Fetched:', fetched.length, 'items');
       setLearn2earn(fetched);
     } catch (error) {
+      console.error('[Learn2Earn] Error fetching:', error);
       setLearn2earn([]);
     }
   }, [db, companyId]);
@@ -428,14 +434,23 @@ const PostJobPage = (): JSX.Element => {
         const decodedToken = atob(token);
         setCompanyId(decodedToken);        // Fetch data once companyId is set
         fetchCompanyPhoto(decodedToken);
-        fetchCompanyProfile(decodedToken); // Fetch profile initially
-        // Fetch jobs related to this company
+        fetchCompanyProfile(decodedToken); // Fetch profile initially        // Fetch jobs related to this company
         const fetchInitialJobs = async () => {
           if (!db) return;
+          console.log('[Jobs] Fetching initial jobs for companyId:', decodedToken);
           const jobCollection = collection(db, "jobs");
           const q = query(jobCollection, where("companyId", "==", decodedToken));
           const jobSnapshot = await getDocs(q);
-          const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Job));
+          const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => ({ 
+            id: doc.id, 
+            ...doc.data(),
+            companyId: doc.data().companyId // Ensure companyId is included
+          } as Job));
+          console.log('[Jobs] Fetched jobs:', fetchedJobs.map(j => ({
+            id: j.id, 
+            companyId: j.companyId, 
+            company: j.company
+          })));
           setJobs(fetchedJobs);
           
           // Also fetch instant jobs when the component mounts
@@ -1169,30 +1184,43 @@ const InstantJobDetailCard: React.FC<{
               country={companyProfile.country}
               responsiblePerson={companyProfile.responsiblePerson}
               isMobile={isMobile}
-            />
-            {/* Quick summary of job offers and counts - optimized for mobile (2x2) */}
+            />            {/* Quick summary of job offers and counts - optimized for mobile (2x2) */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 my-2 sm:my-6 w-full">
               <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
-                <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Active Jobs</span>
-                <span className="text-lg sm:text-2xl font-bold text-orange-400">{jobs.filter(j => j.paymentStatus === 'completed').length}</span>
+                <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Total Jobs</span>
+                <span className="text-lg sm:text-2xl font-bold text-orange-400">{Array.isArray(jobs) ? jobs.length : 0}</span>
               </div>
               <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
-                <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Expired Jobs</span>
-                <span className="text-lg sm:text-2xl font-bold text-orange-400">{jobs.filter(j => j.expiresAt && getDate(j.expiresAt)! < new Date()).length}</span>
+                <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Active Jobs</span>
+                <span className="text-lg sm:text-2xl font-bold text-orange-400">{Array.isArray(jobs) ? jobs.filter(j => j.paymentStatus === 'completed').length : 0}</span>
               </div>
               <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
                 <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Applications</span>
-                <span className="text-lg sm:text-2xl font-bold text-orange-400">{totalApplications}</span>
+                <span className="text-lg sm:text-2xl font-bold text-orange-400">{typeof totalApplications === 'number' ? totalApplications : 0}</span>
               </div>
               <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
                 <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Instant Jobs</span>
-                <span className="text-lg sm:text-2xl font-bold text-orange-400">{instantJobs.length}</span>
+                <span className="text-lg sm:text-2xl font-bold text-orange-400">{Array.isArray(instantJobs) ? instantJobs.length : 0}</span>
               </div>
               <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
                 <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Learn2Earn</span>
-                <span className="text-lg sm:text-2xl font-bold text-orange-400">{learn2earn.length}</span>
+                <span className="text-lg sm:text-2xl font-bold text-orange-400">{Array.isArray(learn2earn) ? learn2earn.length : 0}</span>
               </div>
-            </div>
+            </div>            {/* DEBUG: Console logs for troubleshooting */}
+            {(() => {
+              console.log('Dashboard Debug Info:', {
+                currentCompanyId: companyId,
+                jobsLength: Array.isArray(jobs) ? jobs.length : 'not array',
+                instantJobsLength: Array.isArray(instantJobs) ? instantJobs.length : 'not array', 
+                learn2earnLength: Array.isArray(learn2earn) ? learn2earn.length : 'not array',
+                totalApplications,
+                jobs: jobs?.map(j => ({ id: j.id, company: j.company, paymentStatus: j.paymentStatus })),
+                instantJobs: instantJobs?.map(j => ({ id: j.id, status: j.status })),
+                learn2earn: learn2earn?.map(l => ({ id: l.id, status: l.status }))
+              });
+              
+              return null;
+            })()}
             {/* Evolution chart section - translated title */}
             <div className="mt-2 sm:mt-4 w-full overflow-x-auto">
               <div className="min-w-[320px] sm:min-w-0">
@@ -1518,21 +1546,30 @@ const InstantJobDetailCard: React.FC<{
                     <div>
                       <div className="font-semibold text-white mb-1">{ticket.subject}</div>
                       <div className="text-gray-400 text-xs mb-1">{ticket.category}</div>
-                      <div className="text-gray-500 text-xs">{new Date(ticket.createdAt).toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs mb-1">Opened on: {new Date(ticket.createdAt).toLocaleString()}</div>
+                      <div className="text-gray-300 mt-2">{ticket.description}</div>
+                      <div className="mt-2">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          ticket.status === 'resolved' 
+                            ? 'bg-green-900/30 text-green-400' 
+                            : ticket.status === 'open' 
+                            ? 'bg-blue-900/30 text-blue-400'
+                            : 'bg-yellow-900/30 text-yellow-400'
+                        }`}>
+                          {ticket.status === 'resolved' 
+                            ? 'Resolved' 
+                            : ticket.status === 'open' 
+                            ? 'In Progress' 
+                            : 'Pending'}
+                        </span>
+                      </div>
                     </div>
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      ticket.status === 'resolved' 
-                        ? 'bg-green-900/30 text-green-400' 
-                        : ticket.status === 'open' 
-                        ? 'bg-blue-900/30 text-blue-400'
-                        : 'bg-yellow-900/30 text-yellow-400'
-                    }`}>
-                      {ticket.status === 'resolved' 
-                        ? 'Resolved' 
-                        : ticket.status === 'open' 
-                        ? 'In Progress' 
-                        : 'Pending'}
-                    </span>
+                    <button
+                      onClick={e => { e.stopPropagation(); handleDeleteJob(ticket.id); }}
+                      className="ml-4 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm flex-shrink-0"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))
