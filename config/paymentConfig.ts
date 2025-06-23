@@ -7,7 +7,8 @@ export const CONTRACT_ADDRESSES = {
   polygon: '0x0000000000000000000000000000000000000000',
   binance: '0x0000000000000000000000000000000000000000',
   avalanche: '0x0000000000000000000000000000000000000000',
-  optimism: '0x0000000000000000000000000000000000000000'
+  optimism: '0x0000000000000000000000000000000000000000',
+  base: '0x0000000000000000000000000000000000000000' // Placeholder - será atualizado quando os contratos forem deployados
 };
 
 // Network configurations
@@ -38,13 +39,19 @@ export const NETWORK_CONFIG = {
     rpcUrl: 'https://api.avax.network/ext/bc/C/rpc',
     currencySymbol: 'AVAX',
     blockExplorer: 'https://snowtrace.io'
-  },
-  optimism: {
+  },  optimism: {
     chainId: 10,
     name: 'Optimism',
     rpcUrl: 'https://mainnet.optimism.io',
     currencySymbol: 'ETH',
     blockExplorer: 'https://optimistic.etherscan.io'
+  },
+  base: {
+    chainId: 8453,
+    name: 'Base',
+    rpcUrl: 'https://mainnet.base.org',
+    currencySymbol: 'ETH',
+    blockExplorer: 'https://basescan.org'
   }
 };
 

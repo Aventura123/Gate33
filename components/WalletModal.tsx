@@ -47,7 +47,6 @@ const WalletModal: React.FC<WalletModalProps> = ({
       </ModalBackdrop>
     );
   }
-
   // Helper for network details  
   const getNetworkDetails = (network: string) => {
     switch (network) {
@@ -56,6 +55,7 @@ const WalletModal: React.FC<WalletModalProps> = ({
       case 'binance': return { name: 'Binance Smart Chain', color: 'bg-yellow-500' };
       case 'optimism': return { name: 'Optimism', color: 'bg-pink-500' };
       case 'avalanche': return { name: 'Avalanche C-Chain', color: 'bg-red-500' };
+      case 'base': return { name: 'Base', color: 'bg-indigo-500' };
       default: return { name: network, color: 'bg-gray-500' };
     }
   };
@@ -76,21 +76,28 @@ const WalletModal: React.FC<WalletModalProps> = ({
         <div className="mb-6">
           <div className="flex flex-col gap-3">
             {rows.map((row: string[], idx: number) => (
-              <div key={idx} className="flex flex-row gap-3 justify-center">
-                {row.map((n: string) => {
+              <div key={idx} className="flex flex-row gap-3 justify-center">                {row.map((n: string) => {
                   const d = getNetworkDetails(n);
                   const isActive = n === currentNetwork;
+                  const isDisabled = n === 'base'; // Base está desabilitada até ter contratos
                   return (
                     <button
                       key={n}
-                      onClick={() => !isActive && onSwitchNetwork(n)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs font-medium border transition-all ${isActive ? 'border-orange-500 text-white shadow pointer-events-none bg-orange-400' : 'border-transparent text-gray-800 dark:text-gray-200 opacity-80 hover:opacity-100 hover:border-orange-400 hover:scale-105 pointer-events-auto bg-white/60 dark:bg-black/60'} min-w-90`}
+                      onClick={() => !isActive && !isDisabled && onSwitchNetwork(n)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs font-medium border transition-all ${
+                        isActive 
+                          ? 'border-orange-500 text-white shadow pointer-events-none bg-orange-400' 
+                          : isDisabled
+                          ? 'border-gray-600 text-gray-500 opacity-50 cursor-not-allowed bg-gray-800/60'
+                          : 'border-transparent text-gray-800 dark:text-gray-200 opacity-80 hover:opacity-100 hover:border-orange-400 hover:scale-105 pointer-events-auto bg-white/60 dark:bg-black/60'
+                      } min-w-90`}
                       type="button"
-                    >
-                      <span className={`w-3 h-3 rounded-full mr-2 ${d.color}`} />
+                      disabled={isDisabled}
+                      title={isDisabled ? 'Base network coming soon - contracts not deployed yet' : ''}
+                    >                      <span className={`w-3 h-3 rounded-full mr-2 ${d.color} ${isDisabled ? 'opacity-50' : ''}`} />
                       <span className="flex flex-col items-start">
                         <span>{d.name}</span>
-                        <span className="text-[10px] text-gray-400 lowercase">{n}</span>
+                        {isDisabled && <span className="text-[9px] text-gray-500">Coming Soon</span>}
                       </span>
                     </button>
                   );

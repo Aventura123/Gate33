@@ -13,6 +13,7 @@ const getNetworkColor = (network: NetworkType): string => {
     case 'binance': return 'yellow';
     case 'avalanche': return 'red';
     case 'optimism': return 'pink';
+    case 'base': return 'indigo';
     default: return 'gray';
   }
 };
@@ -37,17 +38,23 @@ const getNetworkDetails = (network: NetworkType) => {
         name: 'Binance Smart Chain',
         nativeCurrency: 'BNB',
         color: 'bg-yellow-500'
-      };
-    case 'avalanche':
+      };    case 'avalanche':
       return {
         name: 'Avalanche C-Chain',
         nativeCurrency: 'AVAX',
-        color: 'bg-red-500'      };
+        color: 'bg-red-500'
+      };
     case 'optimism':
       return {
         name: 'Optimism',
         nativeCurrency: 'ETH',
         color: 'bg-pink-500'
+      };
+    case 'base':
+      return {
+        name: 'Base',
+        nativeCurrency: 'ETH',
+        color: 'bg-indigo-500'
       };
     default:
       return {
@@ -154,10 +161,9 @@ const WalletButton: React.FC<WalletButtonProps> = ({
   const [showWalletOptions, setShowWalletOptions] = useState(false);
   const [showNetworkModal, setShowNetworkModal] = useState(false);
   const [showNetworkSuccess, setShowNetworkSuccess] = useState(false);
-
   // Prefer context networks if available
   const availableNetworks: NetworkType[] = (propNetworks || contextNetworks || [
-    "ethereum", "polygon", "binance", "avalanche", "optimism"
+    "ethereum", "polygon", "binance", "avalanche", "optimism", "base"
   ]) as NetworkType[];
 
   // Format address for display

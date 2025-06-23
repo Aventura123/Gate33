@@ -9,6 +9,7 @@ const CUSTOM_RPC: Record<string, string | undefined> = {
   binance: process.env.CUSTOM_BSC_RPC,
   avalanche: process.env.CUSTOM_AVALANCHE_RPC,
   optimism: process.env.CUSTOM_OPTIMISM_RPC,
+  base: process.env.CUSTOM_BASE_RPC,
 };
 
 // HTTP endpoints per network
@@ -35,11 +36,16 @@ const HTTP_RPC_URLS: Record<string, string[]> = {
     CUSTOM_RPC.avalanche,
     'https://api.avax.network/ext/bc/C/rpc',
     'https://avalanche-c-chain.publicnode.com',
-  ].filter(Boolean) as string[],
-  optimism: [
+  ].filter(Boolean) as string[],  optimism: [
     CUSTOM_RPC.optimism,
     `https://optimism-mainnet.infura.io/v3/${INFURA_KEY}`,
     'https://optimism.publicnode.com',
+  ].filter(Boolean) as string[],
+  base: [
+    CUSTOM_RPC.base,
+    'https://mainnet.base.org',
+    'https://base.publicnode.com',
+    'https://1rpc.io/base',
   ].filter(Boolean) as string[],
 };
 
@@ -64,11 +70,14 @@ const WS_RPC_URLS: Record<string, string[]> = {
     CUSTOM_RPC.avalanche && CUSTOM_RPC.avalanche.startsWith('wss://') ? CUSTOM_RPC.avalanche : undefined,
     'wss://avalanche-c-chain.publicnode.com/ws',
     'wss://api.avax.network/ext/bc/C/ws',
-  ].filter(Boolean) as string[],
-  optimism: [
+  ].filter(Boolean) as string[],  optimism: [
     CUSTOM_RPC.optimism && CUSTOM_RPC.optimism.startsWith('wss://') ? CUSTOM_RPC.optimism : undefined,
     `wss://optimism-mainnet.infura.io/ws/v3/${INFURA_KEY}`,
     'wss://optimism.publicnode.com',
+  ].filter(Boolean) as string[],
+  base: [
+    CUSTOM_RPC.base && CUSTOM_RPC.base.startsWith('wss://') ? CUSTOM_RPC.base : undefined,
+    'wss://base.publicnode.com/ws',
   ].filter(Boolean) as string[],
 };
 

@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-export type NetworkType = 'ethereum' | 'polygon' | 'binance' | 'avalanche' | 'optimism';
+export type NetworkType = 'ethereum' | 'polygon' | 'binance' | 'avalanche' | 'optimism' | 'base';
 
 export interface WalletInfo {
   address: string;
@@ -52,14 +52,14 @@ class Web3Service {
 
   /**
    * Gets the name of a network from its chainId
-   */
-  private getNetworkNameForChainId(chainId: number): string {
+   */  private getNetworkNameForChainId(chainId: number): string {
     // Remove BSC Testnet (97) logic
     if (chainId === 1) return 'Ethereum Mainnet';
     if (chainId === 56) return 'Binance Smart Chain';
     if (chainId === 137) return 'Polygon Mainnet';
     if (chainId === 43114) return 'Avalanche C-Chain';
     if (chainId === 10) return 'Optimism';
+    if (chainId === 8453) return 'Base';
     if (chainId === 80001) return 'Polygon Mumbai Testnet';
     if (chainId === 11155111) return 'Sepolia Testnet';
     if (chainId === 5) return 'Goerli Testnet';
@@ -299,13 +299,13 @@ class Web3Service {
       } catch (e) {
         console.warn("Error getting chainId before creating provider:", e);
       }
-      
-      // Initialize the provider with detected chainId, without forcing any specific network
+        // Initialize the provider with detected chainId, without forcing any specific network
       const networkName = chainId === 56 ? "bnb" : 
                           chainId === 1 ? "homestead" : 
                           chainId === 137 ? "matic" :
                           chainId === 43114 ? "avalanche" :
-                          chainId === 10 ? "optimism" : "any";
+                          chainId === 10 ? "optimism" : 
+                          chainId === 8453 ? "base" : "any";
                           
       this.provider = new ethers.providers.Web3Provider(window.ethereum, {
         name: networkName,
@@ -394,7 +394,7 @@ class Web3Service {
     if (!infuraRpc || infuraRpc.includes('undefined')) {
       throw new Error('Ethereum Infura RPC endpoint is not properly configured. Please check your INFURA_KEY in .env.local and rpcConfig.ts.');
     }    // Add popular networks for better wallet compatibility
-    const chains = [1, 137, 56, 43114, 10]; // Added Avalanche (43114) and Optimism (10)
+    const chains = [1, 137, 56, 43114, 10, 8453]; // Added Avalanche (43114), Optimism (10), and Base (8453)
     
     // Initialize with optimal configuration for general wallet compatibility
     console.log('[WalletConnect] Creating provider with chains:', chains);
@@ -402,14 +402,14 @@ class Web3Service {
       this.wcV2Provider = await EthereumProvider.init({
         projectId,
         chains,
-        optionalChains: [1, 137, 56, 43114, 10], // Include Avalanche and Optimism
-        showQrModal: true,
-        rpcMap: {
+        optionalChains: [1, 137, 56, 43114, 10, 8453], // Include Avalanche, Optimism, and Base
+        showQrModal: true,        rpcMap: {
           1: infuraRpc,
           137: "https://polygon-rpc.com",
           56: "https://bsc-dataseed.binance.org/",
           43114: "https://api.avax.network/ext/bc/C/rpc",
-          10: "https://mainnet.optimism.io"
+          10: "https://mainnet.optimism.io",
+          8453: "https://mainnet.base.org"
         },
         disableProviderPing: false, // Keep connection alive with pings
         // Use standard storage options that are compatible with WalletConnect types
@@ -523,14 +523,14 @@ class Web3Service {
         
         // Get the numeric chainId
         const numericChainId = parseInt(chainId, 16);
-        
-        // Determine the network name based on chainId
+          // Determine the network name based on chainId
         let networkName = "any";
         if (numericChainId === 56) networkName = "bnb";
         else if (numericChainId === 1) networkName = "homestead";
         else if (numericChainId === 137) networkName = "matic";
         else if (numericChainId === 43114) networkName = "avalanche";
         else if (numericChainId === 10) networkName = "optimism";
+        else if (numericChainId === 8453) networkName = "base";
         
         // Reinitialize the provider and signer with the correct chainId
         this.provider = new ethers.providers.Web3Provider(window.ethereum, {
@@ -681,9 +681,8 @@ class Web3Service {
             console.error('[switchNetwork] Failed to reconnect WalletConnect:', enableError);
             throw new Error('The connection to your WalletConnect wallet was lost. Please reconnect it first.');
           }
-        }        
-        // Check if the network needs special handling (BSC, Avalanche, or Optimism)
-        const needsSpecialHandling = ['binance', 'avalanche', 'optimism'].includes(networkType);
+        }          // Check if the network needs special handling (BSC, Avalanche, Optimism, or Base)
+        const needsSpecialHandling = ['binance', 'avalanche', 'optimism', 'base'].includes(networkType);
         
         if (needsSpecialHandling) {
           console.log(`[switchNetwork] Special handling for ${networkType} network detected with WalletConnect`);
