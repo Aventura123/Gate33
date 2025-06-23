@@ -595,38 +595,36 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   };  // --- Main rendering ---
   const isMobileDevice = useIsMobileL2E();
   return (
-    <div className={isMobileDevice ? 'px-2 pt-2' : ''}>
-      {/* Tabs to switch between "My L2L" and "New L2L" */}
-      <div className={isMobileDevice ? 'flex mb-4 space-x-2' : 'flex mb-6'}>
-        <button
-          onClick={() => setLearn2EarnSubTab('my')}
-          className={`py-2 ${isMobileDevice ? 'px-2 text-base' : 'px-6'} font-medium ${
-            learn2EarnSubTab === 'my'
-              ? 'text-orange-500 border-b-2 border-orange-500'
-              : 'text-gray-400 hover:text-orange-300'
-          }`}
-        >
-          My Learn2Earn
-        </button>
-        <button
-          onClick={() => setLearn2EarnSubTab('new')}
-          className={`py-2 ${isMobileDevice ? 'px-2 text-base' : 'px-6'} font-medium ${
-            learn2EarnSubTab === 'new'
-              ? 'text-orange-500 border-b-2 border-orange-500'
-              : 'text-gray-400 hover:text-orange-300'
-          }`}
-        >
-          New Learn2Earn
-        </button>
-      </div>
-      {/* Render the appropriate subcomponent based on the selected subtab */}
-      {learn2EarnSubTab === 'new' ? (
-        // --- renderNewLearn2Earn migrated JSX ---
-        isLoadingLearn2Earn ? (
-          <p className="text-gray-300 py-4">Loading...</p>
-        ) : learn2EarnStep === 'info' ? (
-          <div className="bg-black/50 p-6 rounded-lg">
-            <h3 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobileDevice ? 'text-center' : ''}`}>Create New Learn2Earn</h3>
+    <div className="w-full">
+      <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">
+        {/* Main section title */}
+        <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">Learn2Earn Opportunities</h2>
+        <div className="flex gap-6 mb-6 items-end border-b border-orange-900/60">
+          <button
+            className={`relative text-base font-semibold mr-2 transition-colors pb-1 ${learn2EarnSubTab === 'my' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
+            onClick={() => setLearn2EarnSubTab('my')}
+          >
+            My Learn2Earn
+            {learn2EarnSubTab === 'my' && (
+              <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
+            )}
+          </button>
+          <button
+            className={`relative text-base font-semibold transition-colors pb-1 ${learn2EarnSubTab === 'new' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
+            onClick={() => setLearn2EarnSubTab('new')}
+          >
+            New Learn2Earn
+            {learn2EarnSubTab === 'new' && (
+              <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
+            )}
+          </button>
+        </div>
+        {/* Render the appropriate subcomponent based on the selected subtab */}
+        {learn2EarnSubTab === 'new' ? (
+          // --- renderNewLearn2Earn migrated JSX ---
+          isLoadingLearn2Earn ? (
+            <p className="text-gray-300 py-4">Loading...</p>
+          ) : learn2EarnStep === 'info' ? (
             <form onSubmit={(e) => {
               e.preventDefault();
               setLearn2EarnStep('tasks');
@@ -868,12 +866,8 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                 >
                   Next: Add Tasks
                 </button>
-              </div>
-            </form>
-          </div>
-        ) : learn2EarnStep === 'tasks' ? (
-          <div className="bg-black/50 p-6 rounded-lg">
-            <h3 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobileDevice ? 'text-center' : ''}`}>Add Learning Tasks</h3>
+              </div>            </form>        ) : learn2EarnStep === 'tasks' ? (
+          <div className="space-y-6">
             {learn2earnData.tasks.length > 0 && (
               <div className="mb-6">
                 <h4 className="text-xl font-medium text-white mb-2">Current Tasks</h4>
@@ -1369,9 +1363,8 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                 </button>
               </div>
             </div>
-          </div>
-        ) : learn2EarnStep === 'confirmation' ? (
-          <div className="bg-black/50 p-6 rounded-lg text-center">
+          </div>        ) : learn2EarnStep === 'confirmation' ? (
+          <div className="space-y-6 text-center">
             <div className="text-green-500 text-5xl mb-4">✓</div>
             <h3 className="text-2xl font-semibold text-white mb-2">Learn2Earn Created Successfully!</h3>
             <p className="text-gray-300 mb-6">Your Learn2Earn opportunity is now live and ready for participants.</p>
@@ -1543,13 +1536,13 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                         )}
                       </div>
                     );
-                  })}
-                </div>
+                  })}                </div>
               )}
             </div>
           </div>
         )
       )}
+      </div>
     </div>
   );
 };

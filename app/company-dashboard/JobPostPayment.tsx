@@ -314,10 +314,9 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
   // State for screening questions
   const [enableScreeningQuestions, setEnableScreeningQuestions] = useState(false);
   const [screeningQuestions, setScreeningQuestions] = useState<string[]>([]);
-
   // Render
   return (
-    <div className="bg-black/70 p-8 rounded-lg shadow-lg">
+    <div>
       {paymentStep === 'form' && (
         <form onSubmit={e => {
           e.preventDefault();
@@ -657,38 +656,36 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
             }} className="bg-orange-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-orange-600">Continue to Payment</button>
           </div>
         </div>
-      )}
-      {paymentStep === 'review' && selectedPlan && (
-        <div className="bg-black/50 p-6 rounded-lg mt-4">
+      )}      {paymentStep === 'review' && selectedPlan && (
+        <div>
           <div className="flex justify-between mb-6">
             <button onClick={() => setPaymentStep('select-plan')} className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-6 rounded-lg">Back to Plans</button>
           </div>
           <h3 className="text-2xl font-semibold text-orange-500 mb-4">Review Your Order</h3>
-          <div className="bg-black/50 border border-gray-700 rounded-lg p-6">
-            <div className="flex justify-between items-center border-b border-gray-700 pb-4 mb-4">
-              <div>
-                <h4 className="text-xl font-semibold text-white">{selectedPlan.name} Plan</h4>
-                <p className="text-gray-400">{selectedPlan.duration} days of job listing</p>
-              </div>
-              <div className="text-2xl font-bold text-white">${selectedPlan.price} {selectedPlan.currency === 'USDT' ? 'USDT' : ''}</div>
+          <div className="flex justify-between items-center border-b border-gray-700 pb-4 mb-4">
+            <div>
+              <h4 className="text-xl font-semibold text-white">{selectedPlan.name} Plan</h4>
+              <p className="text-gray-400">{selectedPlan.duration} days of job listing</p>
             </div>
-            <div className="space-y-2 mb-6">
-              <div className="flex justify-between font-bold">
-                <span className="text-gray-300">Total:</span>
-                <span className="text-orange-500">${selectedPlan.price} {selectedPlan.currency === 'USDT' ? 'USDT' : ''}</span>
-              </div>
-              {selectedPlan.currency === 'USDT' && (
-                <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-800 rounded-md">
-                  <div className="flex items-start text-yellow-400 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1v-3a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <span>This plan requires payment in USDT. Make sure you have sufficient USDT tokens in your wallet.</span>
-                  </div>
+            <div className="text-2xl font-bold text-white">${selectedPlan.price} {selectedPlan.currency === 'USDT' ? 'USDT' : ''}</div>
+          </div>
+          <div className="space-y-2 mb-6">
+            <div className="flex justify-between font-bold">
+              <span className="text-gray-300">Total:</span>
+              <span className="text-orange-500">${selectedPlan.price} {selectedPlan.currency === 'USDT' ? 'USDT' : ''}</span>
+            </div>
+            {selectedPlan.currency === 'USDT' && (
+              <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-800 rounded-md">
+                <div className="flex items-start text-yellow-400 text-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1v-3a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <span>This plan requires payment in USDT. Make sure you have sufficient USDT tokens in your wallet.</span>
                 </div>
-              )}
-            </div>
-            <div className="mb-4 p-3 rounded-lg border border-gray-700">
+              </div>
+            )}
+          </div>
+          <div className="mb-4 p-3 rounded-lg border border-gray-700">
               <div className="flex justify-between items-center">
                 <span className="text-gray-300">Wallet Connection:</span>
                 <span className={walletAddress ? "text-green-500" : "text-yellow-500"}>{walletAddress ? "Connected" : "Not Connected"}</span>
@@ -720,13 +717,11 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                 disabled={isProcessingPayment || isConnectingWallet || !walletAddress}
               >
                 {isProcessingPayment ? 'Processing Payment...' : isConnectingWallet ? 'Connecting Wallet...' : !walletAddress ? 'Connect Wallet First' : 'Pay and Publish'}
-              </button>
-              {/* Only show the error message once below the button */}
+              </button>              {/* Only show the error message once below the button */}
               {paymentError && (
                 <div className="mt-3 text-red-500 text-sm">{paymentError}</div>
               )}
             </div>
-          </div>
         </div>
       )}
       {paymentStep === 'processing' && (

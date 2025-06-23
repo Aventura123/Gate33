@@ -95,12 +95,9 @@ const InstantJobForm: React.FC<InstantJobFormProps> = ({
       setErrors([error instanceof Error ? error.message : "An unknown error occurred"]);
     } finally {
       setIsSubmitting(false);
-    }
-  };
+    }  };
   return (
-    <div className={`bg-black/70 ${isMobile ? 'p-4' : 'p-8'} rounded-lg shadow-lg`}>
-      <h2 className={`text-2xl sm:text-3xl font-semibold text-orange-500 mb-4 sm:mb-6 ${isMobile ? 'text-center' : ''}`}>Create Instant Job</h2>
-      
+    <div>
       {errors.length > 0 && (
         <div className="bg-red-900/50 border border-red-500 p-4 mb-6 rounded-lg">
           <p className="text-red-400 font-medium mb-2">Please fix the following errors:</p>
