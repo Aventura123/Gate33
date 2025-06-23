@@ -347,9 +347,9 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
               target.src = '/images/default-avatar.png';
             }}
           />
-        </div>        <span className={`text-sm font-medium text-white flex-shrink-0 ${isMobile ? 'inline' : 'hidden md:inline'}`}>
+        </div>        <h1 className={`text-sm font-medium text-orange-500 flex-shrink-0 ${isMobile ? 'inline' : 'hidden md:inline'}`} style={{ fontFamily: 'Verdana, sans-serif' }}>
           My Profile
-        </span>
+        </h1>
       </div>
       
       {isDropdownOpen && (

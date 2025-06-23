@@ -16,7 +16,6 @@ import MarketCapComparison from './components/MarketCapComparison';
 import BitcoinAnalysis from './BitcoinAnalysis';
 import { useCryptocurrencies } from './lib/hooks';
 import { useWallet } from '../../components/WalletProvider';
-import GovernanceCopilot from './components/GovernanceCopilot';
 import './styles/crypto-tools.css';
 
 // Adicionar estilos customizados para as animações da sidebar
@@ -1187,12 +1186,8 @@ export default function CryptoToolsPage() {
   const networkError = walletError;
     // Estado local para informações da rede
   const [networkInfo, setNetworkInfo] = useState<{name: string, chainId: number} | null>(null);
-  
-  // Novo estado para o menu lateral
+    // Novo estado para o menu lateral
   const [activeMenuOption, setActiveMenuOption] = useState<string>("marketlist");
-  
-  // State to show/hide the Governance AI component
-  const [showGovernance, setShowGovernance] = useState(false);
   
   // Estado para o controle da sidebar
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -1529,46 +1524,32 @@ export default function CryptoToolsPage() {
                 />
               </div>
             )}            {activeMenuOption === "governance" && (
-              <div className="max-w-7xl mx-auto bg-black/40 p-6 rounded-lg border border-orange-500/20 content-section">
-                <h2 className="text-2xl font-bold text-orange-400 mb-4">Governance AI</h2>
-                <p className="text-gray-300 mb-4">
-                  Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
-                </p>
-                <div className="bg-orange-900/20 p-4 rounded-lg text-center">
-                  <p className="text-orange-300 mb-2">
-                    {isConnected 
-                      ? "Your wallet is connected! You can now use Governance AI features." 
-                      : "Please connect your wallet to access Governance AI features."}
-                  </p>
-                  <button 
-                    onClick={() => {
-                      if (!isConnected) {
-                        // If wallet is not connected, show connect prompt
-                        alert("Please connect your wallet first to use Governance AI");
-                      } else {
-                        // If wallet is connected, set state to show governance component
-                        setShowGovernance(true);
-                      }
-                    }}
-                    className="inline-block px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
-                  >
-                    {isConnected ? "Launch Governance AI" : "Connect Wallet to Continue"}
-                  </button>
-                </div>
-                  {/* Show governance component when wallet is connected and button is clicked */}
-                {isConnected && showGovernance && (
-                  <div className="mt-6">
-                    <div className="bg-black/60 rounded-lg border border-orange-500/30 p-6 relative z-10">
-                      <button 
-                        onClick={() => setShowGovernance(false)} 
-                        className="mb-4 text-sm text-orange-400 hover:text-orange-300"
-                      >
-                        ← Back to Overview
-                      </button>
-                      <GovernanceCopilot />
-                    </div>
+              <div className="max-w-7xl mx-auto content-section">
+                <h2 className="text-2xl font-bold text-orange-400 mb-6">Governance AI</h2>
+                <div className="bg-black/40 p-8 rounded-lg border border-orange-500/20 text-center">
+                  <div className="mb-6">
+                    <svg className="w-16 h-16 text-orange-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Coming Soon</h3>
+                    <p className="text-gray-300 mb-4">
+                      Use artificial intelligence to help with governance decisions and proposals. 
+                      This feature integrates with your connected wallet for DAO interactions.
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      This feature is currently in development and will be available soon.
+                    </p>
                   </div>
-                )}
+                  <div className="bg-orange-900/20 p-4 rounded-lg border border-orange-500/30">
+                    <h4 className="text-orange-400 font-medium mb-2">What to expect:</h4>
+                    <ul className="text-gray-300 text-sm space-y-1">
+                      <li>• AI-powered proposal analysis</li>
+                      <li>• Smart governance recommendations</li>
+                      <li>• DAO voting assistance</li>
+                      <li>• Governance strategy insights</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             )}{activeMenuOption === "bitcoin" && (
               <div className="max-w-7xl mx-auto content-section">
