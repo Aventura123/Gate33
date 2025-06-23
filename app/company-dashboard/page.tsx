@@ -1810,20 +1810,17 @@ const InstantJobDetailCard: React.FC<{
             <h2 className="text-xl font-bold text-orange-500 text-center break-words">
               {companyProfile.name || "Company Overview"}
             </h2>
-            <WalletButton />
-            {/* Navigation */}
-            <ul className="space-y-4 flex-grow w-full mt-6">
-              <li>
+            <WalletButton />            {/* Navigation */}
+            <ul className="space-y-2 flex-grow w-full mt-6">              <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "profile" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2.5 px-4 rounded-md transition-all duration-200 focus:outline-none ${activeTab === "profile" ? "bg-orange-500/20 text-orange-400 border-l-4 border-orange-500" : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"}`}
                   onClick={() => handleTabChange("profile")}
                 >
                   Overview
                 </button>
-              </li>
-              <li>
+              </li>              <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg flex items-center justify-between ${activeTab === "myJobOffers" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2.5 px-4 rounded-md transition-all duration-200 focus:outline-none flex items-center justify-between ${activeTab === "myJobOffers" ? "bg-orange-500/20 text-orange-400 border-l-4 border-orange-500" : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"}`}
                   onClick={() => {
                     setActiveTab("myJobOffers");
                     setSidebarJobOffersOpen((open) => !open);
@@ -1837,7 +1834,7 @@ const InstantJobDetailCard: React.FC<{
                   <ul className="ml-6 mt-2 space-y-1">
                     <li>
                       <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'list' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm transition-all duration-200 ${jobOffersSubTab === 'list' ? 'bg-orange-500/20 text-orange-400 border-l-2 border-orange-500' : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'}`}
                         onClick={() => setJobOffersSubTab('list')}
                       >
                         All Offers
@@ -1845,7 +1842,7 @@ const InstantJobDetailCard: React.FC<{
                     </li>
                     <li>
                       <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'new' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm transition-all duration-200 ${jobOffersSubTab === 'new' ? 'bg-orange-500/20 text-orange-400 border-l-2 border-orange-500' : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'}`}
                         onClick={() => setJobOffersSubTab('new')}
                       >
                         New Job Offer
@@ -1853,7 +1850,7 @@ const InstantJobDetailCard: React.FC<{
                     </li>
                     <li>
                       <button
-                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm ${jobOffersSubTab === 'instant' ? 'bg-orange-500 text-white' : 'text-orange-400 hover:bg-orange-600/20'}`}
+                        className={`w-full text-left py-1.5 px-3 rounded-md text-sm transition-all duration-200 ${jobOffersSubTab === 'instant' ? 'bg-orange-500/20 text-orange-400 border-l-2 border-orange-500' : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'}`}
                         onClick={() => setJobOffersSubTab('instant')}
                       >
                         Instant Jobs
@@ -1861,18 +1858,16 @@ const InstantJobDetailCard: React.FC<{
                     </li>
                   </ul>
                 )}
-              </li>
-              <li>
+              </li>              <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "learn2earn" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2.5 px-4 rounded-md transition-all duration-200 focus:outline-none ${activeTab === "learn2earn" ? "bg-orange-500/20 text-orange-400 border-l-4 border-orange-500" : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"}`}
                   onClick={() => handleTabChange("learn2earn")}
                 >
                   Learn2Earn
                 </button>
-              </li>
-              <li>
+              </li>              <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "support" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2.5 px-4 rounded-md transition-all duration-200 focus:outline-none ${activeTab === "support" ? "bg-orange-500/20 text-orange-400 border-l-4 border-orange-500" : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"}`}
                   onClick={() => {
                     handleTabChange("support");
                     fetchSupportTickets();
@@ -1883,7 +1878,7 @@ const InstantJobDetailCard: React.FC<{
                 </button>
               </li>              <li>
                 <button
-                  className={`w-full text-left py-2 px-4 rounded-lg ${activeTab === "settings" ? "bg-orange-500 text-white" : "text-gray-400 hover:text-orange-500"}`}
+                  className={`w-full text-left py-2.5 px-4 rounded-md transition-all duration-200 focus:outline-none ${activeTab === "settings" ? "bg-orange-500/20 text-orange-400 border-l-4 border-orange-500" : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"}`}
                   onClick={() => handleTabChange("settings")}
                 >
                   Settings
