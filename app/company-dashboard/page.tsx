@@ -215,6 +215,7 @@ const PostJobPage = (): JSX.Element => {
   
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const [sidebarJobOffersOpen, setSidebarJobOffersOpen] = useState(false);
   const [jobOffersSubTab, setJobOffersSubTab] = useState<'list' | 'new' | 'instant'>('list');
@@ -1597,8 +1598,7 @@ const InstantJobDetailCard: React.FC<{
                           Delete
                         </button>
                       </div>
-                    </div>
-                  ))
+                    </div>                  ))
                 )}              </div>
             </div>
             {/* Right column: ticket details or default message */}
@@ -1621,6 +1621,7 @@ const InstantJobDetailCard: React.FC<{
                       }`}>
                         {selectedTicket.status === 'resolved' 
                           ? 'Resolved' 
+                           
                           : selectedTicket.status === 'open' 
                           ? 'In Progress' 
                           : 'Pending'}
@@ -1758,6 +1759,11 @@ const InstantJobDetailCard: React.FC<{
   };
 
   // Add after the existing useEffect hooks
+  // Handle hydration
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+  
   // Detect mobile device on client side
   useEffect(() => {
     const checkIfMobile = () => {
@@ -1836,10 +1842,10 @@ const InstantJobDetailCard: React.FC<{
       }
     };
     fetchTotalApplications();
-  }, [jobs, db]);
-  return (
+  }, [jobs, db]);  return (
     <FullScreenLayout>
-      <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex relative">
+      {/* Company Dashboard - Updated gradient */}
+      <main className="min-h-screen bg-gradient-to-br from-orange-900 to-black text-white flex relative">
         {/* Mobile menu toggle button */}
         {isMobile && (
           <button 
