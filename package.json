@@ -8,11 +8,10 @@
   },
   "engines": {
     "node": ">=20.0.0"
-  },
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+  },  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next dev",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next build",
+    "start": "node --max-old-space-size=8192 node_modules/.bin/next start",
     "migrate-seekers": "node scripts/migrate-seekers-to-auth.js",
     "git:init": "git init",
     "git:add": "git add .",
@@ -94,6 +93,7 @@
     "@typescript-eslint/parser": "8.32.1",
     "autoprefixer": "^10.4.21",
     "critters": "0.0.23",
+    "cross-env": "7.0.3",
     "eslint": "9.26.0",
     "eslint-config-next": "15.3.4",
     "pino-pretty": "13.0.0",
