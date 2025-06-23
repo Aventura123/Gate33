@@ -15,18 +15,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
     }
 
+    // First check if this email belongs to a seeker account
+    const seekersCollection = collection(db, 'seekers');
+    const seekerQuery = query(seekersCollection, where('email', '==', email));
+    const seekerSnapshot = await getDocs(seekerQuery);
+
+    if (!seekerSnapshot.empty) {
+      return NextResponse.json({ 
+        error: 'This email belongs to a job seeker account. Please login as a job seeker.' 
+      }, { status: 401 });
+    }
+
     // Query companies collection to find a company with the provided email
     const companiesCollection = collection(db, 'companies');
     const q = query(companiesCollection, where('email', '==', email));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-      return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
+      return NextResponse.json({ error: 'Company account not found. Please register as a company.' }, { status: 401 });
     }
 
     // Get the first document (email should be unique)
     const companyDoc = querySnapshot.docs[0];
     const companyData = companyDoc.data();
+    
+    // Check if company is approved
+    if (!companyData.approved && companyData.status !== 'approved') {
+      return NextResponse.json({ 
+        error: 'Company account is pending approval by administrator.' 
+      }, { status: 401 });
+    }
     
     // Use Firebase Auth to authenticate
     const auth = getAuth();
@@ -49,7 +67,7 @@ export async function POST(request: Request) {
       });
     } catch (authError: any) {
       console.error('Firebase authentication error:', authError);
-      return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
     }
   } catch (error) {
     console.error('Error during authentication:', error);

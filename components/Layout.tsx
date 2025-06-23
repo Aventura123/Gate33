@@ -226,7 +226,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               )}
             </div>            {/* Login/Signup Button */}
             {isLoggedIn ? (
-              <UserProfileButton className="ml-4 header-button min-w-0" />
+              <UserProfileButton className="ml-4 mr-4 header-button min-w-0" />
             ) : (<a 
                 href="/login" 
                 className="px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors font-medium header-button login-button"

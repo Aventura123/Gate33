@@ -348,11 +348,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
             }}
           />
         </div>        <span className={`text-sm font-medium text-white flex-shrink-0 ${isMobile ? 'inline' : 'hidden md:inline'}`}>
-          {/* Log the name being displayed for debugging */}
-          {(() => {
-            console.log("Displaying user name:", userInfo.name);
-            return userInfo.name;
-          })()}
+          My Profile
         </span>
       </div>
       

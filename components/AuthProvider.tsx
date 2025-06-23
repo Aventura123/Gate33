@@ -78,7 +78,6 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
   }, [initialRole]);
 
   const clearError = () => setError(null);
-
   const loginWithGoogle = async (role: UserRole = 'seeker') => {
     setError(null);
     try {
@@ -89,6 +88,18 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
 
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
+      
+      // Check if this email exists in companies collection first
+      if (result.user.email) {
+        const companiesRef = collection(db, 'companies');
+        const companyQuery = query(companiesRef, where('email', '==', result.user.email));
+        const companySnap = await getDocs(companyQuery);
+        
+        if (!companySnap.empty) {
+          await signOut(auth); // Sign out from Firebase
+          throw new Error('This email belongs to a company account. Please login as a company using email and password.');
+        }
+      }
       
       // Check if user exists in Firestore
       const userRef = doc(db, "seekers", result.user.uid);
@@ -120,24 +131,59 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
       setError(err.message || 'Failed to login with Google');
       throw err;
     }
-  };  const loginWithEmail = async (email: string, password: string, role: UserRole = 'seeker') => {
+  };const loginWithEmail = async (email: string, password: string, role: UserRole = 'seeker') => {
     console.log(`AuthProvider.loginWithEmail called with email: ${email}, role: ${role}`);
     setError(null);
     try {
+      // First, authenticate with Firebase
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Now check if the user exists in the correct collection based on the role
       if (role === 'seeker') {
         console.log('Attempting seeker login...');
-        const result = await signInWithEmailAndPassword(auth, email, password);
+        
+        // Check if user exists in seekers collection
+        const seekerRef = doc(db, 'seekers', result.user.uid);
+        const seekerSnap = await getDoc(seekerRef);
+        
+        if (!seekerSnap.exists()) {
+          // Check if this email exists in companies collection
+          const companiesRef = collection(db, 'companies');
+          const companyQuery = query(companiesRef, where('email', '==', email));
+          const companySnap = await getDocs(companyQuery);
+          
+          if (!companySnap.empty) {
+            await signOut(auth); // Sign out from Firebase
+            throw new Error('This email belongs to a company account. Please login as a company.');
+          }
+          
+          // If not found in either collection, this might be a new Firebase user
+          throw new Error('Seeker account not found. Please sign up as a job seeker.');
+        }
+        
         localStorage.setItem('seekerToken', btoa(result.user.uid));
         setUserRole('seeker');
-        return result.user;      } else if (role === 'company') {
-        const result = await signInWithEmailAndPassword(auth, email, password);
-        console.log('Firebase auth successful for company, checking Firestore...');
+        return result.user;
         
-        // Buscar dados da company no Firestore
+      } else if (role === 'company') {
+        console.log('Attempting company login...');
+        
+        // Check if user exists in companies collection
         const companyRef = doc(db, 'companies', result.user.uid);
         const companySnap = await getDoc(companyRef);
-          if (!companySnap.exists()) {
+        
+        if (!companySnap.exists()) {
           console.log('Company document not found, looking by email...');
+          // Check if this email exists in seekers collection
+          const seekersRef = collection(db, 'seekers');
+          const seekerQuery = query(seekersRef, where('email', '==', email));
+          const seekerSnap = await getDocs(seekerQuery);
+          
+          if (!seekerSnap.empty) {
+            await signOut(auth); // Sign out from Firebase
+            throw new Error('This email belongs to a job seeker account. Please login as a job seeker.');
+          }
+          
           // Procurar por email se não encontrar pelo UID
           const companiesRef = collection(db, 'companies');
           const emailQuery = query(companiesRef, where('email', '==', email));
@@ -157,7 +203,8 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
             
             console.log('Company migrated successfully');
           } else {
-            throw new Error('Company not found in database.');
+            await signOut(auth); // Sign out from Firebase
+            throw new Error('Company account not found. Please register as a company.');
           }
         }
         
@@ -166,6 +213,7 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
         const companyData = finalCompanySnap.data();
         
         if (!companyData?.approved && companyData?.status !== 'approved') {
+          await signOut(auth); // Sign out from Firebase
           throw new Error('Company account is pending approval by administrator.');
         }
         
@@ -173,6 +221,7 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
         setUserRole('company');
         return result.user;
       } else {
+        await signOut(auth); // Sign out from Firebase
         throw new Error(`Email authentication via Firebase is only available for seeker or company accounts`);
       }
     } catch (err: any) {
