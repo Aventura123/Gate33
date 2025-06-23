@@ -93,13 +93,13 @@ interface SeekerProfile {
   bio?: string; // Short professional bio/summary
   hourlyRate?: number; // Expected hourly rate
   availability?: string; // Availability status (e.g., "Full-time", "Part-time", "Weekends only")
-  
-  // Education
+    // Education
   education?: {
     degree: string;
     institution: string;
     year: string;
     description?: string;
+    isMain?: boolean;
   }[];
   
   // Work experience
@@ -111,6 +111,7 @@ interface SeekerProfile {
     endDate?: string;
     current: boolean;
     description?: string;
+    isMain?: boolean;
   }[];
   
   // Projects
@@ -1225,7 +1226,11 @@ const SeekerDashboard = () => {
     if (seekerProfile.behanceUrl) mainLinks.push({ href: seekerProfile.behanceUrl, label: 'Behance', icon: '🎨' });
 
     // Data for experience and education
-    const firstExperience = seekerProfile.experience && seekerProfile.experience.length > 0 ? seekerProfile.experience[0] : null;    const firstEducation = seekerProfile.education && seekerProfile.education.length > 0 ? seekerProfile.education[0] : null;    return (
+    // Find main experience and education (marked as main, or fallback to first item)
+    const firstExperience = seekerProfile.experience?.find(exp => exp.isMain) || 
+                           (seekerProfile.experience && seekerProfile.experience.length > 0 ? seekerProfile.experience[0] : null);
+    const firstEducation = seekerProfile.education?.find(edu => edu.isMain) || 
+                          (seekerProfile.education && seekerProfile.education.length > 0 ? seekerProfile.education[0] : null);    return (
       <div className="bg-black/60 rounded-lg border border-orange-900/30 p-6 pt-16 md:pt-20 shadow-lg">
         {/* Top Section: Photo, Name, Title */}
         <div className="flex flex-col md:flex-row items-center gap-8 mb-6">          {/* Profile photo */}
@@ -1257,13 +1262,8 @@ const SeekerDashboard = () => {
               </div>
             )}
           </div>
-          
-          {/* Main information */}
+            {/* Main information */}
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-4xl font-bold text-orange-400 mb-1">
-              {seekerProfile.fullName || (seekerProfile.name + (seekerProfile.surname ? ' ' + seekerProfile.surname : ''))}
-            </h1>
-            
             {/* Professional title */}
             {seekerProfile.title && 
               <div className="text-xl text-orange-200 font-semibold mb-1">{seekerProfile.title}</div>
@@ -2537,8 +2537,7 @@ const SeekerDashboard = () => {
                                 className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
                               />
                             </div>
-                          </div>
-                          <div className="mb-4">
+                          </div>                          <div className="mb-4">
                             <label className="block text-sm font-semibold text-gray-300 mb-1">
                               Description
                             </label>
@@ -2554,6 +2553,30 @@ const SeekerDashboard = () => {
                               rows={3}
                               className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
                             />
+                          </div>
+                          <div className="mb-4">
+                            <label className="flex items-center space-x-2 text-sm text-gray-300">
+                              <input 
+                                type="checkbox" 
+                                name={`exp-isMain-${idx}`} 
+                                checked={exp.isMain || false}
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.experience ?? [])]; 
+                                  // If checking this as main, uncheck all others
+                                  if (e.target.checked) {
+                                    updated.forEach((item, index) => {
+                                      item.isMain = index === idx;
+                                    });
+                                  } else {
+                                    updated[idx] = { ...updated[idx], isMain: false }; 
+                                  }
+                                  setSeekerProfile({ ...seekerProfile, experience: updated }); 
+                                }} 
+                                className="rounded border-gray-600 bg-black/40 text-orange-500 focus:ring-orange-400 focus:ring-2" 
+                              />
+                              <span className="font-semibold text-orange-300">Set as Main Experience</span>
+                              <span className="text-xs text-gray-500">(This will appear in your profile summary)</span>
+                            </label>
                           </div>
                           <div className="flex justify-end">
                             <button 
@@ -2571,11 +2594,10 @@ const SeekerDashboard = () => {
                         </div>
                       </div>
                     ))}
-                    <div className="p-3 md:p-4">
-                      <button 
+                    <div className="p-3 md:p-4">                      <button 
                         type="button" 
                         onClick={() => { 
-                          setSeekerProfile({ ...seekerProfile, experience: [...(seekerProfile.experience ?? []), { position: '', company: '', location: '', startDate: '', endDate: '', current: false, description: '' }] }); 
+                          setSeekerProfile({ ...seekerProfile, experience: [...(seekerProfile.experience ?? []), { position: '', company: '', location: '', startDate: '', endDate: '', current: false, description: '', isMain: false }] }); 
                         }} 
                         className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
                       >
@@ -2643,8 +2665,7 @@ const SeekerDashboard = () => {
                                 className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
                               />
                             </div>
-                          </div>
-                          <div className="mb-4">
+                          </div>                          <div className="mb-4">
                             <label className="block text-sm font-semibold text-gray-300 mb-1">
                               Description
                             </label>
@@ -2660,6 +2681,30 @@ const SeekerDashboard = () => {
                               rows={2}
                               className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
                             />
+                          </div>
+                          <div className="mb-4">
+                            <label className="flex items-center space-x-2 text-sm text-gray-300">
+                              <input 
+                                type="checkbox" 
+                                name={`edu-isMain-${idx}`} 
+                                checked={edu.isMain || false}
+                                onChange={e => { 
+                                  const updated = [...(seekerProfile.education ?? [])]; 
+                                  // If checking this as main, uncheck all others
+                                  if (e.target.checked) {
+                                    updated.forEach((item, index) => {
+                                      item.isMain = index === idx;
+                                    });
+                                  } else {
+                                    updated[idx] = { ...updated[idx], isMain: false }; 
+                                  }
+                                  setSeekerProfile({ ...seekerProfile, education: updated }); 
+                                }} 
+                                className="rounded border-gray-600 bg-black/40 text-orange-500 focus:ring-orange-400 focus:ring-2" 
+                              />
+                              <span className="font-semibold text-orange-300">Set as Main Education</span>
+                              <span className="text-xs text-gray-500">(This will appear in your profile summary)</span>
+                            </label>
                           </div>
                           <div className="flex justify-end">
                             <button 
@@ -2677,11 +2722,10 @@ const SeekerDashboard = () => {
                         </div>
                       </div>
                     ))}
-                    <div className="p-3 md:p-4">
-                      <button 
+                    <div className="p-3 md:p-4">                      <button 
                         type="button" 
                         onClick={() => { 
-                          setSeekerProfile({ ...seekerProfile, education: [...(seekerProfile.education ?? []), { degree: '', institution: '', year: '', description: '' }] }); 
+                          setSeekerProfile({ ...seekerProfile, education: [...(seekerProfile.education ?? []), { degree: '', institution: '', year: '', description: '', isMain: false }] }); 
                         }} 
                         className="bg-gray-800 hover:bg-gray-700 text-gray-100 px-3 py-1.5 rounded-md text-xs font-semibold"
                       >
