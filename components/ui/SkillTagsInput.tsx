@@ -9,12 +9,11 @@ interface SkillTagsInputProps {
   className?: string;
 }
 
-export const SkillTagsInput: React.FC<SkillTagsInputProps> = ({
-  value,
+export const SkillTagsInput: React.FC<SkillTagsInputProps> = ({  value,
   onChange,
   suggestions = [],
   placeholder = "Enter skills separated by commas",
-  label = "Required Skills",
+  label = "Required Skills & Tags",
   className = ""
 }) => {
   const [input, setInput] = React.useState("");

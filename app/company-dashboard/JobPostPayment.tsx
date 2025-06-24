@@ -396,12 +396,11 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
             </div>
               {/* Unified Skills Input Section */}
             <div>
-              <SkillTagsInput
-                value={jobData.requiredSkills}
+              <SkillTagsInput                value={jobData.requiredSkills}
                 onChange={(skills) => setJobData(prev => ({ ...prev, requiredSkills: skills }))}
                 suggestions={['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Anti Money Laundering','Human Resources','C++','Memes','Site Reliability Engineering','ReFi','Stablecoin','Full-stack Developer','Developer Relations','iOS','Android Developer','GameFi','Talent Acquisition','Node.js','Search Engine Optimization','AI','DePIN','CEX','Berachain','Real World Assets']}
                 placeholder="Enter skills separated by commas or press Enter"
-                label="Required Skills"
+                label="Required Skills & Tags"
                 className="mb-4"
               />
             </div>

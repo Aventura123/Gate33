@@ -18,13 +18,33 @@ interface JobPlan {
 interface Job {
   id: string;
   title: string;
+  jobTitle?: string;
   companyName: string;
   description: string;
+  jobDescription?: string;
+  requiredSkills?: string | string[];
   location?: string;
   salary?: string;
-  sourceLink: string;
+  salaryRange?: string;
+  sourceLink?: string;
+  applyLink?: string;
+  category?: string;
+  jobType?: string;
+  experienceLevel?: string;
+  techTags?: string[];
+  technologies?: string | string[];
+  insertedDate?: string;
+  isFeatured?: boolean;
+  priorityListing?: boolean;
+  acceptsCryptoPay?: boolean;
+  responsibilities?: string;
+  idealCandidate?: string;
+  screeningQuestions?: string[];
   disabled?: boolean;
-  TP?: boolean; // True Posting - posted by team
+  TP?: boolean;
+  status?: 'active' | 'inactive' | 'expired';
+  expiresAt?: any;
+  fromExternalSource?: boolean;
 }
 
 interface JobsManagerProps {
@@ -39,8 +59,39 @@ const JobListItem: React.FC<{
   isDeleting: boolean;
   onToggleDisable: () => void;
   isDisabling?: boolean;
-}> = ({ job, onDelete, isDeleting, onToggleDisable, isDisabling }) => {
+  onEdit: () => void;
+}> = ({ job, onDelete, isDeleting, onToggleDisable, isDisabling, onEdit }) => {
   const [expanded, setExpanded] = useState(false);
+  
+  // Helper function to safely render arrays
+  const renderTags = (tags: string[] | string | undefined, label: string) => {
+    if (!tags) return null;
+    const tagArray = Array.isArray(tags) ? tags : [tags];
+    if (tagArray.length === 0) return null;
+    
+    return (
+      <div className="mb-2">
+        <span className="text-gray-400 text-xs">{label}:</span>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {tagArray.map((tag, index) => (
+            <span key={index} className="px-2 py-1 rounded-full text-xs bg-orange-900/30 text-orange-300 border border-orange-700/50">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return dateString;
+    }
+  };
   
   return (
     <li      className={`bg-black/30 rounded-xl overflow-hidden transition-all duration-200 ${expanded ? 'border-orange-500' : job.disabled ? 'border-gray-500' : 'border-gray-700'} border ${job.disabled ? 'opacity-70' : ''}`}
@@ -51,7 +102,7 @@ const JobListItem: React.FC<{
       >        <div className="flex-1 min-w-0 pr-2">
           <div className="flex items-center gap-2">
             <p className={`font-bold truncate ${job.disabled ? 'text-gray-400' : 'text-orange-400'}`}>
-              {job.title}
+              {job.title || job.jobTitle}
             </p>
             {job.disabled && (
               <span className="px-1 md:px-1.5 py-0.5 rounded-full text-xs bg-gray-800 text-gray-400 border border-gray-700">
@@ -62,6 +113,16 @@ const JobListItem: React.FC<{
               <span className="px-1 md:px-1.5 py-0.5 rounded-full text-xs bg-green-900/50 text-green-300 border border-green-700 animate-pulse">
                 TP
               </span>
+            )}
+            {job.isFeatured && (
+              <span className="px-1 md:px-1.5 py-0.5 rounded-full text-xs bg-purple-900/50 text-purple-300 border border-purple-700">
+                Featured
+              </span>
+            )}
+            {job.acceptsCryptoPay && (
+              <span className="px-1 md:px-1.5 py-0.5 rounded-full text-xs bg-blue-900/50 text-blue-300 border border-blue-700">
+                Crypto Pay
+              </span>
             )}          </div>
           <p className="text-gray-300 text-xs truncate overflow-hidden whitespace-nowrap text-ellipsis w-full">{job.companyName}</p>
         </div>        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
@@ -70,6 +131,15 @@ const JobListItem: React.FC<{
               {job.location}
             </span>
           )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-1.5 md:px-2 py-1 rounded-md text-xs font-semibold whitespace-nowrap"
+          >
+            Edit
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation(); // Prevent expansion toggle
@@ -106,31 +176,135 @@ const JobListItem: React.FC<{
               <span className="text-gray-400 text-xs">Job ID:</span>
               <p className="text-gray-300 text-xs font-mono break-all select-all">{job.id}</p>
             </div>
-            {job.salary && (
+            
+            <div>
+              <span className="text-gray-400 text-xs">Company:</span>
+              <p className="text-orange-300 text-xs">{job.companyName}</p>
+            </div>
+
+            {job.category && (
               <div>
-                <span className="text-gray-400 text-xs">Salary:</span>
-                <p className="text-orange-300 text-xs">{job.salary}</p>
+                <span className="text-gray-400 text-xs">Category:</span>
+                <p className="text-orange-300 text-xs">{job.category}</p>
               </div>
             )}
+
+            {job.jobType && (
+              <div>
+                <span className="text-gray-400 text-xs">Job Type:</span>
+                <p className="text-orange-300 text-xs">{job.jobType}</p>
+              </div>
+            )}
+
+            {job.experienceLevel && (
+              <div>
+                <span className="text-gray-400 text-xs">Experience Level:</span>
+                <p className="text-orange-300 text-xs">{job.experienceLevel}</p>
+              </div>
+            )}
+
+            {(job.salary || job.salaryRange) && (
+              <div>
+                <span className="text-gray-400 text-xs">Salary:</span>
+                <p className="text-orange-300 text-xs">{job.salary || job.salaryRange}</p>
+              </div>
+            )}
+
             {job.location && (
               <div>
                 <span className="text-gray-400 text-xs">Location:</span>
                 <p className="text-orange-300 text-xs">{job.location}</p>
               </div>
             )}
-            {job.sourceLink && (
+
+            {job.insertedDate && (
+              <div>
+                <span className="text-gray-400 text-xs">Posted Date:</span>
+                <p className="text-orange-300 text-xs">{formatDate(job.insertedDate)}</p>
+              </div>
+            )}
+
+            {job.status && (
+              <div>
+                <span className="text-gray-400 text-xs">Status:</span>
+                <p className={`text-xs capitalize ${job.status === 'active' ? 'text-green-300' : job.status === 'expired' ? 'text-red-300' : 'text-yellow-300'}`}>
+                  {job.status}
+                </p>
+              </div>
+            )}
+
+            {(job.sourceLink || job.applyLink) && (
               <div className="md:col-span-2">
-                <span className="text-gray-400 text-xs">Source:</span>
-                <a href={job.sourceLink} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline break-words block text-xs">
-                  {job.sourceLink}
+                <span className="text-gray-400 text-xs">Link:</span>
+                <a 
+                  href={job.sourceLink || job.applyLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-orange-400 hover:underline break-words block text-xs"
+                >
+                  {job.sourceLink || job.applyLink}
                 </a>
               </div>
             )}
           </div>
+
+          {/* Tags Section */}
+          <div className="space-y-2 mb-4">
+            {renderTags(job.techTags, "Tech Tags")}
+            {renderTags(job.technologies, "Technologies")}
+            {renderTags(job.requiredSkills, "Required Skills")}
+            
+            {job.screeningQuestions && job.screeningQuestions.length > 0 && (
+              <div className="mb-2">
+                <span className="text-gray-400 text-xs">Screening Questions:</span>
+                <ul className="text-orange-300 text-xs mt-1 ml-4">
+                  {job.screeningQuestions.map((question, index) => (
+                    <li key={index} className="list-disc">{question}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Job Description */}
           <div className="space-y-2 md:space-y-3">            <div>
               <span className="text-gray-400 text-xs">Description:</span>
-              <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.description}</p>
+              <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.description || job.jobDescription}</p>
             </div>
+
+            {/* Additional deprecated fields that might still contain data */}
+            {job.responsibilities && (
+              <div>
+                <span className="text-gray-400 text-xs">Responsibilities:</span>
+                <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.responsibilities}</p>
+              </div>
+            )}
+
+            {job.idealCandidate && (
+              <div>
+                <span className="text-gray-400 text-xs">Ideal Candidate:</span>
+                <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.idealCandidate}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Status Indicators */}
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-700">
+            {job.fromExternalSource && (
+              <span className="px-2 py-1 rounded-full text-xs bg-gray-800 text-gray-300 border border-gray-600">
+                External Source
+              </span>
+            )}
+            {job.priorityListing && (
+              <span className="px-2 py-1 rounded-full text-xs bg-yellow-900/50 text-yellow-300 border border-yellow-700">
+                Priority Listed
+              </span>
+            )}
+            {job.expiresAt && (
+              <span className="px-2 py-1 rounded-full text-xs bg-red-900/50 text-red-300 border border-red-700">
+                Expires: {formatDate(job.expiresAt.toDate ? job.expiresAt.toDate().toLocaleDateString() : job.expiresAt)}
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -162,11 +336,17 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
     salaryRange: "",
     category: "",
     employmentType: "",
+    jobType: "",
     experienceLevel: "",
+    techTags: [] as string[],
     sourceLink: "",
-  });
-  const [creatingJob, setCreatingJob] = useState(false);
+  });const [creatingJob, setCreatingJob] = useState(false);
   const [deletingJobId, setDeletingJobId] = useState<string | null>(null);
+
+  // Job editing state
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [isEditingJob, setIsEditingJob] = useState(false);
+  const [updatingJobId, setUpdatingJobId] = useState<string | null>(null);
 
   // Job plans state
   const [jobPlans, setJobPlans] = useState<JobPlan[]>([]);
@@ -210,18 +390,38 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
 
       const jobsCollection = collection(db, "jobs");
       const querySnapshot = await getDocs(jobsCollection);      const jobsList = querySnapshot.docs.map((doc) => {
-        // Transform document data into Job object
+        // Transform document data into Job object - capture data as it is
         const data = doc.data();
         return {
           id: doc.id,
-          title: data.title || "",
-          companyName: data.company || "", // Use companyName for the interface but company for Firestore
-          description: data.description || "",
-          location: data.location || "",
-          salary: data.salaryRange || "",
-          sourceLink: data.sourceLink || "",
-          disabled: data.disabled || false,
-          TP: data.TP || false
+          title: data.title,
+          jobTitle: data.jobTitle,
+          companyName: data.companyName || data.company, // Check both fields
+          description: data.description,
+          jobDescription: data.jobDescription,
+          requiredSkills: data.requiredSkills,
+          location: data.location,
+          salary: data.salary,
+          salaryRange: data.salaryRange,
+          sourceLink: data.sourceLink,
+          applyLink: data.applyLink,
+          category: data.category,
+          jobType: data.jobType,
+          experienceLevel: data.experienceLevel,
+          techTags: data.techTags,
+          technologies: data.technologies,
+          insertedDate: data.insertedDate,
+          isFeatured: data.isFeatured,
+          priorityListing: data.priorityListing,
+          acceptsCryptoPay: data.acceptsCryptoPay,
+          responsibilities: data.responsibilities,
+          idealCandidate: data.idealCandidate,
+          screeningQuestions: data.screeningQuestions,
+          disabled: data.disabled,
+          TP: data.TP,
+          status: data.status,
+          expiresAt: data.expiresAt,
+          fromExternalSource: data.fromExternalSource
         } as Job;
       });
 
@@ -278,19 +478,20 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
     try {
       if (!db) {
         throw new Error("Firestore is not initialized.");
-      }        // Format the data for Firestore
+      }      // Format the data for Firestore
       const jobData = {        title: newJob.title,
-        company: newJob.companyName, // Store as 'company' to match existing schema
+        companyName: newJob.companyName,
         description: newJob.description,
         requiredSkills: newJob.requiredSkills,
         location: newJob.location,
         salaryRange: newJob.salaryRange,
         category: newJob.category,
-        jobType: newJob.employmentType, // Store as 'jobType' to match existing schema
-        experienceLevel: newJob.experienceLevel,
+        jobType: newJob.jobType, // Job Type field
+        employmentType: newJob.employmentType, // Employment Type field 
+        experienceLevel: newJob.experienceLevel,        techTags: newJob.techTags, // Tech Tags field
         sourceLink: newJob.sourceLink,
         fromExternalSource: true, // Mark as created from the admin panel
-        TP: true, // True Posting - posted by team
+        TP: true, // Team Post - automatically true for all admin-created jobs
         createdAt: new Date().toISOString(),
         insertedDate: new Date().toISOString(), // Add this to match existing schema
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // Set expiration date to 30 days from now
@@ -302,7 +503,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         id: docRef.id,
         ...newJob,
         disabled: false,
-        TP: true // Mark as True Posting for local state updates
+        TP: true // Automatically true for all admin-created jobs
       };
       
       // Add to all jobs
@@ -330,7 +531,9 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         salaryRange: "",
         category: "",
         employmentType: "",
+        jobType: "",
         experienceLevel: "",
+        techTags: [],
         sourceLink: "",
       });
 
@@ -419,9 +622,64 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
       console.error("Error deleting job:", error);
       alert("Failed to delete job.");
     } finally {
-      setDeletingJobId(null);
+      setDeletingJobId(null);    }
+  };
+
+  // Handle job editing
+  const handleEditJob = (job: Job) => {
+    setEditingJob(job);
+    setIsEditingJob(true);
+  };
+
+  // Handle saving edited job
+  const handleSaveEditedJob = async () => {
+    if (!editingJob) return;
+    
+    setUpdatingJobId(editingJob.id);
+    try {
+      if (!db) {
+        console.error("Firestore is not initialized.");
+        return;
+      }
+      
+      await updateDoc(doc(db, "jobs", editingJob.id), {
+        ...editingJob
+      });
+      
+      // Update both job lists after editing
+      const updatedJobs = allJobs.map(job => 
+        job.id === editingJob.id ? editingJob : job
+      );
+      setAllJobs(updatedJobs);
+      
+      // If we're searching, maintain the filter
+      if (searchTerm) {
+        setJobs(updatedJobs.filter(job => 
+          job.title?.toLowerCase().includes(searchTerm) || 
+          job.companyName?.toLowerCase().includes(searchTerm) ||
+          job.description?.toLowerCase().includes(searchTerm)
+        ));
+      } else {
+        setJobs(updatedJobs);
+      }
+      
+      setIsEditingJob(false);
+      setEditingJob(null);
+      alert("Job updated successfully!");
+    } catch (error) {
+      console.error("Error updating job:", error);
+      alert("Failed to update job.");
+    } finally {
+      setUpdatingJobId(null);
     }
   };
+
+  // Handle canceling job edit
+  const handleCancelEditJob = () => {
+    setIsEditingJob(false);
+    setEditingJob(null);
+  };
+
   // Handle toggling a feature
   const handleToggleFeature = (feature: string) => {
     if (isEditingPlan && selectedPlanForEdit) {
@@ -627,14 +885,14 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
           )}
             <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
             <ul className="space-y-2">
-              {jobs.map((job) => (
-                <JobListItem 
+              {jobs.map((job) => (                <JobListItem 
                   key={job.id} 
                   job={job} 
                   onDelete={() => handleDeleteJob(job.id)}
                   isDeleting={deletingJobId === job.id}
                   onToggleDisable={() => handleToggleJobDisable(job.id)}
                   isDisabling={disablingJobId === job.id}
+                  onEdit={() => handleEditJob(job)}
                 />
               ))}
               {jobs.length === 0 && !jobsLoading && !jobsError && (
@@ -717,16 +975,14 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
               <p className="text-xs text-gray-400 mt-1">Include all job details: position description, responsibilities, requirements, ideal candidate profile, benefits, and technical requirements.</p>
             </div>              {/* Required Skills Section */}
             <div>
-              <SkillTagsInput
-                value={newJob.requiredSkills}
+              <SkillTagsInput                value={newJob.requiredSkills}
                 onChange={(skills) => setNewJob({ ...newJob, requiredSkills: skills })}
                 suggestions={['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Human Resources','C++','Full-stack Developer','Developer Relations','iOS','Android Developer','Node.js','SEO','AI']}
                 placeholder="Enter skills separated by commas or press Enter"
-                label="Required Skills"
+                label="Required Skills & Tags"
                 className="mb-4"
               />
-            </div>
-              {/* Job Details */}
+            </div>              {/* Job Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="jobLocation" className="block text-sm font-semibold text-gray-300 mb-1">Job Location</label>
@@ -742,6 +998,26 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
               </div>
               
               <div>
+                <label htmlFor="jobType" className="block text-sm font-semibold text-gray-300 mb-1">Job Type</label>
+                <select
+                  id="jobType"
+                  name="jobType"
+                  value={newJob.jobType}
+                  onChange={(e) => setNewJob({ ...newJob, jobType: e.target.value })}
+                  className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                >
+                  <option value="">Select Job Type</option>
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Freelance">Freelance</option>
+                  <option value="Internship">Internship</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">              
+              <div>
                 <label htmlFor="employmentType" className="block text-sm font-semibold text-gray-300 mb-1">Employment Type</label>
                 <select
                   id="employmentType"
@@ -750,16 +1026,32 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                   onChange={(e) => setNewJob({ ...newJob, employmentType: e.target.value })}
                   className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
                 >
-                  <option value="">Select Type</option>
+                  <option value="">Select Employment Type</option>
                   <option value="Full-Time">Full-Time</option>
                   <option value="Part-Time">Part-Time</option>
                   <option value="Contract">Contract</option>
                   <option value="Freelance">Freelance</option>
                 </select>
               </div>
+              
+              <div>
+                <label htmlFor="experienceLevel" className="block text-sm font-semibold text-gray-300 mb-1">Experience Level</label>
+                <select
+                  id="experienceLevel"
+                  name="experienceLevel"
+                  value={newJob.experienceLevel}
+                  onChange={(e) => setNewJob({ ...newJob, experienceLevel: e.target.value })}
+                  className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                >
+                  <option value="">Select Experience Level</option>
+                  <option value="Junior">Junior</option>
+                  <option value="Mid-Level">Mid-Level</option>
+                  <option value="Senior">Senior</option>
+                  <option value="Lead">Lead</option>
+                </select>
+              </div>
             </div>
-            
-            <div>
+              <div>
               <label htmlFor="salaryRange" className="block text-sm font-semibold text-gray-300 mb-1">Salary Range</label>
               <div className="flex gap-2">
                 <input 
@@ -774,24 +1066,19 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
               </div>
             </div>
             
+            {/* Tech Tags */}
             <div>
-              <label htmlFor="experienceLevel" className="block text-sm font-semibold text-gray-300 mb-1">Experience Level</label>
-              <select
-                id="experienceLevel"
-                name="experienceLevel"
-                value={newJob.experienceLevel}
-                onChange={(e) => setNewJob({ ...newJob, experienceLevel: e.target.value })}
-                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
-              >
-                <option value="">Select Experience Level</option>
-                <option value="Junior">Junior</option>
-                <option value="Mid-Level">Mid-Level</option>
-                <option value="Senior">Senior</option>
-                <option value="Lead">Lead</option>
-              </select>
-            </div>
+              <label htmlFor="techTags" className="block text-sm font-semibold text-gray-300 mb-1">Tech Tags (comma separated)</label>
+              <input 
+                id="techTags"
+                type="text" 
+                value={newJob.techTags.join(', ')} 
+                onChange={(e) => setNewJob({ ...newJob, techTags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag) })} 
+                placeholder="React, Node.js, Solidity, etc." 
+                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
+              />            </div>
             
-            {/* Application Methods */}            {/* Removed Application Link and Contact Email fields as requested */}
+            {/* Application Methods */}{/* Removed Application Link and Contact Email fields as requested */}
               <div>
               <label htmlFor="sourceLink" className="block text-sm font-semibold text-gray-300 mb-1">Source Link (Admin Only) *</label>
               <input 
@@ -1020,8 +1307,186 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                 <li>Mark premium plans to highlight them to users</li>
                 <li>Use "Top Listed" for plans that place jobs at the top of search results</li>
               </ul>
+            </div>          )}
+        </div>
+      )}      {/* Job Edit Modal */}
+      {isEditingJob && editingJob && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-orange-950/80 via-black to-orange-900/60 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-orange-500/50 shadow-2xl backdrop-blur-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-orange-400">Edit Job</h3>
+              <button
+                onClick={handleCancelEditJob}
+                className="text-gray-400 hover:text-white p-2"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-          )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-orange-300">Basic Information</h4>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Job Title</label>                  <input
+                    type="text"
+                    value={editingJob.title || editingJob.jobTitle || ''}
+                    onChange={(e) => setEditingJob({...editingJob, title: e.target.value, jobTitle: e.target.value})}
+                    className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Company Name</label>                  <input
+                    type="text"
+                    value={editingJob.companyName || ''}
+                    onChange={(e) => setEditingJob({...editingJob, companyName: e.target.value})}
+                    className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>                  <select
+                    value={editingJob.category || ''}
+                    onChange={(e) => setEditingJob({...editingJob, category: e.target.value})}
+                    className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                  >
+                    <option value="">Select Category</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Design">Design</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Product">Product</option>
+                    <option value="Finance">Finance</option>
+                    <option value="DeFi">DeFi</option>
+                    <option value="Web3">Web3</option>
+                    <option value="Non-Tech">Non-Tech</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Job Type</label>                  <select
+                    value={editingJob.jobType || ''}
+                    onChange={(e) => setEditingJob({...editingJob, jobType: e.target.value})}
+                    className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                  >
+                    <option value="">Select Type</option>
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Internship">Internship</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Experience Level</label>                  <select
+                    value={editingJob.experienceLevel || ''}
+                    onChange={(e) => setEditingJob({...editingJob, experienceLevel: e.target.value})}
+                    className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                  >
+                    <option value="">Select Level</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Mid">Mid</option>
+                    <option value="Senior">Senior</option>
+                    <option value="Lead">Lead</option>
+                    <option value="Executive">Executive</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Additional Information */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-orange-300">Additional Information</h4>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Location</label>                  <input
+                    type="text"
+                    value={editingJob.location || ''}
+                    onChange={(e) => setEditingJob({...editingJob, location: e.target.value})}
+                    className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Salary Range</label>                  <input
+                    type="text"
+                    value={editingJob.salaryRange || editingJob.salary || ''}
+                    onChange={(e) => setEditingJob({...editingJob, salaryRange: e.target.value, salary: e.target.value})}
+                    className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Apply Link / Source Link</label>                  <input
+                    type="url"
+                    value={editingJob.applyLink || editingJob.sourceLink || ''}
+                    onChange={(e) => setEditingJob({...editingJob, applyLink: e.target.value, sourceLink: e.target.value})}
+                    className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                  />
+                </div>                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Required Skills / Tech Tags</label>                  <input
+                    type="text"
+                    value={Array.isArray(editingJob.requiredSkills) ? editingJob.requiredSkills.join(', ') : editingJob.requiredSkills || ''}
+                    onChange={(e) => {
+                      const skills = e.target.value;
+                      const skillsArray = skills.split(',').map(tag => tag.trim()).filter(tag => tag);
+                      setEditingJob({
+                        ...editingJob, 
+                        requiredSkills: skills,
+                        techTags: skillsArray
+                      });
+                    }}
+                    className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                    placeholder="React, Node.js, Solidity, etc."
+                  />                </div>
+
+                <div>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={editingJob.acceptsCryptoPay || false}
+                      onChange={(e) => setEditingJob({...editingJob, acceptsCryptoPay: e.target.checked})}
+                      className="h-4 w-4 accent-orange-500"
+                    />
+                    <span className="text-gray-300">Accepts Crypto Payment</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Job Description */}
+            <div className="mt-6 space-y-4">
+              <h4 className="text-lg font-semibold text-orange-300">Job Description</h4>              <textarea
+                value={editingJob.description || editingJob.jobDescription || ''}
+                onChange={(e) => setEditingJob({...editingJob, description: e.target.value, jobDescription: e.target.value})}
+                rows={8}
+                className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                placeholder="Describe the job position, requirements, and responsibilities..."
+              />
+            </div>
+
+            {/* Action Buttons */}            <div className="flex justify-end space-x-4 mt-6">
+              <button
+                onClick={handleCancelEditJob}
+                className="px-6 py-2 bg-gray-800/80 hover:bg-gray-700 text-white rounded-md transition-colors border border-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEditedJob}
+                disabled={updatingJobId === editingJob.id}
+                className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md transition-colors disabled:opacity-50 shadow-lg"
+              >
+                {updatingJobId === editingJob.id ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

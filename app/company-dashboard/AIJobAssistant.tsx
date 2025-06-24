@@ -231,9 +231,8 @@ const AIJobAssistant: React.FC<AIJobAssistantProps> = ({ jobData, updateJobData,
             <h5 className="text-sm font-medium text-orange-300">Description:</h5>
             <p className={`text-gray-200 ${isMobile ? 'text-xs' : 'text-sm'} whitespace-pre-wrap`}>{generatedContent.description}</p>
           </div>
-          
-          <div className="mb-3">
-            <h5 className="text-sm font-medium text-orange-300">Required Skills:</h5>
+            <div className="mb-3">
+            <h5 className="text-sm font-medium text-orange-300">Required Skills & Tags:</h5>
             <div className="flex flex-wrap gap-1 mt-1">
               {generatedContent.requiredSkills.map((skill, i) => (
                 <span key={i} className={`bg-orange-900/30 text-orange-200 px-2 py-1 rounded ${isMobile ? 'text-xs' : 'text-xs'}`}>

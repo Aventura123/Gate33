@@ -134,6 +134,10 @@ export default function JobsPage() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const jobsPerPage = 20;
+  
   // New states for additional filters
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedJobType, setSelectedJobType] = useState("All Types");
@@ -245,12 +249,11 @@ export default function JobsPage() {
               </div>
             )}
           </div>
-        </div>
-        {/* Close button - shows when there's an onClose callback or when not hidden */}
-        {(onClose || !hideCloseButton) && (
+        </div>        {/* Close button - only shows on mobile modal */}
+        {isMobileModal && onClose && (
           <button
-            onClick={onClose || (() => setSelectedJobId(null))}
-            className={`text-orange-400 hover:text-orange-300 font-bold ${isMobileModal ? 'text-2xl p-1' : 'text-xl ml-4'}`}
+            onClick={onClose}
+            className="text-orange-400 hover:text-orange-300 font-bold text-2xl p-1"
           >
             ×
           </button>
@@ -300,7 +303,14 @@ export default function JobsPage() {
         <div className="text-orange-100 leading-relaxed whitespace-pre-wrap">
           {job.jobDescription}
         </div>
-      </div>      {/* Apply Button */}
+      </div>
+      
+      {/* Job ID - positioned discreetly before the border */}
+      <div className="flex justify-end mb-1">
+        <span className="text-orange-200/50 text-[10px]">ID: {job.id}</span>
+      </div>
+      
+      {/* Apply Button */}
       <div className="pt-4 border-t border-orange-500/30">
         <Button 
           onClick={() => handleApplyClick(job)}
@@ -424,6 +434,48 @@ export default function JobsPage() {
     // If both have the same priorityListing status, sort by date (most recent first)
     return new Date(b.insertedDate).getTime() - new Date(a.insertedDate).getTime();
   });
+
+  // Apply pagination to filtered jobs
+  const totalFilteredJobs = filteredJobs.length;
+  const totalPages = Math.ceil(totalFilteredJobs / jobsPerPage);
+  const indexOfLastJob = currentPage * jobsPerPage;
+  const indexOfFirstJob = indexOfLastJob - jobsPerPage;
+  const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob);
+  // Function to handle page changes
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+      // Reset selected job when changing pages
+      setSelectedJobId(null);
+      // Scroll to the job listings section
+      setTimeout(() => {
+        const jobListElement = document.querySelector('.grid.grid-cols-1');
+        if (jobListElement) {
+          jobListElement.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+          window.scrollTo({ top: 300, behavior: "smooth" });
+        }
+      }, 100);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+      // Reset selected job when changing pages
+      setSelectedJobId(null);
+      // Scroll to the job listings section
+      setTimeout(() => {
+        const jobListElement = document.querySelector('.grid.grid-cols-1');
+        if (jobListElement) {
+          jobListElement.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+          window.scrollTo({ top: 300, behavior: "smooth" });
+        }
+      }, 100);
+    }
+  };
+  
   // Email Signup Section
   const [alertEmail, setAlertEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
@@ -719,11 +771,9 @@ export default function JobsPage() {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Results Count */}
+          </div>          {/* Results Count */}
           <div className="mb-4 sm:mb-6 text-orange-200 text-sm sm:text-base">
-            Found {filteredJobs.length} job listings
+            Found {filteredJobs.length} job listings {totalFilteredJobs > 0 && `(Showing ${indexOfFirstJob + 1}-${Math.min(indexOfLastJob, totalFilteredJobs)} of ${totalFilteredJobs})`}
           </div>
 
           {/* Job Listings with two column layout */}
@@ -750,8 +800,7 @@ export default function JobsPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {filteredJobs.map((job) => (
-                    <div
+                  {currentJobs.map((job) => (                    <div
                       key={job.id}
                       className={`bg-black/70 rounded-lg border border-orange-500/30 shadow-lg px-3 py-2 flex flex-col transition-all duration-300 relative cursor-pointer hover:border-orange-400 ${selectedJobId === job.id ? 'border-orange-400 ring-2 ring-orange-400/50' : ''}`}
                       onClick={() => setSelectedJobId(job.id)}
@@ -772,24 +821,74 @@ export default function JobsPage() {
                           </div>
                         </div>
                       )}
-                      <span className="font-bold text-orange-400 text-base truncate max-w-full mb-1">{job.jobTitle}</span>
+                      {/* Título do Job */}
+                      <span className="font-bold text-orange-400 text-base truncate max-w-full">{job.jobTitle}</span>
+                        {/* Empresa com ícone */}
+                      <div className="flex items-center gap-1 mb-2 mt-1">
+                        <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <span className="text-orange-400 text-sm font-bold">{job.companyName}</span>
+                      </div>
+                      
+                      {/* Localização - limitada a uma linha */}                      {/* Localização - limitada a uma linha */}
+                      <div className="text-orange-200 flex items-center gap-1 mb-2 text-xs truncate w-full">
+                        <svg className="h-4 w-4 min-w-4 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" /></svg>
+                        <span className="truncate">{job.location}</span>
+                      </div>
+                      
+                      {/* Outros badges */}
                       <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="text-orange-200 flex items-center gap-1">
-                          <svg className="h-4 w-4 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" /></svg>
-                          {job.location}
-                        </span>
                         <span className="bg-black/40 px-2 py-1 rounded-full text-orange-200 border border-orange-500/30">{job.jobType}</span>
                         <span className="bg-black/40 px-2 py-1 rounded-full text-orange-200 border border-orange-500/30">{job.experienceLevel}</span>
                         {job.salaryRange && (
                           <span className="bg-black/40 px-2 py-1 rounded-full text-orange-200 border border-orange-500/30">{job.salaryRange}</span>
                         )}
                         {job.acceptsCryptoPay && (
-                          <span className="px-2 py-1 bg-black/40 rounded-full text-orange-400 font-semibold border border-orange-500/30">Crypto Pay</span>
-                        )}
-                        <span className="ml-auto text-orange-300 bg-black/40 px-2 py-1 rounded border border-orange-500/30">{getTimeAgo(job.insertedDate)}</span>
+                          <span className="px-2 py-1 bg-orange-500/20 rounded-full text-orange-400 font-semibold border border-orange-500/50">Crypto Pay</span>
+                        )}                        <span className="ml-auto text-orange-300 bg-black/40 px-2 py-1 rounded border border-orange-500/30">{getTimeAgo(job.insertedDate)}</span>
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+              
+              {/* Pagination Controls */}
+              {filteredJobs.length > 0 && totalPages > 1 && (
+                <div className="flex justify-between items-center mt-6 border-t border-orange-500/30 pt-4">
+                  <button
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                    className={`flex items-center gap-1 px-4 py-2 rounded-lg ${
+                      currentPage === 1 
+                      ? 'text-orange-500/50 cursor-not-allowed' 
+                      : 'bg-black/40 border border-orange-500/30 text-orange-400 hover:bg-orange-900/30'
+                    }`}
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Previous
+                  </button>
+                  
+                  <div className="text-orange-200 text-sm">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                  
+                  <button
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                    className={`flex items-center gap-1 px-4 py-2 rounded-lg ${
+                      currentPage === totalPages 
+                      ? 'text-orange-500/50 cursor-not-allowed' 
+                      : 'bg-black/40 border border-orange-500/30 text-orange-400 hover:bg-orange-900/30'
+                    }`}
+                  >
+                    Next
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
               )}
             </div>
@@ -812,8 +911,7 @@ export default function JobsPage() {
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+            )}          </div>
           
           {/* Email Signup Section */}
           <div className="mt-10 sm:mt-16 bg-black/60 rounded-lg p-6 sm:p-8 border border-orange-500/30">
