@@ -340,6 +340,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
     experienceLevel: "",
     techTags: [] as string[],
     sourceLink: "",
+    acceptsCryptoPay: false,
   });const [creatingJob, setCreatingJob] = useState(false);
   const [deletingJobId, setDeletingJobId] = useState<string | null>(null);
 
@@ -490,6 +491,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         employmentType: newJob.employmentType, // Employment Type field 
         experienceLevel: newJob.experienceLevel,        techTags: newJob.techTags, // Tech Tags field
         sourceLink: newJob.sourceLink,
+        acceptsCryptoPay: newJob.acceptsCryptoPay, // Accepts Crypto Payment
         fromExternalSource: true, // Mark as created from the admin panel
         TP: true, // Team Post - automatically true for all admin-created jobs
         createdAt: new Date().toISOString(),
@@ -503,7 +505,8 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         id: docRef.id,
         ...newJob,
         disabled: false,
-        TP: true // Automatically true for all admin-created jobs
+        TP: true, // Automatically true for all admin-created jobs
+        acceptsCryptoPay: newJob.acceptsCryptoPay
       };
       
       // Add to all jobs
@@ -535,6 +538,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         experienceLevel: "",
         techTags: [],
         sourceLink: "",
+        acceptsCryptoPay: false
       });
 
       alert("Job created successfully!");
@@ -1065,8 +1069,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                 />
               </div>
             </div>
-            
-            {/* Tech Tags */}
+              {/* Tech Tags */}
             <div>
               <label htmlFor="techTags" className="block text-sm font-semibold text-gray-300 mb-1">Tech Tags (comma separated)</label>
               <input 
@@ -1076,7 +1079,19 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                 onChange={(e) => setNewJob({ ...newJob, techTags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag) })} 
                 placeholder="React, Node.js, Solidity, etc." 
                 className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
-              />            </div>
+              />            </div>            {/* Crypto Payment */}
+            <div>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={newJob.acceptsCryptoPay || false}
+                  onChange={(e) => setNewJob({ ...newJob, acceptsCryptoPay: e.target.checked })}
+                  className="h-4 w-4 accent-orange-500"
+                />
+                <span className="text-gray-300">Crypto Payment</span>
+              </label>
+              <p className="text-xs text-gray-400 mt-1">This company can pay salaries and compensation in cryptocurrency.</p>
+            </div>
             
             {/* Application Methods */}{/* Removed Application Link and Contact Email fields as requested */}
               <div>
@@ -1443,8 +1458,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                       });
                     }}
                     className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                    placeholder="React, Node.js, Solidity, etc."
-                  />                </div>
+                    placeholder="React, Node.js, Solidity, etc."                  />                </div>
 
                 <div>
                   <label className="flex items-center space-x-2">
@@ -1454,8 +1468,9 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                       onChange={(e) => setEditingJob({...editingJob, acceptsCryptoPay: e.target.checked})}
                       className="h-4 w-4 accent-orange-500"
                     />
-                    <span className="text-gray-300">Accepts Crypto Payment</span>
+                    <span className="text-gray-300">Crypto Payment</span>
                   </label>
+                  <p className="text-xs text-gray-400 mt-1">This company can pay salaries and compensation in cryptocurrency.</p>
                 </div>
               </div>
             </div>

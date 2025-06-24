@@ -56,6 +56,7 @@ interface JobDataType {
   idealCandidate: string;
   benefits: string; // Added benefits field
   screeningQuestions?: string[];
+  acceptsCryptoPay?: boolean;
   [key: `question${number}`]: string | undefined;
 }
 
@@ -82,7 +83,8 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     responsibilities: "",
     idealCandidate: "",
     benefits: "",
-    screeningQuestions: []
+    screeningQuestions: [],
+    acceptsCryptoPay: false
   });
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
   const [paymentStep, setPaymentStep] = useState<'form' | 'select-plan' | 'review' | 'processing' | 'completed'>('form');
@@ -545,9 +547,23 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                   </button>
                 )}
               </div>
-            )}
-            <div className="text-gray-400 text-xs mt-2">By default, we ask for CV, LinkedIn, location and others. AI Job Assistant can help generate relevant screening questions.</div>
+            )}            <div className="text-gray-400 text-xs mt-2">By default, we ask for CV, LinkedIn, location and others. AI Job Assistant can help generate relevant screening questions.</div>
           </div>
+          
+          {/* Crypto Payment */}
+          <div>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={jobData.acceptsCryptoPay || false}
+                onChange={(e) => setJobData(prev => ({ ...prev, acceptsCryptoPay: e.target.checked }))}
+                className="h-4 w-4 accent-orange-500"
+              />
+              <span className="text-gray-300">Crypto Payment</span>
+            </label>
+            <p className="text-xs text-gray-400 mt-1">This company can pay salaries and compensation in cryptocurrency.</p>
+          </div>
+          
           {/* --- END OF NEW FORM --- */}
           <div className="space-y-6">
             <button type="submit" className="w-full bg-orange-500 text-white py-3 rounded-full font-semibold text-lg hover:bg-orange-600 mt-6">Continue</button>
