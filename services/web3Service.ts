@@ -41,13 +41,17 @@ class Web3Service {
   fallbackProvider: ethers.providers.JsonRpcProvider | ethers.providers.InfuraProvider | null = null;
   isInitializing: boolean = false;
   connectionError: string | null = null;
-  wcV2Provider: any = null;
-  // Network configurations imported from the configuration file
+  wcV2Provider: any = null;  // Network configurations imported from the configuration file
   networks = NETWORK_CONFIG;
 
-  // Inicialize fallback providers
+  // Initialize fallback providers silently
   constructor() {
-    this.initializeFallbackProviders();
+    // Only initialize if we're in a browser environment
+    if (typeof window !== 'undefined') {
+      this.initializeFallbackProviders().catch(error => {
+        console.debug('Fallback providers initialization failed:', error);
+      });
+    }
   }
 
   /**
@@ -264,10 +268,15 @@ class Web3Service {
    * Connects to MetaMask or other compatible web3 wallet
    */
   async connectWallet(retryMode = false): Promise<WalletInfo> {
-    try {
-      // Check if MetaMask is available
+    try {      // Check if MetaMask is available - silent check for pages that don't need wallet
       if (!window.ethereum) {
-        throw new Error('MetaMask is not installed. Please install the extension and try again.');
+        console.debug('MetaMask not detected. This is normal for pages that don\'t require wallet functionality.');
+        // Return a safe default instead of throwing error
+        return {
+          address: '',
+          chainId: 0,
+          networkName: 'Not Connected'
+        };
       }
 
       // Register handlers for network events to automatically reconnect when the network changes
@@ -504,15 +513,19 @@ class Web3Service {
       throw new Error('Failed to connect with the wallet. Please try again.');
     }
   }
-
   /**
    * Sets up listeners for network change events
    */
   private setupNetworkChangeListeners() {
-    if (!window.ethereum) return;
+    // Silent check - only setup listeners if MetaMask is available
+    if (typeof window === 'undefined' || !window.ethereum) {
+      console.debug('Skipping wallet event listeners setup - no wallet detected');
+      return;
+    }
     
-    // Remove old listeners to avoid duplication
-    window.ethereum.removeAllListeners('chainChanged');
+    try {
+      // Remove old listeners to avoid duplication
+      window.ethereum.removeAllListeners('chainChanged');
     window.ethereum.removeAllListeners('networkChanged');
     window.ethereum.removeAllListeners('accountsChanged');
     
@@ -588,10 +601,14 @@ class Web3Service {
           if (this.walletInfo) {
             this.walletInfo.address = accounts[0];
           }
-        }
-        window.dispatchEvent(new CustomEvent('web3AccountChanged', { detail: accounts[0] }));
+        }        window.dispatchEvent(new CustomEvent('web3AccountChanged', { detail: accounts[0] }));
       }
     });
+    
+    } catch (error) {
+      // Silently handle errors when setting up event listeners
+      console.debug('Could not setup wallet event listeners:', error);
+    }
   }
 
   /**
@@ -784,12 +801,12 @@ class Web3Service {
         } else {
           throw new Error(`Failed to switch to the ${network.name} network: ${error.message || 'Unknown error'}`);
         }
-      }
-    }
+      }    }
     
     // Normal case for MetaMask and others using window.ethereum
     if (!window.ethereum) {
-      throw new Error('MetaMask is not installed.');
+      console.debug('MetaMask not detected - cannot switch network');
+      return false;
     }
     
     try {
@@ -1084,8 +1101,7 @@ class Web3Service {
         
         // Generic error with details for debugging
         throw new Error(`Could not switch to the ${network.name} network. Error: ${errorMessage || 'Unknown'}. Please do this manually in your wallet.`);
-      }
-    }    // MetaMask or injected provider
+      }    }    // MetaMask or injected provider
     if (window.ethereum) {
       try {
         console.log(`Attempting to switch to the ${network.name} network (chainId: ${network.chainId}) via MetaMask...`);
@@ -1172,11 +1188,12 @@ class Web3Service {
         }
         
         // Generic error with details
-        throw new Error(error?.message || 'Could not switch network in MetaMask. Please try again or do it manually.');
-      }
+        throw new Error(error?.message || 'Could not switch network in MetaMask. Please try again or do it manually.');      }
     }
     
-    throw new Error('No compatible wallet found. Please install MetaMask or use WalletConnect.');
+    // Silent fail if no wallet is available instead of throwing error
+    console.debug('No compatible wallet found for network switching.');
+    return false;
   }
 
   /**
