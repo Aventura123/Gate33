@@ -144,16 +144,21 @@ export default function JobsPage() {
   // State for technology tags filter
   const [selectedTechTags, setSelectedTechTags] = useState<string[]>([]);
   const [showTechTagsFilter, setShowTechTagsFilter] = useState(false);
-
-  // Function to extract technology tags from a skills string
-  const extractTechTags = (skills: string): string[] => {
+  // Function to extract technology tags from skills (handles both string or array)
+  const extractTechTags = (skills: string | string[]): string[] => {
     if (!skills) return [];
     
-    const skillsArray = skills.split(',').map(skill => skill.trim());
+    // Convert to array if it's a string
+    const skillsArray = Array.isArray(skills) 
+      ? skills 
+      : skills.split(',').map(skill => skill.trim());
+    
     return TECH_TAGS.filter(tag => 
       skillsArray.some(skill => 
-        skill.toLowerCase().includes(tag.toLowerCase()) || 
-        tag.toLowerCase().includes(skill.toLowerCase())
+        typeof skill === 'string' && (
+          skill.toLowerCase().includes(tag.toLowerCase()) || 
+          tag.toLowerCase().includes(skill.toLowerCase())
+        )
       )
     );
   };
@@ -314,10 +319,11 @@ export default function JobsPage() {
 
         const jobCollection = collection(db, "jobs");
         const jobSnapshot = await getDocs(jobCollection);
-        const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => {
-          const skillsString = doc.data().requiredSkills || "";
+        const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => {          // Get requiredSkills from data (can be string or array)
+          const skillsData = doc.data().requiredSkills || "";
+          console.log(`Job ${doc.id} requiredSkills type:`, typeof skillsData, Array.isArray(skillsData), skillsData);
           // Automatically extract technology tags from skills
-          const techTags = extractTechTags(skillsString);
+          const techTags = extractTechTags(skillsData);
           
           const data = doc.data();
           console.log(`Job data ${doc.id}:`, data);
@@ -342,7 +348,9 @@ export default function JobsPage() {
             id: doc.id,
             jobTitle: data.title || "",
             companyName: data.company || "",
-            requiredSkills: skillsString,
+            requiredSkills: Array.isArray(data.requiredSkills) 
+              ? data.requiredSkills.join(', ') 
+              : (data.requiredSkills || ""),
             jobDescription: data.description || "",
             applyLink: data.applicationLink || "",
             category: data.category || "Other",
