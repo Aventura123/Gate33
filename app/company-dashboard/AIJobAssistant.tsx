@@ -15,7 +15,7 @@ interface AIJobAssistantProps {
   jobData: {
     title: string;
     description: string;
-    requiredSkills: string;
+    requiredSkills: string[] | string; // Updated to support both string[] and string for backward compatibility
     screeningQuestions?: string[];
     experienceLevel?: string;
     remoteOption?: string;
@@ -117,13 +117,11 @@ const AIJobAssistant: React.FC<AIJobAssistantProps> = ({ jobData, updateJobData,
     ].filter(Boolean).join('');
     
     // Handle screening questions - make sure they're formatted properly
-    const screeningQuestionsList = generatedContent.screeningQuestions;
-
-    updateJobData({
+    const screeningQuestionsList = generatedContent.screeningQuestions;    updateJobData({
       ...jobData,
       description: comprehensiveDescription,
-      // For skills, convert to comma-separated format (for tags UI)
-      requiredSkills: generatedContent.requiredSkills.join(', '),
+      // Keep skills as an array for the SkillTagsInput component
+      requiredSkills: generatedContent.requiredSkills,
       // Make sure to add the screening questions
       screeningQuestions: screeningQuestionsList
     });

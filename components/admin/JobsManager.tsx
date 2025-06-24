@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { collection, addDoc, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import { SkillTagsInput } from "../ui/SkillTagsInput";
 
 interface JobPlan {
   id: string;
@@ -156,7 +157,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
     title: "",
     companyName: "",
     description: "",
-    requiredSkills: "",
+    requiredSkills: [] as string[],
     location: "",
     salaryRange: "",
     category: "",
@@ -324,7 +325,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         title: "",
         companyName: "",
         description: "",
-        requiredSkills: "",
+        requiredSkills: [],
         location: "",
         salaryRange: "",
         category: "",
@@ -714,80 +715,16 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                 rows={15} 
               />
               <p className="text-xs text-gray-400 mt-1">Include all job details: position description, responsibilities, requirements, ideal candidate profile, benefits, and technical requirements.</p>
-            </div>
-              {/* Required Skills Section */}
+            </div>              {/* Required Skills Section */}
             <div>
-              <label htmlFor="requiredSkills" className="block text-sm font-semibold text-gray-300 mb-1">Required Skills</label>
-              <div className="mb-2">
-                <input 
-                  id="requiredSkills"
-                  name="requiredSkills"
-                  type="text"
-                  value={newJob.requiredSkills} 
-                  onChange={(e) => setNewJob({ ...newJob, requiredSkills: e.target.value })} 
-                  className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
-                  placeholder="Enter skills separated by commas or select from below"
-                />
-                <p className="text-xs text-gray-400 mt-1">Click on tags below to add or remove skills, or type custom skills above.</p>
-              </div>
-              
-              {/* Display selected skills as tags */}
-              {newJob.requiredSkills && (
-                <div className="mt-3 mb-4">
-                  <label className="block text-sm text-gray-300 mb-1">Selected Skills:</label>
-                  <div className="flex flex-wrap gap-2">
-                    {newJob.requiredSkills.split(',').map((skill, index) => {
-                      const trimmedSkill = skill.trim();
-                      if (!trimmedSkill) return null;
-                      
-                      return (
-                        <div key={index} className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm flex items-center">
-                          {trimmedSkill}
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              const skills = newJob.requiredSkills.split(',')
-                                .map(s => s.trim())
-                                .filter(s => s !== trimmedSkill)
-                                .join(', ');
-                              setNewJob(prev => ({ ...prev, requiredSkills: skills }));
-                            }}
-                            className="ml-2 text-white hover:text-orange-200"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Common Skill Tags */}              <div className="flex flex-wrap gap-2">
-                {['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Human Resources','C++','Full-stack Developer','Developer Relations','iOS','Android Developer','Node.js','SEO','AI'].map(tag => (
-                  <button 
-                    type="button" 
-                    key={tag} 
-                    onClick={() => {
-                      const skills = newJob.requiredSkills;
-                      const skillsArray = skills ? skills.split(',').map(s => s.trim()) : [];
-                      const exists = skillsArray.includes(tag);
-                      
-                      let newSkills;
-                      if (exists) {
-                        newSkills = skillsArray.filter(s => s !== tag).join(', ');
-                      } else {
-                        newSkills = skills ? `${skills}, ${tag}` : tag;
-                      }
-                      
-                      setNewJob(prev => ({ ...prev, requiredSkills: newSkills }));
-                    }} 
-                    className={`px-3 py-1 rounded-full border text-xs ${newJob.requiredSkills.includes(tag) ? 'bg-orange-500 text-white border-orange-500' : 'bg-black/40 text-gray-300 border-gray-600'}`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
+              <SkillTagsInput
+                value={newJob.requiredSkills}
+                onChange={(skills) => setNewJob({ ...newJob, requiredSkills: skills })}
+                suggestions={['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Human Resources','C++','Full-stack Developer','Developer Relations','iOS','Android Developer','Node.js','SEO','AI']}
+                placeholder="Enter skills separated by commas or press Enter"
+                label="Required Skills"
+                className="mb-4"
+              />
             </div>
               {/* Job Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

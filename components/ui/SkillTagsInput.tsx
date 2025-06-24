@@ -30,21 +30,40 @@ export const SkillTagsInput: React.FC<SkillTagsInputProps> = ({
   const handleRemoveTag = (tag: string) => {
     onChange(value.filter(t => t !== tag));
   };
-
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
-    // If comma, add as tag
-    if (e.target.value.endsWith(",")) {
-      handleAddTag(e.target.value.slice(0, -1));
+    const newValue = e.target.value;
+    
+    // Check if user typed a comma
+    if (newValue.includes(',')) {
+      const tags = newValue.split(',');
+      const lastTag = tags.pop() || '';
+      
+      // Add all tags except the last one
+      tags.forEach(tag => {
+        if (tag.trim() && !value.includes(tag.trim())) {
+          handleAddTag(tag.trim());
+        }
+      });
+      
+      // Set the remaining text as input
+      setInput(lastTag);
+    } else {
+      setInput(newValue);
     }
   };
 
-  // Handle enter key
+  // Handle enter key and other special keys
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && input.trim()) {
+    if ((e.key === "Enter" || e.key === ",") && input.trim()) {
       e.preventDefault();
       handleAddTag(input);
+    } else if (e.key === "Backspace" && !input && value.length > 0) {
+      // Remove last tag if input is empty and backspace is pressed
+      e.preventDefault();
+      const newTags = [...value];
+      newTags.pop();
+      onChange(newTags);
     }
   };
 
@@ -60,9 +79,8 @@ export const SkillTagsInput: React.FC<SkillTagsInputProps> = ({
         type="text"
         value={input}
         onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+        onKeyDown={handleKeyDown}        placeholder={placeholder}
+        className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
       />
       {/* Tags display */}
       <div className="flex flex-wrap gap-2 mt-2">
@@ -94,7 +112,7 @@ export const SkillTagsInput: React.FC<SkillTagsInputProps> = ({
           ))}
         </div>
       )}
-      <p className="text-xs text-gray-400 mt-2">Click on tags to add or remove them from the required skills.</p>
+      <p className="text-xs text-gray-400 mt-2">Type skills and press Enter or comma to add them. Click on suggestion tags below to add or remove skills.</p>
     </div>
   );
 };

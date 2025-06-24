@@ -6,6 +6,7 @@ import { collection, addDoc, getDoc, doc, getDocs, QueryDocumentSnapshot, Docume
 import jobService from "../../services/jobService";
 import { useWallet } from '../../components/WalletProvider';
 import AIJobAssistant from "./AIJobAssistant";
+import { SkillTagsInput } from "../../components/ui/SkillTagsInput";
 
 interface PricingPlan {
   id: string;
@@ -31,13 +32,14 @@ interface JobPostPaymentProps {
   companyId: string;
   companyProfile: CompanyProfile;
   reloadData: () => void;
-} // Extend the interface to include dynamic questions and new fields for the AI Job Assistant
+}
+ // Extend the interface to include dynamic questions and new fields for the AI Job Assistant
 interface JobDataType {
   title: string;
   description: string;
   category: string;
   company: string;
-  requiredSkills: string;
+  requiredSkills: string[]; // Changed from string to string[]
   salaryRange: string;
   location: string;
   employmentType: string;
@@ -49,6 +51,10 @@ interface JobDataType {
   pricingPlanId: string;
   paymentStatus: 'pending' | 'completed' | 'failed';
   paymentId: string;
+  // AI Job Assistant fields - reintegrated
+  responsibilities: string;
+  idealCandidate: string;
+  benefits: string; // Added benefits field
   screeningQuestions?: string[];
   [key: `question${number}`]: string | undefined;
 }
@@ -60,7 +66,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     description: "",
     category: "",
     company: companyProfile.name || "",
-    requiredSkills: "",
+    requiredSkills: [], // Changed from string to empty array
     salaryRange: "",
     location: "",
     employmentType: "",
@@ -72,6 +78,10 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     pricingPlanId: "",
     paymentStatus: "pending" as 'pending' | 'completed' | 'failed',
     paymentId: "",
+    // Reintegrating the specific fields
+    responsibilities: "",
+    idealCandidate: "",
+    benefits: "",
     screeningQuestions: []
   });
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
@@ -250,8 +260,7 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
         transactionHash: transaction.transactionHash,
         blockNumber: transaction.blockNumber
       });
-      
-      // Save job
+        // Save job
       const now = new Date();
       const expiryDate = new Date(now.getTime() + selectedPlan.duration * 24 * 60 * 60 * 1000);
       const jobCollection = collection(db, "jobs");
@@ -265,7 +274,8 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
         pricingPlanId: selectedPlan.id,
         planName: selectedPlan.name,
         planDuration: selectedPlan.duration,
-        planCurrency: planCurrency || 'NATIVE',        featured: selectedPlan.features?.includes('Featured in Job Listing') || selectedPlan.name.toLowerCase().includes('premium') || selectedPlan.name.toLowerCase().includes('featured'),
+        planCurrency: planCurrency || 'NATIVE',
+        featured: selectedPlan.features?.includes('Featured in Job Listing') || selectedPlan.name.toLowerCase().includes('premium') || selectedPlan.name.toLowerCase().includes('featured'),
         priorityListing: selectedPlan.features?.includes('Top Listed') || selectedPlan.name.toLowerCase().includes('premium'),
         // Company info
         companyName: companyProfile.name || jobData.company,
@@ -339,86 +349,61 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                 value={jobData.description} 
                 onChange={handleChange} 
                 required 
-                rows={15} 
+                rows={10} 
                 className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
-                placeholder="Enter a complete job description including responsibilities, requirements, ideal candidate profile, benefits, and all relevant details"
+                placeholder="Enter a complete job description"
               />
-              <p className="text-xs text-gray-400 mt-1">Include all job details: position description, responsibilities, requirements, ideal candidate profile, benefits, and technical requirements.</p>
+              <p className="text-xs text-gray-400 mt-1">Include details about the position and technical requirements.</p>
             </div>
             
-            {/* Unified Skills Input Section */}
             <div>
-              <label className="block text-orange-400 font-semibold mb-1">Required Skills</label>
-              <div className="mb-2">
-                <input 
-                  name="requiredSkills"
-                  type="text"
-                  value={jobData.requiredSkills} 
-                  onChange={handleChange} 
-                  className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
-                  placeholder="Enter skills separated by commas or select from below"
-                />
-                <p className="text-xs text-gray-400 mt-1">Click on tags below to add or remove skills, or type custom skills above.</p>
-              </div>
-              
-              {/* Display selected skills as tags */}
-              {jobData.requiredSkills && (
-                <div className="mt-3 mb-4">
-                  <label className="block text-sm text-gray-300 mb-1">Selected Skills:</label>
-                  <div className="flex flex-wrap gap-2">
-                    {jobData.requiredSkills.split(',').map((skill, index) => {
-                      const trimmedSkill = skill.trim();
-                      if (!trimmedSkill) return null;
-                      
-                      return (
-                        <div key={index} className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm flex items-center">
-                          {trimmedSkill}
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              const skills = jobData.requiredSkills.split(',')
-                                .map(s => s.trim())
-                                .filter(s => s !== trimmedSkill)
-                                .join(', ');
-                              setJobData(prev => ({ ...prev, requiredSkills: skills }));
-                            }}
-                            className="ml-2 text-white hover:text-orange-200"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Common Skill Tags */}
-              <div className="flex flex-wrap gap-2">
-                {['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Anti Money Laundering','Human Resources','C++','Memes','Site Reliability Engineering','ReFi','Stablecoin','Full-stack Developer','Developer Relations','iOS','Android Developer','GameFi','Talent Acquisition','Node.js','Search Engine Optimization','AI','DePIN','CEX','Berachain','Real World Assets'].map(tag => (
-                  <button 
-                    type="button" 
-                    key={tag} 
-                    onClick={() => {
-                      const skills = jobData.requiredSkills;
-                      const skillsArray = skills ? skills.split(',').map(s => s.trim()) : [];
-                      const exists = skillsArray.includes(tag);
-                      
-                      let newSkills;
-                      if (exists) {
-                        newSkills = skillsArray.filter(s => s !== tag).join(', ');
-                      } else {
-                        newSkills = skills ? `${skills}, ${tag}` : tag;
-                      }
-                      
-                      setJobData(prev => ({ ...prev, requiredSkills: newSkills }));
-                    }} 
-                    className={`px-3 py-1 rounded-full border text-sm ${jobData.requiredSkills.includes(tag) ? 'bg-orange-500 text-white border-orange-500' : 'bg-black/50 text-gray-300 border-gray-700'}`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
+              <label className="block text-orange-400 font-semibold mb-1">Responsibilities</label>
+              <textarea 
+                name="responsibilities" 
+                value={jobData.responsibilities} 
+                onChange={handleChange} 
+                rows={6} 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                placeholder="List key responsibilities for this role. Use bullet points (•) for better readability."
+              />
+              <p className="text-xs text-gray-400 mt-1">Describe the main tasks and responsibilities of the position. Use bullet points • or - for better readability.</p>
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Ideal Candidate</label>
+              <textarea 
+                name="idealCandidate" 
+                value={jobData.idealCandidate} 
+                onChange={handleChange} 
+                rows={6} 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                placeholder="Describe your ideal candidate's profile, including soft skills and cultural fit"
+              />
+              <p className="text-xs text-gray-400 mt-1">Describe the ideal candidate profile, including soft skills and cultural fit. Use bullet points • or - for better readability.</p>
+            </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Benefits</label>
+              <textarea 
+                name="benefits" 
+                value={jobData.benefits} 
+                onChange={handleChange} 
+                rows={6} 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
+                placeholder="List the benefits and perks offered with this position"
+              />
+              <p className="text-xs text-gray-400 mt-1">Describe compensation benefits, perks, and any other incentives offered with this position. Use bullet points • or - for better readability.</p>
+            </div>
+              {/* Unified Skills Input Section */}
+            <div>
+              <SkillTagsInput
+                value={jobData.requiredSkills}
+                onChange={(skills) => setJobData(prev => ({ ...prev, requiredSkills: skills }))}
+                suggestions={['Full Time','Web3','Non Technical','NFT','Marketing','DeFi','Internships','Entry Level','Trading','Zero Knowledge','Anti Money Laundering','Human Resources','C++','Memes','Site Reliability Engineering','ReFi','Stablecoin','Full-stack Developer','Developer Relations','iOS','Android Developer','GameFi','Talent Acquisition','Node.js','Search Engine Optimization','AI','DePIN','CEX','Berachain','Real World Assets']}
+                placeholder="Enter skills separated by commas or press Enter"
+                label="Required Skills"
+                className="mb-4"
+              />
             </div>
             
             <div>
