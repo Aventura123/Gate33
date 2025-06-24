@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Layout from '../components/Layout';
 import ContactForm from '../components/ContactForm';
-import DevNoticePopup from '../components/DevNoticePopup';
 
 interface Partner {
   id: string;
@@ -14,6 +13,19 @@ interface Partner {
   description: string;
   website: string;
   createdAt?: string;
+}
+
+interface FeaturedJob {
+  id: string;
+  title: string;
+  companyName: string;
+  description: string;
+  location?: string;
+  jobType?: string;
+  salaryRange?: string;
+  requiredSkills?: string[] | string;
+  techTags?: string[];
+  acceptsCryptoPay?: boolean;
 }
 
 interface FAQItemProps {
@@ -62,9 +74,10 @@ const ModernFAQItem = ({ question, answer, open = false, highlight = false }: { 
 };
 
 function Home() {
-  const [showDevNotice, setShowDevNotice] = useState(true);
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [featuredJobs, setFeaturedJobs] = useState<FeaturedJob[]>([]);
   const [loading, setLoading] = useState(false);
+  const [featuredJobsLoading, setFeaturedJobsLoading] = useState(false);
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistLoading, setWaitlistLoading] = useState(false);
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
@@ -73,11 +86,32 @@ function Home() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [activeJobCard, setActiveJobCard] = useState<number>(-1);
 
-  // Job cards data
-  const featuredJobs = [
-    { id: 0, title: "Blockchain Developer" },
-    { id: 1, title: "Digital Marketing Analyst" },
-    { id: 2, title: "Security Specialist" }
+  // Job cards data - fallback estático
+  const fallbackJobs = [
+    { 
+      id: "fallback-1", 
+      title: "Blockchain Developer", 
+      companyName: "Polygon",
+      description: "Develop and maintain decentralized applications (DApps) using Solidity. Experience with smart contracts and Web3.js.",
+      location: "Remote",
+      jobType: "Contract"
+    },
+    { 
+      id: "fallback-2", 
+      title: "Digital Marketing Analyst", 
+      companyName: "OpenSea",
+      description: "Develop digital marketing strategies focused on cryptocurrency and blockchain markets. SEO, SEM, and social media.",
+      location: "Lisbon",
+      jobType: "Full-time"
+    },
+    { 
+      id: "fallback-3", 
+      title: "Security Specialist", 
+      companyName: "Ethereum Foundation",
+      description: "Conduct thorough audits of smart contracts while implementing robust security protocols to enhance the safety and reliability of blockchain-based applications.",
+      location: "Remote",
+      jobType: "Full-time"
+    }
   ];
 
   // Card sections data
@@ -86,9 +120,9 @@ function Home() {
     { id: 1, title: "FOR HODLERS" },
     { id: 2, title: "FOR EXPLORERS" }
   ];
-
   useEffect(() => {
     fetchPartners();
+    fetchFeaturedJobs();
   }, []);
 
   // Set carousel width after partners are loaded
@@ -97,7 +131,6 @@ function Home() {
       carouselRef.current.style.width = `${partners.length * 340}px`;
     }
   }, [partners]);
-
   const fetchPartners = async () => {
     setLoading(true);
     try {
@@ -111,6 +144,52 @@ function Home() {
       console.error('Error fetching partners:', error);
     } finally {
       setLoading(false);
+    }
+  };  const fetchFeaturedJobs = async () => {
+    setFeaturedJobsLoading(true);
+    try {
+      // Import Firebase methods dynamically (for SSR safety)
+      const { collection, getDocs, query, where, limit } = await import("firebase/firestore");
+      const { db } = await import("../lib/firebase");
+      
+      // Query for featured jobs - simpler query without orderBy to avoid index issues
+      const jobsQuery = query(
+        collection(db, "jobs"),
+        where("featured", "==", true),
+        limit(3)
+      );
+      
+      const querySnapshot = await getDocs(jobsQuery);
+      const jobs = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title || data.jobTitle,
+          companyName: data.companyName || data.company, // Check both fields
+          description: data.description || data.jobDescription,
+          location: data.location,
+          jobType: data.jobType,
+          salaryRange: data.salaryRange || data.salary,
+          requiredSkills: data.requiredSkills,
+          techTags: data.techTags,
+          acceptsCryptoPay: data.acceptsCryptoPay
+        };
+      });
+      
+      console.log('Featured jobs found:', jobs.length, jobs);
+      
+      // Usar jobs do Firebase se existirem, senão usar fallback
+      if (jobs.length > 0) {
+        setFeaturedJobs(jobs);
+      } else {
+        setFeaturedJobs(fallbackJobs);
+      }
+    } catch (error) {
+      console.error('Error fetching featured jobs:', error);
+      // Em caso de erro, usar jobs fallback
+      setFeaturedJobs(fallbackJobs);
+    } finally {
+      setFeaturedJobsLoading(false);
     }
   };
 
@@ -265,10 +344,7 @@ function Home() {
             </div>
           </div>
         </div>
-      </section>
-      {showDevNotice && (
-        <DevNoticePopup onClose={() => setShowDevNotice(false)} />
-      )}      {/* EVEN MORE...COMING SOON Section with centered alignment */}
+      </section>      {/* EVEN MORE...COMING SOON Section with centered alignment */}
       <div className="w-full mt-0.5 mb-1.5">
         <div
           className="coming-soon-card rounded-[40px] py-6 md:py-8 px-4 md:px-10 shadow-lg shadow-black/10 relative overflow-hidden w-full max-w-6xl mx-auto text-center bg-[#F97316]"
@@ -299,7 +375,7 @@ function Home() {
         </div>
       </div>      {/* Featured Jobs Section - New horizontal layout, cards stacked on the right */}
       <section id="jobs" className="jobs py-6 md:py-10 px-4 relative">
-        <div className="relative z-10 flex flex-col lg:flex-row max-w-7xl mx-auto gap-6 md:gap-10 items-start lg:items-center justify-center">          {/* Left column: title, description, button */}
+        <div className="relative z-10 flex flex-col lg:flex-row max-w-6xl mx-auto gap-6 md:gap-10 items-start lg:items-center justify-center">{/* Left column: title, description, button */}
           <div className="flex-shrink-0 w-full lg:w-[35%] flex flex-col justify-center items-start text-center lg:text-left lg:pl-4"><h2 className="text-2xl md:text-3xl font-verdana font-bold text-gate33-orange mb-3 md:mb-4">FEATURED JOBS</h2>
             <p className="text-orange-300 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
               Explore some of the current opportunities available on our platform.
@@ -313,8 +389,8 @@ function Home() {
           </div>          {/* Right column: stacked job cards */}
           <div className="w-full lg:w-[65%] flex flex-col gap-4 md:gap-6 relative">
             {/* Job Indicators */}
-            <div className="job-indicators hidden lg:flex">
-              {[0, 1, 2].map((idx) => (
+            <div className="job-indicators hidden lg:flex" style={{ right: '-50px' }}>
+              {featuredJobs.map((_, idx) => (
                 <div
                   key={idx}
                   className={`job-indicator ${((activeJobCard === -1 && idx === 1) || activeJobCard === idx) ? 'active' : ''}`}
@@ -322,75 +398,51 @@ function Home() {
               ))}
             </div>
 
-            {/* Card 1: Blockchain Developer */}
-            <Link 
-              href="/jobs" 
-              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"              onMouseEnter={() => setActiveJobCard(0)}
-              onMouseLeave={() => setActiveJobCard(-1)}
-            >
-              {/* Vertical lantern-style light effect */}
-              <div className="lamp-light-vertical"></div>
-              {/* Vertical LED bar on the left + light effect only on hover */}
-              <div className="flex flex-col justify-center items-center mr-3 md:mr-5 relative">
-                <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-8 md:h-12 z-10"></div>
+            {/* Loading state */}
+            {featuredJobsLoading && (
+              <div className="flex justify-center py-8">
+                <div className="w-8 h-8 border-4 border-orange-500 rounded-full animate-spin border-t-transparent"></div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-verdana font-bold text-white text-sm md:text-lg mb-1">Blockchain Developer <span className="text-gray-400 font-normal text-xs md:text-base">@Polygon</span></h3>
-                <div className="flex flex-wrap gap-1 md:gap-2 mb-2">
-                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Remote</span>
-                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Contract</span>
+            )}            {/* Dynamic Job Cards */}
+            {!featuredJobsLoading && featuredJobs.map((job, idx) => (
+              <Link 
+                key={job.id}
+                href={`/jobs/apply/${job.id}`}
+                className="rounded-3xl card-orange-glow p-4 md:p-5 h-[120px] md:h-[140px] flex flex-row items-center w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"
+                onMouseEnter={() => setActiveJobCard(idx)}
+                onMouseLeave={() => setActiveJobCard(-1)}
+              >
+                {/* Vertical lantern-style light effect */}
+                <div className="lamp-light-vertical"></div>                {/* Vertical LED bar on the left + light effect only on hover */}
+                <div className="flex flex-col justify-center items-center mr-2 md:mr-3 relative">
+                  <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-6 md:h-8 z-10"></div>
+                </div>                <div className="flex-1">
+                  <h3 className="font-verdana font-bold text-white text-xs md:text-sm mb-0.5">
+                    {job.title} <span className="text-gray-400 font-normal text-xs">- {job.companyName}</span>
+                  </h3>
+                  <div className="flex flex-wrap gap-1 mb-1">
+                    {job.location && (
+                      <span className="bg-orange-500/20 text-orange-400 text-xs px-1.5 py-0.5 rounded font-semibold">
+                        {job.location}
+                      </span>
+                    )}
+                    {job.jobType && (
+                      <span className="bg-orange-500/20 text-orange-400 text-xs px-1.5 py-0.5 rounded font-semibold">
+                        {job.jobType}
+                      </span>
+                    )}
+                    {job.acceptsCryptoPay && (
+                      <span className="bg-green-500/20 text-green-400 text-xs px-1.5 py-0.5 rounded font-semibold">
+                        Crypto Pay
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-200 text-xs mb-0 text-justify pr-2 line-clamp-2">
+                    {job.description}
+                  </p>
                 </div>
-                <p className="text-gray-200 text-xs md:text-sm mb-2 text-justify pr-2">
-                  Develop and maintain decentralized applications (DApps) using Solidity. Experience with smart contracts and Web3.js.
-                </p>
-              </div>
-            </Link>
-            {/* Card 2: Digital Marketing Analyst */}
-            <Link 
-              href="/jobs" 
-              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"              onMouseEnter={() => setActiveJobCard(1)}
-              onMouseLeave={() => setActiveJobCard(-1)}
-            >
-              {/* Vertical lantern-style light effect */}
-              <div className="lamp-light-vertical"></div>
-              {/* Vertical LED bar on the left + light effect only on hover */}
-              <div className="flex flex-col justify-center items-center mr-3 md:mr-5 relative">
-                <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-8 md:h-12 z-10"></div>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-verdana font-bold text-white text-sm md:text-lg mb-1">Digital Marketing Analyst <span className="text-gray-400 font-normal text-xs md:text-base">@OpenSea</span></h3>
-                <div className="flex flex-wrap gap-1 md:gap-2 mb-2">
-                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Lisbon</span>
-                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Full-time</span>
-                </div>
-                <p className="text-gray-200 text-xs md:text-sm mb-2 text-justify pr-2">
-                  Develop digital marketing strategies focused on cryptocurrency and blockchain markets. SEO, SEM, and social media.
-                </p>
-              </div>
-            </Link>
-            {/* Card 3: Security Specialist */}
-            <Link 
-              href="/jobs" 
-              className="rounded-2xl card-orange-glow p-4 md:p-5 h-auto flex flex-row items-stretch w-full group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500"              onMouseEnter={() => setActiveJobCard(2)}
-              onMouseLeave={() => setActiveJobCard(-1)}
-            >
-              {/* Vertical lantern-style light effect */}
-              <div className="lamp-light-vertical"></div>
-              {/* Vertical LED bar on the left + light effect only on hover */}
-              <div className="flex flex-col justify-center items-center mr-3 md:mr-5 relative">
-                <div className="led-bar-vertical bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-md shadow-orange-500/50 w-1 h-8 md:h-12 z-10"></div>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-verdana font-bold text-white text-sm md:text-lg mb-1">Security Specialist <span className="text-gray-400 font-normal text-xs md:text-base">@Ethereum Foundation</span></h3>
-                <div className="flex flex-wrap gap-1 md:gap-2 mb-2">
-                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Remote</span>
-                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded font-semibold">Full-time</span>
-                </div>
-                <p className="text-gray-200 text-xs md:text-sm mb-2 text-justify pr-2">
-                  Conduct thorough audits of smart contracts while implementing robust security protocols to enhance the safety and reliability of blockchain-based applications.
-                </p>
-              </div>
-            </Link>
+              </Link>
+            ))}
           </div>
         </div>      </section>      <main className="min-h-screen text-white relative overflow-hidden gate33-main-section pt-16 md:pt-20 p-4 md:p-8">
         {/* Top orange divider line */}
