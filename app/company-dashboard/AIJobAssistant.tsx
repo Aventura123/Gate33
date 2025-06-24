@@ -16,8 +16,6 @@ interface AIJobAssistantProps {
     title: string;
     description: string;
     requiredSkills: string;
-    responsibilities: string;
-    idealCandidate: string;
     screeningQuestions?: string[];
     experienceLevel?: string;
     remoteOption?: string;
@@ -107,21 +105,25 @@ const AIJobAssistant: React.FC<AIJobAssistantProps> = ({ jobData, updateJobData,
   };  const applyGeneratedContent = () => {
     if (!generatedContent) return;
 
-    // Prepare responsibilities and candidate info string formats
+    // Prepare comprehensive description that includes all job details
     const responsibilitiesList = generatedContent.responsibilities.map(r => `• ${r}`).join('\n');
     const idealCandidateInfo = generatedContent.idealCandidate;
+    
+    // Create comprehensive description including all details
+    const comprehensiveDescription = [
+      generatedContent.description,
+      responsibilitiesList && `\n\n**Key Responsibilities:**\n${responsibilitiesList}`,
+      idealCandidateInfo && `\n\n**Ideal Candidate:**\n${idealCandidateInfo}`
+    ].filter(Boolean).join('');
     
     // Handle screening questions - make sure they're formatted properly
     const screeningQuestionsList = generatedContent.screeningQuestions;
 
     updateJobData({
       ...jobData,
-      description: generatedContent.description,
+      description: comprehensiveDescription,
       // For skills, convert to comma-separated format (for tags UI)
       requiredSkills: generatedContent.requiredSkills.join(', '),
-      // Set each field individually
-      responsibilities: responsibilitiesList,
-      idealCandidate: idealCandidateInfo,
       // Make sure to add the screening questions
       screeningQuestions: screeningQuestionsList
     });

@@ -137,43 +137,43 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
                       {job?.description && (
                         <>
                           <h3 className="text-orange-400 text-lg font-bold mb-2">Description</h3>
-                          <p className="text-gray-200 mb-6">{job.description}</p>
+                          <p className="text-gray-200 mb-6 whitespace-pre-wrap">{job.description}</p>
                         </>
-                      )}
-                      {job?.responsibilities && (
-                        <>
-                          <h3 className="text-orange-400 text-lg font-bold mb-2">Responsibilities</h3>
-                          <p className="text-gray-200 mb-6">{job.responsibilities}</p>
-                        </>
-                      )}
-                      {job?.idealCandidate && (
-                        <>
-                          <h3 className="text-orange-400 text-lg font-bold mb-2">Ideal Candidate</h3>
-                          <p className="text-gray-200 mb-6">{job.idealCandidate}</p>
-                        </>
-                      )}
-                      {job?.requiredSkills && (
-                        <>
-                          <h3 className="text-orange-400 text-lg font-bold mb-2">Required Skills</h3>
-                          <div className="flex flex-wrap gap-2 mb-6">
-                            {(Array.isArray(job.requiredSkills) ? job.requiredSkills : String(job.requiredSkills).split(',')).map((skill: string, idx: number) => (
-                              <span key={idx} className="border border-orange-500 text-orange-300 px-4 py-1 rounded-full text-sm font-medium bg-transparent">{skill.trim()}</span>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                      {job?.technologies && (
-                        <>
-                          <h3 className="text-orange-400 text-lg font-bold mb-2">Technologies</h3>
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {(Array.isArray(job.technologies) ? job.technologies : String(job.technologies).split(',')).map((tech: string, idx: number) => (
-                              <span key={idx} className="border border-orange-500 text-orange-300 px-4 py-1 rounded-full text-sm font-medium bg-transparent flex items-center gap-1">
-                                <span className="text-orange-400">&lt;/&gt;</span> {tech.trim()}
-                              </span>
-                            ))}
-                          </div>
-                        </>
-                      )}
+                      )}                      {/* Combined Skills & Technologies */}
+                      {(() => {
+                        // Get skills from requiredSkills field
+                        const skills = job?.requiredSkills ? 
+                          (Array.isArray(job.requiredSkills) ? job.requiredSkills : String(job.requiredSkills).split(','))
+                            .map((skill: string) => skill.trim()).filter((skill: string) => skill) : [];
+                        
+                        // Get technologies from multiple possible fields
+                        const techs = job?.technologies ? 
+                          (Array.isArray(job.technologies) ? job.technologies : String(job.technologies).split(','))
+                            .map((tech: string) => tech.trim()).filter((tech: string) => tech) : [];
+                        
+                        const techTags = job?.techTags && Array.isArray(job.techTags) ? job.techTags : [];
+                        
+                        // Combine all skills and technologies
+                        const allItems = [...skills, ...techs, ...techTags];
+                        
+                        // Remove duplicates (case-insensitive)
+                        const uniqueItems = allItems.filter((item, index, arr) => 
+                          arr.findIndex(otherItem => otherItem.toLowerCase() === item.toLowerCase()) === index
+                        );
+                        
+                        return uniqueItems.length > 0 ? (
+                          <>
+                            <h3 className="text-orange-400 text-lg font-bold mb-2">Skills & Technologies</h3>
+                            <div className="flex flex-wrap gap-2 mb-6">
+                              {uniqueItems.map((item: string, idx: number) => (
+                                <span key={idx} className="border border-orange-500 text-orange-300 px-4 py-1 rounded-full text-sm font-medium bg-transparent flex items-center gap-1">
+                                  <span className="text-orange-400">&lt;/&gt;</span> {item}
+                                </span>
+                              ))}
+                            </div>
+                          </>
+                        ) : null;
+                      })()}
                     </div>{/* Application button */}
                     <div className="mt-8 flex justify-center">
                       {job?.applicationLink ? (

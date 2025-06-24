@@ -23,9 +23,6 @@ interface Job {
   salary?: string;
   sourceLink: string;
   disabled?: boolean;
-  responsibilities?: string;
-  idealCandidate?: string;
-  benefits?: string;
   TP?: boolean; // True Posting - posted by team
 }
 
@@ -129,32 +126,10 @@ const JobListItem: React.FC<{
               </div>
             )}
           </div>
-          <div className="space-y-2 md:space-y-3">
-            <div>
+          <div className="space-y-2 md:space-y-3">            <div>
               <span className="text-gray-400 text-xs">Description:</span>
               <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.description}</p>
             </div>
-            
-            {job.responsibilities && (
-              <div>
-                <span className="text-gray-400 text-xs">Responsibilities:</span>
-                <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.responsibilities}</p>
-              </div>
-            )}
-            
-            {job.idealCandidate && (
-              <div>
-                <span className="text-gray-400 text-xs">Ideal Candidate:</span>
-                <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.idealCandidate}</p>
-              </div>
-            )}
-            
-            {job.benefits && (
-              <div>
-                <span className="text-gray-400 text-xs">Benefits:</span>
-                <p className="text-white text-xs whitespace-pre-wrap mt-0.5">{job.benefits}</p>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -184,9 +159,6 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
     requiredSkills: "",
     location: "",
     salaryRange: "",
-    responsibilities: "",
-    idealCandidate: "",
-    benefits: "",
     category: "",
     employmentType: "",
     experienceLevel: "",
@@ -248,9 +220,6 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
           salary: data.salaryRange || "",
           sourceLink: data.sourceLink || "",
           disabled: data.disabled || false,
-          responsibilities: data.responsibilities || "",
-          idealCandidate: data.idealCandidate || "",
-          benefits: data.benefits || "",
           TP: data.TP || false
         } as Job;
       });
@@ -309,16 +278,12 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
       if (!db) {
         throw new Error("Firestore is not initialized.");
       }        // Format the data for Firestore
-      const jobData = {
-        title: newJob.title,
+      const jobData = {        title: newJob.title,
         company: newJob.companyName, // Store as 'company' to match existing schema
         description: newJob.description,
         requiredSkills: newJob.requiredSkills,
         location: newJob.location,
         salaryRange: newJob.salaryRange,
-        responsibilities: newJob.responsibilities,
-        idealCandidate: newJob.idealCandidate,
-        benefits: newJob.benefits,
         category: newJob.category,
         jobType: newJob.employmentType, // Store as 'jobType' to match existing schema
         experienceLevel: newJob.experienceLevel,
@@ -362,9 +327,6 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         requiredSkills: "",
         location: "",
         salaryRange: "",
-        responsibilities: "",
-        idealCandidate: "",
-        benefits: "",
         category: "",
         employmentType: "",
         experienceLevel: "",
@@ -739,62 +701,19 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                 <option value="Non-Tech">Non-Tech</option>
                 <option value="Other">Other</option>
               </select>
-            </div>
-              <div>
+            </div>            <div>
               <label htmlFor="jobDescription" className="block text-sm font-semibold text-gray-300 mb-1">Job Description *</label>
               <textarea 
                 id="jobDescription"
                 name="description" 
                 value={newJob.description} 
                 onChange={(e) => setNewJob({ ...newJob, description: e.target.value })} 
-                placeholder="Enter a complete job description" 
+                placeholder="Enter a complete job description including responsibilities, requirements, ideal candidate profile, benefits, and all relevant details" 
                 className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
                 required 
-                rows={10} 
+                rows={15} 
               />
-              <p className="text-xs text-gray-400 mt-1">Include details about the position and technical requirements.</p>
-            </div>
-            
-            <div>
-              <label htmlFor="responsibilities" className="block text-sm font-semibold text-gray-300 mb-1">Responsibilities</label>
-              <textarea 
-                id="responsibilities"
-                name="responsibilities" 
-                value={newJob.responsibilities} 
-                onChange={(e) => setNewJob({ ...newJob, responsibilities: e.target.value })} 
-                placeholder="List key responsibilities for this role. Use bullet points (•) for better readability." 
-                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
-                rows={6} 
-              />
-              <p className="text-xs text-gray-400 mt-1">Describe the main tasks and responsibilities of the position.</p>
-            </div>
-            
-            <div>
-              <label htmlFor="idealCandidate" className="block text-sm font-semibold text-gray-300 mb-1">Ideal Candidate</label>
-              <textarea 
-                id="idealCandidate"
-                name="idealCandidate" 
-                value={newJob.idealCandidate} 
-                onChange={(e) => setNewJob({ ...newJob, idealCandidate: e.target.value })} 
-                placeholder="Describe your ideal candidate's profile, including soft skills and cultural fit" 
-                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
-                rows={6} 
-              />
-              <p className="text-xs text-gray-400 mt-1">Describe the ideal candidate profile, including soft skills and cultural fit.</p>
-            </div>
-            
-            <div>
-              <label htmlFor="benefits" className="block text-sm font-semibold text-gray-300 mb-1">Benefits</label>
-              <textarea 
-                id="benefits"
-                name="benefits" 
-                value={newJob.benefits} 
-                onChange={(e) => setNewJob({ ...newJob, benefits: e.target.value })} 
-                placeholder="List the benefits and perks offered with this position" 
-                className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"  
-                rows={6} 
-              />
-              <p className="text-xs text-gray-400 mt-1">Describe compensation benefits, perks, and any other incentives offered with this position.</p>
+              <p className="text-xs text-gray-400 mt-1">Include all job details: position description, responsibilities, requirements, ideal candidate profile, benefits, and technical requirements.</p>
             </div>
               {/* Required Skills Section */}
             <div>

@@ -31,8 +31,7 @@ interface JobPostPaymentProps {
   companyId: string;
   companyProfile: CompanyProfile;
   reloadData: () => void;
-}
- // Extend the interface to include dynamic questions and new fields for the AI Job Assistant
+} // Extend the interface to include dynamic questions and new fields for the AI Job Assistant
 interface JobDataType {
   title: string;
   description: string;
@@ -50,10 +49,6 @@ interface JobDataType {
   pricingPlanId: string;
   paymentStatus: 'pending' | 'completed' | 'failed';
   paymentId: string;
-  // AI Job Assistant fields - reintegrated
-  responsibilities: string;
-  idealCandidate: string;
-  benefits: string; // Added benefits field
   screeningQuestions?: string[];
   [key: `question${number}`]: string | undefined;
 }
@@ -77,10 +72,6 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
     pricingPlanId: "",
     paymentStatus: "pending" as 'pending' | 'completed' | 'failed',
     paymentId: "",
-    // Reintegrating the specific fields
-    responsibilities: "",
-    idealCandidate: "",
-    benefits: "",
     screeningQuestions: []
   });
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
@@ -348,50 +339,11 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                 value={jobData.description} 
                 onChange={handleChange} 
                 required 
-                rows={10} 
+                rows={15} 
                 className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
-                placeholder="Enter a complete job description"
+                placeholder="Enter a complete job description including responsibilities, requirements, ideal candidate profile, benefits, and all relevant details"
               />
-              <p className="text-xs text-gray-400 mt-1">Include details about the position and technical requirements.</p>
-            </div>
-            
-            <div>
-              <label className="block text-orange-400 font-semibold mb-1">Responsibilities</label>
-              <textarea 
-                name="responsibilities" 
-                value={jobData.responsibilities} 
-                onChange={handleChange} 
-                rows={6} 
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
-                placeholder="List key responsibilities for this role. Use bullet points (•) for better readability."
-              />
-              <p className="text-xs text-gray-400 mt-1">Describe the main tasks and responsibilities of the position. Use bullet points • or - for better readability.</p>
-            </div>
-            
-            <div>
-              <label className="block text-orange-400 font-semibold mb-1">Ideal Candidate</label>
-              <textarea 
-                name="idealCandidate" 
-                value={jobData.idealCandidate} 
-                onChange={handleChange} 
-                rows={6} 
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
-                placeholder="Describe your ideal candidate's profile, including soft skills and cultural fit"
-              />
-              <p className="text-xs text-gray-400 mt-1">Describe the ideal candidate profile, including soft skills and cultural fit. Use bullet points • or - for better readability.</p>
-            </div>
-            
-            <div>
-              <label className="block text-orange-400 font-semibold mb-1">Benefits</label>
-              <textarea 
-                name="benefits" 
-                value={jobData.benefits} 
-                onChange={handleChange} 
-                rows={6} 
-                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
-                placeholder="List the benefits and perks offered with this position"
-              />
-              <p className="text-xs text-gray-400 mt-1">Describe compensation benefits, perks, and any other incentives offered with this position. Use bullet points • or - for better readability.</p>
+              <p className="text-xs text-gray-400 mt-1">Include all job details: position description, responsibilities, requirements, ideal candidate profile, benefits, and technical requirements.</p>
             </div>
             
             {/* Unified Skills Input Section */}

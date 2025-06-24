@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../lib/firebase";
 import { doc, getDoc, collection, getDocs, query, limit, updateDoc, setDoc } from "firebase/firestore";
-import bcrypt from "bcryptjs";
 
 // GET: Fetch user profile data with or without ID
 export async function GET(req: NextRequest) {
@@ -51,7 +50,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, photoUrl, collection = "admins", newPassword, ...otherFields } = body;
+    const { userId, photoUrl, collection = "admins", ...otherFields } = body;
 
     if (!userId) {
       return NextResponse.json({ 
@@ -84,12 +83,6 @@ export async function POST(req: NextRequest) {
         updateData.photoURL = photoUrl;
       }
       
-      // Hash password if newPassword is provided
-      if (newPassword) {
-        console.log("Hashing new password for user");
-        updateData.password = await bcrypt.hash(newPassword, 10);
-      }
-      
       await updateDoc(userRef, updateData);
       
       console.log("User profile updated successfully");
@@ -110,12 +103,6 @@ export async function POST(req: NextRequest) {
         newData.photoURL = photoUrl;
       }
       
-      // Hash password if newPassword is provided
-      if (newPassword) {
-        console.log("Hashing new password for new user");
-        newData.password = await bcrypt.hash(newPassword, 10);
-      }
-      
       await setDoc(userRef, newData);
       
       console.log("New user document created with all profile data");
@@ -123,8 +110,7 @@ export async function POST(req: NextRequest) {
         success: true,
         message: "New profile created successfully"
       });
-    }
-  } catch (error: any) {
+    }  } catch (error: any) {
     console.error("Error updating user profile:", error);
     return NextResponse.json(
       { error: "Error updating user profile", message: error.message },

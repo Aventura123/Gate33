@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
@@ -21,16 +22,18 @@ interface Job {
   salaryRange: string;
   isFeatured: boolean;
   priorityListing?: boolean; // Top Listed jobs
-  acceptsCryptoPay: boolean;
-  experienceLevel: string; // Junior, Mid, Senior
+  acceptsCryptoPay: boolean;  experienceLevel: string; // Junior, Mid, Senior
   techTags?: string[]; // Array of specific technology tags
-  responsibilities?: string; // Job responsibilities
-  idealCandidate?: string; // Ideal candidate profile
+  technologies?: string | string[]; // Technologies field (can be string or array)
+  responsibilities?: string; // Job responsibilities - DEPRECATED: content moved to jobDescription
+  idealCandidate?: string; // Ideal candidate profile - DEPRECATED: content moved to jobDescription
   screeningQuestions?: string[]; // Screening questions
   disabled?: boolean; // Whether the job is disabled and shouldn't be shown publicly
   TP?: boolean; // True Posting - posted by team
   status?: 'active' | 'inactive' | 'expired'; // Job status
   expiresAt?: any; // Job expiration date (Firestore Timestamp or Date)
+  fromExternalSource?: boolean; // Whether the job is from external source
+  sourceLink?: string; // External source link for external jobs
 }
 
 // Array of categories for the filter
@@ -124,6 +127,7 @@ function useIsMobile() {
 }
 
 export default function JobsPage() {
+  const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
@@ -167,8 +171,36 @@ export default function JobsPage() {
   };
 
   // Get the selected job details
-  const selectedJob = jobs.find(job => job.id === selectedJobId);
-  
+  const selectedJob = jobs.find(job => job.id === selectedJobId);    // Function to handle job application
+  const handleApplyClick = (job: Job) => {
+    // If job is from external source, redirect to sourceLink
+    if (job.fromExternalSource && job.sourceLink) {
+      window.open(job.sourceLink, '_blank');
+      return;
+    }
+    
+    // If it's not from external source, redirect to internal apply page
+    if (!job.fromExternalSource) {
+      router.push(`/jobs/apply/${job.id}`);
+      return;
+    }
+    
+    // Fallback: if it's a True Posting (TP - posted by team), use applyLink
+    if (job.TP && job.applyLink) {
+      window.open(job.applyLink, '_blank');
+      return;
+    }
+    
+    // Secondary fallback: if there's an applyLink, use it
+    if (job.applyLink && job.applyLink.trim() !== '') {
+      window.open(job.applyLink, '_blank');
+      return;
+    }
+    
+    // Final fallback: redirect to internal apply page
+    router.push(`/jobs/apply/${job.id}`);
+  };
+
   // Component for job details panel
   const JobDetailsPanel = ({ job, hideCloseButton, onClose, isMobileModal }: { job: Job, hideCloseButton?: boolean, onClose?: () => void, isMobileModal?: boolean }) => (
     <div className={`bg-black/70 rounded-lg border border-orange-500/30 shadow-lg ${isMobileModal ? 'p-4 sm:p-6 h-auto' : 'p-6 h-fit sticky top-4'}`}>
@@ -221,61 +253,42 @@ export default function JobsPage() {
         <div className="text-orange-100 leading-relaxed whitespace-pre-wrap">
           {job.jobDescription}
         </div>
-      </div>
-
-      {/* Required Skills */}
-      {job.requiredSkills && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-orange-300 mb-3">Required Skills</h3>
-          <div className="flex flex-wrap gap-2">
-            {job.requiredSkills.split(',').map((skill, index) => (
-              <span
-                key={index}
-                className="bg-black/40 px-3 py-1 rounded-full text-sm text-orange-200 border border-orange-500/30"
-              >
-                {skill.trim()}
-              </span>
-            ))}
+      </div>      {/* Combined Skills & Technologies */}
+      {(() => {
+        // Get skills from requiredSkills field
+        const skills = job.requiredSkills ? 
+          job.requiredSkills.split(',').map((skill: string) => skill.trim()).filter((skill: string) => skill) : [];
+        
+        // Get technologies from techTags or technologies field
+        const techTags = job.techTags && Array.isArray(job.techTags) ? job.techTags : [];
+        const technologies = job.technologies ? 
+          (Array.isArray(job.technologies) ? job.technologies : job.technologies.split(','))
+            .map((tech: string) => tech.trim()).filter((tech: string) => tech) : [];
+        
+        // Combine all skills and technologies
+        const allItems = [...skills, ...techTags, ...technologies];
+        
+        // Remove duplicates (case-insensitive)
+        const uniqueItems = allItems.filter((item, index, arr) => 
+          arr.findIndex(otherItem => otherItem.toLowerCase() === item.toLowerCase()) === index
+        );
+        
+        return uniqueItems.length > 0 ? (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-orange-300 mb-3">Skills & Technologies</h3>
+            <div className="flex flex-wrap gap-2">
+              {uniqueItems.map((item, index) => (
+                <span
+                  key={index}
+                  className="bg-orange-500/20 px-3 py-1 rounded-full text-sm text-orange-400 border border-orange-500/50 flex items-center gap-1"
+                >
+                  <span className="text-orange-400">&lt;/&gt;</span> {item}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* Technology Tags */}
-      {job.techTags && job.techTags.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-orange-300 mb-3">Technologies</h3>
-          <div className="flex flex-wrap gap-2">
-            {job.techTags.map((tag, index) => (
-              <span
-                key={index}
-                className="bg-orange-500/20 px-3 py-1 rounded-full text-sm text-orange-400 border border-orange-500/50"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Responsibilities */}
-      {job.responsibilities && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-orange-300 mb-3">Responsibilities</h3>
-          <div className="text-orange-100 leading-relaxed whitespace-pre-wrap">
-            {job.responsibilities}
-          </div>
-        </div>
-      )}
-
-      {/* Ideal Candidate */}
-      {job.idealCandidate && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-orange-300 mb-3">Ideal Candidate</h3>
-          <div className="text-orange-100 leading-relaxed whitespace-pre-wrap">
-            {job.idealCandidate}
-          </div>
-        </div>
-      )}
+        ) : null;
+      })()}
 
       {/* Salary Range */}
       {job.salaryRange && (
@@ -283,12 +296,10 @@ export default function JobsPage() {
           <h3 className="text-lg font-semibold text-orange-300 mb-3">Salary Range</h3>
           <p className="text-orange-100">{job.salaryRange}</p>
         </div>
-      )}
-
-      {/* Apply Button */}
+      )}      {/* Apply Button */}
       <div className="pt-4 border-t border-orange-500/30">
         <Button 
-          onClick={() => setShowApplyPopup(true)}
+          onClick={() => handleApplyClick(job)}
           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 transition-colors"
         >
           Apply Now
@@ -328,8 +339,7 @@ export default function JobsPage() {
               }
             }
           }
-          
-          return {
+            return {
             id: doc.id,
             jobTitle: data.title || "",
             companyName: data.company || "",
@@ -348,7 +358,7 @@ export default function JobsPage() {
             techTags: techTags, // Add the extracted tags
             disabled: data.disabled || false, // Include disabled status
             
-            // Adding the new fields with verification
+            // Adding the deprecated fields for backwards compatibility (content should be in jobDescription now)
             responsibilities: data.responsibilities || "",
             idealCandidate: data.idealCandidate || "",
             screeningQuestions: screeningQuestions,
@@ -356,7 +366,11 @@ export default function JobsPage() {
             
             // Include status and expiration fields for filters
             status: data.status || 'active',
-            expiresAt: data.expiresAt || null
+            expiresAt: data.expiresAt || null,
+            
+            // Include new fields for external source handling
+            fromExternalSource: data.fromExternalSource || false,
+            sourceLink: data.sourceLink || ""
           };
         });
         setJobs(fetchedJobs);
@@ -403,15 +417,11 @@ export default function JobsPage() {
     // If both have the same priorityListing status, sort by date (most recent first)
     return new Date(b.insertedDate).getTime() - new Date(a.insertedDate).getTime();
   });
-
   // Email Signup Section
   const [alertEmail, setAlertEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
   const [subscribeSuccess, setSubscribeSuccess] = useState(false);
   const [subscribeError, setSubscribeError] = useState("");
-
-  // Popup state for Apply button
-  const [showApplyPopup, setShowApplyPopup] = useState(false);
 
   const handleJobAlertSubscribe = async () => {
     setSubscribing(true);
@@ -496,23 +506,8 @@ export default function JobsPage() {
       }
     }
   };
-
   return (
     <Layout>
-      {/* Popup Modal for Apply Button */}
-      {showApplyPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <div className="bg-black border border-orange-500/50 rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-            <h2 className="text-xl font-bold text-orange-400 mb-4">In Development</h2>
-            <p className="text-orange-200 mb-6">This platform is still under development. The job offers are for testing purposes only and are not real at this time.</p>
-            <button
-              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2 rounded transition-colors"
-              onClick={() => setShowApplyPopup(false)}
-            >
-              Close
-            </button>
-          </div>
-        </div>      )}
       <div className="bg-gradient-to-b from-black via-[#18181b] to-black min-h-screen text-white pt-16 md:pt-20">
         {/* Header Section */}
         <div className="border-b border-orange-500/30 py-8 px-2 sm:py-16 sm:px-4 bg-black/80">

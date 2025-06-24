@@ -5,67 +5,55 @@ import { compare } from 'bcryptjs';
 import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
-  try {
-    // Verificar se o Firestore está inicializado
+  try {    // Check if Firestore is initialized
     if (!db) {
-      console.error('Firestore não foi inicializado corretamente');
-      return NextResponse.json({ error: 'Serviço indisponível. Tente novamente mais tarde.' }, { status: 503 });
+      console.error('Firestore was not initialized correctly');
+      return NextResponse.json({ error: 'Service unavailable. Please try again later.' }, { status: 503 });
     }
 
-    const body = await request.json();
-    const { email, password } = body;
-    const username = email; // Permitir login usando username no campo 'email'
+    const body = await request.json();    const { email, password } = body;
+    const username = email; // Allow login using username in the 'email' field
 
     if (!username || !password) {
-      return NextResponse.json({ error: 'Username e senha são obrigatórios' }, { status: 400 });
-    }
-
-    console.log('Tentando autenticar usuário:', username);
+      return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
+    }    console.log('Attempting to authenticate user:', username);
 
     const adminsCollection = collection(db, 'admins');
     
-    // Tente buscar por username ou email
+    // Try to search by username or email
     const qUsername = query(adminsCollection, where("username", "==", username));
     let querySnapshot = await getDocs(qUsername);
     
-    // Se não encontrou por username, tente pelo email
+    // If not found by username, try by email
     if (querySnapshot.empty) {
-      console.log('Não encontrado por username, tentando por email');
+      console.log('Not found by username, trying by email');
       const qEmail = query(adminsCollection, where("email", "==", username));
       querySnapshot = await getDocs(qEmail);
-    }
-
-    console.log('Resultado da consulta:', querySnapshot.size, 'documentos encontrados');
+    }    console.log('Query result:', querySnapshot.size, 'documents found');
     
     if (querySnapshot.empty) {
-      return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
-    }
-
-    const adminDoc = querySnapshot.docs[0];
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }    const adminDoc = querySnapshot.docs[0];
     const adminData = adminDoc.data();
 
-    // Verificar se temos o hash da senha
+    // Check if we have the password hash
     if (!adminData.password) {
-      console.error('Admin encontrado mas sem senha definida:', adminDoc.id);
-      return NextResponse.json({ error: 'Conta de administrador inválida' }, { status: 401 });
-    }
-
-    // Use bcrypt para comparar a senha digitada com o hash salvo
+      console.error('Admin found but no password defined:', adminDoc.id);
+      return NextResponse.json({ error: 'Invalid administrator account' }, { status: 401 });
+    }    // Use bcrypt to compare the entered password with the saved hash
     let passwordValid = false;
     try {
       passwordValid = await compare(password, adminData.password);
     } catch (compareError) {
-      console.error('Erro ao comparar senhas:', compareError);
-      return NextResponse.json({ error: 'Erro na validação da senha' }, { status: 500 });
+      console.error('Error comparing passwords:', compareError);
+      return NextResponse.json({ error: 'Password validation error' }, { status: 500 });
     }
     
-    console.log('Validação de senha:', passwordValid ? 'Sucesso' : 'Falha');
+    console.log('Password validation:', passwordValid ? 'Success' : 'Failed');
 
     if (!passwordValid) {
-      return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
-    }
-
-    // Gerar token
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }    // Generate token
     const tokenData = {
       id: adminDoc.id,
       role: adminData.role || 'viewer',
@@ -74,16 +62,14 @@ export async function POST(request: Request) {
     
     const token = Buffer.from(JSON.stringify(tokenData)).toString('base64');
 
-    // Configurar cookie de sessão
+    // Configure session cookie
     const cookieStore = await cookies();
     cookieStore.set('adminSession', token, { 
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24, // 24 horas
+      maxAge: 60 * 60 * 24, // 24 hours
       path: '/'
-    });
-
-    // Retornar resposta com token e dados do admin
+    });    // Return response with token and admin data
     return NextResponse.json({
       success: true,
       token,
@@ -97,7 +83,7 @@ export async function POST(request: Request) {
       }
     });
   } catch (error) {
-    console.error('Erro durante autenticação:', error);
-    return NextResponse.json({ error: 'Falha na autenticação. Tente novamente.' }, { status: 500 });
+    console.error('Error during authentication:', error);
+    return NextResponse.json({ error: 'Authentication failed. Please try again.' }, { status: 500 });
   }
 }

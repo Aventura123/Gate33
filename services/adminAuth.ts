@@ -8,7 +8,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { compare } from 'bcrypt';
  import { cookies } from 'next/headers';
 
-// Função de login do administrador
+// Administrator login function
 export async function loginAdmin(email: string, password: string) {
   try {
     const response = await fetch('/api/admin/login', {
@@ -17,10 +17,8 @@ export async function loginAdmin(email: string, password: string) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ email, password }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Erro ao fazer login');
+    });    if (!response.ok) {
+      throw new Error('Login error');
     }
 
     const data = await response.json();
@@ -32,30 +30,27 @@ export async function loginAdmin(email: string, password: string) {
     localStorage.setItem('token', data.token);
     localStorage.setItem('admin', JSON.stringify(data.admin));
 
-    return data.admin;
-  } catch (error) {
-    console.error('Erro ao fazer login do admin:', error);
+    return data.admin;  } catch (error) {
+    console.error('Admin login error:', error);
     throw error;
   }
 }
 
 /**
- * Verifica se o usuário atual é um administrador
- * @param request Objeto Request para extrair o cookie de autenticação
- * @returns true se o usuário for administrador, false caso contrário
+ * Verifies if the current user is an administrator
+ * @param request Request object to extract authentication cookie
+ * @returns true if user is administrator, false otherwise
  */
 export async function isUserAdmin(request: Request): Promise<boolean> {
   try {
     // Extrair token do cookie ou header Authorization
     let token: string | null = null;
-    
-    // Tentar extrair do header Authorization
+      // Try to extract from Authorization header
     const authHeader = request.headers.get('Authorization');
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7);
     }
-    
-    // Se não encontrou no header, tentar extrair do cookie
+      // If not found in header, try to extract from cookie
     if (!token) {
       const cookieHeader = request.headers.get('cookie');
       if (cookieHeader) {
@@ -65,19 +60,15 @@ export async function isUserAdmin(request: Request): Promise<boolean> {
           token = tokenCookie.split('=')[1];
         }
       }
-    }
-
-    if (!token) {
-      console.log('Token não encontrado');
+    }    if (!token) {
+      console.log('Token not found');
       return false;
-    }
-
-    // Decodificar o token (implementação simples - em produção usar JWT)
+    }    // Decode the token (simple implementation - use JWT in production)
     try {
-      // Para este exemplo, vamos assumir que qualquer token válido representa um admin
-      // Em um cenário real, você faria a verificação adequada do token
+      // For this example, we'll assume any valid token represents an admin
+      // In a real scenario, you would perform proper token verification
       
-      // Verificação opcional: consultar o banco de dados para confirmar que o usuário é admin
+      // Optional verification: query database to confirm user is admin
       const adminsRef = collection(db, "admins");
       const q = query(adminsRef, where("token", "==", token));
       const snapshot = await getDocs(q);
@@ -85,18 +76,16 @@ export async function isUserAdmin(request: Request): Promise<boolean> {
       if (snapshot.empty) {
         return false;
       }
-      
-      // Verificar se o usuário tem permissão de admin
+        // Verify if user has admin permission
       const adminDoc = snapshot.docs[0];
       const role = adminDoc.data().role;
       
-      return ['admin', 'super_admin'].includes(role);
-    } catch (error) {
-      console.error('Erro ao verificar token:', error);
+      return ['admin', 'super_admin'].includes(role);    } catch (error) {
+      console.error('Error verifying token:', error);
       return false;
     }
   } catch (error) {
-    console.error('Erro ao verificar se usuário é admin:', error);
+    console.error('Error verifying if user is admin:', error);
     return false;
   }
 }
