@@ -229,6 +229,11 @@ export default function JobsPage() {
             <div className="bg-black/40 px-3 py-1 rounded-full text-xs text-orange-200 border border-orange-500/30">
               {job.experienceLevel}
             </div>
+            {job.salaryRange && (
+              <div className="bg-black/40 px-3 py-1 rounded-full text-xs text-orange-200 border border-orange-500/30">
+                {job.salaryRange}
+              </div>
+            )}
             {job.acceptsCryptoPay && (
               <div className="px-3 py-1 bg-orange-500/20 rounded-full text-xs text-orange-400 font-semibold border border-orange-500/50">
                 Crypto Pay
@@ -247,13 +252,7 @@ export default function JobsPage() {
         )}
       </div>
 
-      {/* Job Description */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-orange-300 mb-3">Job Description</h3>
-        <div className="text-orange-100 leading-relaxed whitespace-pre-wrap">
-          {job.jobDescription}
-        </div>
-      </div>      {/* Combined Skills & Technologies */}
+      {/* Combined Skills & Technologies - Moved before job description */}
       {(() => {
         // Get skills from requiredSkills field
         const skills = job.requiredSkills ? 
@@ -280,9 +279,9 @@ export default function JobsPage() {
               {uniqueItems.map((item, index) => (
                 <span
                   key={index}
-                  className="bg-orange-500/20 px-3 py-1 rounded-full text-sm text-orange-400 border border-orange-500/50 flex items-center gap-1"
+                  className="bg-orange-500/20 px-3 py-1 rounded-full text-sm text-orange-400 border border-orange-500/50"
                 >
-                  <span className="text-orange-400">&lt;/&gt;</span> {item}
+                  {item}
                 </span>
               ))}
             </div>
@@ -290,13 +289,13 @@ export default function JobsPage() {
         ) : null;
       })()}
 
-      {/* Salary Range */}
-      {job.salaryRange && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-orange-300 mb-3">Salary Range</h3>
-          <p className="text-orange-100">{job.salaryRange}</p>
+      {/* Job Description */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-orange-300 mb-3">Job Description</h3>
+        <div className="text-orange-100 leading-relaxed whitespace-pre-wrap">
+          {job.jobDescription}
         </div>
-      )}      {/* Apply Button */}
+      </div>      {/* Apply Button */}
       <div className="pt-4 border-t border-orange-500/30">
         <Button 
           onClick={() => handleApplyClick(job)}

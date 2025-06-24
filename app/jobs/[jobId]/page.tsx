@@ -86,44 +86,60 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center mb-4">
-                      {/* Salary */}
-                      {job?.salary && (
-                        <span className="inline-flex items-center bg-black border border-orange-500 text-orange-300 text-sm px-3 py-1 rounded-full mr-2 mb-2">
-                          <svg className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          {job.salary}
+                    
+                    {/* Job Type, Experience Level, and Salary - Added at the top */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {/* Job Type */}
+                      {job?.jobType && (
+                        <span className="inline-flex items-center bg-black/40 border border-orange-500/30 text-orange-200 text-sm px-3 py-1 rounded-full">
+                          {job.jobType}
                         </span>
                       )}
-                      {/* Salary Range/Min/Max */}
-                      {job?.salaryRange && !job.salary && (
-                        <span className="inline-flex items-center bg-green-500/20 text-green-300 text-sm px-3 py-1 rounded-full mr-2 mb-2">
-                          <svg className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          {job.salaryRange}
+                      
+                      {/* Experience Level */}
+                      {job?.experienceLevel && (
+                        <span className="inline-flex items-center bg-black/40 border border-orange-500/30 text-orange-200 text-sm px-3 py-1 rounded-full">
+                          {job.experienceLevel}
                         </span>
                       )}
-                      {(job?.salaryMin || job?.salaryMax) && !job.salary && !job.salaryRange && (
-                        <span className="inline-flex items-center bg-green-500/20 text-green-300 text-sm px-3 py-1 rounded-full mr-2 mb-2">
-                          <svg className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          {job.salaryMin ? `From ${job.salaryMin}` : ''}{job.salaryMin && job.salaryMax ? ' - ' : ''}{job.salaryMax ? `Up to ${job.salaryMax}` : ''}
+                      
+                      {/* Remote Option */}
+                      {job?.remoteOption && (
+                        <span className="inline-flex items-center bg-cyan-500/20 text-cyan-300 text-sm px-3 py-1 rounded-full border border-cyan-500/30">
+                          <svg className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 21l3-1.5L15 21l-.75-4M12 3v8m0 0l3.5-3.5M12 11l-3.5-3.5" /></svg>
+                          {job.remoteOption}
                         </span>
                       )}
-                      {/* Location/Region */}
+                      
+                      {/* Location */}
                       {job?.location && (
-                        <span className="inline-flex items-center bg-black/40 text-gray-300 text-sm px-3 py-1 rounded-full mr-2 mb-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <span className="inline-flex items-center bg-black/40 text-orange-200 text-sm px-3 py-1 rounded-full border border-orange-500/30">
+                          <svg className="h-3.5 w-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
                           </svg>
                           {job.location}
                         </span>
                       )}
-                      {/* Remote Option */}
-                      {job?.remoteOption && (
-                        <span className="inline-flex items-center bg-cyan-500/20 text-cyan-300 text-sm px-3 py-1 rounded-full mr-2 mb-2">
-                          <svg className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 21l3-1.5L15 21l-.75-4M12 3v8m0 0l3.5-3.5M12 11l-3.5-3.5" /></svg>
-                          {job.remoteOption}
+                      
+                      {/* Salary Range */}
+                      {job?.salaryRange && (
+                        <span className="inline-flex items-center bg-green-500/20 text-green-300 text-sm px-3 py-1 rounded-full border border-green-500/30">
+                          <svg className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          {job.salaryRange}
                         </span>
                       )}
+                    </div>
+                      <div className="flex flex-wrap items-center mb-4">
+                      {/* Additional metadata about the job - if needed */}
+                      {/* We've moved salary, location, job type to the top bar */}
+                      
+                      {/* Display any other salary information not already shown */}
+                      {(job?.salaryMin || job?.salaryMax) && !job.salary && !job.salaryRange && (
+                        <span className="inline-flex items-center bg-green-500/20 text-green-300 text-sm px-3 py-1 rounded-full mr-2 mb-2">
+                          <svg className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          {job.salaryMin ? `From ${job.salaryMin}` : ''}{job.salaryMin && job.salaryMax ? ' - ' : ''}{job.salaryMax ? `Up to ${job.salaryMax}` : ''}
+                        </span>                      )}
                       {/* Posted Date */}
                       {job?.createdAt && (
                         <span className="inline-flex items-center bg-gray-500/20 text-gray-300 text-sm px-3 py-1 rounded-full mr-2 mb-2">
@@ -134,12 +150,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
                         </span>
                       )}
                     </div>                    <div className="border-t border-orange-500/30 mt-6 pt-6">
-                      {job?.description && (
-                        <>
-                          <h3 className="text-orange-400 text-lg font-bold mb-2">Description</h3>
-                          <p className="text-gray-200 mb-6 whitespace-pre-wrap">{job.description}</p>
-                        </>
-                      )}                      {/* Combined Skills & Technologies */}
+                      {/* Combined Skills & Technologies */}
                       {(() => {
                         // Get skills from requiredSkills field
                         const skills = job?.requiredSkills ? 
@@ -165,15 +176,19 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
                           <>
                             <h3 className="text-orange-400 text-lg font-bold mb-2">Skills & Technologies</h3>
                             <div className="flex flex-wrap gap-2 mb-6">
-                              {uniqueItems.map((item: string, idx: number) => (
-                                <span key={idx} className="border border-orange-500 text-orange-300 px-4 py-1 rounded-full text-sm font-medium bg-transparent flex items-center gap-1">
-                                  <span className="text-orange-400">&lt;/&gt;</span> {item}
+                              {uniqueItems.map((item: string, idx: number) => (                                <span key={idx} className="border border-orange-500 text-orange-300 px-4 py-1 rounded-full text-sm font-medium bg-transparent">
+                                  {item}
                                 </span>
                               ))}
-                            </div>
-                          </>
-                        ) : null;
-                      })()}
+                            </div>                          </>
+                        ) : null;                      })()}
+                      
+                      {job?.description && (
+                        <>
+                          <h3 className="text-orange-400 text-lg font-bold mb-2">Description</h3>
+                          <p className="text-gray-200 mb-6 whitespace-pre-wrap">{job.description}</p>
+                        </>
+                      )}
                     </div>{/* Application button */}
                     <div className="mt-8 flex justify-center">
                       {job?.applicationLink ? (
