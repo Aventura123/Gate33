@@ -24,9 +24,9 @@ interface Job {
   acceptsCryptoPay: boolean;
   experienceLevel: string; // Junior, Mid, Senior
   techTags?: string[]; // Array of specific technology tags
-  responsibilities?: string; // Responsabilidades da vaga
-  idealCandidate?: string; // Perfil do candidato ideal
-  screeningQuestions?: string[]; // Perguntas de triagem
+  responsibilities?: string; // Job responsibilities
+  idealCandidate?: string; // Ideal candidate profile
+  screeningQuestions?: string[]; // Screening questions
   disabled?: boolean; // Whether the job is disabled and shouldn't be shown publicly
   TP?: boolean; // True Posting - posted by team
   status?: 'active' | 'inactive' | 'expired'; // Job status
@@ -111,7 +111,7 @@ const EXPERIENCE_LEVELS = [
   "Lead"
 ];
 
-// Hook para detectar se é mobile
+// Hook to detect if it's mobile
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -167,7 +167,9 @@ export default function JobsPage() {
   };
 
   // Get the selected job details
-  const selectedJob = jobs.find(job => job.id === selectedJobId);  // Component for job details panel
+  const selectedJob = jobs.find(job => job.id === selectedJobId);
+  
+  // Component for job details panel
   const JobDetailsPanel = ({ job, hideCloseButton, onClose, isMobileModal }: { job: Job, hideCloseButton?: boolean, onClose?: () => void, isMobileModal?: boolean }) => (
     <div className={`bg-black/70 rounded-lg border border-orange-500/30 shadow-lg ${isMobileModal ? 'p-4 sm:p-6 h-auto' : 'p-6 h-fit sticky top-4'}`}>
       <div className="flex justify-between items-start mb-4">
@@ -182,7 +184,8 @@ export default function JobsPage() {
           </div>
           <p className={`text-orange-200 mb-1 ${isMobileModal ? 'text-base sm:text-lg' : 'text-lg'}`}>{job.companyName}</p>
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <div className="flex items-center bg-black/40 px-3 py-1 rounded-full border border-orange-500/30">                <svg className="h-4 w-4 text-orange-300 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center bg-black/40 px-3 py-1 rounded-full border border-orange-500/30">
+              <svg className="h-4 w-4 text-orange-300 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
               </svg>
@@ -201,7 +204,7 @@ export default function JobsPage() {
             )}
           </div>
         </div>
-        {/* Botão de fechar - mostra quando tem callback onClose ou quando não está oculto */}
+        {/* Close button - shows when there's an onClose callback or when not hidden */}
         {(onClose || !hideCloseButton) && (
           <button
             onClick={onClose || (() => setSelectedJobId(null))}
@@ -307,17 +310,17 @@ export default function JobsPage() {
           const techTags = extractTechTags(skillsString);
           
           const data = doc.data();
-          console.log(`Dados da vaga ${doc.id}:`, data);
+          console.log(`Job data ${doc.id}:`, data);
           
-          // Extrair perguntas de triagem - tanto do campo screeningQuestions (array)
-          // quanto dos campos individuais question1, question2, etc.
+          // Extract screening questions - both from screeningQuestions field (array)
+          // and from individual fields question1, question2, etc.
           let screeningQuestions = [];
           
-          // Verificar se temos o campo screeningQuestions como array
+          // Check if we have the screeningQuestions field as an array
           if (Array.isArray(data.screeningQuestions)) {
             screeningQuestions = data.screeningQuestions;
           } else {
-            // Caso contrário, buscar de fields question1, question2, etc.
+            // Otherwise, search from question1, question2, etc. fields
             for (let i = 1; i <= 5; i++) {
               const questionKey = `question${i}`;
               if (data[questionKey] && typeof data[questionKey] === 'string' && data[questionKey].trim() !== '') {
@@ -325,7 +328,8 @@ export default function JobsPage() {
               }
             }
           }
-            return {
+          
+          return {
             id: doc.id,
             jobTitle: data.title || "",
             companyName: data.company || "",
@@ -344,19 +348,20 @@ export default function JobsPage() {
             techTags: techTags, // Add the extracted tags
             disabled: data.disabled || false, // Include disabled status
             
-            // Adicionando os novos campos com verificação
+            // Adding the new fields with verification
             responsibilities: data.responsibilities || "",
             idealCandidate: data.idealCandidate || "",
             screeningQuestions: screeningQuestions,
             TP: data.TP || false, // True Posting - posted by team
             
-            // Incluir campos de status e expiração para filtros
+            // Include status and expiration fields for filters
             status: data.status || 'active',
             expiresAt: data.expiresAt || null
-          };        });
+          };
+        });
         setJobs(fetchedJobs);
         
-        // Verificar e atualizar jobs expirados após carregar
+        // Check and update expired jobs after loading
         await checkAndUpdateExpiredJobs(fetchedJobs);
       } catch (error) {
         console.error("Error fetching jobs from Firestore:", error);
@@ -364,13 +369,15 @@ export default function JobsPage() {
     };
 
     fetchJobs();
-  }, []);  // Filtrar os jobs de acordo com os critérios selecionados
+  }, []);
+
+  // Filter jobs according to selected criteria
   const filteredJobs = jobs.filter(
     (job) => {
       // Don't show disabled jobs on public page
       if (job.disabled) return false;
       
-      // Filtrar jobs com status 'inactive' (já incluindo os que foram atualizados automaticamente)
+      // Filter jobs with 'inactive' status (already including those that were automatically updated)
       if (job.status === 'inactive') return false;
       
       const matchesSearch = job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase());
@@ -389,11 +396,11 @@ export default function JobsPage() {
              matchesExperience && matchesCryptoPay && matchesFeatured && matchesTechTags;
     }
   ).sort((a, b) => {
-    // Primeiro ordena por priorityListing (Top Listed)
+    // First sort by priorityListing (Top Listed)
     if (a.priorityListing && !b.priorityListing) return -1;
     if (!a.priorityListing && b.priorityListing) return 1;
     
-    // Se ambos têm o mesmo status de priorityListing, ordenar por data (mais recentes primeiro)
+    // If both have the same priorityListing status, sort by date (most recent first)
     return new Date(b.insertedDate).getTime() - new Date(a.insertedDate).getTime();
   });
 
@@ -446,25 +453,25 @@ export default function JobsPage() {
     const expiredJobs: Job[] = [];
 
     for (const job of jobsToCheck) {
-      // Verificar se o job tem data de expiração
+      // Check if the job has an expiration date
       if (job.expiresAt) {
         let expiresAt: Date;
         
-        // Converter Firestore Timestamp para Date se necessário
+        // Convert Firestore Timestamp to Date if necessary
         if (job.expiresAt.toDate) {
           expiresAt = job.expiresAt.toDate();
         } else {
           expiresAt = new Date(job.expiresAt);
         }
 
-        // Se expirou e ainda está ativo, marcar para atualização
+        // If expired and still active, mark for update
         if (expiresAt < now && job.status === 'active') {
           expiredJobs.push(job);
         }
       }
     }
 
-    // Atualizar jobs expirados no Firestore
+    // Update expired jobs in Firestore
     if (expiredJobs.length > 0) {
       try {
         const updatePromises = expiredJobs.map(job => 
@@ -476,7 +483,7 @@ export default function JobsPage() {
         await Promise.all(updatePromises);
         console.log(`Updated ${expiredJobs.length} expired jobs to inactive status`);
         
-        // Atualizar estado local
+        // Update local state
         setJobs(prevJobs => 
           prevJobs.map(job => 
             expiredJobs.find(expiredJob => expiredJob.id === job.id)

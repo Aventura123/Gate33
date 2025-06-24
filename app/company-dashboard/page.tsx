@@ -294,12 +294,12 @@ const PostJobPage = (): JSX.Element => {
     }
   };  const fetchCompanyPhoto = async (id: string) => {
     try {
-      console.log("Fetchando foto para companyId:", id);
+      console.log("Fetching photo for companyId:", id);
       const response = await fetch(`/api/company/photo?companyId=${id}`);
-      console.log("Resposta do servidor:", response.status, response.statusText);
+      console.log("Server response:", response.status, response.statusText);
       
       if (!response.ok) {
-        console.error("Erro ao buscar foto:", response.status, response.statusText);
+        console.error("Error fetching photo:", response.status, response.statusText);
         setUserPhoto(""); // Clear photo on error
         return;
       }
@@ -307,32 +307,32 @@ const PostJobPage = (): JSX.Element => {
       let data;
       try {
         const textResponse = await response.text();
-        console.log("Resposta bruta:", textResponse.substring(0, 200)); // Log primeiros 200 caracteres
+        console.log("Raw response:", textResponse.substring(0, 200)); // Log first 200 characters
         
         try {
           data = JSON.parse(textResponse);
-          console.log("Dados JSON parseados com sucesso:", data);
+          console.log("JSON data parsed successfully:", data);
         } catch (jsonError) {
-          console.error("Erro ao fazer parse do JSON:", jsonError);
-          console.error("Resposta não é um JSON válido:", textResponse.substring(0, 200));
+          console.error("Error parsing JSON:", jsonError);
+          console.error("Response is not valid JSON:", textResponse.substring(0, 200));
           setUserPhoto(""); // Clear photo on error
           return;
         }
       } catch (textError) {
-        console.error("Erro ao ler resposta como texto:", textError);
+        console.error("Error reading response as text:", textError);
         setUserPhoto(""); // Clear photo on error
         return;
       }
       
       if (data.photoUrl || data.photoURL) {
-        console.log("URL da foto encontrada:", data.photoUrl || data.photoURL);
-        setUserPhoto(data.photoUrl || data.photoURL); // Verificando ambos os campos
+        console.log("Photo URL found:", data.photoUrl || data.photoURL);
+        setUserPhoto(data.photoUrl || data.photoURL); // Check both fields
       } else {
-        console.log("Nenhuma URL de foto encontrada nos dados");
+        console.log("No photo URL found in data");
         setUserPhoto(""); // Clear photo if not found
       }
     } catch (error) {
-      console.error("Erro ao buscar foto da empresa:", error);
+      console.error("Error fetching company photo:", error);
       setUserPhoto(""); // Clear photo on error
     }
   };
@@ -395,7 +395,8 @@ const PostJobPage = (): JSX.Element => {
 
   // Updated reloadData to include profile fetching
   const reloadData = useCallback(async () => {
-    console.log("Reloading company dashboard data...");    try {
+    console.log("Reloading company dashboard data...");
+    try {
       if (!db) throw new Error("Firestore is not initialized");
 
       // Reload jobs (only if companyId is known)
@@ -410,10 +411,10 @@ const PostJobPage = (): JSX.Element => {
           const data = doc.data();
           const expiresAt = data.expiresAt?.toDate?.() || null;
           
-          // Atualiza status para 'expired' se expirou e ainda está 'active'
+          // Update status to 'expired' if expired and still 'active'
           if (expiresAt && expiresAt < now && data.status === 'active') {
             batch.update(doc.ref, { status: 'expired' });
-            data.status = 'expired'; // Atualiza localmente também
+            data.status = 'expired'; // Update locally as well
           }
           
           return {
@@ -423,7 +424,7 @@ const PostJobPage = (): JSX.Element => {
           } as Job;
         });
         
-        // Commit batch updates se necessário
+        // Commit batch updates if necessary
         await batch.commit();
         setJobs(fetchedJobs);
 
@@ -455,17 +456,18 @@ const PostJobPage = (): JSX.Element => {
           if (!db) return;
           console.log('[Jobs] Fetching initial jobs for companyId:', decodedToken);
           const jobCollection = collection(db, "jobs");
-          const q = query(jobCollection, where("companyId", "==", decodedToken));          const jobSnapshot = await getDocs(q);
+          const q = query(jobCollection, where("companyId", "==", decodedToken));
+          const jobSnapshot = await getDocs(q);
           const now = new Date();
           const batch = writeBatch(db);
             const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => {
             const data = doc.data();
             const expiresAt = data.expiresAt?.toDate?.() || null;
             
-            // Atualiza status para 'expired' se expirou e ainda está 'active'
+            // Update status to 'expired' if expired and still 'active'
             if (expiresAt && expiresAt < now && data.status === 'active') {
               batch.update(doc.ref, { status: 'expired' });
-              data.status = 'expired'; // Atualiza localmente também
+              data.status = 'expired'; // Update locally as well
             }
             
             return { 
@@ -475,7 +477,7 @@ const PostJobPage = (): JSX.Element => {
             } as Job;
           });
           
-          // Commit batch updates se necessário
+          // Commit batch updates if necessary
           await batch.commit();
           console.log('[Jobs] Fetched jobs:', fetchedJobs.map(j => ({
             id: j.id, 
@@ -543,7 +545,7 @@ const PostJobPage = (): JSX.Element => {
       formData.append("companyId", companyId);
 
       try {
-        console.log("Enviando arquivo para o servidor...", {
+        console.log("Sending file to server...", {
           fileName: file.name,
           fileType: file.type,
           fileSize: file.size,
@@ -555,46 +557,46 @@ const PostJobPage = (): JSX.Element => {
           body: formData,
         });
         
-        console.log("Resposta recebida do servidor:", {
+        console.log("Response received from server:", {
           status: response.status,
           statusText: response.statusText
         });
 
-        // Tentar ler a resposta primeiro como texto para garantir que seja um JSON válido
+        // Try to read response as text first to ensure it's valid JSON
         let responseData;
         const responseText = await response.text();
-        console.log("Resposta do texto:", responseText.substring(0, 200));
+        console.log("Text response:", responseText.substring(0, 200));
         
         try {
           responseData = JSON.parse(responseText);
-          console.log("Dados da resposta:", responseData);
+          console.log("Response data:", responseData);
         } catch (jsonError) {
-          console.error("Erro ao analisar JSON:", jsonError);
-          throw new Error("Resposta do servidor não é um JSON válido");
+          console.error("Error parsing JSON:", jsonError);
+          throw new Error("Server response is not valid JSON");
         }
         
         if (!response.ok) {
-          throw new Error(responseData.message || "Falha ao fazer upload da foto");
+          throw new Error(responseData.message || "Failed to upload photo");
         }
         
         // Update the photo with the URL returned by the server
         const photoUrl = responseData.url || responseData.photoURL || responseData.photoUrl;
         if (photoUrl) {
-          console.log("URL da foto recebida:", photoUrl);
+          console.log("Photo URL received:", photoUrl);
           setUserPhoto(photoUrl);
         } else {
-          console.warn("Nenhuma URL de foto encontrada na resposta");
+          console.warn("No photo URL found in response");
         }
         
-        console.log("Upload concluído com sucesso!");
+        console.log("Upload completed successfully!");
         
         // Reload the data to ensure everything is updated
         reloadData();
       } catch (error: any) {
-        console.error("Erro detalhado ao enviar foto da empresa:", error);
-        alert(`Falha ao fazer upload da foto: ${error.message || "Erro desconhecido"}`);
+        console.error("Detailed error uploading company photo:", error);
+        alert(`Failed to upload photo: ${error.message || "Unknown error"}`);
         
-        // Reverter para foto anterior ou limpar
+        // Revert to previous photo or clear
         fetchCompanyPhoto(companyId);
       } finally {
         setIsUploading(false);
@@ -1674,7 +1676,6 @@ const InstantJobDetailCard: React.FC<{
                       }`}>
                         {selectedTicket.status === 'resolved' 
                           ? 'Resolved' 
-                           
                           : selectedTicket.status === 'open' 
                           ? 'In Progress' 
                           : 'Pending'}

@@ -2,7 +2,7 @@
   "name": "Gate33 - Web3 Platform",
   "short_name": "Gate33",
   "description": "Complete Web3 platform for jobs, learn-to-earn and crypto tools",
-  "start_url": "/",
+  "start_url": "/?pwa=true",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#ff6b35",
