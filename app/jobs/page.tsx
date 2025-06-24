@@ -182,10 +182,9 @@ export default function JobsPage() {
           </div>
           <p className={`text-orange-200 mb-1 ${isMobileModal ? 'text-base sm:text-lg' : 'text-lg'}`}>{job.companyName}</p>
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <div className="flex items-center bg-black/40 px-3 py-1 rounded-full border border-orange-500/30">
-              <svg className="h-4 w-4 text-orange-300 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center bg-black/40 px-3 py-1 rounded-full border border-orange-500/30">                <svg className="h-4 w-4 text-orange-300 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 616 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
               </svg>
               <span className="text-orange-200 text-sm">{job.location}</span>
             </div>
@@ -565,7 +564,7 @@ export default function JobsPage() {
                 />
                 <svg className="absolute right-3 top-3.5 h-5 w-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
                 </svg>
               </div>
             </div>
@@ -767,7 +766,7 @@ export default function JobsPage() {
                       <span className="font-bold text-orange-400 text-base truncate max-w-full mb-1">{job.jobTitle}</span>
                       <div className="flex flex-wrap items-center gap-2 text-xs">
                         <span className="text-orange-200 flex items-center gap-1">
-                          <svg className="h-4 w-4 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                          <svg className="h-4 w-4 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" /></svg>
                           {job.location}
                         </span>
                         <span className="bg-black/40 px-2 py-1 rounded-full text-orange-200 border border-orange-500/30">{job.jobType}</span>
