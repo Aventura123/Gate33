@@ -1433,13 +1433,11 @@ const fetchEmployersList = async () => {
         country: profileData.country || "",
         phone: profileData.phone || "",
         updatedAt: new Date().toISOString()
-      };
-
-      // If password is being changed, add it to the update data
+      };      // If password is being changed, we need to handle it through API only (not direct Firestore update)
+      let passwordUpdate = null;
       if (profileData.password) {
-        if (profileData.password) {
-          (updateData as any).password = profileData.password;
-        }
+        passwordUpdate = profileData.password;
+        // Don't add password to updateData - it will be handled by API
       }
 
       // Log the payload (redacting sensitive data)
@@ -1466,33 +1464,44 @@ const fetchEmployersList = async () => {
         
         // Update the document
         await updateDoc(adminRef, updateData);
-        console.log("Profile updated successfully via direct Firestore update");
-        
-        // APPROACH 2: Also try API update as a backup
-        try {
-          const token = localStorage.getItem('token');
-          if (token) {
-            const apiResponse = await fetch("/api/userProfile", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                userId: userId,
-                collection: "admins",
-                ...updateData
-              }),
-            });
+        console.log("Profile updated successfully via direct Firestore update");        // APPROACH 2: Use API for password updates and other changes
+        const token = localStorage.getItem('token');
+        if (token) {
+          const apiPayload: any = {
+            userId: userId,
+            collection: "admins",
+            ...updateData
+          };
+          
+          // Add password to API payload if being changed
+          if (passwordUpdate) {
+            apiPayload.newPassword = passwordUpdate;
+          }
+          
+          const apiResponse = await fetch("/api/userProfile", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(apiPayload),
+          });
+          
+          if (apiResponse.ok) {
+            console.log("Profile updated via API");
+          } else {
+            const errorData = await apiResponse.json();
+            console.error("API update failed:", errorData);
             
-            if (apiResponse.ok) {
-              console.log("Profile also updated via API");
+            // If password update failed, this is critical
+            if (passwordUpdate) {
+              throw new Error("Failed to update password: " + (errorData.message || "Unknown error"));
             } else {
-              console.warn("API update failed, but direct Firestore update was successful");
+              console.warn("Non-password API update failed, but direct Firestore update was successful");
             }
           }
-        } catch (apiError) {
-          console.warn("API update failed, but direct Firestore update was successful:", apiError);
+        } else if (passwordUpdate) {
+          throw new Error("Cannot update password: Authentication token not found");
         }
         
         alert("Profile updated successfully!");

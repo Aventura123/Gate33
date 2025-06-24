@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
+import { sendResetPasswordEmail } from "@/utils/emailService";
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
   try {
@@ -54,8 +56,9 @@ export async function POST(req: Request) {
         }
       }
     }
-    
-    // Search admin by username or email
+      // Search admin by username or email
+    let isAdmin = false;
+    let adminUserId = null;
     if (!userEmail) {
       const adminsRef = collection(db, "admins");
       // Try by username
@@ -63,6 +66,8 @@ export async function POST(req: Request) {
       const adminsSnap1 = await getDocs(adminsQ1);
       if (!adminsSnap1.empty) {
         userEmail = adminsSnap1.docs[0].data().email;
+        isAdmin = true;
+        adminUserId = adminsSnap1.docs[0].id;
       }
       // Try by email if not found by username
       if (!userEmail) {
@@ -70,20 +75,48 @@ export async function POST(req: Request) {
         const adminsSnap2 = await getDocs(adminsQ2);
         if (!adminsSnap2.empty) {
           userEmail = adminsSnap2.docs[0].data().email;
+          isAdmin = true;
+          adminUserId = adminsSnap2.docs[0].id;
         }
       }
-    }
-
-    if (!userEmail) {
+    }    if (!userEmail) {
       // Do not reveal if user exists or not
       return NextResponse.json({ ok: true });
     }
 
-    // Use Firebase Auth to send password reset email
+    // Handle admin password reset differently (custom system)
+    if (isAdmin && adminUserId) {
+      try {
+        // Generate reset token
+        const resetToken = uuidv4();
+        const expires = Date.now() + (60 * 60 * 1000); // 1 hour
+        
+        // Save reset token to passwordResets collection
+        await setDoc(doc(db, "passwordResets", resetToken), {
+          userId: adminUserId,
+          userType: "admin",
+          email: userEmail,
+          expires: expires,
+          used: false,
+          createdAt: Date.now()
+        });
+        
+        // Send custom email for admin
+        await sendResetPasswordEmail(userEmail, resetToken);
+        
+        console.log(`Custom password reset email sent to admin: ${userEmail}`);
+        return NextResponse.json({ ok: true });
+      } catch (error) {
+        console.error("Error sending admin password reset:", error);
+        return NextResponse.json({ error: "Error processing admin reset request." }, { status: 500 });
+      }
+    }
+
+    // Use Firebase Auth for seekers and companies
     const auth = getAuth();
     await sendPasswordResetEmail(auth, userEmail);
     
-    return NextResponse.json({ ok: true });  } catch (err: any) {
+    return NextResponse.json({ ok: true });} catch (err: any) {
     console.error("Error sending password reset:", err);
     
     // Provide better error messages
