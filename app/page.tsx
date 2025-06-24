@@ -374,19 +374,19 @@ function Home() {
           </div>
         </div>
       </div>      {/* Featured Jobs Section - New horizontal layout, cards stacked on the right */}
-      <section id="jobs" className="jobs py-6 md:py-10 px-4 relative">
-        <div className="relative z-10 flex flex-col lg:flex-row max-w-6xl mx-auto gap-6 md:gap-10 items-start lg:items-center justify-center">{/* Left column: title, description, button */}
-          <div className="flex-shrink-0 w-full lg:w-[35%] flex flex-col justify-center items-start text-center lg:text-left lg:pl-4"><h2 className="text-2xl md:text-3xl font-verdana font-bold text-gate33-orange mb-3 md:mb-4">FEATURED JOBS</h2>
-            <p className="text-orange-300 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
+      <section id="jobs" className="jobs py-6 md:py-10 px-4 relative">        <div className="relative z-10 flex flex-col lg:flex-row max-w-6xl mx-auto gap-6 md:gap-10 items-start lg:items-center justify-center">{/* Left column: title, description, button */}
+          <div className="flex-shrink-0 w-full lg:w-[35%] flex flex-col justify-center items-start text-center lg:text-left lg:ml-[-40px] xl:ml-[-48px]">
+            <h2 className="text-2xl md:text-3xl font-verdana font-bold text-white mb-3 md:mb-4">FEATURED JOBS</h2>
+            <p className="text-orange-500 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
               Explore some of the current opportunities available on our platform.
             </p>
             <p className="text-gray-200 text-xs md:text-sm mb-6 md:mb-8 max-w-xs mx-auto lg:mx-0 font-verdana">
               Access quality Web3 jobs from verified companies or post roles as a trusted employer. Build your profile, manage applications, and connect securely with top talent in one place.
             </p>
-            <Link href="/jobs" className="gate33-btn-orange text-white py-2.5 px-8 md:px-12 min-w-[240px] md:min-w-[270px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit mx-auto lg:mx-0 whitespace-nowrap">
+            <Link href="/jobs" className="gate33-btn-orange text-white py-2.5 px-8 md:px-12 min-w-[240px] md:min-w-[270px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit mx-auto lg:mx-0 whitespace-nowrap text-center">
               Explore The Job-Board
             </Link>
-          </div>          {/* Right column: stacked job cards */}
+          </div>{/* Right column: stacked job cards */}
           <div className="w-full lg:w-[65%] flex flex-col gap-4 md:gap-6 relative">
             {/* Job Indicators */}
             <div className="job-indicators hidden lg:flex" style={{ right: '-50px' }}>
@@ -444,10 +444,10 @@ function Home() {
               </Link>
             ))}
           </div>
-        </div>      </section>      <main className="min-h-screen text-white relative overflow-hidden gate33-main-section pt-16 md:pt-20 p-4 md:p-8">
+        </div>      </section>      <main className="min-h-screen text-white relative overflow-hidden gate33-main-section pt-2 md:pt-4 p-4 md:p-8">
         {/* Top orange divider line */}
         <div className="max-w-7xl mx-auto px-4">
-          <div className="w-full h-[3px] bg-gate33-orange z-20 my-8 rounded"></div>
+          <div className="w-full h-[3px] bg-gate33-orange z-20 my-2 md:my-4 rounded"></div>
         </div>
         
         <section id="about" className="about py-6 md:py-10 px-4 relative">
@@ -478,7 +478,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
                         </p>
-                      </div>                      <Link href="/crypto-tools#governance-ai" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                      </div>                      <Link href="/crypto-tools#governance-ai" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[120px]">
                         Try This Out
                       </Link>
                     </div>
@@ -495,7 +495,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
                         </p>
-                      </div>                      <Link href="/crypto-tools#market-list" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                      </div>                      <Link href="/crypto-tools#market-list" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[120px]">
                         Try This Out
                       </Link>
                     </div>
@@ -509,7 +509,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Real-time Bitcoin price data, market sentiment analysis, and useful trading utilities powered by free APIs.
                         </p>
-                      </div>                      <Link href="/crypto-tools#bitcoin-analysis" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                      </div>                      <Link href="/crypto-tools#bitcoin-analysis" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[120px]">
                         Try This Out
                       </Link>
                     </div>
@@ -559,7 +559,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Analyze market capitalization data and trends across different cryptocurrencies to make informed investment decisions.
                         </p>
-                      </div>                      <Link href="/crypto-tools#market-cap" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto block w-fit">
+                      </div>                      <Link href="/crypto-tools#market-cap" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[120px]">
                         Try This Out
                       </Link>
                     </div>
