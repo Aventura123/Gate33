@@ -3,7 +3,7 @@
 import React, { useState, useEffect, JSX, useCallback } from "react";
 import FullScreenLayout from "../../components/FullScreenLayout";
 import { useRouter } from "next/navigation";
-import { collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, updateDoc, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, updateDoc, onSnapshot, orderBy, serverTimestamp, writeBatch } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 // Import payment related services
 import web3Service from "../../services/web3Service";
@@ -76,8 +76,7 @@ interface Job {
   requiredSkills: string | string[]; // Permitindo ambos os tipos para compatibilidade
   salaryRange: string;
   location: string;
-  employmentType: string;
-  experienceLevel: string;
+  employmentType: string;  experienceLevel: string;
   blockchainExperience: string;
   remoteOption: string;
   contactEmail: string;
@@ -94,6 +93,7 @@ interface Job {
   companyWebsite?: string;
   managerName?: string;
   notes?: string;
+  status?: 'active' | 'inactive' | 'expired';
 }
 
 // Add an interface for Company Profile
@@ -336,7 +336,6 @@ const PostJobPage = (): JSX.Element => {
       setUserPhoto(""); // Clear photo on error
     }
   };
-
   // Function to fetch company profile data
   const fetchCompanyProfile = useCallback(async (id: string) => {
     if (!id || !db) return;
@@ -396,8 +395,7 @@ const PostJobPage = (): JSX.Element => {
 
   // Updated reloadData to include profile fetching
   const reloadData = useCallback(async () => {
-    console.log("Reloading company dashboard data...");
-    try {
+    console.log("Reloading company dashboard data...");    try {
       if (!db) throw new Error("Firestore is not initialized");
 
       // Reload jobs (only if companyId is known)
@@ -406,11 +404,27 @@ const PostJobPage = (): JSX.Element => {
         // Query jobs specifically for this company
         const q = query(jobCollection, where("companyId", "==", companyId));
         const jobSnapshot = await getDocs(q);
-        const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt || null, // Ensure createdAt is included
-        } as Job));
+        const now = new Date();
+        const batch = writeBatch(db);
+          const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => {
+          const data = doc.data();
+          const expiresAt = data.expiresAt?.toDate?.() || null;
+          
+          // Atualiza status para 'expired' se expirou e ainda está 'active'
+          if (expiresAt && expiresAt < now && data.status === 'active') {
+            batch.update(doc.ref, { status: 'expired' });
+            data.status = 'expired'; // Atualiza localmente também
+          }
+          
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt || null, // Ensure createdAt is included
+          } as Job;
+        });
+        
+        // Commit batch updates se necessário
+        await batch.commit();
         setJobs(fetchedJobs);
 
         // Reload company photo
@@ -441,13 +455,28 @@ const PostJobPage = (): JSX.Element => {
           if (!db) return;
           console.log('[Jobs] Fetching initial jobs for companyId:', decodedToken);
           const jobCollection = collection(db, "jobs");
-          const q = query(jobCollection, where("companyId", "==", decodedToken));
-          const jobSnapshot = await getDocs(q);
-          const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => ({ 
-            id: doc.id, 
-            ...doc.data(),
-            companyId: doc.data().companyId // Ensure companyId is included
-          } as Job));
+          const q = query(jobCollection, where("companyId", "==", decodedToken));          const jobSnapshot = await getDocs(q);
+          const now = new Date();
+          const batch = writeBatch(db);
+            const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => {
+            const data = doc.data();
+            const expiresAt = data.expiresAt?.toDate?.() || null;
+            
+            // Atualiza status para 'expired' se expirou e ainda está 'active'
+            if (expiresAt && expiresAt < now && data.status === 'active') {
+              batch.update(doc.ref, { status: 'expired' });
+              data.status = 'expired'; // Atualiza localmente também
+            }
+            
+            return { 
+              id: doc.id, 
+              ...data,
+              companyId: data.companyId // Ensure companyId is included
+            } as Job;
+          });
+          
+          // Commit batch updates se necessário
+          await batch.commit();
           console.log('[Jobs] Fetched jobs:', fetchedJobs.map(j => ({
             id: j.id, 
             companyId: j.companyId, 
@@ -692,16 +721,26 @@ const PostJobPage = (): JSX.Element => {
                         <div>
                           <span className="block text-xs text-orange-300">Category</span>
                           <span className="text-gray-200">{job.category}</span>
-                        </div>
-                        {!isExpanded ? (
+                        </div>                        {!isExpanded ? (
                           <>
                             <div>
                               <span className="block text-xs text-orange-300">Start Date</span>
                               <span className="text-gray-200">{createdAt ? createdAt.toLocaleDateString() : '-'}</span>
-                            </div>
-                            <div>
-                              <span className="block text-xs text-orange-300">Expires</span>
-                              <span className="text-gray-200">{expirationDate ? expirationDate.toLocaleDateString() : '-'}</span>
+                            </div>                            <div>
+                              <span className="block text-xs text-orange-300">Status</span>
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                job.status === 'expired' 
+                                  ? 'bg-red-900/30 text-red-400' 
+                                  : job.status === 'inactive'
+                                  ? 'bg-yellow-900/30 text-yellow-400'
+                                  : 'bg-green-900/30 text-green-400'
+                              }`}>
+                                {job.status === 'expired' 
+                                  ? 'Expired' 
+                                  : job.status === 'inactive'
+                                  ? 'Inactive'
+                                  : 'Active'}
+                              </span>
                             </div>
                           </>
                         ) : (
@@ -750,13 +789,27 @@ const PostJobPage = (): JSX.Element => {
                               <span className="text-orange-300">Payment Status:</span> {job.paymentStatus}
                             </div>
                           )}
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        </div>                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           <div>
                             <span className="text-orange-300">Created At:</span> {createdAt ? createdAt.toLocaleDateString() : '-'}
                           </div>
                           <div>
                             <span className="text-orange-300">Expires:</span> {expirationDate ? expirationDate.toLocaleDateString() : '-'}
+                          </div>                          <div>
+                            <span className="text-orange-300">Status:</span> 
+                            <span className={`ml-2 text-xs px-2 py-1 rounded ${
+                              job.status === 'expired' 
+                                ? 'bg-red-900/30 text-red-400' 
+                                : job.status === 'inactive'
+                                ? 'bg-yellow-900/30 text-yellow-400'
+                                : 'bg-green-900/30 text-green-400'
+                            }`}>
+                              {job.status === 'expired' 
+                                ? 'Expired' 
+                                : job.status === 'inactive'
+                                ? 'Inactive'
+                                : 'Active'}
+                            </span>
                           </div>
                         </div>
                         {job.requiredSkills && (
@@ -1201,10 +1254,9 @@ const InstantJobDetailCard: React.FC<{
               <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
                 <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Total Jobs</span>
                 <span className="text-lg sm:text-2xl font-bold text-orange-400">{Array.isArray(jobs) ? jobs.length : 0}</span>
-              </div>
-              <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
+              </div>              <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
                 <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Active Jobs</span>
-                <span className="text-lg sm:text-2xl font-bold text-orange-400">{Array.isArray(jobs) ? jobs.filter(j => j.paymentStatus === 'completed').length : 0}</span>
+                <span className="text-lg sm:text-2xl font-bold text-orange-400">{Array.isArray(jobs) ? jobs.filter(j => j.status === 'active' && j.paymentStatus === 'completed').length : 0}</span>
               </div>
               <div className="bg-black/60 rounded-lg p-2 sm:p-5 flex flex-col items-center justify-center border border-orange-900/30 w-full min-w-0 h-[70px] sm:h-auto">
                 <span className="text-[10px] sm:text-sm text-gray-400 mb-0 sm:mb-1">Applications</span>
@@ -1597,9 +1649,10 @@ const InstantJobDetailCard: React.FC<{
                         >
                           Delete
                         </button>
-                      </div>
-                    </div>                  ))
-                )}              </div>
+                      </div>                    </div>
+                  ))
+                )}
+              </div>
             </div>
             {/* Right column: ticket details or default message */}
             <div className="w-full md:w-2/3">
@@ -2009,12 +2062,12 @@ const InstantJobDetailCard: React.FC<{
             ): jobOffersSubTab === 'instant' ? renderInstantJobsTab() : null
           ) : renderContent()}
         </section>
-        {/* Notification panel (right side overlay) */}
-        <NotificationsPanel
+        {/* Notification panel (right side overlay) */}        <NotificationsPanel
           companyId={companyId}
           open={showNotifications}
           onClose={() => setShowNotifications(false)}
-          overlay        />
+          overlay={true}
+        />
       </main>
     </FullScreenLayout>
   );

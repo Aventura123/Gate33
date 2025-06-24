@@ -10,8 +10,6 @@ import '../../styles/phone-input.css'; // Custom styling for PhoneInput
 import Layout from '../../components/Layout';
 import { AuthProvider, useAuth } from '../../components/AuthProvider'; // Import Auth context
 
-const isProduction = process.env.NEXT_PUBLIC_DEPLOY_STAGE === "production";
-
 // Separate component for seekers login that uses Firebase Auth
 function SeekerLoginForm() {
   const { signup, loginWithGoogle } = useAuth();
@@ -255,17 +253,6 @@ function SeekerLoginForm() {
 }
 
 const SeekerSignupPage: React.FC = () => {
-  if (isProduction) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4 text-orange-500">Coming Soon</h1>
-          <p className="text-lg text-gray-300">This feature will be available soon.</p>
-        </div>
-      </div>
-    );
-  }
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

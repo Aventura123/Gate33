@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 
 // Defining the types
@@ -29,6 +29,8 @@ interface Job {
   screeningQuestions?: string[]; // Perguntas de triagem
   disabled?: boolean; // Whether the job is disabled and shouldn't be shown publicly
   TP?: boolean; // True Posting - posted by team
+  status?: 'active' | 'inactive' | 'expired'; // Job status
+  expiresAt?: any; // Job expiration date (Firestore Timestamp or Date)
 }
 
 // Array of categories for the filter
@@ -165,27 +167,25 @@ export default function JobsPage() {
   };
 
   // Get the selected job details
-  const selectedJob = jobs.find(job => job.id === selectedJobId);
-
-  // Component for job details panel
-  const JobDetailsPanel = ({ job, hideCloseButton }: { job: Job, hideCloseButton?: boolean }) => (
-    <div className="bg-black/70 rounded-lg border border-orange-500/30 shadow-lg p-6 h-fit sticky top-4">
+  const selectedJob = jobs.find(job => job.id === selectedJobId);  // Component for job details panel
+  const JobDetailsPanel = ({ job, hideCloseButton, onClose, isMobileModal }: { job: Job, hideCloseButton?: boolean, onClose?: () => void, isMobileModal?: boolean }) => (
+    <div className={`bg-black/70 rounded-lg border border-orange-500/30 shadow-lg ${isMobileModal ? 'p-4 sm:p-6 h-auto' : 'p-6 h-fit sticky top-4'}`}>
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-2xl font-bold text-orange-400">{job.jobTitle}</h2>
+            <h2 className={`font-bold text-orange-400 ${isMobileModal ? 'text-xl sm:text-2xl' : 'text-2xl'}`}>{job.jobTitle}</h2>
             {job.TP && (
               <div className="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-md animate-pulse">
                 TP
               </div>
             )}
           </div>
-          <p className="text-orange-200 text-lg mb-1">{job.companyName}</p>
+          <p className={`text-orange-200 mb-1 ${isMobileModal ? 'text-base sm:text-lg' : 'text-lg'}`}>{job.companyName}</p>
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <div className="flex items-center bg-black/40 px-3 py-1 rounded-full border border-orange-500/30">
               <svg className="h-4 w-4 text-orange-300 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 616 0z" />
               </svg>
               <span className="text-orange-200 text-sm">{job.location}</span>
             </div>
@@ -202,11 +202,11 @@ export default function JobsPage() {
             )}
           </div>
         </div>
-        {/* Só mostra o botão de fechar se não for mobile/modal */}
-        {!hideCloseButton && (
+        {/* Botão de fechar - mostra quando tem callback onClose ou quando não está oculto */}
+        {(onClose || !hideCloseButton) && (
           <button
-            onClick={() => setSelectedJobId(null)}
-            className="text-orange-400 hover:text-orange-300 text-xl font-bold ml-4"
+            onClick={onClose || (() => setSelectedJobId(null))}
+            className={`text-orange-400 hover:text-orange-300 font-bold ${isMobileModal ? 'text-2xl p-1' : 'text-xl ml-4'}`}
           >
             ×
           </button>
@@ -326,8 +326,7 @@ export default function JobsPage() {
               }
             }
           }
-          
-          return {
+            return {
             id: doc.id,
             jobTitle: data.title || "",
             companyName: data.company || "",
@@ -350,23 +349,30 @@ export default function JobsPage() {
             responsibilities: data.responsibilities || "",
             idealCandidate: data.idealCandidate || "",
             screeningQuestions: screeningQuestions,
-            TP: data.TP || false // True Posting - posted by team
-          };
-        });
+            TP: data.TP || false, // True Posting - posted by team
+            
+            // Incluir campos de status e expiração para filtros
+            status: data.status || 'active',
+            expiresAt: data.expiresAt || null
+          };        });
         setJobs(fetchedJobs);
+        
+        // Verificar e atualizar jobs expirados após carregar
+        await checkAndUpdateExpiredJobs(fetchedJobs);
       } catch (error) {
         console.error("Error fetching jobs from Firestore:", error);
       }
     };
 
     fetchJobs();
-  }, []);
-
-  // Filtrar os jobs de acordo com os critérios selecionados
+  }, []);  // Filtrar os jobs de acordo com os critérios selecionados
   const filteredJobs = jobs.filter(
     (job) => {
       // Don't show disabled jobs on public page
       if (job.disabled) return false;
+      
+      // Filtrar jobs com status 'inactive' (já incluindo os que foram atualizados automaticamente)
+      if (job.status === 'inactive') return false;
       
       const matchesSearch = job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesLocation = job.location.toLowerCase().includes(locationQuery.toLowerCase());
@@ -432,6 +438,56 @@ export default function JobsPage() {
       setSubscribeError("Failed to subscribe. Please try again later.");
     } finally {
       setSubscribing(false);
+    }
+  };
+
+  // Function to check and update expired jobs
+  const checkAndUpdateExpiredJobs = async (jobsToCheck: Job[]) => {
+    const now = new Date();
+    const expiredJobs: Job[] = [];
+
+    for (const job of jobsToCheck) {
+      // Verificar se o job tem data de expiração
+      if (job.expiresAt) {
+        let expiresAt: Date;
+        
+        // Converter Firestore Timestamp para Date se necessário
+        if (job.expiresAt.toDate) {
+          expiresAt = job.expiresAt.toDate();
+        } else {
+          expiresAt = new Date(job.expiresAt);
+        }
+
+        // Se expirou e ainda está ativo, marcar para atualização
+        if (expiresAt < now && job.status === 'active') {
+          expiredJobs.push(job);
+        }
+      }
+    }
+
+    // Atualizar jobs expirados no Firestore
+    if (expiredJobs.length > 0) {
+      try {
+        const updatePromises = expiredJobs.map(job => 
+          updateDoc(doc(db, 'jobs', job.id), {
+            status: 'inactive'
+          })
+        );
+        
+        await Promise.all(updatePromises);
+        console.log(`Updated ${expiredJobs.length} expired jobs to inactive status`);
+        
+        // Atualizar estado local
+        setJobs(prevJobs => 
+          prevJobs.map(job => 
+            expiredJobs.find(expiredJob => expiredJob.id === job.id)
+              ? { ...job, status: 'inactive' as const }
+              : job
+          )
+        );
+      } catch (error) {
+        console.error('Error updating expired jobs:', error);
+      }
     }
   };
 
@@ -735,21 +791,17 @@ export default function JobsPage() {
               <div className="col-span-2">
                 <JobDetailsPanel job={filteredJobs.find(j => j.id === selectedJobId) || filteredJobs[0]} />
               </div>
-            )}
-
-            {/* Mobile View: Show job details as modal only when a job is selected */}
+            )}            {/* Mobile View: Show job details as modal only when a job is selected */}
             {isMobile && selectedJobId && (
-              <div className="fixed inset-0 bg-black/80 z-40 overflow-y-auto p-4">
-                <div className="relative max-w-2xl mx-auto">
-                  {/* Botão de fechar apenas aqui, não dentro do JobDetailsPanel */}
-                  <button
-                    onClick={() => setSelectedJobId(null)}
-                    className="absolute -top-2 right-0 bg-black/60 text-orange-400 hover:text-orange-300 text-xl p-2 w-10 h-10 rounded-full flex items-center justify-center border border-orange-500/30 z-50"
-                  >
-                    ×
-                  </button>
-                  {/* Renderiza o painel de detalhes sem botão de fechar interno */}
-                  <JobDetailsPanel job={filteredJobs.find(j => j.id === selectedJobId) || filteredJobs[0]} hideCloseButton />
+              <div className="fixed inset-0 bg-black/90 z-40 overflow-y-auto">
+                <div className="min-h-screen p-2 sm:p-4 pt-16 sm:pt-20">
+                  <div className="w-full max-w-2xl mx-auto">
+                    <JobDetailsPanel 
+                      job={filteredJobs.find(j => j.id === selectedJobId) || filteredJobs[0]} 
+                      onClose={() => setSelectedJobId(null)}
+                      isMobileModal={true}
+                    />
+                  </div>
                 </div>
               </div>
             )}
