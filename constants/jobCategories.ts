@@ -1,6 +1,7 @@
 // Job categories used across the application
 export const JOB_CATEGORIES = [
   "All",
+  "AI",
   "Engineering",
   "Marketing", 
   "Design",
@@ -19,6 +20,7 @@ export const JOB_CATEGORIES = [
   "Customer Service",
   "Data",
   "DevOps",
+  "Development",
   "Quality Assurance",
   "Research",
   "Content",
