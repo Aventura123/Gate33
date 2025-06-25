@@ -480,6 +480,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
       }      // Format the data for Firestore
       const jobData = {        title: newJob.title,
         companyName: newJob.companyName,
+        company: newJob.companyName, // Ensure both fields are set for consistency
         description: newJob.description,
         requiredSkills: newJob.requiredSkills,
         location: newJob.location,
@@ -640,9 +641,9 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         console.error("Firestore is not initialized.");
         return;
       }
-      
-      await updateDoc(doc(db, "jobs", editingJob.id), {
-        ...editingJob
+        await updateDoc(doc(db, "jobs", editingJob.id), {
+        ...editingJob,
+        company: editingJob.companyName // Ensure both fields are set for consistency
       });
       
       // Update both job lists after editing

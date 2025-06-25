@@ -353,11 +353,10 @@ export default function JobsPage() {
                 screeningQuestions.push(data[questionKey]);
               }
             }
-          }
-            return {
+          }            return {
             id: doc.id,
             jobTitle: data.title || "",
-            companyName: data.company || "",
+            companyName: data.companyName || data.company || "",
             requiredSkills: Array.isArray(data.requiredSkills) 
               ? data.requiredSkills.join(', ') 
               : (data.requiredSkills || ""),
