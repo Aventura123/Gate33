@@ -406,11 +406,11 @@ export default function JobsPage() {
     (job) => {
       // Don't show disabled jobs on public page
       if (job.disabled) return false;
-      
-      // Filter jobs with 'inactive' status (already including those that were automatically updated)
+        // Filter jobs with 'inactive' status (already including those that were automatically updated)
       if (job.status === 'inactive') return false;
       
-      const matchesSearch = job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           job.companyName.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesLocation = job.location.toLowerCase().includes(locationQuery.toLowerCase());
       const matchesCategory = selectedCategory === "All" || job.category === selectedCategory;
       const matchesJobType = selectedJobType === "All Types" || job.jobType === selectedJobType;
