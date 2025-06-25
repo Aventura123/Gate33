@@ -10,6 +10,13 @@
   z-index: 100;
 }
 
+/* Hide indicators on mobile to prevent content misalignment */
+@media (max-width: 1024px) {
+  .job-indicators {
+    display: none !important;
+  }
+}
+
 .job-indicator {
   width: 14px;
   height: 14px;

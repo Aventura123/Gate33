@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Layout from '../components/Layout';
 import ContactForm from '../components/ContactForm';
+import '../components/index-page.css';
+import '../styles/job-indicators.css';
 
 interface Partner {
   id: string;
@@ -24,8 +26,7 @@ interface FeaturedJob {
   jobType?: string;
   salaryRange?: string;
   requiredSkills?: string[] | string;
-  techTags?: string[];
-  acceptsCryptoPay?: boolean;
+  techTags?: string[];  acceptsCryptoPay?: boolean;
 }
 
 interface FAQItemProps {
@@ -58,14 +59,16 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
 const ModernFAQItem = ({ question, answer, open = false, highlight = false }: { question: string, answer: React.ReactNode, open?: boolean, highlight?: boolean }) => {
   const [isOpen, setIsOpen] = useState(false); // Always start closed
   return (
-    <div className={`rounded-xl border border-orange-500/20 shadow-md transition-all bg-[#181A20] text-white ${isOpen ? 'border-orange-500 shadow-orange-500/20' : ''} ${highlight ? 'font-semibold' : ''}`}>      <button
-        className={`w-full flex justify-between items-center px-5 py-4 text-left focus:outline-none transition-colors gate33-faq-btn ${highlight ? 'text-gate33-orange' : 'text-white'}`}
+    <div className={`rounded-lg border border-orange-500/20 shadow-sm transition-all bg-[#181A20] text-white ${isOpen ? 'border-orange-500 shadow-orange-500/20' : ''} ${highlight ? 'font-semibold' : ''}`}>
+      <button
+        className={`w-full flex justify-between items-center px-3 py-3 text-left focus:outline-none transition-colors gate33-faq-btn ${highlight ? 'text-gate33-orange' : 'text-white'}`}
         onClick={() => setIsOpen((v) => !v)}
       >
-        <h3 className={`text-lg md:text-xl font-verdana font-medium ${isOpen ? 'text-gate33-orange' : 'text-white'}`}>{question}</h3>
-        <span className={`ml-4 text-xl font-bold transition-transform ${isOpen ? 'text-white rotate-180' : 'text-gate33-orange'}`}>⌄</span>
-      </button>      {isOpen && (
-        <div className="px-5 pb-4 text-sm leading-relaxed text-gray-300 animate-fade-in">
+        <h3 className={`text-sm md:text-base font-verdana font-medium ${isOpen ? 'text-gate33-orange' : 'text-white'}`}>{question}</h3>
+        <span className={`ml-3 text-lg font-bold transition-transform ${isOpen ? 'text-white rotate-180' : 'text-gate33-orange'}`}>⌄</span>
+      </button>
+      {isOpen && (
+        <div className="px-3 pb-3 text-xs md:text-sm leading-relaxed text-gray-300 animate-fade-in">
           {answer}
         </div>
       )}
@@ -374,18 +377,17 @@ function Home() {
           </div>
         </div>
       </div>      {/* Featured Jobs Section - New horizontal layout, cards stacked on the right */}      <section id="jobs" className="jobs py-6 md:py-10 px-4 relative">        <div className="relative z-10 flex flex-col lg:flex-row max-w-6xl mx-auto gap-6 md:gap-10 items-center lg:items-center justify-center">{/* Left column: title, description, button */}
-          <div className="flex-shrink-0 w-full lg:w-[35%] flex flex-col justify-center items-center lg:items-start text-center lg:text-left lg:ml-[-40px] xl:ml-[-48px]">
-            <h2 className="text-2xl md:text-3xl font-verdana font-bold text-white mb-3 md:mb-4">FEATURED JOBS</h2>
+          <div className="flex-shrink-0 w-full lg:w-[40%] flex flex-col justify-center items-center lg:items-start text-center lg:text-left lg:ml-[-40px] xl:ml-[-48px]">            <h2 className="text-2xl md:text-3xl font-verdana font-bold text-white mb-3 md:mb-4">FEATURED JOBS</h2>
             <p className="text-orange-500 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
-              Explore some of the current opportunities available on our platform.
+              Explore some of the current opportunities<br />available on our platform.
             </p>
             <p className="text-gray-200 text-xs md:text-sm mb-6 md:mb-8 max-w-xs mx-auto lg:mx-0 font-verdana">
               Access quality Web3 jobs from verified companies or post roles as a trusted employer. Build your profile, manage applications, and connect securely with top talent in one place.
             </p>            <Link href="/jobs" className="gate33-btn-orange text-white py-2.5 px-8 md:px-12 min-w-[240px] md:min-w-[270px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl flex items-center justify-center w-fit mx-auto lg:mx-0 whitespace-nowrap text-center">
               Explore The Job-Board
             </Link>
-          </div>{/* Right column: stacked job cards */}
-          <div className="w-full lg:w-[65%] flex flex-col gap-4 md:gap-6 relative">
+          </div>          {/* Right column: stacked job cards */}
+          <div className="w-full lg:w-[60%] flex flex-col gap-4 md:gap-6 relative">
             {/* Job Indicators */}
             <div className="job-indicators hidden lg:flex" style={{ right: '-50px' }}>
               {featuredJobs.map((_, idx) => (
@@ -476,8 +478,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
                         </p>
-                      </div>
-                      <Link href="/crypto-tools#governance-ai" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
+                      </div>                      <Link href="/crypto-tools#governance-ai" className="bg-orange-500 text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer mt-auto mx-auto block w-fit hover:bg-orange-600 transition-colors">
                         Try This Out
                       </Link>
                     </div>
@@ -494,8 +495,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
                         </p>
-                      </div>
-                      <Link href="/crypto-tools#market-list" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
+                      </div>                      <Link href="/crypto-tools#market-list" className="bg-orange-500 text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer mt-auto mx-auto block w-fit hover:bg-orange-600 transition-colors">
                         Try This Out
                       </Link>
                     </div>
@@ -509,8 +509,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Real-time Bitcoin price data, market sentiment analysis, and useful trading utilities powered by free APIs.
                         </p>
-                      </div>
-                      <Link href="/crypto-tools#bitcoin-analysis" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
+                      </div>                      <Link href="/crypto-tools#bitcoin-analysis" className="bg-orange-500 text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer mt-auto mx-auto block w-fit hover:bg-orange-600 transition-colors">
                         Try This Out
                       </Link>
                     </div>
@@ -560,8 +559,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Analyze market capitalization data and trends across different cryptocurrencies to make informed investment decisions.
                         </p>
-                      </div>
-                      <Link href="/crypto-tools#market-cap" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
+                      </div>                      <Link href="/crypto-tools#market-cap" className="bg-orange-500 text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer mt-auto mx-auto block w-fit hover:bg-orange-600 transition-colors">
                         Try This Out
                       </Link>
                     </div>
@@ -594,48 +592,48 @@ function Home() {
             </div>
             {/* Cards Grid */}
             <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 items-stretch">              {/* Card 1 */}
-              <div className="relative rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col min-h-[160px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <div className="relative rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col min-h-[95px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
                 <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
                   <span className="bg-green-900 text-green-300 text-xs px-1.5 py-0.5 md:px-2 md:py-1 rounded-full font-semibold">Earn 0.01 ETH</span>
                 </div>
-                <div className="mb-1 md:mb-2 text-left">
+                <div className="mb-1 md:mb-2 text-left flex-1">
                   <span className="text-xs text-gray-400 block mb-0.5 md:mb-1">Ends: May 23, 2025 at 03:00 AM</span>
-                  <h3 className="font-bold text-white text-sm md:text-lg mb-0.5 md:mb-1">Ethereum Fundamentals</h3>
+                  <h3 className="font-bold text-white text-sm md:text-lg mb-1 md:mb-1">Ethereum Fundamentals</h3>
                   <p className="text-gray-300 text-xs mb-1 md:mb-2 line-clamp-2 learn2earn-description">Complete this 4-module course to understand Ethereum's architecture and smart contract basics.</p>
                 </div>
-                <div className="flex items-center justify-between mt-1 md:mt-auto">
+                <div className="flex items-center justify-between mt-auto">
                   <span className="text-xs text-orange-300 flex items-center"><span className="inline-block w-2 h-2 bg-orange-400 rounded-full mr-1"></span>4,321 enrolled</span>
                   <a href="#" className="text-orange-400 text-xs font-semibold hover:underline">Start learning</a>
                 </div>
               </div>              {/* Card 2 */}
-              <div className="relative rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col min-h-[160px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <div className="relative rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col min-h-[120px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
                 <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
                   <span className="bg-green-900 text-green-300 text-xs px-1.5 py-0.5 md:px-2 md:py-1 rounded-full font-semibold">Earn 50 USDC</span>
                 </div>
-                <div className="mb-1 md:mb-2 text-left">
+                <div className="mb-1 md:mb-2 text-left flex-1">
                   <span className="text-xs text-gray-400 block mb-0.5 md:mb-1">Ends: May 23, 2025 at 03:00 AM</span>
-                  <h3 className="font-bold text-white text-sm md:text-lg mb-0.5 md:mb-1">DeFi Protocols</h3>
+                  <h3 className="font-bold text-white text-sm md:text-lg mb-1 md:mb-1">DeFi Protocols</h3>
                   <p className="text-gray-300 text-xs mb-1 md:mb-2 line-clamp-2 learn2earn-description">Learn how decentralized finance works and how to interact with major lending and exchange protocols.</p>
                 </div>
-                <div className="flex items-center justify-between mt-1 md:mt-auto">
+                <div className="flex items-center justify-between mt-auto">
                   <span className="text-xs text-orange-300 flex items-center"><span className="inline-block w-2 h-2 bg-orange-400 rounded-full mr-1"></span>2,157 enrolled</span>
                   <a href="#" className="text-orange-400 text-xs font-semibold hover:underline">Start learning</a>
                 </div>
               </div>              {/* Card 3 */}
-              <div className="relative rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col min-h-[160px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <div className="relative rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col min-h-[120px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
                 <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
                   <span className="bg-green-900 text-green-300 text-xs px-1.5 py-0.5 md:px-2 md:py-1 rounded-full font-semibold">Earn 0.01 ETH</span>
                 </div>
-                <div className="mb-1 md:mb-2 text-left">
+                <div className="mb-1 md:mb-2 text-left flex-1">
                   <span className="text-xs text-gray-400 block mb-0.5 md:mb-1">Ends: May 23, 2025 at 03:00 AM</span>
-                  <h3 className="font-bold text-white text-sm md:text-lg mb-0.5 md:mb-1">Ethereum Fundamentals</h3>
+                  <h3 className="font-bold text-white text-sm md:text-lg mb-1 md:mb-1">Ethereum Fundamentals</h3>
                   <p className="text-gray-300 text-xs mb-1 md:mb-2 line-clamp-2 learn2earn-description">Complete this 4-module course to understand Ethereum's architecture and smart contract basics.</p>
                 </div>
-                <div className="flex items-center justify-between mt-1 md:mt-auto">
+                <div className="flex items-center justify-between mt-auto">
                   <span className="text-xs text-orange-300 flex items-center"><span className="inline-block w-2 h-2 bg-orange-400 rounded-full mr-1"></span>4,321 enrolled</span>
                   <a href="#" className="text-orange-400 text-xs font-semibold hover:underline">Start learning</a>
                 </div>
-              </div>              {/* Card 4 - Coming Soon - Oculto em mobile */}
+              </div>{/* Card 4 - Coming Soon - Oculto em mobile */}
               <div className="relative rounded-2xl card-orange-glow p-3 md:p-6 flex-col min-h-[160px] md:min-h-[210px] items-center justify-center group overflow-visible opacity-60 cursor-not-allowed md:col-span-1 col-span-1 mx-auto md:mx-0 max-w-[280px] md:max-w-none learn2earn-coming-soon hidden md:flex">
                 <span className="text-gray-400 text-sm">MORE COMING SOON</span>
               </div>
@@ -652,34 +650,33 @@ function Home() {
             {/* Top orange line removed, content pulled up */}            <h2 className="text-xl md:text-2xl lg:text-3xl font-verdana font-bold text-gate33-orange mb-1 text-center tracking-wide mt-0">WHY CHOOSE GATE33?</h2>
             <p className="text-gray-200 max-w-3xl mx-auto mb-3 md:mb-4 text-center text-sm md:text-base leading-relaxed px-4 font-verdana">
               We offer a secure environment where verified companies post genuine job opportunities and qualified candidates can find real opportunities.
-            </p>            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 lg:gap-10 max-w-7xl mx-auto">
-              {/* Verified Companies */}
-              <div className="flex flex-col items-center text-center">                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
+            </p>            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-8 xl:gap-10 max-w-7xl mx-auto">              {/* Verified Companies */}
+              <div className="flex flex-col items-center text-center">                <div className="mb-2 md:mb-3 flex items-center justify-center w-24 h-24 md:w-32 md:h-32 lg:w-36 lg:h-36">
                   <Image src="/icons/21. Verified.png" alt="Verified Companies" width={160} height={160} className="w-full h-full object-contain" />
                 </div>
-                <h3 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Verified Companies</h3>
-                <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">All companies on our platform undergo a rigorous verification process to ensure legitimacy and reliability in job postings.</p>
+                <h3 className="font-verdana font-bold text-white text-base md:text-lg lg:text-xl xl:text-2xl mb-2 md:mb-3">Verified Companies</h3>
+                <p className="text-gray-400 text-xs md:text-sm lg:text-base font-verdana leading-relaxed">All companies on our platform undergo a rigorous verification process to ensure legitimacy and reliability in job postings.</p>
               </div>
               {/* Quality Opportunities */}
-              <div className="flex flex-col items-center text-center">                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
+              <div className="flex flex-col items-center text-center">                <div className="mb-2 md:mb-3 flex items-center justify-center w-24 h-24 md:w-32 md:h-32 lg:w-36 lg:h-36">
                   <Image src="/icons/Rating.png" alt="Quality Opportunities" width={160} height={160} className="w-full h-full object-contain" />
                 </div>
-                <h3 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Quality Opportunities</h3>
-                <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">Curated high-quality job listings with detailed descriptions, clear benefits, and transparent selection processes.</p>
+                <h3 className="font-verdana font-bold text-white text-base md:text-lg lg:text-xl xl:text-2xl mb-2 md:mb-3">Quality Opportunities</h3>
+                <p className="text-gray-400 text-xs md:text-sm lg:text-base font-verdana leading-relaxed">Curated high-quality job listings with detailed descriptions, clear benefits, and transparent selection processes.</p>
               </div>              {/* Data Security */}
               <div className="flex flex-col items-center text-center">
-                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
+                <div className="mb-2 md:mb-3 flex items-center justify-center w-24 h-24 md:w-32 md:h-32 lg:w-36 lg:h-36">
                   <Image src="/icons/rat2.png" alt="Data Security" width={160} height={160} className="w-full h-full object-contain" />
                 </div>
-                <h2 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Data Security</h2>
-                <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">Our platform prioritizes the protection of your personal information with advanced security measures to keep your profile and application data safe.</p>
+                <h2 className="font-verdana font-bold text-white text-base md:text-lg lg:text-xl xl:text-2xl mb-2 md:mb-3">Data Security</h2>
+                <p className="text-gray-400 text-xs md:text-sm lg:text-base font-verdana leading-relaxed">Our platform prioritizes the protection of your personal information with advanced security measures to keep your profile and application data safe.</p>
               </div>
               {/* Learn2Earn */}
               <div className="flex flex-col items-center text-center">
-                <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
+                <div className="mb-2 md:mb-3 flex items-center justify-center w-24 h-24 md:w-32 md:h-32 lg:w-36 lg:h-36">
                   <Image src="/icons/rat3.png" alt="Learn2Earn" width={160} height={160} className="w-full h-full object-contain" />
                 </div>
-                <h2 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Learn2Earn</h2>                <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">Enhance your skills and earn rewards by participating in our Learn2Earn program, where learning converts into real opportunities.</p>
+                <h2 className="font-verdana font-bold text-white text-base md:text-lg lg:text-xl xl:text-2xl mb-2 md:mb-3">Learn2Earn</h2>                <p className="text-gray-400 text-xs md:text-sm lg:text-base font-verdana leading-relaxed">Enhance your skills and earn rewards by participating in our Learn2Earn program, where learning converts into real opportunities.</p>
               </div>
             </div></div>
         </section>
@@ -731,21 +728,23 @@ function Home() {
         </section>
 
       {/* FAQ SECTION - Also moved outside of main */}
-      <section id="faq" className="faq py-10 px-4 relative">
+      <section id="faq" className="faq py-6 md:py-8 px-4 relative">
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-gate33-orange mb-6 text-center">FAQS</h2>
-            <p className="text-center text-gray-300 mb-8 max-w-2xl mx-auto">We get asked these questions a lot so if you have questions of your own it’s best to start here. Not helpful? No worries you can ask us your own below.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">              {/* Column 1 */}
-              <div className="flex flex-col gap-4">
-                <ModernFAQItem question="What is Gate33?" answer="Gate33 is a platform that connects talent and companies in the Web3 space, ensuring trust, security, and innovation through blockchain technology." />
-                <ModernFAQItem question="How does Learn2Earn work?" open highlight answer={<span>Gate33 differentiates itself through three main factors:<br /><br />1. Rigorous company verification;<br />2. Use of blockchain technology to ensure data security;<br />3. Learn2Earn system that allows candidates to earn tokens while improving their professional skills. Additionally, we are developing a revolutionary new feature that will transform how talent connects with opportunities.</span>} />
-                <ModernFAQItem question="Is Gate33 available worldwide?" answer="Yes, Gate33 is available to users and companies globally." />
-                <ModernFAQItem question="How do I get started with Gate33?" answer="Simply sign up on our platform, complete your profile, and start exploring opportunities or posting jobs." />
-              </div>              {/* Column 2 */}
-              <div className="flex flex-col gap-4">
-                <ModernFAQItem question="What is Gate33?" answer="Gate33 is a platform that connects talent and companies in the Web3 space, ensuring trust, security, and innovation through blockchain technology." />
-                <ModernFAQItem question="How does Learn2Earn work?" answer={<span>Gate33 differentiates itself through three main factors:<br /><br />1. Rigorous company verification;<br />2. Use of blockchain technology to ensure data security;<br />3. Learn2Earn system that allows candidates to earn tokens while improving their professional skills. Additionally, we are developing a revolutionary feature that will transform the connection between talent and opportunities.</span>} />
-                <ModernFAQItem question="Is Gate33 available worldwide?" answer="Yes, Gate33 is available to users and companies globally." />              </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gate33-orange mb-4 md:mb-6 text-center">FAQS</h2>
+            <p className="text-center text-gray-300 mb-8 max-w-2xl mx-auto">We get asked these questions a lot so if you have questions of your own it’s best to start here. Not helpful? No worries you can ask us your own below.</p>            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto">
+              {/* Column 1 */}
+              <div className="flex flex-col gap-3">
+                <ModernFAQItem question="What is Gate33?" answer="A Web3 platform connecting talent with verified companies through secure blockchain technology." />
+                <ModernFAQItem question="How does Learn2Earn work?" open highlight answer="Complete Web3 courses and earn G33 tokens while building valuable skills. Our system rewards learning with cryptocurrency." />
+                <ModernFAQItem question="Is Gate33 available worldwide?" answer="Yes, our platform is accessible globally to both job seekers and employers." />
+                <ModernFAQItem question="How do I get started?" answer="Sign up, complete your profile, and start exploring jobs or post your first position." />
+              </div>
+              {/* Column 2 */}
+              <div className="flex flex-col gap-3">
+                <ModernFAQItem question="Are jobs verified?" answer="All companies go through rigorous verification to ensure legitimacy and trustworthiness." />
+                <ModernFAQItem question="What makes Gate33 different?" answer="We combine job matching with Web3 education, escrow protection, and token rewards." />
+                <ModernFAQItem question="Do you accept crypto payments?" answer="Yes, many positions offer cryptocurrency payment options for flexible compensation." />
+              </div>
             </div>
           </div>
         </section>

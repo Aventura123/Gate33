@@ -2,11 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Existing custom styles */
+/* ===== CSS VARIABLES GLOBAIS ===== */
 :root {
   --w3m-accent-color: #FB923C;
   --w3m-background-color: #000000;
   --w3m-text-color: #FFFFFF;
+  
+  /* Gate33 Color Variables */
+  --gate33-orange: #F97316;
+  --gate33-orange-hover: #EA580C;
+  --gate33-orange-alt: #FB923C;
+  --led-orange: #F97316;
+  --led-orange-alt: #E65C00;
+  --led-orange-subtle: rgba(249, 115, 22, 0.7);
+  --led-orange-alt-subtle: rgba(230, 92, 0, 0.5);
+  --card-bg: rgba(26, 31, 38, 0.71);
+  --card-bg-solid: #1A1F26;
+  --overlay-dark: rgba(0, 0, 0, 0.8);
+  --overlay-light: rgba(0, 0, 0, 0.4);
+  --border-orange: rgba(249, 115, 22, 0.6);
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {

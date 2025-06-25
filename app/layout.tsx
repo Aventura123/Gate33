@@ -1,6 +1,4 @@
 import "./globals.css";
-import "../components/index-page.css";
-import "../styles/job-indicators.css";
 import { WalletProvider } from '../components/WalletProvider';
 import PWAUpdateManager from '../components/PWAUpdateManager';
 import CookieConsent from '../components/CookieConsent';
