@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { collection, addDoc, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { SkillTagsInput } from "../ui/SkillTagsInput";
+import { logAdminAction } from "../../utils/logSystem";
 import { JOB_CATEGORIES_DROPDOWN } from "../../constants/jobCategories";
 
 interface JobPlan {
@@ -314,6 +315,16 @@ const JobListItem: React.FC<{
 };
 
 const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab }) => {
+  // Function to get current admin info for logging
+  const getCurrentAdmin = () => {
+    if (typeof window !== 'undefined') {
+      const adminName = localStorage.getItem("userName") || "Unknown Admin";
+      const adminId = localStorage.getItem("userId") || "unknown-id";
+      return { adminName, adminId };
+    }
+    return { adminName: "Unknown Admin", adminId: "unknown-id" };
+  };
+
   // Predefined feature options
   const predefinedFeatures = [
     "Featured in Job Listing",
@@ -535,8 +546,23 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         employmentType: "",
         experienceLevel: "",
         sourceLink: "",
-        acceptsCryptoPay: false
-      });
+        acceptsCryptoPay: false      });
+
+      // Log the job creation
+      const { adminName, adminId } = getCurrentAdmin();
+      await logAdminAction(
+        adminId,
+        adminName,
+        "Criou um novo job",
+        {
+          jobId: docRef.id,
+          jobTitle: newJob.title,
+          companyName: newJob.companyName,
+          category: newJob.category,
+          location: newJob.location,
+          sourceLink: newJob.sourceLink
+        }
+      );
 
       alert("Job created successfully!");
     } catch (error) {
@@ -564,8 +590,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
       await updateDoc(doc(db, "jobs", id), {
         disabled: !job.disabled
       });
-      
-      // Update local state
+        // Update local state
       const updatedAllJobs = allJobs.map(j => 
         j.id === id ? { ...j, disabled: !j.disabled } : j
       );
@@ -582,6 +607,21 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         setJobs(updatedAllJobs);
       }
       
+      // Log the disable/enable action
+      const { adminName, adminId } = getCurrentAdmin();
+      await logAdminAction(
+        adminId,
+        adminName,
+        `${job.disabled ? "Habilitou" : "Desabilitou"} um job`,
+        {
+          jobId: id,
+          jobTitle: job.title,
+          companyName: job.companyName,
+          previousState: job.disabled ? "disabled" : "enabled",
+          newState: job.disabled ? "enabled" : "disabled"
+        }
+      );
+      
       alert(`Job ${job.disabled ? "enabled" : "disabled"} successfully!`);
     } catch (error) {
       console.error(`Error ${action}ing job:`, error);
@@ -590,10 +630,11 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
       setDisablingJobId(null);
     }
   };
-
   // Handle job deletion
   const handleDeleteJob = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this job?")) return;
+    
+    const jobToDelete = allJobs.find(j => j.id === id);
     
     setDeletingJobId(id);
     try {
@@ -617,6 +658,20 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
       } else {
         setJobs(updatedJobs);
       }
+      
+      // Log the deletion action
+      const { adminName, adminId } = getCurrentAdmin();
+      await logAdminAction(
+        adminId,
+        adminName,
+        "Deletou um job",
+        {
+          jobId: id,
+          jobTitle: jobToDelete?.title || "Unknown",
+          companyName: jobToDelete?.companyName || "Unknown",
+          category: jobToDelete?.category || "Unknown"
+        }
+      );
       
       alert("Job deleted successfully!");
     } catch (error) {
@@ -646,8 +701,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         ...editingJob,
         company: editingJob.companyName // Ensure both fields are set for consistency
       });
-      
-      // Update both job lists after editing
+        // Update both job lists after editing
       const updatedJobs = allJobs.map(job => 
         job.id === editingJob.id ? editingJob : job
       );
@@ -663,6 +717,20 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
       } else {
         setJobs(updatedJobs);
       }
+      
+      // Log the edit action
+      const { adminName, adminId } = getCurrentAdmin();
+      await logAdminAction(
+        adminId,
+        adminName,
+        "Editou um job",
+        {
+          jobId: editingJob.id,
+          jobTitle: editingJob.title,
+          companyName: editingJob.companyName,
+          category: editingJob.category
+        }
+      );
       
       setIsEditingJob(false);
       setEditingJob(null);
@@ -773,9 +841,23 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         features: [],
         duration: 30,
         isPremium: false,
-        isTopListed: false
-      });
+        isTopListed: false      });
       await refreshJobPlans();
+      
+      // Log the job plan creation
+      const { adminName, adminId } = getCurrentAdmin();
+      await logAdminAction(
+        adminId,
+        adminName,
+        "Criou um novo plano de job",
+        {
+          planName: newJobPlan.name,
+          price: newJobPlan.price,
+          duration: newJobPlan.duration,
+          features: newJobPlan.features
+        }
+      );
+      
       alert("Job plan created successfully!");
     } catch (error) {
       console.error("Error creating job plan:", error);
@@ -797,24 +879,54 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         updatedAt: new Date().toISOString(),
       };
       const { id, ...updateData } = planData;
-      await updateDoc(doc(db, "jobPlans", id), updateData);
-      setSelectedPlanForEdit(null);
+      await updateDoc(doc(db, "jobPlans", id), updateData);      setSelectedPlanForEdit(null);
       setIsEditingPlan(false);
       await refreshJobPlans();
+      
+      // Log the job plan update
+      const { adminName, adminId } = getCurrentAdmin();
+      await logAdminAction(
+        adminId,
+        adminName,
+        "Atualizou um plano de job",
+        {
+          planId: selectedPlanForEdit.id,
+          planName: selectedPlanForEdit.name,
+          price: selectedPlanForEdit.price,
+          duration: selectedPlanForEdit.duration
+        }
+      );
+      
       alert("Job plan updated successfully!");
     } catch (error) {
       console.error("Error updating job plan:", error);
       alert("Failed to update job plan. Please check the console for details.");
     }
   };
-
   // Handle job plan deletion
   const handleDeleteJobPlan = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this job plan?")) return;
+    
+    const planToDelete = jobPlans.find(p => p.id === id);
+    
     try {
       if (!db) throw new Error("Firestore is not initialized.");
       await deleteDoc(doc(db, "jobPlans", id));
       await refreshJobPlans();
+      
+      // Log the job plan deletion
+      const { adminName, adminId } = getCurrentAdmin();
+      await logAdminAction(
+        adminId,
+        adminName,
+        "Deletou um plano de job",
+        {
+          planId: id,
+          planName: planToDelete?.name || "Unknown",
+          price: planToDelete?.price || 0
+        }
+      );
+      
       alert("Job plan deleted successfully!");
     } catch (error) {
       console.error("Error deleting job plan:", error);
