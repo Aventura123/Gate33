@@ -373,9 +373,8 @@ function Home() {
             </form>
           </div>
         </div>
-      </div>      {/* Featured Jobs Section - New horizontal layout, cards stacked on the right */}
-      <section id="jobs" className="jobs py-6 md:py-10 px-4 relative">        <div className="relative z-10 flex flex-col lg:flex-row max-w-6xl mx-auto gap-6 md:gap-10 items-start lg:items-center justify-center">{/* Left column: title, description, button */}
-          <div className="flex-shrink-0 w-full lg:w-[35%] flex flex-col justify-center items-start text-center lg:text-left lg:ml-[-40px] xl:ml-[-48px]">
+      </div>      {/* Featured Jobs Section - New horizontal layout, cards stacked on the right */}      <section id="jobs" className="jobs py-6 md:py-10 px-4 relative">        <div className="relative z-10 flex flex-col lg:flex-row max-w-6xl mx-auto gap-6 md:gap-10 items-center lg:items-center justify-center">{/* Left column: title, description, button */}
+          <div className="flex-shrink-0 w-full lg:w-[35%] flex flex-col justify-center items-center lg:items-start text-center lg:text-left lg:ml-[-40px] xl:ml-[-48px]">
             <h2 className="text-2xl md:text-3xl font-verdana font-bold text-white mb-3 md:mb-4">FEATURED JOBS</h2>
             <p className="text-orange-500 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
               Explore some of the current opportunities available on our platform.
@@ -466,7 +465,7 @@ function Home() {
               <div className="w-full lg:w-[65%]">
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-1 w-full">
                   {/* Card 1 */}
-                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-square min-h-[200px] md:min-h-[280px] max-h-[250px] md:max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-auto min-h-[280px] md:min-h-[280px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
                     <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
                       <span className="bg-blue-500 text-white text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-semibold">New</span>
                     </div>
@@ -477,13 +476,14 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
                         </p>
-                      </div>                      <Link href="/crypto-tools#governance-ai" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
+                      </div>
+                      <Link href="/crypto-tools#governance-ai" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
                         Try This Out
                       </Link>
                     </div>
                   </div>
                   {/* Card 2 */}
-                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-square min-h-[200px] md:min-h-[280px] max-h-[250px] md:max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-auto min-h-[280px] md:min-h-[280px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
                     <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
                       <span className="bg-orange-500 text-white text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-semibold">Popular</span>
                     </div>
@@ -494,13 +494,14 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
                         </p>
-                      </div>                      <Link href="/crypto-tools#market-list" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
+                      </div>
+                      <Link href="/crypto-tools#market-list" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
                         Try This Out
                       </Link>
                     </div>
                   </div>
                   {/* Card 3 */}
-                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-square min-h-[200px] md:min-h-[280px] max-h-[250px] md:max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-auto min-h-[280px] md:min-h-[280px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
                     <Image src="/icons/Vector (5).png" alt="Bitcoin Analysis Icon" width={20} height={20} className="md:w-8 md:h-8 mb-2 md:mb-4" />
                     <div className="flex-1 flex flex-col justify-between w-full text-center">
                       <div>
@@ -508,13 +509,14 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Real-time Bitcoin price data, market sentiment analysis, and useful trading utilities powered by free APIs.
                         </p>
-                      </div>                      <Link href="/crypto-tools#bitcoin-analysis" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
+                      </div>
+                      <Link href="/crypto-tools#bitcoin-analysis" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
                         Try This Out
                       </Link>
                     </div>
                   </div>
                   {/* Card 4 */}
-                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-square min-h-[200px] md:min-h-[280px] max-h-[250px] md:max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-auto min-h-[280px] md:min-h-[280px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
                     <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
                       <span className="bg-blue-500 text-white text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-semibold">New</span>
                     </div>
@@ -526,13 +528,13 @@ function Home() {
                           AI-powered smart contract auditing tool will analyze your contracts for gas optimization opportunities and security best practices.
                         </p>
                       </div>
-                      <button className="bg-gray-600 text-gray-300 py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-not-allowed mt-auto mx-auto block w-fit" disabled>
+                      <button className="bg-gray-600 text-gray-300 py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-not-allowed mt-auto mx-auto block w-fit">
                         Coming Soon
                       </button>
                     </div>
                   </div>
                   {/* Card 5 */}
-                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-square min-h-[200px] md:min-h-[280px] max-h-[250px] md:max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-auto min-h-[280px] md:min-h-[280px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
                     <Image src="/icons/Vector (6).png" alt="Staking Tool Icon" width={20} height={20} className="md:w-8 md:h-8 mb-2 md:mb-4" />
                     <div className="flex-1 flex flex-col justify-between w-full text-center">
                       <div>
@@ -541,13 +543,13 @@ function Home() {
                           Stake your tokens and earn rewards through our secure staking platform. Support the network while generating passive income.
                         </p>
                       </div>
-                      <button className="bg-gray-600 text-gray-300 py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-not-allowed mt-auto mx-auto block w-fit" disabled>
+                      <button className="bg-gray-600 text-gray-300 py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-not-allowed mt-auto mx-auto block w-fit">
                         Coming Soon
                       </button>
                     </div>
                   </div>
                   {/* Card 6 */}
-                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-square min-h-[160px] md:min-h-[280px] max-h-[200px] md:max-h-[320px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <div className="rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col items-center w-full aspect-auto min-h-[280px] md:min-h-[280px] group overflow-visible relative cursor-pointer transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
                     <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
                       <span className="bg-orange-500 text-white text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-semibold">Popular</span>
                     </div>
@@ -558,7 +560,8 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Analyze market capitalization data and trends across different cryptocurrencies to make informed investment decisions.
                         </p>
-                      </div>                      <Link href="/crypto-tools#market-cap" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
+                      </div>
+                      <Link href="/crypto-tools#market-cap" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
                         Try This Out
                       </Link>
                     </div>
@@ -590,54 +593,50 @@ function Home() {
               <button className="gate33-btn-orange text-white py-2.5 px-10 md:px-12 rounded-full font-semibold text-sm md:text-base w-fit mx-auto lg:mx-0 min-w-[220px] md:min-w-[240px]">See All Opportunities</button>
             </div>
             {/* Cards Grid */}
-            <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 items-stretch">
-              {/* Card 1 */}
-              <div className="relative rounded-2xl card-orange-glow p-4 md:p-6 flex flex-col min-h-[200px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
-                <div className="absolute top-3 md:top-4 right-3 md:right-4 z-10">
-                  <span className="bg-green-900 text-green-300 text-xs px-2 py-1 rounded-full font-semibold">Earn 0.01 ETH</span>
+            <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 items-stretch">              {/* Card 1 */}
+              <div className="relative rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col min-h-[160px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
+                  <span className="bg-green-900 text-green-300 text-xs px-1.5 py-0.5 md:px-2 md:py-1 rounded-full font-semibold">Earn 0.01 ETH</span>
                 </div>
-                <div className="mb-2 text-left">
-                  <span className="text-xs text-gray-400 block mb-1">Ends: May 23, 2025 at 03:00 AM</span>
-                  <h3 className="font-bold text-white text-sm md:text-lg mb-1">Ethereum Fundamentals</h3>
-                  <p className="text-gray-300 text-xs mb-2 line-clamp-2 learn2earn-description">Complete this 4-module course to understand Ethereum's architecture and smart contract basics.</p>
+                <div className="mb-1 md:mb-2 text-left">
+                  <span className="text-xs text-gray-400 block mb-0.5 md:mb-1">Ends: May 23, 2025 at 03:00 AM</span>
+                  <h3 className="font-bold text-white text-sm md:text-lg mb-0.5 md:mb-1">Ethereum Fundamentals</h3>
+                  <p className="text-gray-300 text-xs mb-1 md:mb-2 line-clamp-2 learn2earn-description">Complete this 4-module course to understand Ethereum's architecture and smart contract basics.</p>
                 </div>
-                <div className="flex items-center justify-between mt-auto">
+                <div className="flex items-center justify-between mt-1 md:mt-auto">
                   <span className="text-xs text-orange-300 flex items-center"><span className="inline-block w-2 h-2 bg-orange-400 rounded-full mr-1"></span>4,321 enrolled</span>
                   <a href="#" className="text-orange-400 text-xs font-semibold hover:underline">Start learning</a>
                 </div>
-              </div>
-              {/* Card 2 */}
-              <div className="relative rounded-2xl card-orange-glow p-4 md:p-6 flex flex-col min-h-[200px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
-                <div className="absolute top-3 md:top-4 right-3 md:right-4 z-10">
-                  <span className="bg-green-900 text-green-300 text-xs px-2 py-1 rounded-full font-semibold">Earn 50 USDC</span>
+              </div>              {/* Card 2 */}
+              <div className="relative rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col min-h-[160px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
+                  <span className="bg-green-900 text-green-300 text-xs px-1.5 py-0.5 md:px-2 md:py-1 rounded-full font-semibold">Earn 50 USDC</span>
                 </div>
-                <div className="mb-2 text-left">
-                  <span className="text-xs text-gray-400 block mb-1">Ends: May 23, 2025 at 03:00 AM</span>
-                  <h3 className="font-bold text-white text-sm md:text-lg mb-1">DeFi Protocols</h3>
-                  <p className="text-gray-300 text-xs mb-2 line-clamp-2 learn2earn-description">Learn how decentralized finance works and how to interact with major lending and exchange protocols.</p>
+                <div className="mb-1 md:mb-2 text-left">
+                  <span className="text-xs text-gray-400 block mb-0.5 md:mb-1">Ends: May 23, 2025 at 03:00 AM</span>
+                  <h3 className="font-bold text-white text-sm md:text-lg mb-0.5 md:mb-1">DeFi Protocols</h3>
+                  <p className="text-gray-300 text-xs mb-1 md:mb-2 line-clamp-2 learn2earn-description">Learn how decentralized finance works and how to interact with major lending and exchange protocols.</p>
                 </div>
-                <div className="flex items-center justify-between mt-auto">
+                <div className="flex items-center justify-between mt-1 md:mt-auto">
                   <span className="text-xs text-orange-300 flex items-center"><span className="inline-block w-2 h-2 bg-orange-400 rounded-full mr-1"></span>2,157 enrolled</span>
                   <a href="#" className="text-orange-400 text-xs font-semibold hover:underline">Start learning</a>
                 </div>
-              </div>
-              {/* Card 3 */}
-              <div className="relative rounded-2xl card-orange-glow p-4 md:p-6 flex flex-col min-h-[200px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
-                <div className="absolute top-3 md:top-4 right-3 md:right-4 z-10">
-                  <span className="bg-green-900 text-green-300 text-xs px-2 py-1 rounded-full font-semibold">Earn 0.01 ETH</span>
+              </div>              {/* Card 3 */}
+              <div className="relative rounded-2xl card-orange-glow p-3 md:p-6 flex flex-col min-h-[160px] md:min-h-[210px] group overflow-visible transition-transform hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
+                  <span className="bg-green-900 text-green-300 text-xs px-1.5 py-0.5 md:px-2 md:py-1 rounded-full font-semibold">Earn 0.01 ETH</span>
                 </div>
-                <div className="mb-2 text-left">
-                  <span className="text-xs text-gray-400 block mb-1">Ends: May 23, 2025 at 03:00 AM</span>
-                  <h3 className="font-bold text-white text-sm md:text-lg mb-1">Ethereum Fundamentals</h3>
-                  <p className="text-gray-300 text-xs mb-2 line-clamp-2 learn2earn-description">Complete this 4-module course to understand Ethereum's architecture and smart contract basics.</p>
+                <div className="mb-1 md:mb-2 text-left">
+                  <span className="text-xs text-gray-400 block mb-0.5 md:mb-1">Ends: May 23, 2025 at 03:00 AM</span>
+                  <h3 className="font-bold text-white text-sm md:text-lg mb-0.5 md:mb-1">Ethereum Fundamentals</h3>
+                  <p className="text-gray-300 text-xs mb-1 md:mb-2 line-clamp-2 learn2earn-description">Complete this 4-module course to understand Ethereum's architecture and smart contract basics.</p>
                 </div>
-                <div className="flex items-center justify-between mt-auto">
+                <div className="flex items-center justify-between mt-1 md:mt-auto">
                   <span className="text-xs text-orange-300 flex items-center"><span className="inline-block w-2 h-2 bg-orange-400 rounded-full mr-1"></span>4,321 enrolled</span>
                   <a href="#" className="text-orange-400 text-xs font-semibold hover:underline">Start learning</a>
                 </div>
-              </div>
-              {/* Card 4 - Coming Soon - Oculto em mobile */}
-              <div className="relative rounded-2xl card-orange-glow p-4 md:p-6 flex-col min-h-[200px] md:min-h-[210px] items-center justify-center group overflow-visible opacity-60 cursor-not-allowed md:col-span-1 col-span-1 mx-auto md:mx-0 max-w-[280px] md:max-w-none learn2earn-coming-soon hidden md:flex">
+              </div>              {/* Card 4 - Coming Soon - Oculto em mobile */}
+              <div className="relative rounded-2xl card-orange-glow p-3 md:p-6 flex-col min-h-[160px] md:min-h-[210px] items-center justify-center group overflow-visible opacity-60 cursor-not-allowed md:col-span-1 col-span-1 mx-auto md:mx-0 max-w-[280px] md:max-w-none learn2earn-coming-soon hidden md:flex">
                 <span className="text-gray-400 text-sm">MORE COMING SOON</span>
               </div>
             </div>
@@ -680,18 +679,19 @@ function Home() {
                 <div className="mb-1 md:mb-2 flex items-center justify-center w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40">
                   <Image src="/icons/rat3.png" alt="Learn2Earn" width={160} height={160} className="w-full h-full object-contain" />
                 </div>
-                <h2 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Learn2Earn</h2>
-                <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">Enhance your skills and earn rewards by participating in our Learn2Earn program, where learning converts into real opportunities.</p>
+                <h2 className="font-verdana font-bold text-white text-lg md:text-xl lg:text-2xl mb-1">Learn2Earn</h2>                <p className="text-gray-400 text-sm md:text-base font-verdana leading-relaxed">Enhance your skills and earn rewards by participating in our Learn2Earn program, where learning converts into real opportunities.</p>
               </div>
             </div></div>
         </section>
-
-        {/* PARTNERS/INDUSTRY LEADERS SECTION */}
-        <section id="partners" className="py-3 md:py-4 px-4 bg-[#181C22] relative">
-          <div className="max-w-7xl mx-auto relative z-10">            <h2 className="text-xl md:text-2xl lg:text-3xl font-verdana font-bold text-center mb-4 md:mb-6 tracking-wide">
-              TRUSTED BY <span className="text-gate33-orange">INDUSTRY LEADERS</span>
-            </h2>
-            {/* Partner logos carousel - larger cards and round logos */}
+      </main>
+      
+      {/* PARTNERS/INDUSTRY LEADERS SECTION - Moved outside of main for full width */}
+      <section id="partners" className="py-3 md:py-4 bg-[#181C22] relative w-full">
+        <div className="max-w-7xl mx-auto relative z-10 px-4">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-verdana font-bold text-center mb-4 md:mb-6 tracking-wide">
+            TRUSTED BY <span className="text-gate33-orange">INDUSTRY LEADERS</span>
+          </h2>
+          {/* Partner logos carousel - larger cards and round logos */}
             <div className="flex overflow-x-auto gap-8 md:gap-12 py-2 px-2 scrollbar-hide items-center justify-center" ref={carouselRef}>
               {partners && partners.length > 0 ? (
                 partners.map((partner) => (
@@ -718,13 +718,11 @@ function Home() {
                           }
                         }}
                       />
-                    </div>
-                  </a>
+                    </div>                  </a>
                 ))
               ) : (
                 <span className="text-gray-400 text-sm">No partners yet.</span>
-              )}
-            </div>
+              )}</div>
             <div className="flex justify-center mt-2">
               <Link href="/partners" className="text-orange-400 text-sm hover:underline font-medium flex items-center gap-1">
                 View all Partners <span className="ml-1">→</span>
@@ -732,7 +730,8 @@ function Home() {
             </div>          </div>
         </section>
 
-        <section id="faq" className="faq py-10 px-4 relative">
+      {/* FAQ SECTION - Also moved outside of main */}
+      <section id="faq" className="faq py-10 px-4 relative">
           <div className="relative z-10">
             <h2 className="text-3xl font-bold text-gate33-orange mb-6 text-center">FAQS</h2>
             <p className="text-center text-gray-300 mb-8 max-w-2xl mx-auto">We get asked these questions a lot so if you have questions of your own it’s best to start here. Not helpful? No worries you can ask us your own below.</p>
@@ -746,13 +745,10 @@ function Home() {
               <div className="flex flex-col gap-4">
                 <ModernFAQItem question="What is Gate33?" answer="Gate33 is a platform that connects talent and companies in the Web3 space, ensuring trust, security, and innovation through blockchain technology." />
                 <ModernFAQItem question="How does Learn2Earn work?" answer={<span>Gate33 differentiates itself through three main factors:<br /><br />1. Rigorous company verification;<br />2. Use of blockchain technology to ensure data security;<br />3. Learn2Earn system that allows candidates to earn tokens while improving their professional skills. Additionally, we are developing a revolutionary feature that will transform the connection between talent and opportunities.</span>} />
-                <ModernFAQItem question="Is Gate33 available worldwide?" answer="Yes, Gate33 is available to users and companies globally." />
-              </div>
+                <ModernFAQItem question="Is Gate33 available worldwide?" answer="Yes, Gate33 is available to users and companies globally." />              </div>
             </div>
           </div>
         </section>
-
-      </main>
 
       {/* Contact Modal */}
       {showContactModal && (
