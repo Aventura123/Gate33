@@ -20,9 +20,9 @@ interface Job {
   location: string;
   jobType: string; // Full-time, Part-time, etc.
   salaryRange: string;
-  isFeatured: boolean;
-  priorityListing?: boolean; // Top Listed jobs
-  acceptsCryptoPay: boolean;  experienceLevel: string; // Junior, Mid, Senior
+  isFeatured: boolean;  priorityListing?: boolean; // Top Listed jobs
+  acceptsCryptoPay: boolean;
+  experienceLevel: string; // Junior, Mid, Senior
   techTags?: string[]; // Array of specific technology tags
   technologies?: string | string[]; // Technologies field (can be string or array)
   responsibilities?: string; // Job responsibilities - DEPRECATED: content moved to jobDescription
@@ -406,11 +406,11 @@ export default function JobsPage() {
     (job) => {
       // Don't show disabled jobs on public page
       if (job.disabled) return false;
-        // Filter jobs with 'inactive' status (already including those that were automatically updated)
+      
+      // Filter jobs with 'inactive' status (already including those that were automatically updated)
       if (job.status === 'inactive') return false;
       
-      const matchesSearch = job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           job.companyName.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesLocation = job.location.toLowerCase().includes(locationQuery.toLowerCase());
       const matchesCategory = selectedCategory === "All" || job.category === selectedCategory;
       const matchesJobType = selectedJobType === "All Types" || job.jobType === selectedJobType;

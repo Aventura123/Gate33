@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { collection, addDoc, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { SkillTagsInput } from "../ui/SkillTagsInput";
+import { JOB_CATEGORIES_DROPDOWN } from "../../constants/jobCategories";
 
 interface JobPlan {
   id: string;
@@ -939,8 +940,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
             </div>
             
             <div>
-              <label htmlFor="jobCategory" className="block text-sm font-semibold text-gray-300 mb-1">Job Category</label>
-              <select
+              <label htmlFor="jobCategory" className="block text-sm font-semibold text-gray-300 mb-1">Job Category</label>              <select
                 id="jobCategory"
                 name="category"
                 value={newJob.category}
@@ -948,17 +948,9 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                 className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
               >
                 <option value="">Select Category</option>
-                <option value="Engineering">Engineering</option>
-                <option value="Marketing">Marketing</option>
-                <option value="Design">Design</option>
-                <option value="Operations">Operations</option>
-                <option value="Sales">Sales</option>
-                <option value="Product">Product</option>
-                <option value="Finance">Finance</option>
-                <option value="DeFi">DeFi</option>
-                <option value="Web3">Web3</option>
-                <option value="Non-Tech">Non-Tech</option>
-                <option value="Other">Other</option>
+                {JOB_CATEGORIES_DROPDOWN.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
               </select>
             </div>            <div>
               <label htmlFor="jobDescription" className="block text-sm font-semibold text-gray-300 mb-1">Job Description *</label>
@@ -1332,17 +1324,9 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                     className="w-full px-3 py-2 bg-black/70 border border-orange-600/50 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
                   >
                     <option value="">Select Category</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Design">Design</option>
-                    <option value="Operations">Operations</option>
-                    <option value="Sales">Sales</option>
-                    <option value="Product">Product</option>
-                    <option value="Finance">Finance</option>
-                    <option value="DeFi">DeFi</option>
-                    <option value="Web3">Web3</option>
-                    <option value="Non-Tech">Non-Tech</option>
-                    <option value="Other">Other</option>
+                    {JOB_CATEGORIES_DROPDOWN.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
                   </select>
                 </div>
 

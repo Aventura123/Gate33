@@ -10,12 +10,13 @@ import { auth, db } from "../../lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import Head from "next/head";
+import { JOB_CATEGORIES } from "../../constants/jobCategories";
 
-// Array of categories for filtering - expanded to be more specific to instant jobs
-const JOB_CATEGORIES = [
+// Additional categories specific to instant jobs
+const INSTANT_JOB_CATEGORIES = [
   "All",
   "Development",
-  "Design",
+  "Design", 
   "Marketing",
   "Content",
   "Research",
@@ -282,7 +283,7 @@ export default function InstantJobsPage() {
                     onChange={(e) => setSelectedCategory(e.target.value)}
                     className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 transition-all"
                   >
-                  {JOB_CATEGORIES.map((category) => (
+                  {INSTANT_JOB_CATEGORIES.map((category) => (
                     <option key={category} value={category}>
                       {category}
                     </option>

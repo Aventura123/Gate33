@@ -393,9 +393,41 @@ const JobPostPayment: React.FC<JobPostPaymentProps> = ({ companyId, companyProfi
                 rows={6} 
                 className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white"
                 placeholder="List the benefits and perks offered with this position"
-              />
-              <p className="text-xs text-gray-400 mt-1">Describe compensation benefits, perks, and any other incentives offered with this position. Use bullet points • or - for better readability.</p>
+              />              <p className="text-xs text-gray-400 mt-1">Describe compensation benefits, perks, and any other incentives offered with this position. Use bullet points • or - for better readability.</p>
             </div>
+            
+            <div>
+              <label className="block text-orange-400 font-semibold mb-1">Job Category *</label>
+              <select 
+                name="category" 
+                value={jobData.category} 
+                onChange={handleChange}
+                required 
+                className="w-full p-2 rounded bg-black/50 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-orange-400"
+              >
+                <option value="">Select a category</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Design">Design</option>
+                <option value="Operations">Operations</option>
+                <option value="Sales">Sales</option>
+                <option value="Product">Product</option>
+                <option value="Finance">Finance</option>
+                <option value="Legal">Legal</option>
+                <option value="Security">Security</option>
+                <option value="Developer Relations">Developer Relations</option>
+                <option value="Customer Support">Customer Support</option>
+                <option value="Sales & Marketing">Sales & Marketing</option>
+                <option value="Customer Service">Customer Service</option>
+                <option value="Data">Data</option>
+                <option value="DeFi">DeFi</option>
+                <option value="Web3">Web3</option>
+                <option value="Non-Tech">Non-Tech</option>
+                <option value="Other">Other</option>
+              </select>
+              <p className="text-xs text-gray-400 mt-1">Select the category that best describes this job position.</p>
+            </div>
+            
               {/* Unified Skills Input Section */}
             <div>
               <SkillTagsInput                value={jobData.requiredSkills}
