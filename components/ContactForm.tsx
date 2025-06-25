@@ -121,13 +121,14 @@ const ContactForm: React.FC<ContactFormProps> = ({
         <div>
           <label htmlFor="name" className="block text-gray-300 mb-1">
             Name <span className="text-red-400">*</span>
-          </label>
-          <input
+          </label>          <input
             id="name"
+            name="name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full px-4 py-2 bg-black/60 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoComplete="name"
             required
           />
         </div>
@@ -135,13 +136,14 @@ const ContactForm: React.FC<ContactFormProps> = ({
         <div>
           <label htmlFor="email" className="block text-gray-300 mb-1">
             Email <span className="text-red-400">*</span>
-          </label>
-          <input
+          </label>          <input
             id="email"
+            name="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-2 bg-black/60 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoComplete="email"
             required
           />
         </div>
@@ -150,13 +152,14 @@ const ContactForm: React.FC<ContactFormProps> = ({
           <div>
             <label htmlFor="subject" className="block text-gray-300 mb-1">
               Subject
-            </label>
-            <input
+            </label>            <input
               id="subject"
+              name="subject"
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               className="w-full px-4 py-2 bg-black/60 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoComplete="off"
             />
           </div>
         )}
@@ -166,9 +169,11 @@ const ContactForm: React.FC<ContactFormProps> = ({
             Message <span className="text-red-400">*</span>
           </label>          <textarea
             id="message"
+            name="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             className="w-full px-4 py-2 bg-black/60 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoComplete="off"
             rows={4}
             required
           />

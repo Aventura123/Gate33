@@ -357,17 +357,19 @@ function Home() {
             We're developing groundbreaking features that will transform how talent connects with opportunities.
           </p>
           <div className="w-full flex justify-center items-center">
-            <form className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-xl mx-auto" onSubmit={e => { e.preventDefault(); handleWaitlistSubscribe(); }}>
-              <input
+            <form className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-xl mx-auto" onSubmit={e => { e.preventDefault(); handleWaitlistSubscribe(); }}>              <input
                 type="email"
+                id="waitlist-email"
+                name="email"
                 value={waitlistEmail || ''}
                 onChange={e => setWaitlistEmail(e.target.value)}
                 placeholder="Enter your e-mail here to stay up-to-date"
                 className="waitlist-input-orange flex-1 w-full sm:w-auto focus:outline-none text-sm"
+                autoComplete="email"
                 disabled={waitlistLoading || waitlistSuccess}
-              />
-              <button
+              />              <button
                 type="submit"
+                id="waitlist-submit"
                 className="waitlist-btn-orange px-4 py-2.5 min-w-[90px] w-full sm:w-auto text-sm"
                 disabled={waitlistLoading || waitlistSuccess}
               >
@@ -752,8 +754,8 @@ function Home() {
       {/* Contact Modal */}
       {showContactModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-black/95 rounded-xl border border-orange-500/20 p-6 w-full max-w-md relative shadow-2xl">
-            <button
+          <div className="bg-black/95 rounded-xl border border-orange-500/20 p-6 w-full max-w-md relative shadow-2xl">            <button
+              id="contact-modal-close"
               onClick={() => setShowContactModal(false)}
               className="absolute top-4 right-4 text-orange-400 hover:text-orange-300 text-2xl font-bold"
             >
