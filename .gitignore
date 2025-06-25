@@ -78,3 +78,6 @@ docs/*.md
 scripts/generate-pwa-icons.js
 scripts/check-icon-sizes.js
 
+# Scripts with Firebase credentials
+scripts/mark-featured-jobs.js
+

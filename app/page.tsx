@@ -382,8 +382,7 @@ function Home() {
             </p>
             <p className="text-gray-200 text-xs md:text-sm mb-6 md:mb-8 max-w-xs mx-auto lg:mx-0 font-verdana">
               Access quality Web3 jobs from verified companies or post roles as a trusted employer. Build your profile, manage applications, and connect securely with top talent in one place.
-            </p>
-            <Link href="/jobs" className="gate33-btn-orange text-white py-2.5 px-8 md:px-12 min-w-[240px] md:min-w-[270px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit mx-auto lg:mx-0 whitespace-nowrap text-center">
+            </p>            <Link href="/jobs" className="gate33-btn-orange text-white py-2.5 px-8 md:px-12 min-w-[240px] md:min-w-[270px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl flex items-center justify-center w-fit mx-auto lg:mx-0 whitespace-nowrap text-center">
               Explore The Job-Board
             </Link>
           </div>{/* Right column: stacked job cards */}
@@ -462,7 +461,7 @@ function Home() {
               <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-8 min-w-[200px] rounded-full font-semibold text-sm cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit">
                 Explore Our Crypto Tools
               </Link>
-            </div>            <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-center justify-center">
+            </div>            <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-center justify-center lg:items-stretch">
               {/* Cards Grid - Full width on mobile */}
               <div className="w-full lg:w-[65%]">
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-1 w-full">
@@ -478,7 +477,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
                         </p>
-                      </div>                      <Link href="/crypto-tools#governance-ai" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[120px]">
+                      </div>                      <Link href="/crypto-tools#governance-ai" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
                         Try This Out
                       </Link>
                     </div>
@@ -495,7 +494,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Use artificial intelligence to help with governance decisions and proposals. This feature integrates with your connected wallet for DAO interactions.
                         </p>
-                      </div>                      <Link href="/crypto-tools#market-list" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[120px]">
+                      </div>                      <Link href="/crypto-tools#market-list" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
                         Try This Out
                       </Link>
                     </div>
@@ -509,7 +508,7 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Real-time Bitcoin price data, market sentiment analysis, and useful trading utilities powered by free APIs.
                         </p>
-                      </div>                      <Link href="/crypto-tools#bitcoin-analysis" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[120px]">
+                      </div>                      <Link href="/crypto-tools#bitcoin-analysis" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
                         Try This Out
                       </Link>
                     </div>
@@ -559,19 +558,18 @@ function Home() {
                         <p className="text-gray-300 text-xs leading-tight md:leading-relaxed mb-2 md:mb-4">
                           Analyze market capitalization data and trends across different cryptocurrencies to make informed investment decisions.
                         </p>
-                      </div>                      <Link href="/crypto-tools#market-cap" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[120px]">
+                      </div>                      <Link href="/crypto-tools#market-cap" className="gate33-btn-orange text-white py-1 md:py-2 px-2 md:px-4 rounded-full font-semibold text-xs cursor-pointer transition-all border-none shadow-lg hover:shadow-xl mt-auto mx-auto flex items-center justify-center w-full max-w-[140px]">
                         Try This Out
                       </Link>
                     </div>
                   </div>
                 </div>
-              </div>
-              {/* Right text - Desktop only */}              <div className="hidden lg:flex flex-shrink-0 w-full lg:w-[35%] flex-col justify-center items-start text-left mt-6 lg:mt-0 lg:pl-20 xl:pl-24">                <h2 className="text-2xl md:text-3xl font-verdana font-bold text-white mb-3 md:mb-4">EXPLORE OUR<br />CRYPTO TOOLS</h2>
+              </div>              {/* Right text - Desktop only */}              <div className="hidden lg:flex flex-shrink-0 w-full lg:w-[35%] flex-col justify-center items-start text-left mt-6 lg:mt-0 lg:pl-20 xl:pl-24 h-full">                <h2 className="text-2xl md:text-3xl font-verdana font-bold text-white mb-3 md:mb-4">EXPLORE OUR<br />CRYPTO TOOLS</h2>
                 <p className="text-orange-500 mb-3 md:mb-4 font-verdana font-medium text-sm md:text-base">
                   Crypto Tools offers solutions for analyzing<br />Ethereum wallets. Features include ENS<br />resolution, wallet age assessment, and<br />dust token detection.
                 </p><p className="text-gray-300 text-sm md:text-base mb-6 md:mb-8 max-w-xs font-verdana leading-relaxed">
                   Operations are secure in your browser, using public<br />APIs and your Ethereum provider. Private keys<br />remain secure and never exposed.
-                </p>                <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-10 md:px-14 min-w-[240px] md:min-w-[280px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl block w-fit">
+                </p>                <Link href="/crypto-tools" className="gate33-btn-orange text-white py-2.5 px-10 md:px-14 min-w-[240px] md:min-w-[280px] rounded-full font-semibold text-sm md:text-base cursor-pointer transition-all border-none shadow-lg hover:shadow-xl flex items-center justify-center w-fit">
                   Explore Our Crypto Tools
                 </Link>
               </div>
