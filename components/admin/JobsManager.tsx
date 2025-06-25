@@ -336,9 +336,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
     salaryRange: "",
     category: "",
     employmentType: "",
-    jobType: "",
     experienceLevel: "",
-    techTags: [] as string[],
     sourceLink: "",
     acceptsCryptoPay: false,
   });const [creatingJob, setCreatingJob] = useState(false);
@@ -487,9 +485,8 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         location: newJob.location,
         salaryRange: newJob.salaryRange,
         category: newJob.category,
-        jobType: newJob.jobType, // Job Type field
-        employmentType: newJob.employmentType, // Employment Type field 
-        experienceLevel: newJob.experienceLevel,        techTags: newJob.techTags, // Tech Tags field
+        employmentType: newJob.employmentType, // Employment Type (unified field)
+        experienceLevel: newJob.experienceLevel,
         sourceLink: newJob.sourceLink,
         acceptsCryptoPay: newJob.acceptsCryptoPay, // Accepts Crypto Payment
         fromExternalSource: true, // Mark as created from the admin panel
@@ -534,9 +531,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
         salaryRange: "",
         category: "",
         employmentType: "",
-        jobType: "",
         experienceLevel: "",
-        techTags: [],
         sourceLink: "",
         acceptsCryptoPay: false
       });
@@ -986,8 +981,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                 label="Required Skills & Tags"
                 className="mb-4"
               />
-            </div>              {/* Job Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </div>              {/* Job Details */}            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="jobLocation" className="block text-sm font-semibold text-gray-300 mb-1">Job Location</label>
                 <input 
@@ -1002,26 +996,6 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
               </div>
               
               <div>
-                <label htmlFor="jobType" className="block text-sm font-semibold text-gray-300 mb-1">Job Type</label>
-                <select
-                  id="jobType"
-                  name="jobType"
-                  value={newJob.jobType}
-                  onChange={(e) => setNewJob({ ...newJob, jobType: e.target.value })}
-                  className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
-                >
-                  <option value="">Select Job Type</option>
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Contract">Contract</option>
-                  <option value="Freelance">Freelance</option>
-                  <option value="Internship">Internship</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">              
-              <div>
                 <label htmlFor="employmentType" className="block text-sm font-semibold text-gray-300 mb-1">Employment Type</label>
                 <select
                   id="employmentType"
@@ -1035,6 +1009,7 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                   <option value="Part-Time">Part-Time</option>
                   <option value="Contract">Contract</option>
                   <option value="Freelance">Freelance</option>
+                  <option value="Internship">Internship</option>
                 </select>
               </div>
               
@@ -1054,32 +1029,18 @@ const JobsManager: React.FC<JobsManagerProps> = ({ activeSubTab, setActiveSubTab
                   <option value="Lead">Lead</option>
                 </select>
               </div>
-            </div>
-              <div>
+            </div>              <div>
               <label htmlFor="salaryRange" className="block text-sm font-semibold text-gray-300 mb-1">Salary Range</label>
-              <div className="flex gap-2">
-                <input 
-                  id="salaryRange"
-                  type="text" 
-                  name="salaryRange" 
-                  value={newJob.salaryRange} 
-                  onChange={(e) => setNewJob({ ...newJob, salaryRange: e.target.value })} 
-                  placeholder="e.g. $60,000-$90,000/year" 
-                  className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
-                />
-              </div>
-            </div>
-              {/* Tech Tags */}
-            <div>
-              <label htmlFor="techTags" className="block text-sm font-semibold text-gray-300 mb-1">Tech Tags (comma separated)</label>
               <input 
-                id="techTags"
+                id="salaryRange"
                 type="text" 
-                value={newJob.techTags.join(', ')} 
-                onChange={(e) => setNewJob({ ...newJob, techTags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag) })} 
-                placeholder="React, Node.js, Solidity, etc." 
+                name="salaryRange" 
+                value={newJob.salaryRange} 
+                onChange={(e) => setNewJob({ ...newJob, salaryRange: e.target.value })} 
+                placeholder="e.g. $60,000-$90,000/year" 
                 className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none" 
-              />            </div>            {/* Crypto Payment */}
+              />
+            </div>{/* Crypto Payment */}
             <div>
               <label className="flex items-center space-x-2">
                 <input
