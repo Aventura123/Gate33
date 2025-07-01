@@ -156,17 +156,61 @@ const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contractAddress, setContractAddress] = useState<string>("");
+
   useEffect(() => {
-    const fetchConfig = async () => {
-      if (!db) return;
+    const fetchConfigFromContract = async () => {
+      if (!db || !currentNetwork) return;
       setLoading(true);
       setError(null);
       try {
-        const configDoc = await getDoc(doc(db, "settings", "paymentConfig_l2l"));
-        if (configDoc.exists()) {
-          const data = configDoc.data();
-          setFeeCollector(data.feeCollectorAddress || "");
-          setFeePercent(data.feePercent || 5);
+        // Primeiro buscar o endereço do contrato para a rede atual
+        const settingsDoc = doc(db, "settings", "learn2earn");
+        const settingsSnapshot = await getDoc(settingsDoc);
+        
+        if (settingsSnapshot.exists()) {
+          const contracts = settingsSnapshot.data().contracts || [];
+          const currentContract = contracts.find(
+            (contract: any) => contract.network?.toLowerCase() === currentNetwork.toLowerCase()
+          );
+          
+          if (currentContract && currentContract.contractAddress) {
+            setContractAddress(currentContract.contractAddress);
+            
+            // Agora buscar as configurações diretamente do contrato
+            try {
+              const networkParams = getNetworkParams(currentNetwork);
+              const provider = new ethers.providers.JsonRpcProvider(networkParams.rpcUrls[0]);
+              
+              // ABI mínimo para ler fee collector e fee percent
+              const minimalABI = [
+                "function feeCollector() view returns (address)",
+                "function feePercent() view returns (uint256)"
+              ];
+              
+              const contract = new ethers.Contract(currentContract.contractAddress, minimalABI, provider);
+              
+              const [contractFeeCollector, contractFeePercent] = await Promise.all([
+                contract.feeCollector(),
+                contract.feePercent()
+              ]);
+              
+              setFeeCollector(contractFeeCollector);
+              setFeePercent(contractFeePercent.toNumber());
+              console.log(`Loaded from contract: Fee Collector: ${contractFeeCollector}, Fee Percent: ${contractFeePercent.toNumber()}%`);
+            } catch (contractError) {
+              console.error("Error reading from contract:", contractError);
+              // Fallback para Firebase se não conseguir ler do contrato
+              const configDoc = await getDoc(doc(db, "settings", "paymentConfig_l2l"));
+              if (configDoc.exists()) {
+                const data = configDoc.data();
+                setFeeCollector(data.feeCollectorAddress || "");
+                setFeePercent(data.feePercent || 5);
+              }
+            }
+          } else {
+            setError(`No Learn2Earn contract configured for ${currentNetwork} network.`);
+          }
         }
       } catch (err: any) {
         setError("Failed to load config: " + err.message);
@@ -174,8 +218,8 @@ const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
         setLoading(false);
       }
     };
-    fetchConfig();
-  }, []);
+    fetchConfigFromContract();
+  }, [db, currentNetwork]);
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -203,12 +247,13 @@ const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
         setError(`Contract update failed: ${contractError.message || "Unknown error"}. Settings were not saved.`);
         setSaving(false);
         return;
-      }
-      // Só salva no Firebase se o contrato foi atualizado com sucesso
+      }      // Só salva no Firebase se o contrato foi atualizado com sucesso
       await setDoc(doc(db, "settings", "paymentConfig_l2l"), {
         feeCollectorAddress: feeCollector,
         feePercent,
         updatedAt: new Date(),
+        network: currentNetwork, // Salvar também a rede para referência
+        contractAddress: contractAddress // Salvar também o endereço do contrato
       }, { merge: true });
       setSuccess(true);
     } catch (err: any) {
@@ -219,7 +264,7 @@ const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
   };
     return (
     <div className="bg-black/40 border border-gray-700 rounded-xl shadow-lg flex flex-col gap-6 p-6">
-      <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Taxa Learn2Earn</h3>
+      <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">Learn2Earn Fee Configuration</h3>
       <form onSubmit={handleSave} className="space-y-5">
         <div>
           <label className="block text-sm font-semibold text-gray-300 mb-1">Fee Collector Wallet Address</label>
@@ -277,6 +322,14 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db 
   const [contractActionError, setContractActionError] = useState<string | null>(null);
   // Expanded contracts state (array of contract ids)
   const [expandedContracts, setExpandedContracts] = useState<string[]>([]);
+  // Estado para informações do contrato atual
+  const [contractInfo, setContractInfo] = useState({
+    contractAddress: '',
+    contractOwner: '',
+    feeCollector: '',
+    platformFee: 0,
+  });
+  const [loadingContractInfo, setLoadingContractInfo] = useState(false);
   // Fetch smart contract configurations from Firestore
   const fetchNetworkContracts = async () => {
     try {
@@ -421,19 +474,79 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db 
   // Load contracts when component mounts
   useEffect(() => {
     fetchNetworkContracts();
-  }, [db]);
-  const { walletAddress, currentNetwork } = useWallet();
+  }, [db]);  const { walletAddress, currentNetwork } = useWallet();
+  
+  // Função para buscar informações do contrato atual
+  const fetchContractInfo = async () => {
+    if (!currentNetwork || networkContracts.length === 0) return;
+    
+    setLoadingContractInfo(true);
+    try {
+      const mainContract = networkContracts.find(
+        c => c.network?.toLowerCase() === currentNetwork.toLowerCase()
+      );
+      
+      if (mainContract && mainContract.contractAddress) {
+        try {
+          const networkParams = getNetworkParams(currentNetwork);
+          const provider = new ethers.providers.JsonRpcProvider(networkParams.rpcUrls[0]);
+          
+          // ABI mínimo para ler informações do contrato
+          const minimalABI = [
+            "function owner() view returns (address)",
+            "function feeCollector() view returns (address)",
+            "function feePercent() view returns (uint256)"
+          ];
+          
+          const contract = new ethers.Contract(mainContract.contractAddress, minimalABI, provider);
+          
+          const [owner, feeCollector, feePercent] = await Promise.all([
+            contract.owner().catch(() => walletAddress || ''),
+            contract.feeCollector().catch(() => ''),
+            contract.feePercent().catch(() => 0)
+          ]);
+          
+          setContractInfo({
+            contractAddress: mainContract.contractAddress,
+            contractOwner: owner,
+            feeCollector: feeCollector,
+            platformFee: feePercent.toNumber ? feePercent.toNumber() : feePercent,
+          });
+        } catch (error) {
+          console.error("Error fetching contract info:", error);
+          // Fallback para dados básicos
+          setContractInfo({
+            contractAddress: mainContract.contractAddress,
+            contractOwner: walletAddress || '',
+            feeCollector: '',
+            platformFee: 0,
+          });
+        }
+      } else {
+        setContractInfo({
+          contractAddress: '',
+          contractOwner: '',
+          feeCollector: '',
+          platformFee: 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error in fetchContractInfo:", error);
+    } finally {
+      setLoadingContractInfo(false);
+    }
+  };
+
+  // Buscar informações do contrato quando a rede ou contratos mudarem
+  useEffect(() => {
+    fetchContractInfo();
+  }, [currentNetwork, networkContracts, walletAddress]);
+
   // Dummy contract info for now (replace with real data fetch if needed)
   // Find the contract for the current network
   const mainContract = networkContracts.find(
     c => c.network?.toLowerCase() === (currentNetwork?.toLowerCase() || '')
   ) || {};
-  const contractInfo = {
-    contractAddress: mainContract.contractAddress || '',
-    contractOwner: mainContract.contractOwner || walletAddress || '',
-    feeCollector: mainContract.feeCollector || '',
-    platformFee: mainContract.platformFee || 5,
-  };
   const isOwner = contractInfo.contractOwner && walletAddress && contractInfo.contractOwner.toLowerCase() === walletAddress.toLowerCase();
   return (
     <>
@@ -451,21 +564,22 @@ const Learn2EarnContractsPanel: React.FC<Learn2EarnContractsPanelProps> = ({ db 
               </div>
               <div className="text-white font-medium mb-1 text-base">{currentNetwork}</div>
               <div className="text-xs text-gray-400 break-all">Your wallet: {walletAddress}</div>
-            </div>
-            {/* Contract Info */}
+            </div>            {/* Contract Info */}
             <div className="flex-1 bg-black/30 rounded-lg border border-gray-700 p-4">
               <div className="font-bold text-orange-400 mb-2 text-lg">Contract Information</div>
-              {mainContract && mainContract.contractAddress ? (
+              {loadingContractInfo ? (
+                <div className="text-sm text-gray-400">Loading contract information...</div>
+              ) : mainContract && mainContract.contractAddress ? (
                 <>
                   <div className="text-sm text-gray-300 break-all mb-1">
                     <span className="font-semibold">Contract Address:</span> {contractInfo.contractAddress}
                   </div>
                   <div className="text-sm text-gray-300 break-all mb-1 flex items-center gap-2">
-                    <span className="font-semibold">Contract Owner:</span> {contractInfo.contractOwner}
+                    <span className="font-semibold">Contract Owner:</span> {contractInfo.contractOwner || 'Loading...'}
                     {isOwner && <span className="bg-green-700 text-green-100 px-2 py-0.5 rounded text-xs font-bold">You are the owner</span>}
                   </div>
                   <div className="text-sm text-gray-300 break-all mb-1">
-                    <span className="font-semibold">Fee Collector Address:</span> {contractInfo.feeCollector}
+                    <span className="font-semibold">Fee Collector Address:</span> {contractInfo.feeCollector || 'Loading...'}
                   </div>
                   <div className="text-sm text-gray-300 mb-1">
                     <span className="font-semibold">Platform Fee:</span> {contractInfo.platformFee}%
