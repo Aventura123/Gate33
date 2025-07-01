@@ -162,6 +162,16 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   useEffect(() => {
     fetchAvailableNetworks();
   }, [fetchAvailableNetworks]);
+
+  // Auto-set network from wallet provider
+  useEffect(() => {
+    if (currentNetwork && currentNetwork !== learn2earnData.network) {
+      setLearn2EarnData(prevData => ({
+        ...prevData,
+        network: currentNetwork
+      }));
+    }
+  }, [currentNetwork, learn2earnData.network]);
   // Function to fetch drafts
   const fetchDrafts = useCallback(async () => {
     if (!db || !companyId) return;
@@ -924,54 +934,37 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
           // --- renderNewLearn2Earn migrated JSX ---
           isLoadingLearn2Earn ? (
             <p className="text-gray-300 py-4">Loading...</p>
-          ) : learn2EarnStep === 'info' ? (
-            <form onSubmit={(e) => {
+          ) : learn2EarnStep === 'info' ? (            <form onSubmit={(e) => {
               e.preventDefault();
+              if (!currentNetwork) {
+                alert('Please connect your wallet to continue');
+                return;
+              }
               setLearn2EarnStep('tasks');
-            }}>
-              {/* Blockchain Network */}
+            }}>              {/* Blockchain Network */}
               <div className="mb-4">
                 <label className="block text-gray-300 mb-2">Blockchain Network</label>
-                <select
-                  name="network"
-                  value={learn2earnData.network}
-                  onChange={handleLearn2EarnChange}
-                  className="w-full bg-black/50 border border-orange-500 rounded p-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  required
-                  disabled={isLoadingNetworks}
-                >
-                  <option value="">Select Network</option>
-                  {isLoadingNetworks ? (
-                    <option value="" disabled>Loading networks...</option>
-                  ) : availableNetworks.length > 0 ? (
-                    availableNetworks.map((network) => (
-                      <option key={network} value={network}>
-                        {network.charAt(0).toUpperCase() + network.slice(1)}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="" disabled>No networks available</option>
-                  )}
-                </select>
-                {availableNetworks.length === 0 && !isLoadingNetworks && (
-                  <div className="text-red-500 text-sm mt-1">
-                    <p>No blockchain networks with configured contracts available.</p>
-                    <button
-                      onClick={() => {
-                        setIsLoadingNetworks(true);
-                        learn2earnContractService.resetService().then(() => {
-                          fetchAvailableNetworks();
-                        }).catch((error: Error) => {
-                          console.error("Error resetting service:", error);
-                        }).finally(() => {
-                          setIsLoadingNetworks(false);
-                        });
-                      }}
-                      className="mt-2 text-white bg-blue-600 hover:bg-blue-700 py-1 px-3 rounded text-xs"
-                      disabled={isLoadingNetworks}
-                    >
-                      {isLoadingNetworks ? 'Loading...' : 'Reload Networks'}
-                    </button>
+                {currentNetwork ? (
+                  <div className="w-full bg-black/50 border border-orange-500 rounded p-2 text-white">
+                    <div className="flex items-center justify-between">
+                      <span className="text-orange-400 font-semibold">
+                        {currentNetwork.charAt(0).toUpperCase() + currentNetwork.slice(1)}
+                      </span>
+                      <span className="text-green-400 text-sm">● Connected</span>
+                    </div>
+                    <div className="text-gray-400 text-xs mt-1">
+                      Network automatically detected from your wallet
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full bg-black/50 border border-red-500 rounded p-2 text-white">
+                    <div className="flex items-center justify-between">
+                      <span className="text-red-400">No network detected</span>
+                      <span className="text-red-400 text-sm">● Disconnected</span>
+                    </div>
+                    <div className="text-gray-400 text-xs mt-1">
+                      Please connect your wallet using the wallet button to continue
+                    </div>
                   </div>
                 )}
               </div>
