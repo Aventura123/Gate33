@@ -2,6 +2,7 @@ import { ethers } from "ethers";
 import { getDoc, doc, collection, query, where, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { web3Service } from "./web3Service";
+import { getHttpRpcUrls } from "../config/rpcConfig";
 
 // Minimum ABI for ERC20 token operations
 const ERC20_ABI = [
@@ -30,51 +31,22 @@ interface NetworkContractAddress {
   tokenAddress: string;
 }
 
-// Network RPC URLs for different blockchains
-const NETWORK_RPC_URLS: Record<string, string> = {
-  'ethereum': 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
-  'polygon': 'https://polygon-rpc.com',
-  'binance': 'https://bsc-dataseed.binance.org/',
-  'bnb': 'https://bsc-dataseed.binance.org/',
-  'bsc': 'https://bsc-dataseed.binance.org/',
-  'arbitrum': 'https://arb1.arbitrum.io/rpc',
-  'optimism': 'https://mainnet.optimism.io',
-  'avalanche': 'https://api.avax.network/ext/bc/C/rpc',
-  'sepolia': 'https://rpc.sepolia.org',
-  'mumbai': 'https://rpc-mumbai.maticvigil.com',
-  'bsctestnet': 'https://data-seed-prebsc-1-s1.binance.org:8545/',
-  'bnbt': 'https://data-seed-prebsc-1-s1.binance.org:8545/',
-  'goerli': 'https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
-  'matic': 'https://polygon-rpc.com',
-  'maticmum': 'https://rpc-mumbai.maticvigil.com'
-};
-
 /**
- * Gets the RPC URL for a specified network
+ * Gets the RPC URL for a specified network using rpcConfig
  * @param network The network name
  * @returns The RPC URL for the network
  */
 function getNetworkRPC(network: string): string {
   const normalizedNetwork = network.trim().toLowerCase();
+  const rpcUrls = getHttpRpcUrls(normalizedNetwork);
   
-  // Map network name variations to standard names
-  const networkMapping: Record<string, string> = {
-    'bsc testnet': 'bsctestnet',
-    'binance smart chain testnet': 'bsctestnet',
-    'binance testnet': 'bsctestnet',
-    'binance smart chain': 'binance',
-    'polygon mainnet': 'polygon',
-    'polygon mumbai': 'mumbai',
-    'eth mainnet': 'ethereum',
-    'ethereum mainnet': 'ethereum'
-  };
+  if (rpcUrls && rpcUrls.length > 0) {
+    return rpcUrls[0]; // Use the first available RPC from config
+  }
   
-  // Use mapped name if it exists
-  const mappedNetwork = networkMapping[normalizedNetwork];
-  const networkKey = mappedNetwork || normalizedNetwork;
-  
-  // Return the RPC URL if it exists, otherwise return a default
-  return NETWORK_RPC_URLS[networkKey] || 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161';
+  // Fallback for unsupported networks
+  console.warn(`No RPC URLs found for network: ${network}, using default`);
+  return 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161';
 }
 
 class Learn2EarnContractService {
@@ -86,7 +58,28 @@ class Learn2EarnContractService {
   constructor() {
     this.loadContractAddresses();
   }
-
+  /**
+   * Gets the current network from the wallet provider
+   * @returns The current network name or null if not connected
+   */
+  public getCurrentNetworkFromWallet(): string | null {
+    // Try to get current network from web3Service
+    if (web3Service && typeof web3Service.getWalletInfo === 'function') {
+      const walletInfo = web3Service.getWalletInfo();
+      return walletInfo?.networkName || null;
+    }
+    
+    // Fallback: try to get from window events or localStorage
+    if (typeof window !== 'undefined') {
+      // Check if there's a stored network preference
+      const storedNetwork = localStorage.getItem('currentNetwork');
+      if (storedNetwork) {
+        return storedNetwork;
+      }
+    }
+    
+    return null;
+  }
   /**
    * Loads contract addresses from Firebase
    */
@@ -101,26 +94,8 @@ class Learn2EarnContractService {
       this.lastFirebaseCheck = Date.now();
       const addresses: Record<string, NetworkContractAddress> = {};
       
-      // MÉTODO 1: Buscar na coleção contractConfigs
-      const contractConfigsCollection = collection(db, "contractConfigs");
-      const querySnapshot = await getDocs(contractConfigsCollection);
-      
-      if (!querySnapshot.empty) {
-        // Process all contract configs
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          if (data.network && data.contractAddress) {
-            const normalizedNetwork = data.network.trim().toLowerCase();
-            addresses[normalizedNetwork] = {
-              contractAddress: data.contractAddress,
-              tokenAddress: data.tokenAddress || ""
-            };
-          }
-        });
-      }
-      
-      // MÉTODO 2: Buscar também no documento settings/learn2earn
-      console.log("Searching in settings/learn2earn for contract configurations");
+      // Buscar diretamente no documento settings/learn2earn onde os contratos são salvos
+      console.log("Loading contract addresses from settings/learn2earn...");
       const settingsDoc = doc(db, "settings", "learn2earn");
       const settingsSnapshot = await getDoc(settingsDoc);
       
@@ -132,7 +107,7 @@ class Learn2EarnContractService {
         contracts.forEach((contract: any) => {
           if (contract.network && contract.contractAddress) {
             const normalizedNetwork = contract.network.trim().toLowerCase();
-            console.log(`Found contract in settings/learn2earn for ${normalizedNetwork}`);
+            console.log(`Found contract in settings/learn2earn for ${normalizedNetwork}: ${contract.contractAddress}`);
             
             addresses[normalizedNetwork] = {
               contractAddress: contract.contractAddress,
@@ -140,6 +115,8 @@ class Learn2EarnContractService {
             };
           }
         });
+      } else {
+        console.log("No settings/learn2earn document found");
       }
       
       if (Object.keys(addresses).length > 0) {
@@ -149,10 +126,11 @@ class Learn2EarnContractService {
         return;
       }
       
-      console.warn("No contract configurations found in Firestore.");
+      console.warn("No contract configurations found in settings/learn2earn.");
       this.initialized = true;
     } catch (error) {
       console.error("Error loading learn2earn contract addresses:", error);
+      this.initialized = true; // Mark as initialized even on error to prevent infinite loops
     }
   }
 
@@ -1421,41 +1399,93 @@ class Learn2EarnContractService {
 
 /**
  * Updates the fee configuration on the Learn2Earn smart contract.
- * @param contractAddress The address of the Learn2Earn contract.
- * @param provider The Web3 provider instance.
+ * @param network The network name (e.g., 'ethereum', 'polygon', 'base')
  * @param feeCollector The address of the fee collector.
  * @param feePercent The percentage of the fee (0-100).
  */
 export const updateFeeConfig = async (
-  contractAddress: string,
-  provider: ethers.providers.Web3Provider,
+  network: string,
   feeCollector: string,
   feePercent: number
-): Promise<void> => {
+): Promise<any> => {
   try {
-    const signer = provider.getSigner();
-    const network = await provider.getNetwork();
-
-    // Buscar o contrato correspondente no Firestore
-    const normalizedNetwork = network.name.trim().toLowerCase();
-    const contractData = await loadContractAddresses(normalizedNetwork);
-
-    if (!contractData || !contractData.contractAddress) {
-      console.error(`No contract found for network: ${normalizedNetwork}`);
-      throw new Error(`No contract configuration available for the current network: ${normalizedNetwork}`);
+    console.log(`Updating fee config for network: ${network}`);
+    
+    // Get the current network from wallet if no network specified
+    const targetNetwork = network || learn2earnContractService.getCurrentNetworkFromWallet();
+    if (!targetNetwork) {
+      throw new Error("No network specified and no wallet connected");
     }
 
-    console.log(`Using contract address: ${contractData.contractAddress} for network: ${normalizedNetwork}`);
+    // Get contract address for the network
+    const contractData = await learn2earnContractService.getContractAddresses(targetNetwork);
+    if (!contractData || !contractData.contractAddress) {
+      throw new Error(`No Learn2Earn contract found for network: ${targetNetwork}. Please add the contract configuration first.`);
+    }
 
-    const contract = new ethers.Contract(contractData.contractAddress, LEARN2EARN_ABI, signer);
+    const contractAddress = contractData.contractAddress;
+    console.log(`Using contract address: ${contractAddress} for network: ${targetNetwork}`);
 
+    // Get Web3 provider
+    const provider = await web3Service.getWeb3Provider();
+    if (!provider) {
+      throw new Error("Web3 provider not available. Please connect your wallet.");
+    }
+
+    const signer = provider.getSigner();
+
+    // Validate fee collector address
+    if (!ethers.utils.isAddress(feeCollector)) {
+      throw new Error("Invalid fee collector address format");
+    }
+
+    // Validate fee percent (should be between 0 and 100)
+    if (feePercent < 0 || feePercent > 100) {
+      throw new Error("Fee percent must be between 0 and 100");
+    }
+
+    // Create contract instance
+    const contract = new ethers.Contract(contractAddress, LEARN2EARN_ABI, signer);
+
+    // Check if the signer is authorized to update fee config (usually only owner/admin)
+    const signerAddress = await signer.getAddress();
+    console.log(`Attempting to update fee config from address: ${signerAddress}`);
+
+    // Call the updateFeeConfig function
+    console.log(`Calling updateFeeConfig with feeCollector: ${feeCollector}, feePercent: ${feePercent}`);
     const tx = await contract.updateFeeConfig(feeCollector, feePercent);
-    await tx.wait();
 
-    console.log("Fee configuration updated successfully.");
-  } catch (error) {
-    console.error("Error updating fee configuration:", error);
-    throw new Error("Failed to update fee configuration. Check console for details.");
+    console.log(`Transaction sent: ${tx.hash}`);
+    
+    // Wait for confirmation
+    const receipt = await tx.wait(1);
+    console.log(`Transaction confirmed: ${receipt.transactionHash}`);
+
+    return {
+      success: true,
+      transactionHash: receipt.transactionHash,
+      blockNumber: receipt.blockNumber,
+      message: `Fee configuration updated successfully. Fee collector: ${feeCollector}, Fee percent: ${feePercent}%`
+    };
+  } catch (error: any) {
+    console.error("Error updating fee config:", error);
+    
+    // Handle specific error types
+    let errorMessage = error.message || "Unknown error occurred";
+    
+    if (error.message?.includes("Ownable: caller is not the owner")) {
+      errorMessage = "Access denied: Only the contract owner can update fee configuration.";
+    } else if (error.message?.includes("execution reverted")) {
+      errorMessage = "Transaction failed: The contract rejected the fee configuration update.";
+    } else if (error.code === 'NETWORK_ERROR') {
+      errorMessage = "Network error: Please check your internet connection and try again.";
+    }
+
+    return {
+      success: false,
+      error: errorMessage,
+      details: error.message
+    };
   }
 };
 

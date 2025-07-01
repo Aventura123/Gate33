@@ -16,6 +16,10 @@ const NETWORK_CONFIG: Record<string, { chainId: string; chainName: string }> = {
     chainId: '0x38',
     chainName: 'Binance Smart Chain',
   },
+  binance: {
+    chainId: '0x38',
+    chainName: 'Binance Smart Chain',
+  },
   bsctestnet: {
     chainId: '0x61',
     chainName: 'BSC Testnet',
@@ -31,6 +35,10 @@ const NETWORK_CONFIG: Record<string, { chainId: string; chainName: string }> = {
   optimism: {
     chainId: '0xa',
     chainName: 'Optimism',
+  },
+  base: {
+    chainId: '0x2105',
+    chainName: 'Base',
   },
 };
 
@@ -141,6 +149,7 @@ interface Learn2EarnFeePanelProps {
 
 // Learn2EarnFeePanel Component
 const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
+  const { currentNetwork } = useWallet();
   const [feeCollector, setFeeCollector] = useState("");
   const [feePercent, setFeePercent] = useState(5); // default 5%
   const [loading, setLoading] = useState(true);
@@ -183,11 +192,13 @@ const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
       }
       if (feePercent < 0 || feePercent > 100) {
         throw new Error("Fee percent must be between 0 and 100.");
-      }
-      // Primeiro tenta atualizar o contrato
+      }      // Primeiro tenta atualizar o contrato
       try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        await updateFeeConfig("", provider, feeCollector, feePercent);
+        // Use a rede atual do wallet ao invés de string vazia
+        const result = await updateFeeConfig(currentNetwork || 'ethereum', feeCollector, feePercent);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update fee configuration');
+        }
       } catch (contractError: any) {
         setError(`Contract update failed: ${contractError.message || "Unknown error"}. Settings were not saved.`);
         setSaving(false);
