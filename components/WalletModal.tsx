@@ -79,7 +79,7 @@ const WalletModal: React.FC<WalletModalProps> = ({
               <div key={idx} className="flex flex-row gap-3 justify-center">                {row.map((n: string) => {
                   const d = getNetworkDetails(n);
                   const isActive = n === currentNetwork;
-                  const isDisabled = n === 'base'; // Base está desabilitada até ter contratos
+                  const isDisabled = n === 'base' || n === 'ethereum'; // Base e Ethereum estão desabilitadas
                   return (
                     <button
                       key={n}
@@ -93,7 +93,7 @@ const WalletModal: React.FC<WalletModalProps> = ({
                       } min-w-90`}
                       type="button"
                       disabled={isDisabled}
-                      title={isDisabled ? 'Base network coming soon - contracts not deployed yet' : ''}
+                      title={isDisabled ? (n === 'base' ? 'Base network coming soon - contracts not deployed yet' : 'Ethereum network temporarily disabled') : ''}
                     >                      <span className={`w-3 h-3 rounded-full mr-2 ${d.color} ${isDisabled ? 'opacity-50' : ''}`} />
                       <span className="flex flex-col items-start">
                         <span>{d.name}</span>
