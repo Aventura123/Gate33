@@ -46,11 +46,23 @@ const NETWORK_CONFIG: Record<string, { chainId: string; chainName: string }> = {
 const getNetworkParams = (network: string) => {
   const networkName = network.toLowerCase();
   // Get rpcUrls from rpcConfig
-  const rpcUrls = getHttpRpcUrls(networkName);
+  let rpcUrls = getHttpRpcUrls(networkName);
   // Fallback if not found
   if (!rpcUrls || rpcUrls.length === 0) {
     console.warn(`No RPC URLs found for network ${networkName}, using fallback`);
-    rpcUrls.push('https://rpc.sepolia.org');
+    // Provide better fallbacks based on network
+    const fallbackUrls: Record<string, string> = {
+      'sepolia': 'https://rpc.sepolia.org',
+      'ethereum': 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
+      'polygon': 'https://polygon-rpc.com',
+      'bsc': 'https://bsc-dataseed.binance.org',
+      'binance': 'https://bsc-dataseed.binance.org',
+      'base': 'https://mainnet.base.org',
+      'optimism': 'https://mainnet.optimism.io',
+      'avalanche': 'https://api.avax.network/ext/bc/C/rpc'
+    };
+    
+    rpcUrls = [fallbackUrls[networkName] || fallbackUrls['sepolia']];
   }
   // Get chainId and chainName from centralized config
   const config = NETWORK_CONFIG[networkName] || NETWORK_CONFIG['ethereum'];
@@ -176,11 +188,20 @@ const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
           
           if (currentContract && currentContract.contractAddress) {
             setContractAddress(currentContract.contractAddress);
-            
-            // Agora buscar as configurações diretamente do contrato
+              // Agora buscar as configurações diretamente do contrato
             try {
               const networkParams = getNetworkParams(currentNetwork);
+              
+              // Verificar se temos RPCs válidas
+              if (!networkParams.rpcUrls || networkParams.rpcUrls.length === 0) {
+                throw new Error(`No RPC URLs available for network ${currentNetwork}`);
+              }
+              
+              console.log(`Using RPC: ${networkParams.rpcUrls[0]} for network: ${currentNetwork}`);
               const provider = new ethers.providers.JsonRpcProvider(networkParams.rpcUrls[0]);
+              
+              // Testar a conexão primeiro
+              await provider.getNetwork();
               
               // ABI mínimo para ler fee collector e fee percent
               const minimalABI = [
@@ -189,6 +210,12 @@ const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
               ];
               
               const contract = new ethers.Contract(currentContract.contractAddress, minimalABI, provider);
+              
+              // Verificar se o contrato existe
+              const code = await provider.getCode(currentContract.contractAddress);
+              if (code === "0x") {
+                throw new Error("Contract not found at the specified address");
+              }
               
               const [contractFeeCollector, contractFeePercent] = await Promise.all([
                 contract.feeCollector(),
@@ -200,12 +227,25 @@ const Learn2EarnFeePanel: React.FC<Learn2EarnFeePanelProps> = ({ db }) => {
               console.log(`Loaded from contract: Fee Collector: ${contractFeeCollector}, Fee Percent: ${contractFeePercent.toNumber()}%`);
             } catch (contractError) {
               console.error("Error reading from contract:", contractError);
+              console.log("Falling back to Firebase configuration...");
+              
               // Fallback para Firebase se não conseguir ler do contrato
-              const configDoc = await getDoc(doc(db, "settings", "paymentConfig_l2l"));
-              if (configDoc.exists()) {
-                const data = configDoc.data();
-                setFeeCollector(data.feeCollectorAddress || "");
-                setFeePercent(data.feePercent || 5);
+              try {
+                const configDoc = await getDoc(doc(db, "settings", "paymentConfig_l2l"));
+                if (configDoc.exists()) {
+                  const data = configDoc.data();
+                  setFeeCollector(data.feeCollectorAddress || "");
+                  setFeePercent(data.feePercent || 5);
+                  console.log("Loaded from Firebase fallback");
+                } else {
+                  // Valores padrão se não houver nada no Firebase
+                  setFeeCollector("");
+                  setFeePercent(5);
+                  console.log("Using default values");
+                }
+              } catch (fbError) {
+                console.error("Error loading from Firebase:", fbError);
+                setError("Failed to load fee configuration from both contract and database");
               }
             }
           } else {

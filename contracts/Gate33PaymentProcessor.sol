@@ -122,6 +122,9 @@ contract Gate33PaymentProcessor {
         // Avalanche USDT
         supportedTokens[0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7] = true;
         supportedTokensList.push(0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7);
+          // Base USDT
+        supportedTokens[0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2] = true;
+        supportedTokensList.push(0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2);
         
         // BSC Testnet USDT (para testes)
         supportedTokens[0x337610d27c682E347C9cD60BD4b3b107C9d34dDd] = true;
@@ -647,10 +650,8 @@ contract Gate33PaymentProcessor {
         
         // Transferir para as carteiras adicionais
         _distributeAdditionalFees(token, devAmount, charityAmount, evolutionAmount);
-        
-        // Gerar um paymentId baseado no remetente, destinatário, valor e timestamp
-        bytes32 hash1 = keccak256(abi.encodePacked(msg.sender, recipient, amount));
-        bytes32 paymentId = keccak256(abi.encodePacked(hash1, block.timestamp, tokenAddress));
+          // Gerar um paymentId baseado no remetente, destinatário, valor e timestamp
+        bytes32 paymentId = keccak256(abi.encodePacked(msg.sender, recipient, amount, block.timestamp));
         
         // Registrar como processado
         processedPaymentIds[paymentId] = true;
