@@ -83,16 +83,21 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     title: "",
     description: "",
     contentText: "",
-  });
-  const [currentQuestionOptions, setCurrentQuestionOptions] = useState<string[]>(['', '', '', '']);
+  });  const [currentQuestionOptions, setCurrentQuestionOptions] = useState<string[]>(['', '', '', '']);
   const [correctOptionIndex, setCorrectOptionIndex] = useState(0);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [isDepositConfirmed, setIsDepositConfirmed] = useState(false);
   const [depositError, setDepositError] = useState<string | null>(null);
   const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);  const [availableNetworks, setAvailableNetworks] = useState<string[]>([]);
-  const [isLoadingNetworks, setIsLoadingNetworks] = useState(false);
-  // Expansion state for Learn2Earn cards
+  const [isLoadingNetworks, setIsLoadingNetworks] = useState(false);  // Expansion state for Learn2Earn cards
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
+  // Draft management states
+  const [drafts, setDrafts] = useState<Learn2Earn[]>([]);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [isLoadingDrafts, setIsLoadingDrafts] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   // Access wallet context using useWallet hook
   const wallet = useWallet();
 
@@ -114,14 +119,17 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
       alert("Failed to update learn2earn status");
     }
   };
-
   // Function to fetch Learn2Earn opportunities
   const fetchLearn2Earn = useCallback(async () => {
     if (!db || !companyId) return;
     setIsLoadingLearn2Earn(true);
     try {
       const learn2earnCollection = collection(db, "learn2earn");
-      const q = query(learn2earnCollection, where("companyId", "==", companyId));
+      const q = query(
+        learn2earnCollection, 
+        where("companyId", "==", companyId),
+        where("status", "!=", "draft") // Exclude drafts from main listing
+      );
       const learn2earnSnapshot = await getDocs(q);
       const fetchedLearn2Earn: Learn2Earn[] = learn2earnSnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -150,11 +158,221 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
       setAvailableNetworks([]);
     } finally {
       setIsLoadingNetworks(false);
-    }
-  }, [learn2earnContractService]);  // Fetch networks when tab is activated  
+    }  }, [learn2earnContractService]);  // Fetch networks when tab is activated  
   useEffect(() => {
     fetchAvailableNetworks();
   }, [fetchAvailableNetworks]);
+  // Function to fetch drafts
+  const fetchDrafts = useCallback(async () => {
+    if (!db || !companyId) return;
+    setIsLoadingDrafts(true);
+    try {
+      console.log("Fetching drafts for companyId:", companyId);
+      const draftsCollection = collection(db, "learn2earn_drafts");
+      const q = query(
+        draftsCollection, 
+        where("companyId", "==", companyId)
+      );
+      const draftsSnapshot = await getDocs(q);
+      console.log("Drafts snapshot size:", draftsSnapshot.size);      const fetchedDrafts: Learn2Earn[] = draftsSnapshot.docs
+        .map((doc) => {
+          console.log("Draft document:", doc.id, doc.data());
+          return {
+            id: doc.id,
+            ...doc.data(),
+          } as Learn2Earn;
+        })
+        .filter(draft => !(draft as any).deleted); // Filter out deleted drafts after fetching
+      setDrafts(fetchedDrafts);
+      console.log("Fetched drafts (after filtering):", fetchedDrafts);
+    } catch (error) {
+      console.error("Error fetching drafts:", error);
+    } finally {
+      setIsLoadingDrafts(false);
+    }
+  }, [db, companyId]);  // Function to save as draft
+  const saveDraft = async () => {
+    if (!db || !companyId) {
+      alert("Not authenticated. Please login again.");
+      return;
+    }
+    
+    if (!learn2earnData.title) {
+      alert("Please enter at least a title to save as draft");
+      return;
+    }
+
+    setIsSavingDraft(true);
+    try {
+      console.log("Saving draft with data:", learn2earnData);
+      console.log("Current draft ID:", currentDraftId);
+      
+      const draftData = {
+        ...learn2earnData,
+        companyId,
+        status: 'draft',
+        updatedAt: serverTimestamp(),
+        deleted: false,
+      };
+
+      if (currentDraftId) {
+        // Update existing draft
+        console.log("Updating existing draft:", currentDraftId);
+        const draftRef = doc(db, "learn2earn_drafts", currentDraftId);
+        await updateDoc(draftRef, draftData);
+        console.log("Draft updated successfully");
+        alert("Draft updated successfully!");
+      } else {
+        // Create new draft
+        console.log("Creating new draft");
+        const draftsCollection = collection(db, "learn2earn_drafts");
+        const draftDataWithCreatedAt = {
+          ...draftData,
+          createdAt: serverTimestamp(),
+        };
+        const docRef = await addDoc(draftsCollection, draftDataWithCreatedAt);
+        console.log("New draft created with ID:", docRef.id);
+        setCurrentDraftId(docRef.id);
+        alert("Draft saved successfully!");
+      }
+      
+      fetchDrafts(); // Refresh drafts list
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      alert("Failed to save draft. Please try again.");
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };  // Function to load draft
+  const loadDraft = (draft: Learn2Earn) => {
+    console.log("Loading draft:", draft);
+    
+    // Ensure we handle dates properly
+    let startDate = null;
+    let endDate = null;
+    
+    if (draft.startDate) {
+      if (typeof draft.startDate === 'object' && 'toDate' in draft.startDate) {
+        startDate = (draft.startDate as any).toDate();
+      } else if (draft.startDate instanceof Date) {
+        startDate = draft.startDate;
+      } else if (typeof draft.startDate === 'string') {
+        startDate = new Date(draft.startDate);
+      }
+    }
+    
+    if (draft.endDate) {
+      if (typeof draft.endDate === 'object' && 'toDate' in draft.endDate) {
+        endDate = (draft.endDate as any).toDate();
+      } else if (draft.endDate instanceof Date) {
+        endDate = draft.endDate;
+      } else if (typeof draft.endDate === 'string') {
+        endDate = new Date(draft.endDate);
+      }
+    }
+    
+    setLearn2EarnData({
+      title: draft.title || "",
+      description: draft.description || "",
+      tokenSymbol: draft.tokenSymbol || "",
+      tokenAmount: draft.tokenAmount || 0,
+      tokenAddress: draft.tokenAddress || "",
+      tokenPerParticipant: draft.tokenPerParticipant || 0,
+      totalParticipants: draft.totalParticipants || 0,
+      maxParticipants: draft.maxParticipants,
+      startDate: startDate,
+      endDate: endDate,
+      tasks: draft.tasks || [],
+      status: 'draft',
+      contractAddress: draft.contractAddress || "",
+      transactionHash: draft.transactionHash || "",
+      socialLinks: draft.socialLinks || { discord: "", telegram: "", twitter: "", website: "" },
+      network: draft.network || '',
+    });
+    
+    setCurrentDraftId(draft.id);
+    setShowDraftModal(false);
+    setLearn2EarnSubTab('new'); // Switch to new tab
+    
+    // Clear any existing editing state
+    setEditingTaskId(null);
+    setCurrentTask({
+      type: 'content',
+      title: "",
+      description: "",
+      contentText: "",
+    });
+    setCurrentQuestionOptions(['', '', '', '']);
+    setCorrectOptionIndex(0);
+    
+    // Determine which step to show based on draft content
+    if (draft.tasks && draft.tasks.length > 0) {
+      setLearn2EarnStep('tasks');
+    } else {
+      setLearn2EarnStep('info');
+    }
+    
+    console.log("Draft loaded successfully");
+  };// Function to delete draft
+  const deleteDraft = async (draftId: string) => {
+    if (!db) return;
+    
+    if (!confirm('Are you sure you want to delete this draft? This action cannot be undone.')) return;
+    
+    try {
+      console.log("Deleting draft:", draftId);
+      const draftRef = doc(db, "learn2earn_drafts", draftId);
+      await updateDoc(draftRef, { deleted: true });
+      
+      // If we're currently editing this draft, clear the form
+      if (currentDraftId === draftId) {
+        resetLearn2EarnForm();
+      }
+      
+      fetchDrafts(); // Refresh drafts list
+      alert("Draft deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting draft:", error);
+      alert("Failed to delete draft. Please try again.");
+    }
+  };
+  // Function to reset form and current draft
+  const resetLearn2EarnForm = () => {
+    setLearn2EarnData({
+      title: "",
+      description: "",
+      tokenSymbol: "",
+      tokenAmount: 0,
+      tokenAddress: "",
+      tokenPerParticipant: 0,
+      totalParticipants: 0,
+      maxParticipants: undefined,
+      startDate: null,
+      endDate: null,
+      tasks: [],
+      status: 'draft',
+      contractAddress: "",
+      transactionHash: "",
+      socialLinks: { discord: "", telegram: "", twitter: "", website: "" },
+      network: '',
+    });
+    setCurrentDraftId(null);
+    setCurrentTask({
+      type: 'content',
+      title: "",
+      description: "",
+      contentText: "",
+    });
+    setCurrentQuestionOptions(['', '', '', '']);
+    setCorrectOptionIndex(0);
+    setEditingTaskId(null);
+    setIsDepositConfirmed(false);
+  };
+
+  // Fetch drafts when component mounts
+  useEffect(() => {
+    fetchDrafts();
+  }, [fetchDrafts]);
   
   // Dummy function for details (placeholder)
   const fetchL2LStats = (l2lId: string) => {};
@@ -348,8 +566,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   // Handler for dates
   const handleDateChange = (name: 'startDate' | 'endDate', date: Date) => {
     setLearn2EarnData({...learn2earnData, [name]: date});
-  };
-  // Handler to add task
+  };  // Handler to add task
   const addTask = () => {
     if (!currentTask.title || !currentTask.description) {
       alert("Please fill in all task fields");
@@ -391,6 +608,100 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
       ...learn2earnData,
       tasks: [...learn2earnData.tasks, newTask]
     });
+    
+    // Clear form - same as cancelEditTask
+    cancelEditTask();
+  };
+  // Handler to remove task
+  const removeTask = (taskId: string) => {
+    // If we're editing this task, cancel editing
+    if (editingTaskId === taskId) {
+      cancelEditTask();
+    }
+    setLearn2EarnData({
+      ...learn2earnData,
+      tasks: learn2earnData.tasks.filter(task => task.id !== taskId)
+    });
+  };
+
+  // Function to start editing a task
+  const editTask = (task: Learn2EarnTask) => {
+    setEditingTaskId(task.id);
+    setCurrentTask({
+      type: task.type,
+      title: task.title,
+      description: task.description,
+      contentText: task.contentText || "",
+      contentType: task.contentType,
+      externalUrl: task.externalUrl,
+      linkTitle: task.linkTitle,
+      question: task.question,
+    });
+    
+    if (task.type === 'question' && task.options) {
+      setCurrentQuestionOptions([...task.options]);
+      setCorrectOptionIndex(task.correctOption || 0);
+    }
+  };
+
+  // Function to update existing task
+  const updateTask = () => {
+    if (!editingTaskId) {
+      alert("No task selected for editing");
+      return;
+    }
+
+    if (!currentTask.title || !currentTask.description) {
+      alert("Please fill in all task fields");
+      return;
+    }
+    
+    // Same validations as addTask
+    if (currentTask.type === 'content' && currentTask.contentType === 'link') {
+      if (!currentTask.externalUrl) {
+        alert("Please enter a resource URL");
+        return;
+      }
+      if (!currentTask.linkTitle) {
+        alert("Please enter a display text for the link");
+        return;
+      }
+    } else if (currentTask.type === 'content' && (!currentTask.contentType || currentTask.contentType === 'full')) {
+      if (!currentTask.contentText || currentTask.contentText.trim() === '') {
+        alert("Please add some educational content");
+        return;
+      }
+    }
+
+    let updatedTask: Learn2EarnTask;
+    if (currentTask.type === 'content') {
+      updatedTask = {
+        ...currentTask,
+        id: editingTaskId
+      };
+    } else {
+      updatedTask = {
+        ...currentTask,
+        id: editingTaskId,
+        options: currentQuestionOptions,
+        correctOption: correctOptionIndex
+      };
+    }
+
+    setLearn2EarnData({
+      ...learn2earnData,
+      tasks: learn2earnData.tasks.map(task => 
+        task.id === editingTaskId ? updatedTask : task
+      )
+    });
+
+    // Clear editing state
+    cancelEditTask();
+  };
+
+  // Function to cancel editing task
+  const cancelEditTask = () => {
+    setEditingTaskId(null);
     setCurrentTask({
       type: 'content',
       description: "",
@@ -399,14 +710,6 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     });
     setCurrentQuestionOptions(['', '', '', '']);
     setCorrectOptionIndex(0);
-  };
-
-  // Handler to remove task
-  const removeTask = (taskId: string) => {
-    setLearn2EarnData({
-      ...learn2earnData,
-      tasks: learn2earnData.tasks.filter(task => task.id !== taskId)
-    });
   };
 
   // Handler for task form changes
@@ -420,11 +723,10 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     if (!db || !companyId) {
       alert("Not authenticated. Please login again.");
       return;
-    }
-    if (!learn2earnData.title || !learn2earnData.description || 
+    }    if (!learn2earnData.title || !learn2earnData.description || 
         !learn2earnData.tokenSymbol || !learn2earnData.tokenAddress ||
         learn2earnData.tokenAmount <= 0 || learn2earnData.tokenPerParticipant <= 0 ||
-        !learn2earnData.startDate || !learn2earnData.endDate || 
+        !learn2earnData.startDate || 
         learn2earnData.tasks.length === 0) {
       alert("Please fill in all required fields and add at least one task");
       return;
@@ -474,30 +776,15 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
           startDate = new Date(learn2earnData.startDate);
         } else {
           startDate = new Date(Date.now() + 5 * 60 * 1000);
-        }
-      } else {
+        }      } else {
         startDate = new Date(Date.now() + 5 * 60 * 1000);
       }
-      if (learn2earnData.endDate) {
-        if (typeof learn2earnData.endDate === 'object') {
-          if ('toDate' in learn2earnData.endDate && typeof learn2earnData.endDate.toDate === 'function') {
-            endDate = learn2earnData.endDate.toDate();
-          } else if (learn2earnData.endDate instanceof Date) {
-            endDate = learn2earnData.endDate;
-          } else {
-            endDate = new Date();
-            endDate.setDate(endDate.getDate() + 30);
-          }
-        } else if (typeof learn2earnData.endDate === 'string') {
-          endDate = new Date(learn2earnData.endDate);
-        } else {
-          endDate = new Date();
-          endDate.setDate(endDate.getDate() + 30);
-        }
-      } else {
-        endDate = new Date();
-        endDate.setDate(endDate.getDate() + 30);
-      }      const now = new Date();
+
+      // Set endDate to 365 days after startDate
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 365);
+
+      const now = new Date();
       const minStartTime = new Date(now.getTime() + 5 * 60 * 1000);
       if (startDate < now) {
         startDate = minStartTime;
@@ -561,22 +848,30 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         tokenSymbol: learn2earnData.tokenSymbol,
         transactionHash: depositResult.transactionHash,
         read: false,
-        createdAt: new Date()
-      });
+        createdAt: new Date()      });
+      
+      // If this was created from a draft, delete the draft
+      if (currentDraftId) {
+        try {
+          console.log("Deleting draft after successful creation:", currentDraftId);
+          const draftRef = doc(db, "learn2earn_drafts", currentDraftId);
+          await updateDoc(draftRef, { deleted: true });
+          console.log("Draft deleted successfully");
+        } catch (draftError) {
+          console.error("Error deleting draft:", draftError);
+          // Don't fail the whole operation if draft deletion fails
+        }
+      }
+      
       resetLearn2EarnForm();
       fetchLearn2Earn();
+      fetchDrafts(); // Refresh drafts list to remove deleted draft
       setLearn2EarnStep('confirmation');
     } catch (error: any) {
       console.error("Error creating learn2earn:",error);
       setDepositError(error.message || "Failed to create learn2earn opportunity. Please check your wallet and try again.");
     } finally {
-      setIsProcessingDeposit(false);
-    }
-  };
-
-  // Function to reset the form
-  const resetLearn2EarnForm = () => {
-    // Can be implemented as needed
+      setIsProcessingDeposit(false);    }
   };
 
   // Helper to format date for display
@@ -596,9 +891,15 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   const isMobileDevice = useIsMobileL2E();
   return (
     <div className="w-full">
-      <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">
-        {/* Main section title */}
-        <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">Learn2Earn Opportunities</h2>
+      <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">        {/* Main section title */}
+        <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">
+          Learn2Earn Opportunities
+          {currentDraftId && (
+            <span className="text-sm text-yellow-400 ml-2 font-normal">
+              (Editing Draft)
+            </span>
+          )}
+        </h2>
         <div className="flex gap-6 mb-6 items-end border-b border-orange-900/60">
           <button
             className={`relative text-base font-semibold mr-2 transition-colors pb-1 ${learn2EarnSubTab === 'my' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
@@ -608,12 +909,11 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
             {learn2EarnSubTab === 'my' && (
               <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
             )}
-          </button>
-          <button
+          </button>          <button
             className={`relative text-base font-semibold transition-colors pb-1 ${learn2EarnSubTab === 'new' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
             onClick={() => setLearn2EarnSubTab('new')}
           >
-            New Learn2Earn
+            {currentDraftId ? `Edit Draft: ${learn2earnData.title || 'Untitled'}` : 'New Learn2Earn'}
             {learn2EarnSubTab === 'new' && (
               <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
             )}
@@ -772,24 +1072,8 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                   onChange={(e) => handleDateChange('startDate', new Date(e.target.value))}
                   className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
                   required
-                />
-              </div>
-              {/* End Date */}
-              <div className="mb-4">
-                <label className="block text-gray-300 mb-2">End Date</label>
-                <input
-                  type="date"
-                  name="endDate"
-                  value={learn2earnData.endDate ?
-                    (learn2earnData.endDate instanceof Date ?
-                      learn2earnData.endDate.toISOString().split('T')[0] :
-                      new Date(learn2earnData.endDate as any).toISOString().split('T')[0])
-                    : ''}
-                  onChange={(e) => handleDateChange('endDate', new Date(e.target.value))}
-                  className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
-                  required
-                />
-              </div>
+                />              </div>
+              {/* End Date - Auto-calculated to 365 days after start date */}
               {/* Max Participants (readonly, calculated) */}
               <div className="mb-4">
                 <label className="block text-gray-300 mb-2">Max Participants (calculated automatically)</label>
@@ -857,36 +1141,101 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                     placeholder="Discord"
                     className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white"
                   />
+                </div>              </div>            {/* Buttons */}              <div className="mt-4 flex justify-between">
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDraftModal(true)}
+                    className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Load Draft
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveDraft}
+                    disabled={isSavingDraft || !learn2earnData.title}
+                    className={`bg-yellow-600 text-white py-2 px-4 rounded transition-colors ${
+                      isSavingDraft || !learn2earnData.title
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:bg-yellow-700'
+                    }`}
+                  >
+                    {isSavingDraft ? 'Saving...' : currentDraftId ? 'Update Draft' : 'Save Draft'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (currentDraftId || learn2earnData.title || learn2earnData.description) {
+                        if (confirm('Are you sure you want to start a new Learn2Earn? Any unsaved changes will be lost.')) {
+                          resetLearn2EarnForm();
+                        }
+                      } else {
+                        resetLearn2EarnForm();
+                      }
+                    }}
+                    className="bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-colors"
+                  >
+                    New
+                  </button>
                 </div>
-              </div>            {/* Next Button */}
-              <div className="mt-4 flex justify-end">
                 <button
                   type="submit"
                   className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 transition-colors"
                 >
                   Next: Add Tasks
                 </button>
-              </div>            </form>        ) : learn2EarnStep === 'tasks' ? (
-          <div className="space-y-6">
-            {learn2earnData.tasks.length > 0 && (
+              </div></form>        ) : learn2EarnStep === 'tasks' ? (
+          <div className="space-y-6">            {learn2earnData.tasks.length > 0 && (
               <div className="mb-6">
                 <h4 className="text-xl font-medium text-white mb-2">Current Tasks</h4>
                 <ul className="space-y-2">
                   {learn2earnData.tasks.map((task, index) => (
-                    <li key={index} className="bg-black/30 p-3 rounded-lg border border-gray-700 flex justify-between items-center">
-                      <div>
-                        <p className="text-white font-medium">{task.title}</p>
-                        <p className="text-sm text-gray-400">{task.type === 'content' ? 'Educational Content' : 'Quiz Question'}</p>
-                      </div>
-                      <button
-                        onClick={() => removeTask(task.id)}
-                        className="text-red-500 hover:text-red-400"
+                    <li key={task.id} className={`bg-black/30 p-3 rounded-lg border ${editingTaskId === task.id ? 'border-yellow-500' : 'border-gray-700'} flex justify-between items-center cursor-pointer hover:bg-black/40 transition-colors`}>
+                      <div 
+                        className="flex-1"
+                        onClick={() => editTask(task)}
                       >
-                        Remove
-                      </button>
+                        <p className="text-white font-medium">{task.title}</p>
+                        <p className="text-sm text-gray-400">
+                          {task.type === 'content' ? 'Educational Content' : 'Quiz Question'}
+                          {editingTaskId === task.id && (
+                            <span className="text-yellow-400 ml-2">(Editing)</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-500">Click to edit</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        {editingTaskId === task.id && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              cancelEditTask();
+                            }}
+                            className="text-gray-500 hover:text-gray-400 px-2 py-1 text-sm"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeTask(task.id);
+                          }}
+                          className="text-red-500 hover:text-red-400"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
+              </div>            )}
+
+            {editingTaskId && (
+              <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <p className="text-yellow-400 text-sm font-medium">
+                  ✏️ Editing Task: {learn2earnData.tasks.find(t => t.id === editingTaskId)?.title || 'Unknown Task'}
+                </p>
               </div>
             )}
 
@@ -1228,27 +1577,37 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                 )}
               </div>
             )}            <div className="mt-4 mb-6 flex space-x-2 justify-start">
-              <button
-                onClick={addTask}
-                className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors"
-              >
-                Add Task
-              </button>
-              <button
-                onClick={() => {
-                  setCurrentTask({
-                    type: 'content',
-                    description: "",
-                    contentText: "",
-                    title: ""
-                  });
-                  setCurrentQuestionOptions(['', '', '', '']);
-                  setCorrectOptionIndex(0);
-                }}
-                className="bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-colors"
-              >
-                Clear Form
-              </button>
+              {editingTaskId ? (
+                <>
+                  <button
+                    onClick={updateTask}
+                    className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Update Task
+                  </button>
+                  <button
+                    onClick={cancelEditTask}
+                    className="bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-colors"
+                  >
+                    Cancel Edit
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={addTask}
+                    className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors"
+                  >
+                    Add Task
+                  </button>
+                  <button
+                    onClick={cancelEditTask}
+                    className="bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-colors"
+                  >
+                    Clear Form
+                  </button>
+                </>
+              )}
             </div>
             
             {/* Task Creation Completion */}
@@ -1282,8 +1641,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                     <span className="text-xs text-gray-400 ml-1">({learn2earnData.tokenPerParticipant} {learn2earnData.tokenSymbol}/user)</span>
                   </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              </div>              <div className="grid grid-cols-2 gap-3 mb-3">
                 <div className="bg-black/50 p-2 rounded-md">
                   <div className="text-xs text-gray-400">Start</div>
                   <div className="text-sm font-medium text-white">
@@ -1291,12 +1649,19 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                   </div>
                 </div>
                 <div className="bg-black/50 p-2 rounded-md">
-                  <div className="text-xs text-gray-400">End</div>
+                  <div className="text-xs text-gray-400">End (Auto: +365 days)</div>
                   <div className="text-sm font-medium text-white">
-                    {learn2earnData.endDate ? new Date(learn2earnData.endDate as any).toLocaleDateString() : 'Not set'}
+                    {learn2earnData.startDate ? 
+                      (() => {
+                        const endDate = new Date(learn2earnData.startDate as any);
+                        endDate.setDate(endDate.getDate() + 365);
+                        return endDate.toLocaleDateString();
+                      })() : 
+                      'Will be set automatically'
+                    }
                   </div>
                 </div>
-              </div>              <div className="grid grid-cols-2 gap-3 mb-3">
+              </div><div className="grid grid-cols-2 gap-3 mb-3">
                 <div className="bg-black/50 p-2 rounded-md">
                   <div className="text-xs text-gray-400">Total Amount to Send</div>
                   <div className="text-sm font-medium text-white">
@@ -1342,7 +1707,45 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                   I confirm the deposit information and understand that tokens will be transferred from my wallet
                 </label>
               </div>
-            </div>            <div className="mt-4 flex justify-end">
+            </div>            <div className="mt-4 flex justify-between">
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDraftModal(true)}
+                  className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
+                >
+                  Load Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={saveDraft}
+                  disabled={isSavingDraft || !learn2earnData.title}
+                  className={`bg-yellow-600 text-white py-2 px-4 rounded transition-colors ${
+                    isSavingDraft || !learn2earnData.title
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-yellow-700'
+                  }`}
+                >
+                  {isSavingDraft ? 'Saving...' : currentDraftId ? 'Update Draft' : 'Save Draft'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentDraftId || learn2earnData.title || learn2earnData.description || learn2earnData.tasks.length > 0) {
+                      if (confirm('Are you sure you want to start a new Learn2Earn? Any unsaved changes will be lost.')) {
+                        resetLearn2EarnForm();
+                        setLearn2EarnStep('info');
+                      }
+                    } else {
+                      resetLearn2EarnForm();
+                      setLearn2EarnStep('info');
+                    }
+                  }}
+                  className="bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-colors"
+                >
+                  New
+                </button>
+              </div>
               <div>
                 <button
                   onClick={() => setLearn2EarnStep('info')}
@@ -1539,8 +1942,90 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                   })}                </div>
               )}
             </div>
+          </div>        )
+      )}
+        {/* Draft Modal - Gate33 Style */}
+      {showDraftModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-black/90 border border-orange-500/30 p-6 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto m-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-white">Load Draft</h3>
+              <button
+                onClick={() => setShowDraftModal(false)}
+                className="text-gray-400 hover:text-orange-400 text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            
+            {isLoadingDrafts ? (
+              <div className="py-8 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                <p className="text-gray-300 mt-2">Loading drafts...</p>
+              </div>
+            ) : drafts.length === 0 ? (
+              <p className="text-gray-300 py-8 text-center">No drafts found.</p>
+            ) : (
+              <div className="space-y-3">
+                {drafts.map((draft) => (
+                  <div
+                    key={draft.id}
+                    className={`bg-black/50 border rounded-lg p-4 transition-all hover:bg-black/70 ${
+                      currentDraftId === draft.id 
+                        ? 'border-orange-500 bg-orange-500/10' 
+                        : 'border-gray-700 hover:border-orange-500/50'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
+                        <div className="flex items-center mb-2">
+                          <h4 className="text-lg font-medium text-white">
+                            {draft.title || 'Untitled Draft'}
+                          </h4>
+                          {currentDraftId === draft.id && (
+                            <span className="ml-2 px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded">
+                              Currently Editing
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-400 text-sm">
+                          Updated: {
+                            draft.updatedAt ? 
+                              new Date((draft.updatedAt as any).toDate?.() || draft.updatedAt).toLocaleDateString() :
+                              'Unknown'
+                          }
+                        </p>
+                      </div>
+                      <div className="flex space-x-2 ml-4">
+                        <button
+                          onClick={() => loadDraft(draft)}
+                          className="bg-orange-500 text-white px-4 py-2 rounded text-sm hover:bg-orange-600 transition-colors font-medium"
+                        >
+                          Load
+                        </button>
+                        <button
+                          onClick={() => deleteDraft(draft.id)}
+                          className="bg-gray-700 text-white px-4 py-2 rounded text-sm hover:bg-red-600 transition-colors font-medium"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() => setShowDraftModal(false)}
+                className="bg-gray-700 text-white px-6 py-2 rounded hover:bg-gray-600 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
-        )
+        </div>
       )}
       </div>
     </div>

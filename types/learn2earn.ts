@@ -34,9 +34,10 @@ export interface Learn2Earn {
   tasks: Learn2EarnTask[];
   status: 'active' | 'paused' | 'completed' | 'draft';
   companyId: string;
-  contractAddress?: string;
-  transactionHash?: string;
+  contractAddress?: string;  transactionHash?: string;
   createdAt?: Date | Timestamp | string;
+  updatedAt?: Date | Timestamp | string;
+  deletedAt?: Date | Timestamp | string;
   learn2earnId?: string | number;
   firebaseId?: string; // The ID passed to the contract during creation for reference
   contractId?: number; // The numeric ID in the blockchain contract (replacing learn2earnId)
