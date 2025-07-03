@@ -218,8 +218,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <div className="header-dropdown"
                   onMouseEnter={handleLearnEnter}
                   onMouseLeave={handleLearnLeave}
-                >
-                  <div className="py-2">
+                >                  <div className="py-2">
                     <a href="/learn2earn" className={getMenuItemClasses('/learn2earn')}>LEARN2EARN</a>
                   </div>
                 </div>
@@ -394,11 +393,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
           <div>
             <h4 className="text-white font-bold text-base mb-2">Contact</h4>
-            <nav className="text-black/80 text-sm">
-              <a href="/contact" className="block hover:underline">Contact Us</a>
+            <nav className="text-black/80 text-sm">              <a href="/contact" className="block hover:underline">Contact Us</a>
               <a href="/#about" className="block hover:underline">About</a>
               <a href="/#services" className="block hover:underline">Services</a>
               <a href="/#faq" className="block hover:underline">FAQ</a>
+              <a href="/docs" className="block hover:underline">Documentation</a>
             </nav>
           </div>
           <div>
@@ -415,8 +414,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <a href="https://www.linkedin.com/company/gate33" target="_blank" rel="noopener noreferrer" className="block hover:underline">LinkedIn</a>
             </nav>
           </div>
-        </div>        <div className="text-center text-black/60 text-xs mt-4 pb-2">
-          <div className="flex justify-center items-center gap-4 mb-2">
+        </div>        <div className="text-center text-black/60 text-xs mt-4 pb-2">          <div className="flex justify-center items-center gap-4 mb-2">
             <a href="/privacy-policy" className="hover:underline">Privacy Policy</a>
             <span>•</span>
             <a href="/terms-of-service" className="hover:underline">Terms of Service</a>
