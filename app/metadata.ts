@@ -2,8 +2,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Gate33 - Plataforma Web3',
-  description: 'Plataforma Web3 completa para empregos, learn-to-earn e ferramentas crypto',
+  title: 'Gate33 - Web3 Platform',
+  description: 'Complete Web3 platform for jobs, learn-to-earn and crypto tools',
   applicationName: 'Gate33',
   appleWebApp: {
     capable: true,
