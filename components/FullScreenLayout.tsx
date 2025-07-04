@@ -373,42 +373,44 @@ const FullScreenLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         )}
         {pathname === '/' && <hr className="my-8 border-black/30" />}
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-5 gap-6 pb-2">
+          {/* About Gate33 - agora à esquerda */}
+          <div>
+            <h4 className="text-white font-bold text-base mb-2">About Gate33</h4>
+            <p className="text-black/80 text-xs mb-3">
+              Your trusted platform for secure work, real opportunities, and user protection in the Web3 job market.
+            </p>
+            <a href="/#about" className="block text-black/80 text-xs hover:underline">Learn more</a>
+          </div>          {/* Quick Links */}
           <div>
             <h4 className="text-white font-bold text-base mb-2">Quick Links</h4>
             <nav className="text-black/80 text-sm">
               <a href="/jobs" className="block hover:underline">Jobs</a>
               <span className="block text-black/40">Instant Jobs (Coming Soon)</span>
               <a href="/learn2earn" className="block hover:underline">Learn2Earn</a>
-              <a href="/donate" className="block hover:underline">Invest in us</a>
               <a href="/crypto-tools" className="block hover:underline">Crypto Tools</a>
               <a href="/donate" className="block hover:underline">Donate</a>
+              <span className="block text-black/40">Invest in us (Coming Soon)</span>
             </nav>
           </div>
+          {/* Services */}
           <div>
             <h4 className="text-white font-bold text-base mb-2">Services</h4>
             <nav className="text-black/80 text-sm">
               <a href="/seeker-signup" className="block hover:underline">For Job Seekers</a>
               <a href="/company-register" className="block hover:underline">For Companies</a>
-              <a href="/learn2earn" className="block hover:underline">Learn2Earn</a>
             </nav>
-          </div>          <div>
-            <h4 className="text-white font-bold text-base mb-2">Contact</h4>
+          </div>          {/* Resources */}
+          <div>
+            <h4 className="text-white font-bold text-base mb-2">Resources</h4>
+            <nav className="text-black/80 text-sm">
+              <a href="/docs" className="block hover:underline">Documentation</a>
+              <a href="/#faq" className="block hover:underline">FAQ</a>
+            </nav>
+          </div>          {/* Contact & Socials */}
+          <div>
+            <h4 className="text-white font-bold text-base mb-2">Contact & Socials</h4>
             <nav className="text-black/80 text-sm">
               <a href="/contact" className="block hover:underline">Contact Us</a>
-              <a href="/#about" className="block hover:underline">About</a>
-              <a href="/#services" className="block hover:underline">Services</a>
-              <a href="/#faq" className="block hover:underline">FAQ</a>              <a href="/docs" className="block hover:underline">Documentation</a>
-            </nav>
-          </div>
-          <div>
-            <h4 className="text-white font-bold text-base mb-2">About Gate33</h4>
-            <p className="text-black/80 text-xs">
-              Your trusted platform for secure work, real opportunities, and user protection in the Web3 job market.
-            </p>
-          </div>
-          <div>
-            <h4 className="text-white font-bold text-base mb-2">Socials</h4>
-            <nav className="text-black/80 text-sm">
               <a href="https://t.me/gate33_tg_channel" target="_blank" rel="noopener noreferrer" className="block hover:underline">Telegram</a>
               <a href="https://x.com/x_Gate33" target="_blank" rel="noopener noreferrer" className="block hover:underline">X (Twitter)</a>
               <a href="https://www.linkedin.com/company/gate33" target="_blank" rel="noopener noreferrer" className="block hover:underline">LinkedIn</a>
