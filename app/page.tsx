@@ -722,9 +722,12 @@ function Home() {
               ) : (
                 <span className="text-gray-400 text-sm">No partners yet.</span>
               )}</div>            <div className="flex justify-center mt-2">
-              <span className="text-gray-500 text-sm font-medium flex items-center gap-1 cursor-not-allowed opacity-60">
+              <a
+                href="/partners"
+                className="text-gate33-orange text-sm font-medium flex items-center gap-1"
+              >
                 View all Partners <span className="ml-1">→</span>
-              </span>
+              </a>
             </div></div>
         </section>
 
