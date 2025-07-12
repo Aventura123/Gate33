@@ -9,6 +9,8 @@ interface Partner {
   logoUrl: string;
   description: string;
   website: string;
+  type?: string;
+  discount?: number;
   createdAt: string;
 }
 
@@ -34,14 +36,21 @@ const AdminPartnersManager: React.FC = () => {
   const [vipLoading, setVipLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<{companyId: string, currentDiscount: number} | null>(null);
+  const [editingPartnerDiscount, setEditingPartnerDiscount] = useState<{partnerId: string, currentDiscount: number} | null>(null);
   const [newDiscount, setNewDiscount] = useState<number>(0);
+  const [newPartnerDiscount, setNewPartnerDiscount] = useState<number>(0);
   const [savingDiscount, setSavingDiscount] = useState(false);
+  const [savingPartnerDiscount, setSavingPartnerDiscount] = useState(false);
+  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
+  const [savingPartner, setSavingPartner] = useState(false);
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
+  const [expandedPartners, setExpandedPartners] = useState<Set<string>>(new Set());
   const [newPartner, setNewPartner] = useState({
     name: "",
     logoUrl: "",
     description: "",
-    website: ""
+    website: "",
+    type: ""
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -118,7 +127,7 @@ const AdminPartnersManager: React.FC = () => {
         logoUrl,
         createdAt: new Date().toISOString()
       });
-      setNewPartner({ name: "", logoUrl: "", description: "", website: "" });
+      setNewPartner({ name: "", logoUrl: "", description: "", website: "", type: "" });
       setLogoFile(null);
       fetchPartners();
     } catch (error) {
@@ -154,6 +163,18 @@ const AdminPartnersManager: React.FC = () => {
         newSet.delete(companyId);
       } else {
         newSet.add(companyId);
+      }
+      return newSet;
+    });
+  };
+  
+  const togglePartnerExpansion = (partnerId: string) => {
+    setExpandedPartners(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(partnerId)) {
+        newSet.delete(partnerId);
+      } else {
+        newSet.add(partnerId);
       }
       return newSet;
     });
@@ -194,6 +215,86 @@ const AdminPartnersManager: React.FC = () => {
   const handleDiscountCancel = () => {
     setEditingDiscount(null);
     setNewDiscount(0);
+  };
+  
+  const handlePartnerDiscountClick = (partnerId: string, currentDiscount: number = 0) => {
+    setEditingPartnerDiscount({ partnerId, currentDiscount });
+    setNewPartnerDiscount(currentDiscount || 0);
+  };
+  
+  const handlePartnerDiscountSave = async () => {
+    if (!editingPartnerDiscount || newPartnerDiscount < 0 || newPartnerDiscount > 100) {
+      alert("Please enter a valid discount percentage (0-100)");
+      return;
+    }
+
+    setSavingPartnerDiscount(true);
+    try {
+      const partnerRef = doc(db, "partners", editingPartnerDiscount.partnerId);
+      await updateDoc(partnerRef, {
+        discount: newPartnerDiscount
+      });
+      
+      // Update local state
+      setPartners(prev => 
+        prev.map(partner => 
+          partner.id === editingPartnerDiscount.partnerId 
+            ? { ...partner, discount: newPartnerDiscount }
+            : partner
+        )
+      );
+      
+      setEditingPartnerDiscount(null);
+      setNewPartnerDiscount(0);
+    } catch (error) {
+      console.error("Error updating partner discount:", error);
+      alert("Failed to update discount. Please try again.");
+    } finally {
+      setSavingPartnerDiscount(false);
+    }
+  };
+  
+  const handlePartnerDiscountCancel = () => {
+    setEditingPartnerDiscount(null);
+    setNewPartnerDiscount(0);
+  };
+  
+  const handleEditPartner = (partner: Partner) => {
+    setEditingPartner({...partner});
+  };
+  
+  const handlePartnerCancel = () => {
+    setEditingPartner(null);
+  };
+  
+  const handlePartnerSave = async () => {
+    if (!editingPartner) return;
+    
+    setSavingPartner(true);
+    try {
+      const partnerRef = doc(db, "partners", editingPartner.id);
+      // Create an update object with all fields from editingPartner
+      // excluding id (as it's the document id) and createdAt (we don't want to modify this)
+      const { id, createdAt, ...updateData } = editingPartner;
+      
+      await updateDoc(partnerRef, updateData);
+      
+      // Update local state
+      setPartners(prev => 
+        prev.map(partner => 
+          partner.id === editingPartner.id 
+            ? editingPartner
+            : partner
+        )
+      );
+      
+      setEditingPartner(null);
+    } catch (error) {
+      console.error("Error updating partner:", error);
+      alert("Failed to update partner. Please try again.");
+    } finally {
+      setSavingPartner(false);
+    }
   };
   return (
     <div className={`${isMobile ? 'p-2' : 'p-4 md:p-6'}`}>
@@ -248,6 +349,26 @@ const AdminPartnersManager: React.FC = () => {
             </div>
             
             <div>
+              <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-300 mb-1`}>Partner Type*</label>
+              <select
+                className={`w-full ${isMobile ? 'px-2 py-2 text-xs' : 'px-3 py-2 text-sm'} bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none`}
+                value={newPartner.type || ''}
+                onChange={(e) => setNewPartner({...newPartner, type: e.target.value})}
+                required
+              >
+                <option value="">Select Type</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Event">Event</option>
+                <option value="Technical">Technical</option>
+                <option value="NFT">NFT</option>
+                <option value="Network">Network</option>
+                <option value="Listing">Listing</option>
+                <option value="Partnership">Partnership</option>
+                <option value="Consulting">Consulting</option>
+              </select>
+            </div>
+            
+            <div>
               <button
                 type="submit"
                 className={`bg-orange-500 text-white ${isMobile ? 'px-3 py-2 text-xs' : 'px-4 py-2 text-sm'} rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow`}
@@ -273,43 +394,99 @@ const AdminPartnersManager: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {partners.map((partner) => (
-                <div key={partner.id} className={`bg-black/40 rounded-lg ${isMobile ? 'p-2' : 'p-3'} border border-gray-700 flex items-center justify-between`}>
-                  <div className={`flex items-center ${isMobile ? 'space-x-2' : 'space-x-3'}`}>
-                    <div className={`${isMobile ? 'w-8 h-8' : 'w-12 h-12'} bg-black/50 rounded-md border border-gray-600 flex items-center justify-center overflow-hidden`}>
-                      <img 
-                        src={partner.logoUrl} 
-                        alt={partner.name} 
-                        className="max-w-full max-h-full object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/favicon2x.png'; // Fallback image
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <h4 className={`font-semibold text-orange-200 ${isMobile ? 'text-xs' : ''}`}>{partner.name}</h4>
-                      {partner.website && (
-                        <a 
-                          href={partner.website} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className={`${isMobile ? 'text-xs' : 'text-xs'} text-blue-400 hover:text-blue-300`}
+              {partners.map((partner) => {
+                const isExpanded = expandedPartners.has(partner.id);
+                return (
+                  <div key={partner.id} className={`bg-black/40 rounded-lg ${isMobile ? 'p-2' : 'p-3'} border border-gray-700 transition-all duration-200 hover:border-orange-500/50 cursor-pointer`}>
+                    <div 
+                      className={`flex items-center justify-between`}
+                      onClick={() => togglePartnerExpansion(partner.id)}
+                    >
+                      <div className={`flex items-center ${isMobile ? 'space-x-2' : 'space-x-3'}`}>
+                        <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} bg-black/50 rounded-md border border-gray-600 flex items-center justify-center overflow-hidden flex-shrink-0`}>
+                          <img 
+                            src={partner.logoUrl} 
+                            alt={partner.name} 
+                            className="max-w-full max-h-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/favicon2x.png'; // Fallback image
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <h4 className={`font-semibold text-orange-200 ${isMobile ? 'text-xs' : 'text-sm'}`}>{partner.name}</h4>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        {partner.type && (
+                          <span className={`${isMobile ? 'text-xs' : 'text-sm'} bg-blue-500/20 text-blue-400 px-2 py-1 rounded-md border border-blue-500/30`}>
+                            {partner.type}
+                          </span>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePartnerDiscountClick(partner.id, partner.discount);
+                          }}
+                          className={`${isMobile ? 'text-xs px-1 py-1' : 'text-sm px-2 py-1'} text-green-500 hover:text-green-600 font-semibold`}
+                          title="Click to edit discount"
                         >
-                          {partner.website}
-                        </a>
-                      )}
+                          {partner.discount ? `${partner.discount}% OFF` : 'Add Discount'}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditPartner(partner);
+                          }}
+                          className={`${isMobile ? 'text-xs px-1 py-1' : 'text-sm px-2 py-1'} text-yellow-400 hover:text-yellow-300 hover:bg-yellow-900/30 rounded`}
+                          title="Edit partner"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePartner(partner.id);
+                          }}
+                          className={`${isMobile ? 'text-xs px-1 py-1' : 'text-sm px-2 py-1'} text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded`}
+                          title="Delete partner"
+                        >
+                          Delete
+                        </button>
+                        <span className={`text-gray-400 text-sm transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                          ↓
+                        </span>
+                      </div>
                     </div>
+                    
+                    {/* Expanded details */}
+                    {isExpanded && (
+                      <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-400 mt-3 pt-3 border-t border-gray-600`}>
+                        {partner.website && (
+                          <a 
+                            href={partner.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-blue-400 hover:text-blue-300 break-all block mb-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {partner.website}
+                          </a>
+                        )}
+                        {partner.description && (
+                          <p className="mt-1 text-gray-500 mb-2">{partner.description}</p>
+                        )}
+                        <div className="flex flex-col space-y-1">
+                          <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500`}>
+                            📅 Added: {new Date(partner.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  
-                  <button
-                    onClick={() => handleDeletePartner(partner.id)}
-                    className={`${isMobile ? 'text-xs px-1 py-1' : 'text-sm px-2 py-1'} text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded`}
-                    title="Delete partner"
-                  >
-                    Delete
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>        {/* VIP Companies Section */}
@@ -424,7 +601,7 @@ const AdminPartnersManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Discount Edit Modal */}
+      {/* VIP Company Discount Edit Modal */}
       {editingDiscount && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleDiscountCancel}>
           <div 
@@ -461,6 +638,135 @@ const AdminPartnersManager: React.FC = () => {
                 </button>
                 <button
                   onClick={handleDiscountCancel}
+                  className={`flex-1 bg-gray-600 text-white ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2 text-base'} rounded-lg hover:bg-gray-700 font-semibold`}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Partner Discount Edit Modal */}
+      {editingPartnerDiscount && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handlePartnerDiscountCancel}>
+          <div 
+            className={`bg-gray-900 border border-gray-700 rounded-xl ${isMobile ? 'p-4 mx-4 w-full max-w-sm' : 'p-6 w-96'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-orange-300 mb-4`}>
+              Edit Partner Discount
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-300 mb-2`}>
+                  Discount Percentage (0-100%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={newPartnerDiscount}
+                  onChange={(e) => setNewPartnerDiscount(Number(e.target.value))}
+                  className={`w-full ${isMobile ? 'px-2 py-2 text-sm' : 'px-3 py-2 text-base'} bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none`}
+                  placeholder="Enter discount percentage"
+                />
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={handlePartnerDiscountSave}
+                  disabled={savingPartnerDiscount}
+                  className={`flex-1 bg-green-500 text-white ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2 text-base'} rounded-lg hover:bg-green-600 disabled:opacity-60 font-semibold`}
+                >
+                  {savingPartnerDiscount ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={handlePartnerDiscountCancel}
+                  className={`flex-1 bg-gray-600 text-white ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2 text-base'} rounded-lg hover:bg-gray-700 font-semibold`}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Partner Edit Modal */}
+      {editingPartner && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handlePartnerCancel}>
+          <div 
+            className={`bg-gray-900 border border-gray-700 rounded-xl ${isMobile ? 'p-4 mx-4 w-full max-w-sm' : 'p-6 w-96'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-orange-300 mb-4`}>
+              Edit Partner
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-300 mb-1`}>Partner Name*</label>
+                <input
+                  type="text"
+                  className={`w-full ${isMobile ? 'px-2 py-2 text-sm' : 'px-3 py-2 text-base'} bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none`}
+                  value={editingPartner.name}
+                  onChange={(e) => setEditingPartner({...editingPartner, name: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-300 mb-1`}>Website URL</label>
+                <input
+                  type="text"
+                  className={`w-full ${isMobile ? 'px-2 py-2 text-sm' : 'px-3 py-2 text-base'} bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none`}
+                  value={editingPartner.website}
+                  onChange={(e) => setEditingPartner({...editingPartner, website: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-300 mb-1`}>Description</label>
+                <textarea
+                  className={`w-full ${isMobile ? 'px-2 py-2 text-sm' : 'px-3 py-2 text-base'} bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none`}
+                  rows={3}
+                  value={editingPartner.description}
+                  onChange={(e) => setEditingPartner({...editingPartner, description: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-300 mb-1`}>Partner Type</label>
+                <select
+                  className={`w-full ${isMobile ? 'px-2 py-2 text-sm' : 'px-3 py-2 text-base'} bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none`}
+                  value={editingPartner.type || ''}
+                  onChange={(e) => setEditingPartner({...editingPartner, type: e.target.value})}
+                >
+                  <option value="">Select Type</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Event">Event</option>
+                  <option value="Technical">Technical</option>
+                  <option value="NFT">NFT</option>
+                  <option value="Network">Network</option>
+                  <option value="Listing">Listing</option>
+                  <option value="Partnership">Partnership</option>
+                  <option value="Consulting">Consulting</option>
+                </select>
+              </div>
+              
+              <div className="flex space-x-3 pt-2">
+                <button
+                  onClick={handlePartnerSave}
+                  disabled={savingPartner}
+                  className={`flex-1 bg-orange-500 text-white ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2 text-base'} rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold`}
+                >
+                  {savingPartner ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
+                  onClick={handlePartnerCancel}
                   className={`flex-1 bg-gray-600 text-white ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2 text-base'} rounded-lg hover:bg-gray-700 font-semibold`}
                 >
                   Cancel
