@@ -1,6 +1,5 @@
 import { initializeApp, getApps, cert, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { fixPrivateKey, validatePrivateKey } from './privateKeyFixer';
 
 /**
  * Inicializa o Firebase Admin SDK com melhorias para v13.x
@@ -42,28 +41,15 @@ export function initAdmin() {
       else if (privateKey && clientEmail) {
         console.log('🔑 Usando credenciais de Service Account...');
         
-        // Usar o corretor de chave privada para compatibilidade v13.x
+        // Corrigir formato da chave privada
         console.log('🔧 Corrigindo formatação da chave privada...');
-        let cleanPrivateKey: string;
+        let cleanPrivateKey = privateKey.replace(/\\n/g, '\n');
         
-        try {
-          cleanPrivateKey = fixPrivateKey(privateKey);
-          const validation = validatePrivateKey(cleanPrivateKey);
-          
-          if (!validation.isValid) {
-            console.error('❌ Chave privada inválida:', validation.errors);
-            throw new Error(`Chave privada inválida: ${validation.errors.join(', ')}`);
-          }
-          
-          if (validation.warnings.length > 0) {
-            console.warn('⚠️ Avisos da chave privada:', validation.warnings);
-          }
-          
-          console.log('✅ Chave privada corrigida e validada');
-        } catch (keyError) {
-          console.error('❌ Erro ao corrigir chave privada:', keyError);
-          throw new Error(`Falha na correção da chave privada: ${keyError instanceof Error ? keyError.message : 'Unknown error'}`);
+        if (!cleanPrivateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+          throw new Error('Formato da chave privada inválido');
         }
+        
+        console.log('✅ Chave privada corrigida');
         
         const credential = cert({
           projectId: projectId,

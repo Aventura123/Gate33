@@ -35,7 +35,7 @@ const AdminLoginPage: React.FC = () => {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify({ email: username, password: password })
+        body: JSON.stringify({ username: username, password: password })
       });
 
       console.log("Response status:", res.status);

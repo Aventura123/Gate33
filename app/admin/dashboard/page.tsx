@@ -1280,8 +1280,8 @@ const fetchEmployersList = async () => {
   const filteredEmployers = employers.filter((employer) => {
     const query = searchQuery.toLowerCase();
     return (
-      employer.name?.toLowerCase().includes(query) ||
-      employer.email.toLowerCase().includes(query) ||
+      (employer.name || "").toLowerCase().includes(query) ||
+      (employer.email || "").toLowerCase().includes(query) ||
       (employer.companyName || "").toLowerCase().includes(query)
     );
   });
