@@ -134,6 +134,7 @@ function SeekerLoginForm() {
 
 // Separate component for companies login that uses the company API
 function CompanyLoginForm() {
+  const { loginWithEmail } = useAuth(); // Usar AuthProvider
   const [companyEmail, setCompanyEmail] = useState("");
   const [companyPassword, setCompanyPassword] = useState("");
   const [error, setError] = useState("");
@@ -152,45 +153,12 @@ function CompanyLoginForm() {
     }
 
     try {
-      // Use the company API endpoint for authentication
-      const res = await fetch("/api/company/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({ email: companyEmail, password: companyPassword })
-      });
-
-      const data = await res.json();      if (res.ok) {
-        // Save token and company data in localStorage
-        if (data.company) {
-          // The dashboard expects the token to be the company ID encoded in base64
-          const companyIdToken = btoa(data.company.id);
-          localStorage.setItem("token", companyIdToken);
-          localStorage.setItem("companyId", data.company.id);
-          localStorage.setItem("companyName", data.company.name || companyEmail);
-          
-          if (data.company.firebaseUid) {
-            localStorage.setItem("companyFirebaseUid", data.company.firebaseUid);
-          }
-          
-          // Also save the Firebase token if needed for other operations
-          if (data.token) {
-            localStorage.setItem("firebaseToken", data.token);
-          }
-        }
-
-        // Set authentication cookie
-        document.cookie = "isAuthenticated=true; path=/; max-age=86400"; // 24 hours
-        
-        router.replace("/company-dashboard");
-      } else {
-        setError(data.error || "Invalid email or password or company not approved.");
-      }
+      // Usar AuthProvider em vez da API customizada para garantir sincronização dos claims
+      await loginWithEmail(companyEmail, companyPassword, 'company');
+      router.replace("/company-dashboard");
     } catch (err: any) {
       console.error("Error during company login:", err);
-      setError("An error occurred during login. Please try again.");
+      setError(err.message || "Invalid email or password or company not approved.");
     } finally {
       setIsLoading(false);
     }
@@ -250,10 +218,10 @@ function CompanyLoginForm() {
         {isLoading ? "Logging in..." : "Login as Company"}
       </button>
       <div className="mt-6 text-center">
-        <p className="text-gray-600">
-          Don't have a company account?{" "}
+        <p className="text-gray-600 text-sm">
+          Company accounts require admin approval.{" "}
           <Link href="/company-register" className="text-orange-500 hover:text-orange-700 font-medium">
-            Sign up
+            Request access
           </Link>
         </p>
       </div>

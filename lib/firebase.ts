@@ -25,12 +25,11 @@ console.log("Firebase initialized successfully");
 console.log("Initializing Firebase services...");
 const auth = getAuth(app);
 const db = getFirestore(app);
-let storage = getStorage(app);
 
-// Ensure the correct bucket is used
-console.log("Updating Firebase Storage to use the correct bucket...");
-storage = getStorage(app, `gs://${firebaseConfig.storageBucket}`);
-console.log("Firebase Storage updated successfully.");
+// Initialize storage with correct configuration
+console.log("Initializing Firebase Storage...");
+const storage = getStorage(app);
+console.log("Firebase Storage initialized successfully with bucket:", firebaseConfig.storageBucket);
 
 // Define a type for the storage error
 interface StorageErrorType {

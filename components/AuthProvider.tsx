@@ -21,6 +21,9 @@ import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where,
 // Import firebase app reference
 import firebase, { auth, db } from '../lib/firebase';
 
+// Import the synchronization utility
+import { syncUserRoleWithFirebase } from '../utils/firebaseAuthSync';
+
 // Define types for user roles
 export type UserRole = 'seeker' | 'company' | 'admin' | 'support';
 
@@ -53,22 +56,68 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       
-      // Try to determine user role from localStorage
-      if (user) {        // Try to determine role based on tokens in localStorage
-        if (localStorage.getItem('seekerToken')) {
-          setUserRole('seeker');
-        } else if (localStorage.getItem('companyToken') || localStorage.getItem('token') || localStorage.getItem('companyId')) {
-          setUserRole('company');
-        } else if (localStorage.getItem('adminToken')) {
-          setUserRole('admin');
-        } else if (localStorage.getItem('supportToken')) {
-          setUserRole('support');
-        } else {
-          // Default to the initial role
-          setUserRole(initialRole);
+      if (user) {
+        try {
+          // Obter token e claims atualizados
+          const idToken = await user.getIdToken(true);
+          const idTokenResult = await user.getIdTokenResult();
+          
+          // Atualizar token no localStorage
+          localStorage.setItem('firebaseToken', idToken);
+          localStorage.setItem('firebaseUid', user.uid);
+          
+          // Determinar role baseado nos claims ou localStorage
+          let userRole: UserRole | null = null;
+          
+          if (idTokenResult.claims.role) {
+            userRole = idTokenResult.claims.role as UserRole;
+            localStorage.setItem('userRole', userRole);
+          } else {
+            // Fallback: tentar determinar role baseado nos tokens existentes
+            if (localStorage.getItem('seekerToken')) {
+              userRole = 'seeker';
+            } else if (localStorage.getItem('companyToken') || localStorage.getItem('token') || localStorage.getItem('companyId')) {
+              userRole = 'company';
+            } else if (localStorage.getItem('adminToken')) {
+              userRole = 'admin';
+            } else if (localStorage.getItem('supportToken')) {
+              userRole = 'support';
+            } else {
+              userRole = initialRole;
+            }
+          }
+          
+          setUserRole(userRole);
+          
+          console.log('Auth state updated:', {
+            uid: user.uid,
+            email: user.email,
+            role: userRole,
+            claims: idTokenResult.claims
+          });
+          
+        } catch (error) {
+          console.error('Erro ao processar mudança de auth state:', error);
+          
+          // Fallback para role baseado em localStorage
+          if (localStorage.getItem('seekerToken')) {
+            setUserRole('seeker');
+          } else if (localStorage.getItem('companyToken') || localStorage.getItem('token') || localStorage.getItem('companyId')) {
+            setUserRole('company');
+          } else if (localStorage.getItem('adminToken')) {
+            setUserRole('admin');
+          } else if (localStorage.getItem('supportToken')) {
+            setUserRole('support');
+          } else {
+            setUserRole(initialRole);
+          }
         }
       } else {
         setUserRole(null);
+        // Limpar tokens do Firebase
+        localStorage.removeItem('firebaseToken');
+        localStorage.removeItem('firebaseUid');
+        localStorage.removeItem('userRole');
       }
       
       setLoading(false);
@@ -126,6 +175,9 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
       setUserRole('seeker');
       localStorage.setItem('seekerToken', btoa(result.user.uid));
       
+      // Sincronizar o papel do usuário com o Firebase Auth para as regras do Firestore funcionarem
+      await syncUserRoleWithFirebase(result.user, 'seeker');
+      
       return result.user;
     } catch (err: any) {
       setError(err.message || 'Failed to login with Google');
@@ -162,7 +214,17 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
         }
         
         localStorage.setItem('seekerToken', btoa(result.user.uid));
+        // Manter compatibilidade com alguns componentes que esperam estes valores
+        const seekerData = seekerSnap.data();
+        if (seekerData?.id) {
+          localStorage.setItem("token", btoa(seekerData.id));
+        }
+        
         setUserRole('seeker');
+        
+        // Sincronizar o papel do usuário com o Firebase Auth
+        await syncUserRoleWithFirebase(result.user, 'seeker');
+        
         return result.user;
         
       } else if (role === 'company') {
@@ -173,8 +235,8 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
         const companySnap = await getDoc(companyRef);
         
         if (!companySnap.exists()) {
-          console.log('Company document not found, looking by email...');
-          // Check if this email exists in seekers collection
+          console.log('Company document not found by UID, looking by email...');
+          // Check if this email exists in seekers collection first
           const seekersRef = collection(db, 'seekers');
           const seekerQuery = query(seekersRef, where('email', '==', email));
           const seekerSnap = await getDocs(seekerQuery);
@@ -184,33 +246,23 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
             throw new Error('This email belongs to a job seeker account. Please login as a job seeker.');
           }
           
-          // Procurar por email se não encontrar pelo UID
+          // Look for company by email - this should not happen if properly migrated
           const companiesRef = collection(db, 'companies');
           const emailQuery = query(companiesRef, where('email', '==', email));
           const emailSnap = await getDocs(emailQuery);
           
           if (!emailSnap.empty) {
-            console.log('Found company by email, migrating...');
-            const existingCompanyData = emailSnap.docs[0].data();
-            const existingCompanyId = emailSnap.docs[0].id;
-            
-            // Migrar dados para o novo UID
-            await setDoc(companyRef, {
-              ...existingCompanyData,
-              firebaseAuthUid: result.user.uid,
-              migratedAt: new Date()
-            });
-            
-            console.log('Company migrated successfully');
+            console.log('Found company by email but not by UID - migration issue');
+            await signOut(auth);
+            throw new Error('Company account found but not properly migrated. Please contact support.');
           } else {
             await signOut(auth); // Sign out from Firebase
             throw new Error('Company account not found. Please register as a company.');
           }
         }
         
-        // Re-fetch company data
-        const finalCompanySnap = await getDoc(companyRef);
-        const companyData = finalCompanySnap.data();
+        // Company found, check if approved
+        const companyData = companySnap.data();
         
         if (!companyData?.approved && companyData?.status !== 'approved') {
           await signOut(auth); // Sign out from Firebase
@@ -218,7 +270,21 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
         }
         
         localStorage.setItem('companyToken', btoa(result.user.uid));
+        // Manter compatibilidade com o dashboard que espera estes valores
+        localStorage.setItem("token", btoa(companyData.id || result.user.uid));
+        localStorage.setItem("companyId", companyData.id || result.user.uid);
+        localStorage.setItem("companyName", companyData.companyName || companyData.name || result.user.email || "Company");
+        localStorage.setItem("companyEmail", result.user.email || "");
+        localStorage.setItem("companyFirebaseUid", result.user.uid);
+        
+        // Set authentication cookie
+        document.cookie = "isAuthenticated=true; path=/; max-age=86400"; // 24 hours
+        
         setUserRole('company');
+        
+        // Sincronizar o papel do usuário com o Firebase Auth
+        await syncUserRoleWithFirebase(result.user, 'company');
+        
         return result.user;
       } else {
         await signOut(auth); // Sign out from Firebase
@@ -272,6 +338,9 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
         localStorage.setItem('seekerToken', btoa(result.user.uid));
         setUserRole('seeker');
         
+        // Sincronizar o papel do usuário com o Firebase Auth
+        await syncUserRoleWithFirebase(result.user, 'seeker');
+        
         return result.user;
       } else {
         throw new Error(`Sign up via Firebase is only available for seeker accounts`);
@@ -288,6 +357,8 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
       if (userRole === 'seeker') {
         await signOut(auth);
         localStorage.removeItem('seekerToken');
+        // Remover também tokens de compatibilidade
+        localStorage.removeItem('token');
       } else if (userRole === 'company') {
         await signOut(auth);
         localStorage.removeItem('companyToken');
@@ -295,7 +366,9 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
         localStorage.removeItem('token');
         localStorage.removeItem('companyId');
         localStorage.removeItem('companyName');
-        localStorage.removeItem('companyPhoto');
+        localStorage.removeItem('companyEmail');
+        localStorage.removeItem('companyFirebaseUid');
+        localStorage.removeItem('firebaseToken');
       } else if (userRole === 'admin') {
         localStorage.removeItem('adminToken');
       } else if (userRole === 'support') {

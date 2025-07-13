@@ -4,7 +4,8 @@ import React, { useState, useEffect, JSX, useCallback } from "react";
 import FullScreenLayout from "../../components/FullScreenLayout";
 import { useRouter } from "next/navigation";
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, updateDoc, onSnapshot, orderBy, serverTimestamp, writeBatch } from "firebase/firestore";
-import { db } from "../../lib/firebase";
+import { db, auth } from "../../lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 // Import payment related services
 import web3Service from "../../services/web3Service";
 import smartContractService from "../../services/smartContractService";
@@ -281,15 +282,29 @@ const PostJobPage = (): JSX.Element => {
 
   const checkAuthentication = () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Token not found");
+      // Priorizar Firebase UID para companies migradas
+      const firebaseUid = localStorage.getItem("companyFirebaseUid");
+      const legacyToken = localStorage.getItem("token");
+      
+      console.log('[Auth] Firebase UID from localStorage:', firebaseUid);
+      console.log('[Auth] Legacy token from localStorage:', legacyToken);
+      
+      if (firebaseUid) {
+        // Company migrada para Firebase Auth - usar UID
+        console.log("Using Firebase UID for company:", firebaseUid);
+        setCompanyId(firebaseUid);
+        fetchCompanyPhoto(firebaseUid);
+      } else if (legacyToken) {
+        // Company ainda no sistema legado
+        const decodedToken = atob(legacyToken);
+        console.log("Using legacy token for company:", decodedToken);
+        setCompanyId(decodedToken);
+        fetchCompanyPhoto(decodedToken);
+      } else {
+        throw new Error("No authentication token found");
       }
-      const decodedToken = atob(token);
-      setCompanyId(decodedToken);
-      fetchCompanyPhoto(decodedToken);
     } catch (error) {
-      console.error("Error decoding token:", error);
+      console.error("Error in authentication check:", error);
       router.replace("/login");
     }
   };  const fetchCompanyPhoto = async (id: string) => {
@@ -442,25 +457,75 @@ const PostJobPage = (): JSX.Element => {
 
   // Fetch initial data on mount and when companyId changes
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
+    // Priorizar Firebase UID para companies migradas
+    const firebaseUid = localStorage.getItem("companyFirebaseUid");
+    const legacyToken = localStorage.getItem("token");
+    
+    if (firebaseUid || legacyToken) {
       try {
-        if (!token) {
+        const effectiveCompanyId = firebaseUid || (legacyToken ? atob(legacyToken) : null);
+        if (!effectiveCompanyId) {
           throw new Error("Token is missing or invalid.");
         }
-        const decodedToken = atob(token);
-        setCompanyId(decodedToken);        // Fetch data once companyId is set
-        fetchCompanyPhoto(decodedToken);
-        fetchCompanyProfile(decodedToken); // Fetch profile initially        // Fetch jobs related to this company
+        
+        setCompanyId(effectiveCompanyId);
+        
+        // Fetch data once companyId is set
+        fetchCompanyPhoto(effectiveCompanyId);
+        fetchCompanyProfile(effectiveCompanyId); // Fetch profile initially
+        
+        // Fetch jobs related to this company
         const fetchInitialJobs = async () => {
           if (!db) return;
-          console.log('[Jobs] Fetching initial jobs for companyId:', decodedToken);
+          console.log('[Jobs] Fetching initial jobs for companyId:', effectiveCompanyId);
+          
+          // Primeiro, tentar buscar jobs com o ID atual
           const jobCollection = collection(db, "jobs");
-          const q = query(jobCollection, where("companyId", "==", decodedToken));
-          const jobSnapshot = await getDocs(q);
+          let q = query(jobCollection, where("companyId", "==", effectiveCompanyId));
+          let jobSnapshot = await getDocs(q);
+          
+          console.log('[Jobs] Found', jobSnapshot.size, 'jobs with current ID');
+          
+          // Se não encontrar jobs e for uma company migrada, tentar com oldFirestoreId
+          if (jobSnapshot.empty && firebaseUid) {
+            console.log('[Jobs] No jobs found with Firebase UID, checking for old Firestore ID...');
+            
+            // Buscar dados da company para pegar oldFirestoreId
+            const companyRef = doc(db, "companies", effectiveCompanyId);
+            const companySnap = await getDoc(companyRef);
+            
+            if (companySnap.exists()) {
+              const companyData = companySnap.data();
+              const oldId = companyData.oldFirestoreId;
+              
+              if (oldId && oldId !== effectiveCompanyId) {
+                console.log('[Jobs] Trying with old Firestore ID:', oldId);
+                const qByOldId = query(jobCollection, where("companyId", "==", oldId));
+                const jobsByOldId = await getDocs(qByOldId);
+                console.log('[Jobs] Found', jobsByOldId.size, 'jobs with old ID');
+                
+                if (!jobsByOldId.empty) {
+                  jobSnapshot = jobsByOldId;
+                }
+              }
+              
+              // Se ainda não encontrou e temos company name, tentar por nome
+              if (jobSnapshot.empty && companyData.name) {
+                console.log('[Jobs] Trying with company name:', companyData.name);
+                const qByName = query(jobCollection, where("company", "==", companyData.name));
+                const jobsByName = await getDocs(qByName);
+                console.log('[Jobs] Found', jobsByName.size, 'jobs by company name');
+                
+                if (!jobsByName.empty) {
+                  jobSnapshot = jobsByName;
+                }
+              }
+            }
+          }
+          
           const now = new Date();
           const batch = writeBatch(db);
-            const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => {
+          const fetchedJobs: Job[] = jobSnapshot.docs.map((doc) => {
             const data = doc.data();
             const expiresAt = data.expiresAt?.toDate?.() || null;
             
@@ -488,9 +553,30 @@ const PostJobPage = (): JSX.Element => {
           
           // Also fetch instant jobs when the component mounts
           try {
-            console.log('[InstantJobs] Loading initial jobs for companyId:', decodedToken);
-            const instantJobs = await instantJobsService.getInstantJobsByCompany(decodedToken);
-            console.log('[InstantJobs] Initial jobs fetched:', instantJobs);
+            console.log('[InstantJobs] Loading initial jobs for companyId:', effectiveCompanyId);
+            let instantJobs = await instantJobsService.getInstantJobsByCompany(effectiveCompanyId);
+            console.log('[InstantJobs] Found', instantJobs.length, 'jobs with current ID');
+            
+            // Se não encontrou instant jobs e for uma company migrada, tentar com oldFirestoreId
+            if (instantJobs.length === 0 && firebaseUid) {
+              console.log('[InstantJobs] Trying with old Firestore ID...');
+              
+              const companyRef = doc(db, "companies", effectiveCompanyId);
+              const companySnap = await getDoc(companyRef);
+              
+              if (companySnap.exists()) {
+                const companyData = companySnap.data();
+                const oldId = companyData.oldFirestoreId;
+                
+                if (oldId && oldId !== effectiveCompanyId) {
+                  console.log('[InstantJobs] Trying with old ID:', oldId);
+                  instantJobs = await instantJobsService.getInstantJobsByCompany(oldId);
+                  console.log('[InstantJobs] Found', instantJobs.length, 'jobs with old ID');
+                }
+              }
+            }
+            
+            console.log('[InstantJobs] Final instant jobs loaded:', instantJobs.length);
             setInstantJobs(instantJobs);
           } catch (error) {
             console.error('Error loading initial instant jobs:', error);
@@ -504,7 +590,14 @@ const PostJobPage = (): JSX.Element => {
     } else {
       router.replace("/login");
     }
-  }, [router, fetchCompanyProfile]); // Add fetchCompanyProfile dependency
+  }, []); // Empty dependency array - only run on mount
+
+  // Secondary useEffect to fetch data when companyId changes
+  useEffect(() => {
+    if (companyId) {
+      fetchCompanyProfile(companyId);
+    }
+  }, [companyId, fetchCompanyProfile]);
 
   // Fix the conditional in the useEffect for reloading data
   useEffect(() => {

@@ -1,0 +1,139 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ========== LEITURA GLOBAL ==========
+    match /{document=**} {
+      allow read: if true;
+    }
+
+    // ========== FUNÇÕES AUXILIARES ==========
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && 
+        request.auth.token != null && 
+        request.auth.token.role == role;
+    }
+    
+    function isAdmin() {
+      return hasRole('admin') || 
+        (isAuthenticated() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+    
+    function isCompany() {
+      return hasRole('company') || 
+        (isAuthenticated() && exists(/databases/$(database)/documents/companies/$(request.auth.uid)));
+    }
+    
+    function isSeeker() {
+      return hasRole('seeker') || 
+        (isAuthenticated() && exists(/databases/$(database)/documents/seekers/$(request.auth.uid)));
+    }
+
+    // ========== UTILIZADORES (SIGNUP SEM AUTH) ==========
+    match /users/{userId} {
+      allow create: if true; // signup
+      allow update, delete: if isOwner(userId) || isAdmin();
+    }
+    
+    match /seekers/{userId} {
+      allow create: if true; // signup
+      allow update, delete: if isOwner(userId) || isSeeker() || isAdmin();
+    }
+    
+    match /companies/{userId} {
+      allow create: if true; // signup
+      allow update, delete: if isOwner(userId) || isCompany() || isAdmin();
+    }
+
+    // ========== APENAS ADMIN ==========
+    match /admins/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /settings/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /monitoring/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /config/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /systemLogs/{docId} {
+      allow write: if isAdmin();
+    }
+
+    // ========== COMPANIES + ADMIN ==========
+    match /jobs/{docId} {
+      allow write: if isCompany() || isAdmin();
+    }
+    
+    match /jobPlans/{docId} {
+      allow write: if isCompany() || isAdmin();
+    }
+    
+    match /instantJobs/{docId} {
+      allow write: if isCompany() || isAdmin();
+    }
+
+    // ========== SEEKERS + ADMIN ==========
+    match /applications/{docId} {
+      allow write: if isSeeker() || isAdmin();
+    }
+    
+    match /learn2earn/{docId} {
+      allow write: if isSeeker() || isAdmin();
+    }
+    
+    match /nfts/{docId} {
+      allow write: if isSeeker() || isAdmin();
+    }
+
+    // ========== QUALQUER UTILIZADOR AUTENTICADO ==========
+    match /notifications/{docId} {
+      allow write: if isAuthenticated();
+    }
+    
+    match /payments/{docId} {
+      allow write: if isAuthenticated();
+    }
+    
+    match /transactions/{docId} {
+      allow write: if isAuthenticated();
+    }
+    
+    match /balances/{docId} {
+      allow write: if isAuthenticated();
+    }
+
+    // ========== ESPECIAIS ==========
+    match /passwordResets/{docId} {
+      allow write: if true; // reset password sem auth
+    }
+    
+    match /pendingCompanies/{docId} {
+      allow create: if true; // qualquer um pode candidatar-se
+      allow update, delete: if isAdmin();
+    }
+
+    // ========== TESTES (APENAS DESENVOLVIMENTO) ==========
+    match /firestore-write-test/{docId} {
+      allow write: if true;
+    }
+    
+    match /write-test/{docId} {
+      allow write: if true;
+    }
+  }
+}

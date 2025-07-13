@@ -26,6 +26,12 @@ yarn-error.log*
 # environment files - exclude all .env files
 .env*
 
+# firestore rules documentation (sensitive)
+firestore-rules-gate33.md
+firestore-rules-gatex.md
+firestore-rules-gate33-DEFINITIVAS.md
+firestore-rules-gatex-DEFINITIVAS.md
+
 # vercel
 .vercel
 .vercelignore
