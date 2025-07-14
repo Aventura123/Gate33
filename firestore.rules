@@ -96,6 +96,11 @@ service cloud.firestore {
       allow write: if isSeeker() || isAdmin();
     }
     
+    match /learn2earnParticipants/{docId} {
+      allow read: if true; // todos podem ler
+      allow write: if isSeeker() || isAdmin(); // apenas seekers autenticados e admins podem escrever
+    }
+    
     match /nfts/{docId} {
       allow write: if isSeeker() || isAdmin();
     }

@@ -93,6 +93,12 @@ module.exports = withPWA({
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
   trailingSlash: false,
+  // Disable automatic prefetching to reduce unnecessary network requests
+  experimental: {
+    optimizePackageImports: ['@headlessui/react', '@heroicons/react'],
+    optimizeCss: false, // Disabled to prevent critters conflict
+    linkNoTouchStart: true, // Disable touch start prefetching
+  },
   // Production-only optimizations
   compress: true,
   generateEtags: true,
@@ -103,6 +109,7 @@ module.exports = withPWA({
   experimental: {
     optimizePackageImports: ['@headlessui/react', '@heroicons/react'],
     optimizeCss: false, // Disabled to prevent critters conflict
+    linkNoTouchStart: true, // Disable touch start prefetching
   },
   // Bundle optimization para reduzir o chunk de vendors
   webpack: (config, { dev, isServer }) => {
