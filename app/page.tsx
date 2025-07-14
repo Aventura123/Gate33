@@ -137,11 +137,21 @@ function Home() {
   const fetchPartners = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/partners');
-      if (!response.ok) {
-        throw new Error('Failed to fetch partners');
-      }
-      const partnersData = await response.json();
+      // Import Firebase methods dynamically (for SSR safety)
+      const { collection, getDocs } = await import("firebase/firestore");
+      const { db } = await import("../lib/firebase");
+      
+      const querySnapshot = await getDocs(collection(db, 'partners'));
+      const partnersData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name || '',
+          logoUrl: data.logoUrl || '',
+          description: data.description || '',
+          website: data.website || ''
+        };
+      });
       setPartners(partnersData);
     } catch (error) {
       console.error('Error fetching partners:', error);
