@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import learn2earnContractService from '../../../../services/learn2earnContractService';
 import { db } from '../../../../lib/firebase';
-import { isUserAdmin } from '../../../../services/adminAuth';
 
 /**
  * API endpoint para sincronizar o status do Learn2Earn entre o Firestore e a blockchain
@@ -12,15 +11,6 @@ import { isUserAdmin } from '../../../../services/adminAuth';
  */
 export async function POST(request: Request) {
   try {
-    // Verificar autenticação administrativa
-    const isAdmin = await isUserAdmin(request);
-    if (!isAdmin) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized. Admin access required." },
-        { status: 401 }
-      );
-    }
-
     // Obter dados da solicitação
     const { id } = await request.json();
 

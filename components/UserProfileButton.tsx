@@ -15,7 +15,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
     name: string;
     photo: string;
     role: string;
-    type: 'seeker' | 'company' | 'admin' | 'support';
+    type: 'seeker' | 'company';
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -38,7 +38,7 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
   const router = useRouter();
 
   // Function to fetch user data from Firebase
-  const fetchUserDataFromFirebase = async (type: string, id: string) => {
+  const fetchUserDataFromFirebase = async (type: 'seeker' | 'company', id: string) => {
     try {
       if (!db) return null;
       
@@ -50,14 +50,6 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
           break;
         case 'seeker':
           collection = 'seekers';
-          break;
-        case 'admin':
-          collection = 'admins';
-          console.log(`Attempting to fetch admin data from 'admins' collection with ID: ${id}`);
-          break;
-        case 'support':
-          collection = 'support';
-          console.log(`Attempting to fetch support data from 'support' collection with ID: ${id}`);
           break;
         default:
           console.warn(`Unknown user type: ${type}`);
@@ -90,71 +82,11 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
       console.log("- seekerId:", localStorage.getItem("seekerId"));
       console.log("- seekerName:", localStorage.getItem("seekerName"));
       console.log("- seekerPhoto:", localStorage.getItem("seekerPhoto"));
-      console.log("- userId:", localStorage.getItem("userId"));
-      console.log("- userName:", localStorage.getItem("userName"));
-      console.log("- userRole:", localStorage.getItem("userRole"));
       console.log("- companyId:", localStorage.getItem("companyId"));
       console.log("- companyName:", localStorage.getItem("companyName"));
       console.log("- token:", localStorage.getItem("token"));
       
       try {
-        // First priority: Check if we have admin/superadmin credentials
-        if (localStorage.getItem("userId") && localStorage.getItem("userRole")) {
-          const userId = localStorage.getItem("userId");
-          const userRole = localStorage.getItem("userRole") || "";
-          const userName = localStorage.getItem("userName");
-          
-          console.log("Found user credentials:", { userId, userRole, userName });
-          
-          // Handle admin users with highest priority
-          if (userRole === "super_admin" || userRole === "admin") {
-            console.log("Processing as admin account");
-            const adminData = await fetchUserDataFromFirebase('admin', userId || "");
-            const formattedRole = userRole === "super_admin" ? "Super Admin" : 
-                             userRole.charAt(0).toUpperCase() + userRole.slice(1);
-
-            // For admins, we need to be careful about the name
-            // Check if userName is "suporte" and avoid using it for admin accounts
-            let adminName;
-            
-            if (userName && userName.toLowerCase() !== "suporte") {
-              adminName = userName;
-              console.log("Using userName from localStorage:", adminName);
-            } else if (adminData?.name) {
-              adminName = adminData.name;
-              console.log("Using name from adminData:", adminName);
-              
-              // Update localStorage with correct name from Firebase
-              console.log("Updating localStorage userName with correct admin name from Firebase");
-              localStorage.setItem("userName", adminData.name);
-            } else {
-              adminName = "Admin";
-              console.log("Using fallback admin name");
-            }
-            
-            console.log("Final admin name:", adminName);
-                             
-            return {
-              name: adminName,
-              photo: adminData?.photoURL || localStorage.getItem("userPhoto") || "/images/default-avatar.png",
-              role: formattedRole,
-              type: 'admin' as const
-            };
-          }
-          
-          // Handle support users only if clearly identified as support
-          else if (userRole === "support" && userId) {
-            console.log("Processing as support account");
-            const supportData = await fetchUserDataFromFirebase('support', userId);
-            return {
-              name: supportData?.name || userName || "Support",
-              photo: supportData?.photoURL || localStorage.getItem("userPhoto") || "/images/default-avatar.png",
-              role: "Support",
-              type: 'support' as const
-            };
-          }
-        }
-        
         // Check seeker
         if (localStorage.getItem("seekerToken")) {
           const seekerId = localStorage.getItem("seekerToken") 
@@ -297,14 +229,8 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
       case 'company':
         router.push("/company-dashboard");
         break;
-      case 'admin':
-        router.push("/admin/dashboard");
-        break;
-      case 'support':
-        router.push("/support-dashboard");
-        break;
       default:
-        // Fallback: go to a generic dashboard or home
+        // Fallback: go to home
         router.push("/");
         break;
     }

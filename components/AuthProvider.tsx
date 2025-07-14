@@ -25,7 +25,7 @@ import firebase, { auth, db } from '../lib/firebase';
 import { syncUserRoleWithFirebase } from '../utils/firebaseAuthSync';
 
 // Define types for user roles
-export type UserRole = 'seeker' | 'company' | 'admin' | 'support';
+export type UserRole = 'seeker' | 'company';
 
 interface AuthContextType {
   user: User | null;
@@ -78,10 +78,6 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
               userRole = 'seeker';
             } else if (localStorage.getItem('companyToken') || localStorage.getItem('token') || localStorage.getItem('companyId')) {
               userRole = 'company';
-            } else if (localStorage.getItem('adminToken')) {
-              userRole = 'admin';
-            } else if (localStorage.getItem('supportToken')) {
-              userRole = 'support';
             } else {
               userRole = initialRole;
             }
@@ -104,10 +100,6 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
             setUserRole('seeker');
           } else if (localStorage.getItem('companyToken') || localStorage.getItem('token') || localStorage.getItem('companyId')) {
             setUserRole('company');
-          } else if (localStorage.getItem('adminToken')) {
-            setUserRole('admin');
-          } else if (localStorage.getItem('supportToken')) {
-            setUserRole('support');
           } else {
             setUserRole(initialRole);
           }
@@ -369,10 +361,6 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
         localStorage.removeItem('companyEmail');
         localStorage.removeItem('companyFirebaseUid');
         localStorage.removeItem('firebaseToken');
-      } else if (userRole === 'admin') {
-        localStorage.removeItem('adminToken');
-      } else if (userRole === 'support') {
-        localStorage.removeItem('supportToken');
       }
       
       setUserRole(null);
