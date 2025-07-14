@@ -93,7 +93,8 @@ interface SeekerProfile {
   yearsOfExperience?: number;
   bio?: string; // Short professional bio/summary
   hourlyRate?: number; // Expected hourly rate
-  availability?: string; // Availability status (e.g., "Full-time", "Part-time", "Weekends only")
+  availabilityStatus?: string; // Availability status (e.g., "Full-time", "Part-time", "Weekends only")
+  availabilityDate?: string; // Date when available to start (YYYY-MM-DD format)
     // Education
   education?: {
     degree: string;
@@ -397,7 +398,8 @@ const SeekerDashboard = () => {
           bio: data.bio || "",
           skills: data.skills || "",
           title: data.title || "",
-          availability: data.availability || "",
+          availabilityStatus: data.availabilityStatus || data.availability || "", // Backward compatibility
+          availabilityDate: data.availabilityDate || "",
           salaryExpectation: data.salaryExpectation || "",
           contractType: data.contractType || "",
           workPreference: data.workPreference || "",
@@ -663,7 +665,8 @@ const SeekerDashboard = () => {
         bio: seekerProfile.bio || "",
         skills: seekerProfile.skills || "",
         title: seekerProfile.title || "",
-        availability: seekerProfile.availability || "",
+        availabilityStatus: seekerProfile.availabilityStatus || "",
+        availabilityDate: seekerProfile.availabilityDate || "",
         salaryExpectation: seekerProfile.salaryExpectation || "",
         contractType: seekerProfile.contractType || "",
         workPreference: seekerProfile.workPreference || "",
@@ -857,7 +860,7 @@ const SeekerDashboard = () => {
       instantJobApplicationsSnapshot.docs.forEach((doc) => {
         batch.delete(doc.ref);
       });
-      
+
       // Delete notifications
       const notificationsQuery = query(collection(db, "notifications"), where("userId", "==", seekerId));
       const notificationsSnapshot = await getDocs(notificationsQuery);
@@ -1193,12 +1196,12 @@ const SeekerDashboard = () => {
                 </div>
               )}
               
-              {seekerProfile.availability && (
+              {seekerProfile.availabilityStatus && (
                 <div className="text-sm text-gray-300 flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {seekerProfile.availability}
+                  {seekerProfile.availabilityStatus}
                 </div>
               )}
             </div>
@@ -2623,16 +2626,38 @@ const SeekerDashboard = () => {
             {/* What I'm Looking For */}
             <h3 className="text-lg md:text-xl font-bold text-orange-400 mb-4">What I'm Looking For</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-6 md:mb-10">
-              <div className="space-y-4 md:space-y-6">                {/* Availability */}
+              <div className="space-y-4 md:space-y-6">
+                {/* Availability Status */}
                 <div>
-                  <label htmlFor="availability" className="block text-sm font-semibold text-gray-300 mb-1">
-                    Availability Date
+                  <label htmlFor="availabilityStatus" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Availability Status
+                  </label>
+                  <select 
+                    id="availabilityStatus"
+                    name="availabilityStatus" 
+                    value={seekerProfile.availabilityStatus ?? ""} 
+                    onChange={handleProfileChange} 
+                    className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                  >
+                    <option value="">Select availability</option>
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Weekends only">Weekends only</option>
+                    <option value="Evenings">Evenings</option>
+                  </select>
+                </div>
+                {/* Availability Date */}
+                <div>
+                  <label htmlFor="availabilityDate" className="block text-sm font-semibold text-gray-300 mb-1">
+                    Available From
                   </label>
                   <input 
-                    id="availability"
+                    id="availabilityDate"
                     type="date" 
-                    name="availability" 
-                    value={seekerProfile.availability ?? ""} 
+                    name="availabilityDate" 
+                    value={seekerProfile.availabilityDate ?? ""} 
                     onChange={handleProfileChange} 
                     className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm" 
                   />
