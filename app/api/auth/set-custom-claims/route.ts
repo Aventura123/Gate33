@@ -7,19 +7,27 @@ export async function POST(request: NextRequest) {
     // Initialize Firebase Admin
     await initAdmin();
     
-    const { uid, customClaims } = await request.json();
+    const body = await request.json();
+    console.log('Received body:', body);
     
-    if (!uid || !customClaims) {
+    // Support both customClaims and claims for backward compatibility
+    const { uid, customClaims, claims } = body;
+    const finalClaims = customClaims || claims;
+    
+    if (!uid || !finalClaims) {
+      console.error('Missing required fields:', { uid: !!uid, customClaims: !!customClaims, claims: !!claims });
       return NextResponse.json(
-        { error: 'Missing uid or customClaims' },
+        { error: 'Missing uid or customClaims/claims' },
         { status: 400 }
       );
     }
     
     // Set custom claims for the user
     const auth = getAuth();
-    await auth.setCustomUserClaims(uid, customClaims);
+    console.log('Setting custom claims for uid:', uid, 'claims:', finalClaims);
+    await auth.setCustomUserClaims(uid, finalClaims);
     
+    console.log('Custom claims set successfully for uid:', uid);
     return NextResponse.json(
       { message: 'Custom claims set successfully' },
       { status: 200 }

@@ -35,7 +35,7 @@ export async function syncUserRoleWithFirebase(
       },
       body: JSON.stringify({
         uid: user.uid,
-        claims: {
+        customClaims: {
           role,
           ...additionalClaims
         }
@@ -92,7 +92,7 @@ export async function syncUserRoleWithFirebase(
             },
             body: JSON.stringify({
               uid: user.uid,
-              claims: {
+              customClaims: {
                 role,
                 ...additionalClaims
               }

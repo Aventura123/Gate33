@@ -13,6 +13,7 @@ import { BellIcon } from '@heroicons/react/24/outline';
 import WalletButton from '../../components/WalletButton';
 import { web3Service } from "../../services/web3Service";
 import NotificationsPanel, { NotificationBell } from '../../components/ui/NotificationsPanel';
+import SupportPanel from '../../components/support/SupportPanel';
 
 const isProduction = process.env.NEXT_PUBLIC_DEPLOY_STAGE === "production";
 
@@ -202,32 +203,7 @@ interface JobApplication {
     status: string; // e.g., 'Applied', 'Interviewing', 'Rejected', 'Offered'
 }
 
-// Interface for Support Ticket
-interface SupportTicket {
-  id: string;
-  seekerId: string;
-  seekerEmail: string;
-  area: string;
-  subject: string;
-  description: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  attachmentUrl?: string;
-  acceptedBy?: string;
-}
-
-// Interface for Support Message
-interface SupportMessage {
-  id: string;
-  ticketId: string;
-  senderId: string;
-  senderType: string;
-  message: string;
-  createdAt: string;
-  read?: boolean;
-  isSystemMessage?: boolean; // Adding this property that was missing
-}
+// Definition of the Notification type for correct typing
 
 // Definition of the Notification type for correct typing
 interface Notification {
@@ -244,7 +220,6 @@ interface Notification {
 
 const SeekerDashboard = () => {
   const [activeTab, setActiveTab] = useState("myProfile"); // Default tab
-  const [activeSupportTab, setActiveSupportTab] = useState<'new' | 'my'>('new');
   const [userPhoto, setUserPhoto] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [seekerId, setSeekerId] = useState("");
@@ -311,86 +286,9 @@ const SeekerDashboard = () => {
   // Add this new state for job applications
   const [myApplications, setMyApplications] = useState<any[]>([]);
   const [isApplyingForJob, setIsApplyingForJob] = useState(false);
-  // Support ticket form state
-  const [ticketArea, setTicketArea] = useState("");
-  const [ticketSubject, setTicketSubject] = useState("");
-  const [ticketDescription, setTicketDescription] = useState("");
-  const [ticketFile, setTicketFile] = useState<File | null>(null);
-  const [ticketLoading, setTicketLoading] = useState(false);
-  const [ticketSuccess, setTicketSuccess] = useState("");
-  const [ticketError, setTicketError] = useState("");
+  // Add Web3 state
 
-  // Support ticket areas (dropdown options)
-  const supportAreas = [
-    "Login/Account",
-    "Job Applications",
-    "Instant Jobs",
-    "Payments",
-    "Profile/Settings",
-    "Other"
-  ];
-
-  // Handle ticket file upload
-  const handleTicketFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setTicketFile(e.target.files[0]);
-    } else {
-      setTicketFile(null);
-    }
-  };
-
-  // Handle ticket submit
-  const handleSubmitTicket = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setTicketError("");
-    setTicketSuccess("");
-    setTicketLoading(true);
-    try {
-      // Upload file if present (optional, can be improved later)
-      let attachmentUrl = "";
-      if (ticketFile) {
-        // Use Firebase Storage helper if available
-        const storageModule = await import("../../lib/firebase");
-        const { storage } = storageModule;
-        const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
-        const fileRef = ref(storage, `support-tickets/${seekerId}/${Date.now()}-${ticketFile.name}`);
-        await uploadBytes(fileRef, ticketFile);
-        attachmentUrl = await getDownloadURL(fileRef);
-      }
-      // Create ticket in Firestore
-      const ticketDoc = {
-        seekerId,
-        seekerEmail: seekerProfile.email,
-        area: ticketArea,
-        subject: ticketSubject,
-        description: ticketDescription,
-        attachmentUrl,
-        status: "open",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      const docRef = await addDoc(collection(db, "supportTickets"), ticketDoc);
-      // Call API to send confirmation email
-      await fetch("/api/support/ticket", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...ticketDoc,
-          ticketId: docRef.id,
-        }),
-      });
-      setTicketSuccess("Your support ticket has been submitted! You will receive a confirmation email shortly.");
-      setTicketArea("");
-      setTicketSubject("");
-      setTicketDescription("");
-      setTicketFile(null);
-    } catch (err: any) {
-      setTicketError("Failed to submit ticket. Please try again later.");
-      console.error("Support ticket error:", err);
-    } finally {
-      setTicketLoading(false);
-    }
-  };
+  // Detect mobile device on client side
 
   // Detect mobile device on client side
   useEffect(() => {
@@ -959,21 +857,7 @@ const SeekerDashboard = () => {
       instantJobApplicationsSnapshot.docs.forEach((doc) => {
         batch.delete(doc.ref);
       });
-
-      // Delete support tickets
-      const supportTicketsQuery = query(collection(db, "supportTickets"), where("seekerId", "==", seekerId));
-      const supportTicketsSnapshot = await getDocs(supportTicketsQuery);
-      supportTicketsSnapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-
-      // Delete support messages
-      const supportMessagesQuery = query(collection(db, "supportMessages"), where("senderId", "==", seekerId));
-      const supportMessagesSnapshot = await getDocs(supportMessagesQuery);
-      supportMessagesSnapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-
+      
       // Delete notifications
       const notificationsQuery = query(collection(db, "notifications"), where("userId", "==", seekerId));
       const notificationsSnapshot = await getDocs(notificationsQuery);
@@ -3272,117 +3156,17 @@ const SeekerDashboard = () => {
     }
   };
 
-  // Support tickets state
-  const [myTickets, setMyTickets] = useState<SupportTicket[]>([]);
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-  const [ticketMessages, setTicketMessages] = useState<SupportMessage[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [loadingTickets, setLoadingTickets] = useState(false);
-
-  // Fetch tickets for this seeker
-  const fetchMyTickets = useCallback(async () => {
-    if (!seekerId || !db) return;
-    setLoadingTickets(true);
-    try {
-      const q = query(collection(db, "supportTickets"), where("seekerId", "==", seekerId));
-      const snapshot = await getDocs(q);
-      const tickets = snapshot.docs.map(doc => ({ 
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt || new Date().toISOString(),
-        updatedAt: doc.data().updatedAt || new Date().toISOString(),
-        status: doc.data().status || 'open',
-        area: doc.data().area || '',
-        subject: doc.data().subject || '',
-      })) as SupportTicket[];
-      setMyTickets(tickets);
-    } catch (err) {
-      console.error("Error fetching support tickets:", err);
-    } finally {
-      setLoadingTickets(false);
-    }
-  }, [seekerId, db]);
-
-  // Fetch messages for a ticket
-  const fetchTicketMessages = useCallback(async (ticketId: string) => {
-    if (!db) return;
-    try {
-      const q = query(
-        collection(db, "supportMessages"), 
-        where("ticketId", "==", ticketId),
-        // Order by createdAt for chronological display
-        orderBy("createdAt", "asc")
-      );
-      const snapshot = await getDocs(q);
-      const messages = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt || new Date().toISOString(),
-      })) as SupportMessage[];
-      setTicketMessages(messages);
-    } catch (err) {
-      console.error("Error fetching ticket messages:", err);
-      setTicketMessages([]);
-    }
-  }, [db]);
-
-  // Handle sending a message to support
-  const handleSendTicketMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedTicket || !newMessage.trim() || !seekerId || !db) return;
-    
-    setSendingMessage(true);
-    try {
-      const messageData = {
-        ticketId: selectedTicket.id,
-        senderId: seekerId,
-        senderType: "seeker",
-        message: newMessage,
-        createdAt: new Date().toISOString(),
-        read: false,
-      };
-      
-      await addDoc(collection(db, "supportMessages"), messageData);
-      setNewMessage("");
-      await fetchTicketMessages(selectedTicket.id);
-    } catch (err) {
-      console.error("Error sending ticket message:", err);
-    } finally {
-      setSendingMessage(false);
-    }
-  };
-
-  // Load tickets when switching to 'my' tab
-  useEffect(() => {
-    if (activeTab === "support" && activeSupportTab === "my") {
-      fetchMyTickets();
-    }
-  }, [activeTab, activeSupportTab, fetchMyTickets]);
-
-  // Load messages when selecting a ticket
-  useEffect(() => {
-    if (selectedTicket) {
-      fetchTicketMessages(selectedTicket.id);
-    } else {
-      setTicketMessages([]);
-    }
-  }, [selectedTicket, fetchTicketMessages]);
-
-  // Only allow sending messages if ticket is open AND acceptedBy is set
-  const canSendMessage = selectedTicket && selectedTicket.status === 'open' && selectedTicket.acceptedBy;
-
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [showNotifications, setShowNotifications] = useState(false);
-  
   // Reference to the end of messages element (for auto-scroll)
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to the last message when new messages are loaded
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [ticketMessages]);
+  }, []);
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Fetch seeker's notifications from the notifications collection every 10s
   useEffect(() => {
@@ -3538,7 +3322,7 @@ const SeekerDashboard = () => {
     interval = setInterval(fetchUnread, 10000);
     return () => clearInterval(interval);
   }, [seekerId]);  return (    <FullScreenLayout>
-      <main className="min-h-screen bg-gradient-to-br from-orange-900 to-black text-white flex relative">        {/* Mobile menu toggle button */}
+      <main className="min-h-screen bg-gradient-to-b from-black to-orange-900 text-white flex relative">        {/* Mobile menu toggle button */}
         {isMobile && (
           <button 
             className="fixed top-20 left-4 z-50 bg-orange-500 text-white p-2 rounded-full shadow-lg"
@@ -3661,203 +3445,21 @@ const SeekerDashboard = () => {
                 <span className="text-sm font-medium">Support</span>
               </button>
             </li>
-          </ul>          <button
-            onClick={handleLogout}
-            className="w-full mt-auto mb-4 bg-red-600 text-white hover:bg-red-700 py-2.5 px-4 rounded-md flex items-center justify-center transition-all duration-200 font-medium"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span className="text-sm font-medium">Logout</span>
-          </button>
+          </ul>
         </aside>{/* Main Content Area */}
         <section className="w-full md:w-3/4 p-4 md:p-8 pt-16 md:pt-20 overflow-y-auto">
           {/* Maintain the render of main contents */}
           {activeTab === "myProfile" && renderMyProfile()}
           {activeTab === "myApplications" && renderMyApplications()}
           {activeTab === "instantJobs" && renderInstantJobsTab()}
-          {activeTab === "settings" && renderSettings()}          {activeTab === "support" && (            <div className="bg-black/70 rounded-lg shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-orange-500 mb-4 text-center">Support</h2>
-              <div className="border-b border-orange-900/60 mb-6"></div>
-              {/* Tabs for New Ticket and My Tickets */}
-              <div className="flex gap-6 mb-6 items-end border-b border-orange-900/60">
-                <button
-                  className={`relative text-base font-semibold mr-2 transition-colors pb-1 ${activeSupportTab === 'new' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
-                  onClick={() => setActiveSupportTab('new')}
-                >
-                  New Ticket
-                  {activeSupportTab === 'new' && (
-                    <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
-                  )}
-                </button>
-                <button
-                  className={`relative text-base font-semibold transition-colors pb-1 ${activeSupportTab === 'my' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
-                  onClick={() => setActiveSupportTab('my')}
-                >
-                  My Tickets
-                  {activeSupportTab === 'my' && (
-                    <span className="absolute left-0 right-0 -bottom-[2px] h-[2px] bg-orange-500 rounded" />
-                  )}
-                </button>
-              </div>
-              
-              {/* New Ticket Form */}
-              {activeSupportTab === 'new' && (
-                <form onSubmit={handleSubmitTicket} className="space-y-6 max-w-lg">
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-1">Platform Area/Function <span className="text-red-400">*</span></label>                    <select
-                      className="w-full p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                      value={ticketArea}
-                      onChange={e => setTicketArea(e.target.value)}
-                      required
-                    >
-                      <option value="">Select an area</option>
-                      {supportAreas.map(area => (
-                        <option key={area} value={area}>{area}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>                    <label htmlFor="ticketSubject" className="block text-sm text-gray-300 mb-1">Subject <span className="text-red-400">*</span></label>
-                    <input
-                      id="ticketSubject"
-                      name="ticketSubject"
-                      type="text"
-                      className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
-                      value={ticketSubject}
-                      onChange={e => setTicketSubject(e.target.value)}
-                      autoComplete="off"
-                      required
-                    />
-                  </div>
-                  <div>                    <label htmlFor="ticketDescription" className="block text-sm text-gray-300 mb-1">Description <span className="text-red-400">*</span></label>
-                    <textarea
-                      id="ticketDescription"
-                      name="ticketDescription"
-                      className="w-full p-2 rounded bg-black/60 border border-orange-500/30 text-white"
-                      value={ticketDescription}
-                      onChange={e => setTicketDescription(e.target.value)}
-                      autoComplete="off"
-                      required
-                    />
-                  </div>
-                  <div>                    <label htmlFor="ticketAttachment" className="block text-sm text-gray-300 mb-1">Attachment (optional)</label>
-                    <input
-                      id="ticketAttachment"
-                      name="ticketAttachment"
-                      type="file"
-                      className="w-full text-white"
-                      onChange={handleTicketFileChange}
-                    />
-                  </div>
-                  {ticketError && <div className="text-red-400">{ticketError}</div>}
-                  {ticketSuccess && <div className="text-green-400">{ticketSuccess}</div>}
-                  <button
-                    type="submit"
-                    className="bg-orange-500 text-white py-2 px-6 rounded hover:bg-orange-600 disabled:opacity-60"
-                    disabled={ticketLoading}
-                  >
-                    {ticketLoading ? 'Submitting...' : 'Submit Ticket'}
-                  </button>
-                </form>
-              )}
-              
-              {/* My Tickets View */}
-              {activeSupportTab === 'my' && (
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Tickets List - Left Side */}
-                  <div className="md:w-1/3 max-h-[600px] overflow-y-auto">
-                    {loadingTickets ? (
-                      <div className="text-gray-400">Loading tickets...</div>
-                    ) : (
-                      <div className="space-y-2">
-                        {myTickets.map(ticket => (
-                          <div key={ticket.id}>
-                            <button
-                              className={`w-full text-left p-3 rounded-lg border ${selectedTicket?.id === ticket.id ? 'border-orange-500 bg-black/60' : 'border-gray-700 bg-black/40'} transition`}
-                              onClick={() => setSelectedTicket(ticket)}
-                            >
-                              <div className="font-semibold text-orange-400 truncate">{ticket.subject}</div>
-                              <div className="text-xs text-gray-400 truncate">{ticket.area}</div>
-                              <div className="text-xs text-gray-500">{new Date(ticket.createdAt || Date.now()).toLocaleString()}</div>
-                              <div className="text-xs mt-1"><span className={`px-2 py-0.5 rounded ${ticket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{ticket.status}</span></div>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Ticket Details and Chat - Right Side */}
-                  <div className="flex-1 min-w-0">
-                    {selectedTicket ? (
-                      <div className="bg-black/60 rounded-lg p-6 flex flex-col h-[600px]">
-                        {/* Ticket Header */}
-                        <div className="mb-4">
-                          <div className="text-lg font-bold text-orange-400">{selectedTicket.subject}</div>
-                          <div className="text-sm text-gray-400">Area: {selectedTicket.area}</div>
-                          <div className="text-xs text-gray-500">Opened: {new Date(selectedTicket.createdAt || Date.now()).toLocaleString()}</div>
-                          <div className="text-xs mt-1"><span className={`px-2 py-0.5 rounded ${selectedTicket.status === 'open' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{selectedTicket.status}</span></div>
-                          <div className="mt-2 text-gray-300">{selectedTicket.description}</div>
-                          {selectedTicket.attachmentUrl && (
-                            <div className="mt-2"><a href={selectedTicket.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">View Attachment</a></div>
-                          )}
-                        </div>
-                        
-                        {/* Messages Container with Fixed Height and Scrollbar */}
-                        <div className="flex-1 overflow-y-auto border-t border-orange-900 pt-4 mb-4 custom-scrollbar">
-                          {ticketMessages.length === 0 ? (
-                            <div className="text-gray-400">No messages yet.</div>
-                          ) : (
-                            <div className="space-y-3">
-                              {ticketMessages.map(msg => (                              <div key={msg.id} className={`flex ${msg.senderType === 'seeker' ? 'justify-end' : 'justify-start'}`}>
-                                  <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.senderType === 'seeker' ? 'bg-orange-500 text-white' : msg.isSystemMessage ? 'bg-black/60 text-gray-300 italic' : 'bg-black/70 border border-orange-900/30 text-gray-200'}`}>
-                                    {msg.message}
-                                    <div className="text-xs text-gray-400 mt-1 text-right">{new Date(msg.createdAt).toLocaleString()}</div>
-                                  </div>
-                                </div>
-                              ))}
-                              <div ref={messagesEndRef} />
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Message Input Form */}
-                        {selectedTicket.status === 'open' && canSendMessage && (
-                          <form onSubmit={handleSendTicketMessage} className="flex gap-2 mt-auto">                            <input
-                              type="text"
-                              className="flex-1 p-3 bg-black/50 border border-orange-500/30 rounded-lg text-white text-sm"
-                              placeholder="Type your message..."
-                              value={newMessage}
-                              onChange={e => setNewMessage(e.target.value)}
-                              disabled={sendingMessage}
-                              required
-                            />                            <button
-                              type="submit"
-                              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-60 font-semibold shadow text-sm"
-                              disabled={sendingMessage || !newMessage.trim()}
-                            >
-                              {sendingMessage ? 'Sending...' : 'Send'}
-                            </button>
-                          </form>
-                        )}
-                        
-                        {selectedTicket.status === 'open' && !canSendMessage && (
-                          <div className="text-yellow-400 text-sm mt-auto">You can send messages after a support agent accepts your ticket.</div>
-                        )}
-                        
-                        {selectedTicket.status === 'closed' && (
-                          <div className="text-green-400 text-sm mt-auto">This ticket has been resolved and closed.</div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-gray-400 flex items-center justify-center h-[600px] bg-black/40 rounded-lg">
-                        Select a ticket to view details and chat history
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+          {activeTab === "settings" && renderSettings()}
+          {activeTab === "support" && (
+            <SupportPanel
+              userId={seekerId}
+              userType="seeker"
+              userName={seekerProfile.name || "User"}
+              userEmail={seekerProfile.email}
+            />
           )}
         </section>        {/* Notification panel (right side overlay) */}
         <NotificationsPanel

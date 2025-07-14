@@ -1372,16 +1372,13 @@ const InstantJobDetailCard: React.FC<{
           />
         );      case "support":
         return (
-          <div className="bg-black/70 rounded-lg shadow-lg p-6 pt-16 md:pt-20">
-            <h2 className="text-2xl font-bold text-orange-500 mb-2 text-center">Support</h2>
-            <SupportPanel
-              userId={companyId}
-              userType="company"
-              userName={companyProfile.name || ""}
-              userEmail={companyProfile.email || ""}
-              notifications={notifications}
-            />
-          </div>
+          <SupportPanel
+            userId={companyId}
+            userType="company"
+            userName={companyProfile.name || ""}
+            userEmail={companyProfile.email || ""}
+            notifications={notifications}
+          />
         );
       default:
         return <div>Page not found.</div>;

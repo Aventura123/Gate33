@@ -229,7 +229,10 @@ const SupportPanel: React.FC<SupportPanelProps> = ({
   }, [fetchSupportTickets]);
 
   return (
-    <div className="w-full">
+    <div className="bg-black/70 rounded-lg shadow-lg p-6">
+      <h2 className="text-2xl font-bold text-orange-500 mb-4 text-center">Support</h2>
+      <div className="border-b border-orange-900/60 mb-6"></div>
+      
       <div className="flex gap-6 mb-6 items-end border-b border-orange-900/60">
         <button
           className={`relative text-base font-semibold mr-2 transition-colors pb-1 ${supportTab === 'tickets' ? 'text-orange-500' : 'text-orange-300 hover:text-orange-400'}`}
@@ -257,7 +260,7 @@ const SupportPanel: React.FC<SupportPanelProps> = ({
             <div className="flex justify-between items-center mb-4">
               <button
                 onClick={() => setSupportSectionActive('create')}
-                className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
+                className="bg-orange-500 hover:bg-orange-600 text-white py-2.5 px-4 rounded-lg font-semibold text-sm transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 New Ticket
               </button>
@@ -278,28 +281,32 @@ const SupportPanel: React.FC<SupportPanelProps> = ({
             <div className="space-y-2">
               {supportTickets.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-300">You have no support tickets.</p>
+                  <div className="text-6xl mb-4">🎫</div>
+                  <h3 className="text-xl font-medium text-white mb-2">No support tickets found</h3>
+                  <p className="text-gray-300 text-sm">Create your first support ticket to get help from our team.</p>
                 </div>
               ) : (
                 supportTickets.map((ticket) => (
                   <div
                     key={ticket.id}
-                    className={`bg-black/50 border border-gray-700 hover:border-orange-400 rounded-lg p-3 cursor-pointer transition-colors`}
+                    className={`rounded-2xl card-orange-glow p-4 cursor-pointer transition-all duration-200 hover:scale-[1.025] focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                      selectedTicketId === ticket.id ? 'ring-2 ring-orange-500' : ''
+                    }`}
                     onClick={() => handleSelectTicket(ticket)}
                   >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="font-semibold text-white mb-1">{ticket.subject}</div>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="font-bold text-white text-sm mb-1">{ticket.subject}</div>
                         <div className="text-gray-400 text-xs mb-1">{ticket.category}</div>
-                        <div className="text-gray-500 text-xs mb-1">Opened on: {new Date(ticket.createdAt).toLocaleString()}</div>
-                        <div className="text-gray-300 mt-2">{ticket.description}</div>
+                        <div className="text-gray-500 text-xs mb-2">Opened on: {new Date(ticket.createdAt).toLocaleDateString()}, {new Date(ticket.createdAt).toLocaleTimeString()}</div>
+                        <div className="text-gray-300 text-xs mb-2 line-clamp-2">{ticket.description}</div>
                         <div className="mt-2">
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                             ticket.status === 'resolved' 
-                              ? 'bg-green-900/30 text-green-400' 
+                              ? 'bg-green-500/20 text-green-400' 
                               : ticket.status === 'open' 
-                              ? 'bg-blue-900/30 text-blue-400'
-                              : 'bg-yellow-900/30 text-yellow-400'
+                              ? 'bg-blue-500/20 text-blue-400'
+                              : 'bg-yellow-500/20 text-yellow-400'
                           }`}>
                             {ticket.status === 'resolved' 
                               ? 'Resolved' 
@@ -318,20 +325,28 @@ const SupportPanel: React.FC<SupportPanelProps> = ({
           {/* Right column: ticket details or default message */}
           <div className="w-full md:w-2/3">
             {supportSectionActive === 'detail' && selectedTicket ? (
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-orange-500 mb-2">Ticket Details</h3>
+              <div className="bg-black/40 rounded-lg p-6 space-y-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-semibold text-orange-500">Ticket Details</h3>
+                  <button
+                    onClick={() => setSupportSectionActive('list')}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
                 <div className="mb-4">
-                  <div className="font-bold text-white">{selectedTicket.subject}</div>
-                  <div className="text-gray-400 text-sm mb-1">Category: {selectedTicket.category}</div>
-                  <div className="text-gray-500 text-xs mb-1">Opened on: {new Date(selectedTicket.createdAt).toLocaleString()}</div>
-                  <div className="text-gray-300 mt-2">{selectedTicket.description}</div>
-                  <div className="mt-2">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                  <div className="font-bold text-white text-lg mb-2">{selectedTicket.subject}</div>
+                  <div className="text-orange-400 text-sm mb-1">Category: {selectedTicket.category}</div>
+                  <div className="text-gray-500 text-xs mb-3">Opened on: {new Date(selectedTicket.createdAt).toLocaleDateString()}, {new Date(selectedTicket.createdAt).toLocaleTimeString()}</div>
+                  <div className="text-gray-300 mb-4 p-3 bg-black/30 rounded-lg">{selectedTicket.description}</div>
+                  <div className="mb-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       selectedTicket.status === 'resolved' 
-                        ? 'bg-green-900/30 text-green-400' 
+                        ? 'bg-green-500/20 text-green-400' 
                         : selectedTicket.status === 'open' 
-                        ? 'bg-blue-900/30 text-blue-400'
-                        : 'bg-yellow-900/30 text-yellow-400'
+                        ? 'bg-blue-500/20 text-blue-400'
+                        : 'bg-yellow-500/20 text-yellow-400'
                     }`}>
                       {selectedTicket.status === 'resolved' 
                         ? 'Resolved' 
@@ -394,45 +409,63 @@ const SupportPanel: React.FC<SupportPanelProps> = ({
                 </div>
               </div>
             ) : supportSectionActive === 'create' ? (
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-orange-500 mb-4">New Support Ticket</h3>
-                <form onSubmit={handleCreateTicket} className="space-y-4">
-                  <input
-                    type="text"
-                    value={newTicketData.subject}
-                    onChange={e => setNewTicketData({ ...newTicketData, subject: e.target.value })}
-                    placeholder="Ticket subject"
-                    className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-white"
-                    required
-                  />
-                  <textarea
-                    value={newTicketData.description}
-                    onChange={e => setNewTicketData({ ...newTicketData, description: e.target.value })}
-                    placeholder="Describe your issue or question"
-                    className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-white h-32"
-                    required
-                  />
-                  <select
-                    value={newTicketData.category}
-                    onChange={e => setNewTicketData({ ...newTicketData, category: e.target.value })}
-                    className="w-full p-3 bg-black/30 border border-orange-500/30 rounded-lg text-white"
+              <div className="bg-black/40 rounded-lg p-6 space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-semibold text-orange-500">New Support Ticket</h3>
+                  <button
+                    onClick={() => setSupportSectionActive('list')}
+                    className="text-gray-400 hover:text-white transition-colors"
                   >
-                    <option value="general">General</option>
-                    <option value="payment">Payment</option>
-                    <option value="technical">Technical</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <div className="flex justify-end gap-2">
+                    ✕
+                  </button>
+                </div>
+                <form onSubmit={handleCreateTicket} className="space-y-6">
+                  <div>
+                    <label className="block text-orange-400 text-sm font-medium mb-2">Subject</label>
+                    <input
+                      type="text"
+                      value={newTicketData.subject}
+                      onChange={e => setNewTicketData({ ...newTicketData, subject: e.target.value })}
+                      placeholder="Brief description of your issue"
+                      className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-orange-400 text-sm font-medium mb-2">Description</label>
+                    <textarea
+                      value={newTicketData.description}
+                      onChange={e => setNewTicketData({ ...newTicketData, description: e.target.value })}
+                      placeholder="Provide detailed information about your issue or question"
+                      className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm h-32 resize-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-orange-400 text-sm font-medium mb-2">Category</label>
+                    <select
+                      value={newTicketData.category}
+                      onChange={e => setNewTicketData({ ...newTicketData, category: e.target.value })}
+                      className="w-full px-3 py-2 bg-black/40 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:outline-none text-sm"
+                    >
+                      <option value="general">General Support</option>
+                      <option value="payment">Payment & Billing</option>
+                      <option value="technical">Technical Issues</option>
+                      <option value="account">Account Management</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4">
                     <button
                       type="button"
                       onClick={() => setSupportSectionActive('list')}
-                      className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600"
+                      className="bg-gray-600 text-white px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-gray-700 transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="bg-orange-500 text-white px-6 py-2 rounded hover:bg-orange-600"
+                      className="bg-orange-500 text-white px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl"
                     >
                       Submit Ticket
                     </button>
@@ -440,31 +473,34 @@ const SupportPanel: React.FC<SupportPanelProps> = ({
                 </form>
               </div>
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-300 text-lg min-h-200px">
-                Select a ticket to view details and chat.
+              <div className="flex items-center justify-center h-full bg-black/40 rounded-lg p-8 min-h-[400px]">
+                <div className="text-center">
+                  <div className="text-6xl mb-4">💬</div>
+                  <h3 className="text-xl font-medium text-white mb-2">Select a ticket to view details and chat.</h3>
+                  <p className="text-gray-400 text-sm">Choose a support ticket from the list to see its details and chat with our support team.</p>
+                </div>
               </div>
             )}
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-orange-500 mb-4">Help Center</h3>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="bg-black/50 p-4 rounded-lg">
-              <h4 className="text-orange-400 font-semibold mb-2">Getting Started</h4>
-              <p className="text-gray-300 text-sm">Learn how to post jobs, manage applications, and make the most of Gate33.</p>
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-2xl card-orange-glow p-6 hover:scale-[1.025] transition-transform duration-200">
+              <h4 className="text-orange-400 font-bold text-lg mb-3">Getting Started</h4>
+              <p className="text-gray-300 text-sm leading-relaxed">Learn how to post jobs, manage applications, and make the most of Gate33's Web3 job platform.</p>
             </div>
-            <div className="bg-black/50 p-4 rounded-lg">
-              <h4 className="text-orange-400 font-semibold mb-2">Payment & Billing</h4>
-              <p className="text-gray-300 text-sm">Understand our pricing plans, payment methods, and billing cycles.</p>
+            <div className="rounded-2xl card-orange-glow p-6 hover:scale-[1.025] transition-transform duration-200">
+              <h4 className="text-orange-400 font-bold text-lg mb-3">Payment & Billing</h4>
+              <p className="text-gray-300 text-sm leading-relaxed">Understand our pricing plans, crypto payment methods, and escrow protection services.</p>
             </div>
-            <div className="bg-black/50 p-4 rounded-lg">
-              <h4 className="text-orange-400 font-semibold mb-2">Technical Support</h4>
-              <p className="text-gray-300 text-sm">Having technical issues? Find solutions to common problems here.</p>
+            <div className="rounded-2xl card-orange-glow p-6 hover:scale-[1.025] transition-transform duration-200">
+              <h4 className="text-orange-400 font-bold text-lg mb-3">Technical Support</h4>
+              <p className="text-gray-300 text-sm leading-relaxed">Having technical issues? Find solutions to common problems and Web3 integration help.</p>
             </div>
-            <div className="bg-black/50 p-4 rounded-lg">
-              <h4 className="text-orange-400 font-semibold mb-2">Account Management</h4>
-              <p className="text-gray-300 text-sm">Manage your company profile, team members, and account settings.</p>
+            <div className="rounded-2xl card-orange-glow p-6 hover:scale-[1.025] transition-transform duration-200">
+              <h4 className="text-orange-400 font-bold text-lg mb-3">Account Management</h4>
+              <p className="text-gray-300 text-sm leading-relaxed">Manage your profile, wallet connections, team members, and account settings.</p>
             </div>
           </div>
         </div>
