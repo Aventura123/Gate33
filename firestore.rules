@@ -23,7 +23,7 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return hasRole('admin') || 
+      return hasRole('admin') || hasRole('super_admin') || 
         (isAuthenticated() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
     }
     
@@ -117,6 +117,19 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
+    // ========== SUPPORT SYSTEM ==========
+    match /supportTickets/{docId} {
+      allow write: if isAuthenticated();
+    }
+    
+    match /supportMessages/{docId} {
+      allow write: if isAuthenticated();
+    }
+    
+    match /supportNotifications/{docId} {
+      allow write: if isAuthenticated();
+    }
+
     // ========== ESPECIAIS ==========
     match /passwordResets/{docId} {
       allow write: if true; // reset password sem auth
@@ -125,6 +138,55 @@ service cloud.firestore {
     match /pendingCompanies/{docId} {
       allow create: if true; // qualquer um pode candidatar-se
       allow update, delete: if isAdmin();
+    }
+
+    // ========== COLEÇÕES ADICIONAIS - APENAS ADMIN/SUPER_ADMIN ==========
+    match /advertisements/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /alerts/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /crypto_metadata/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /cryptocurrencies/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /expenses/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /jobAlertSubscribers/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /jobMessages/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /job_drafts/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /learn2earn_drafts/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /partners/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /rolePermissions/{docId} {
+      allow write: if isAdmin();
+    }
+    
+    match /supportTickets/{docId} {
+      allow write: if isAdmin();
     }
 
     // ========== TESTES (APENAS DESENVOLVIMENTO) ==========
