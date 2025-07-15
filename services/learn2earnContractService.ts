@@ -176,13 +176,36 @@ class Learn2EarnContractService {
    */
   async checkTokenApproval(network: string, tokenAddress: string): Promise<boolean> {
     try {
+      console.log(`Checking token approval for network: ${network}, tokenAddress: ${tokenAddress}`);
+      
       const provider = await web3Service.getWeb3Provider();
       if (!provider) throw new Error("Web3 provider not available");
       
-      const signer = provider.getSigner();
-      const userAddress = await signer.getAddress();
+      // Validate inputs
+      if (!tokenAddress || tokenAddress.trim() === '') {
+        console.error("Token address is required");
+        return false;
+      }
       
       const learn2earnContractAddress = await this.getContractAddress(network);
+      if (!learn2earnContractAddress || learn2earnContractAddress.trim() === '') {
+        console.error(`Learn2Earn contract not deployed on network: ${network}`);
+        return false;
+      }
+      
+      // Validate addresses are proper Ethereum addresses
+      if (!ethers.utils.isAddress(tokenAddress)) {
+        console.error(`Invalid token address: ${tokenAddress}`);
+        return false;
+      }
+      
+      if (!ethers.utils.isAddress(learn2earnContractAddress)) {
+        console.error(`Invalid contract address: ${learn2earnContractAddress}`);
+        return false;
+      }
+      
+      const signer = provider.getSigner();
+      const userAddress = await signer.getAddress();
       
       // Create token contract instance
       const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
@@ -190,8 +213,11 @@ class Learn2EarnContractService {
       // Check current allowance
       const allowance = await tokenContract.allowance(userAddress, learn2earnContractAddress);
       
-      // If allowance is greater than 0, the token has been approved
-      return !allowance.isZero();
+      // Convert to a reasonable threshold instead of just checking if > 0
+      // This prevents issues with very small remaining allowances
+      const minRequiredAllowance = ethers.utils.parseUnits("1", 18); // 1 token minimum
+      
+      return allowance.gte(minRequiredAllowance);
     } catch (error) {
       console.error("Error checking token approval:", error);
       return false;
@@ -203,11 +229,33 @@ class Learn2EarnContractService {
    */
   async approveToken(network: string, tokenAddress: string): Promise<any> {
     try {
+      console.log(`Approving token for network: ${network}, tokenAddress: ${tokenAddress}`);
+      
       const provider = await web3Service.getWeb3Provider();
       if (!provider) throw new Error("Web3 provider not available");
       
-      const signer = provider.getSigner();
+      // Validate inputs
+      if (!tokenAddress || tokenAddress.trim() === '') {
+        throw new Error("Token address is required");
+      }
+      
       const learn2earnContractAddress = await this.getContractAddress(network);
+      if (!learn2earnContractAddress || learn2earnContractAddress.trim() === '') {
+        throw new Error(`Learn2Earn contract not deployed on network: ${network}`);
+      }
+      
+      console.log(`Learn2Earn contract address: ${learn2earnContractAddress}`);
+      
+      // Validate addresses are proper Ethereum addresses
+      if (!ethers.utils.isAddress(tokenAddress)) {
+        throw new Error(`Invalid token address: ${tokenAddress}`);
+      }
+      
+      if (!ethers.utils.isAddress(learn2earnContractAddress)) {
+        throw new Error(`Invalid contract address: ${learn2earnContractAddress}`);
+      }
+      
+      const signer = provider.getSigner();
       
       // Create token contract instance
       const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
@@ -350,6 +398,73 @@ class Learn2EarnContractService {
       
       // Call the contract to create the learn2earn
       try {
+        console.log("About to call createLearn2Earn with:", {
+          id,
+          tokenAddress,
+          amountInWei: amountInWei.toString(),
+          startTimestamp,
+          endTimestamp,
+          maxParticipants,
+          userAddress: await signer.getAddress()
+        });
+
+        // Validate parameters before sending transaction
+        if (!id || id.trim() === '') {
+          throw new Error("ID cannot be empty");
+        }
+        
+        if (!ethers.utils.isAddress(tokenAddress)) {
+          throw new Error(`Invalid token address: ${tokenAddress}`);
+        }
+        
+        if (amountInWei.lte(0)) {
+          throw new Error("Amount must be greater than 0");
+        }
+        
+        if (startTimestamp <= Math.floor(Date.now() / 1000)) {
+          throw new Error("Start timestamp must be in the future");
+        }
+        
+        if (endTimestamp <= startTimestamp) {
+          throw new Error("End timestamp must be after start timestamp");
+        }
+        
+        if (maxParticipants < 0) {
+          throw new Error("Max participants cannot be negative");
+        }
+
+        // Try to estimate gas first to catch any revert reasons
+        try {
+          const gasEstimate = await learn2earnContract.estimateGas.createLearn2Earn(
+            id,
+            tokenAddress,
+            amountInWei,
+            startTimestamp,
+            endTimestamp,
+            maxParticipants
+          );
+          console.log("Gas estimate successful:", gasEstimate.toString());
+        } catch (gasError: any) {
+          console.error("Gas estimation failed:", gasError);
+          
+          // Try to get more specific error information
+          if (gasError.reason) {
+            throw new Error(`Contract execution would fail: ${gasError.reason}`);
+          } else if (gasError.message) {
+            if (gasError.message.includes('insufficient allowance')) {
+              throw new Error("Insufficient token allowance. Please approve more tokens.");
+            } else if (gasError.message.includes('insufficient balance')) {
+              throw new Error("Insufficient token balance.");
+            } else if (gasError.message.includes('already exists')) {
+              throw new Error("A Learn2Earn with this ID already exists.");
+            } else if (gasError.message.includes('invalid timestamp')) {
+              throw new Error("Invalid start or end timestamp.");
+            }
+            throw new Error(`Contract validation failed: ${gasError.message}`);
+          }
+          throw new Error("Transaction would fail. Please check your parameters and try again.");
+        }
+
         const tx = await learn2earnContract.createLearn2Earn(
           id,
           tokenAddress,
@@ -366,6 +481,11 @@ class Learn2EarnContractService {
         
         console.log("Transaction confirmed:", receipt.transactionHash);
         console.log("Transaction logs:", receipt.logs.length, "logs found");
+        
+        // Check if transaction was successful
+        if (receipt.status === 0) {
+          throw new Error("Transaction failed during execution. Please check contract state and try again.");
+        }
         
         // Extract learn2earn ID from event (adjust based on your contract's event)
         let learn2earnId = 0;

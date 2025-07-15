@@ -730,6 +730,12 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
 
   // Function to create Learn2Earn
   const createLearn2Earn = async () => {
+    // Prevent multiple clicks
+    if (isProcessingDeposit) {
+      console.log("Already processing, ignoring click");
+      return;
+    }
+    
     if (!db || !companyId) {
       alert("Not authenticated. Please login again.");
       return;
@@ -751,25 +757,42 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
     }
     setIsProcessingDeposit(true);
     setDepositError(null);
+    
     try {
+      // Step 1: Check wallet connection
       if (!walletAddress) {
+        setDepositError("Connecting wallet...");
         await handleConnectWallet();
         await new Promise(resolve => setTimeout(resolve, 500));
         if (!walletAddress) {
           throw new Error("Wallet connection is required to create a learn2earn opportunity");
         }
       }
+
       const normalizedNetwork = learn2earnData.network.trim().toLowerCase();
+      
+      // Step 2: Check token approval
+      setDepositError("Checking token approval...");
       const isApproved = await learn2earnContractService.checkTokenApproval(
         normalizedNetwork,
         learn2earnData.tokenAddress
       );
+      
       if (!isApproved) {
-        alert("You need to approve the token first. Please confirm the approval transaction in your wallet.");
-        await learn2earnContractService.approveToken(
-          normalizedNetwork,
-          learn2earnData.tokenAddress
-        );
+        setDepositError("Token approval required. Please approve the transaction in your wallet and wait for confirmation...");
+        try {
+          await learn2earnContractService.approveToken(
+            normalizedNetwork,
+            learn2earnData.tokenAddress
+          );
+          setDepositError("Token approved successfully! Proceeding with creation...");
+          // Wait a bit for the approval to be confirmed
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (approvalError: any) {
+          throw new Error(`Token approval failed: ${approvalError.message}`);
+        }
+      } else {
+        setDepositError("Token already approved. Proceeding with creation...");
       }
       const learn2earnFirebaseId = `learn2earn_${Date.now()}`;
       let startDate: Date, endDate: Date;
@@ -806,6 +829,8 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
       const feeMultiplier = 1 - (feePercent / 100);
       const adjustedTokenAmount = learn2earnData.tokenAmount / feeMultiplier;
       
+      // Step 3: Create contract transaction
+      setDepositError("Creating learn2earn contract transaction...");
       const depositResult = await learn2earnContractService.createLearn2Earn(
         normalizedNetwork,
         learn2earnFirebaseId,
@@ -834,6 +859,9 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         }
         throw new Error(depositResult.message || "Failed to create learn2earn opportunity. Please check your wallet and try again.");
       }
+      
+      // Step 4: Save to Firestore
+      setDepositError("Saving to database...");
       const learn2earnCollection = collection(db, "learn2earn");
       const newLearn2Earn = {
         ...learn2earnData,
@@ -848,6 +876,9 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         createdAt: new Date()
       };
       await addDoc(learn2earnCollection, newLearn2Earn);
+      
+      // Step 5: Create notification
+      setDepositError("Creating notifications...");
       const notificationsCollection = collection(db, "adminNotifications");
       await addDoc(notificationsCollection, {
         type: "learn2earn",
@@ -877,11 +908,13 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
       fetchLearn2Earn();
       fetchDrafts(); // Refresh drafts list to remove deleted draft
       setLearn2EarnStep('confirmation');
+      setDepositError(null); // Clear any status messages
     } catch (error: any) {
       console.error("Error creating learn2earn:",error);
-      setDepositError(error.message || "Failed to create learn2earn opportunity. Please check your wallet and try again.");
+      setDepositError(`Error: ${error.message || "Failed to create learn2earn opportunity. Please check your wallet and try again."}`);
     } finally {
-      setIsProcessingDeposit(false);    }
+      setIsProcessingDeposit(false);    
+    }
   };
 
   // Helper to format date for display
@@ -1700,7 +1733,29 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                   I confirm the deposit information and understand that tokens will be transferred from my wallet
                 </label>
               </div>
-            </div>            <div className="mt-4 flex justify-between">
+            </div>
+            
+            {/* Status/Progress Information */}
+            {(isProcessingDeposit || depositError) && (
+              <div className="mt-4 p-4 rounded-lg bg-gray-800 border">
+                {isProcessingDeposit && (
+                  <div className="flex items-center text-blue-400 mb-2">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </div>
+                )}
+                {depositError && (
+                  <div className={`text-sm ${depositError.includes('error') || depositError.includes('Error') ? 'text-red-400' : 'text-yellow-400'}`}>
+                    {depositError}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="mt-4 flex justify-between">
               <div className="flex space-x-2">
                 <button
                   type="button"
@@ -1748,14 +1803,24 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                 </button>
                 <button
                   onClick={createLearn2Earn}
-                  disabled={learn2earnData.tasks.length === 0 || !isDepositConfirmed}
+                  disabled={learn2earnData.tasks.length === 0 || !isDepositConfirmed || isProcessingDeposit}
                   className={`bg-orange-500 text-white py-2 px-6 rounded transition-colors ${
-                    learn2earnData.tasks.length === 0 || !isDepositConfirmed
+                    learn2earnData.tasks.length === 0 || !isDepositConfirmed || isProcessingDeposit
                       ? 'opacity-50 cursor-not-allowed'
                       : 'hover:bg-orange-600'
                   }`}
                 >
-                  Create Learn2Earn
+                  {isProcessingDeposit ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </span>
+                  ) : (
+                    'Create Learn2Earn'
+                  )}
                 </button>
               </div>
             </div>
