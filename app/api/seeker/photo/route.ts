@@ -87,37 +87,35 @@ export async function POST(req: NextRequest) {
       const seekerRef = db.collection("seekers").doc(seekerId);
       const seekerDoc = await seekerRef.get();
 
-      // Eliminar a foto antiga se existir
+      // Eliminar todas as fotos antigas deste seeker
       if (seekerDoc.exists) {
         const existingData = seekerDoc.data();
         const oldPhotoURL = existingData?.photoURL;
         
-        if (oldPhotoURL) {
-          console.log("POST /api/seeker/photo - Eliminando foto antiga:", oldPhotoURL);
-          try {
-            // Extrair o caminho do ficheiro da URL
-            const urlParts = oldPhotoURL.split('/');
-            const filePathIndex = urlParts.findIndex((part: string) => part === 'seekers');
-            
-            if (filePathIndex !== -1 && filePathIndex < urlParts.length - 2) {
-              // Reconstruir o caminho: seekers/seekerId/filename
-              const oldFilePath = urlParts.slice(filePathIndex, filePathIndex + 3).join('/');
-              console.log("POST /api/seeker/photo - Caminho da foto antiga:", oldFilePath);
-              
-              const oldFileRef = bucket.file(oldFilePath);
-              const [exists] = await oldFileRef.exists();
-              
-              if (exists) {
-                await oldFileRef.delete();
-                console.log("POST /api/seeker/photo - Foto antiga eliminada com sucesso");
-              } else {
-                console.log("POST /api/seeker/photo - Foto antiga não encontrada no storage");
-              }
+        console.log("POST /api/seeker/photo - Eliminando fotos antigas do seeker:", seekerId);
+        try {
+          // Listar e eliminar todos os ficheiros na pasta do seeker
+          const seekerFolder = `seekers/${seekerId}/`;
+          const [files] = await bucket.getFiles({
+            prefix: seekerFolder
+          });
+          
+          console.log(`POST /api/seeker/photo - Encontradas ${files.length} fotos antigas para eliminar`);
+          
+          // Eliminar todos os ficheiros encontrados
+          for (const file of files) {
+            try {
+              await file.delete();
+              console.log(`POST /api/seeker/photo - Foto eliminada: ${file.name}`);
+            } catch (deleteError) {
+              console.error(`POST /api/seeker/photo - Erro ao eliminar ${file.name}:`, deleteError);
             }
-          } catch (deleteError) {
-            console.error("POST /api/seeker/photo - Erro ao eliminar foto antiga:", deleteError);
-            // Não interrompe o processo se a eliminação falhar
           }
+          
+          console.log("POST /api/seeker/photo - Limpeza de fotos antigas concluída");
+        } catch (deleteError) {
+          console.error("POST /api/seeker/photo - Erro ao eliminar fotos antigas:", deleteError);
+          // Não interrompe o processo se a eliminação falhar
         }
         
         console.log("POST /api/seeker/photo - Atualizando documento do seeker no Firestore...");

@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { storage, db, handleStorageError } from "../../../../lib/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { getStorage } from "firebase-admin/storage";
+import { getFirestore } from "firebase-admin/firestore";
+import { initAdmin } from "../../../../lib/firebaseAdmin";
 import { v4 as uuidv4 } from "uuid";
-import fs from 'fs';
-import path from 'path';
 
 export async function POST(req: NextRequest) {
   try {
     console.log("POST /api/company/photo - Iniciando requisição");
+    
+    // Initialize Firebase Admin
+    await initAdmin();
+    const storage = getStorage();
+    const db = getFirestore();
+    
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const companyId = formData.get("companyId") as string | null;
@@ -50,44 +54,53 @@ export async function POST(req: NextRequest) {
       console.log("Gerando referência para Firebase Storage:", filePath);
 
       const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);      if (!storage) {
-        console.error("POST /api/company/photo - Firebase Storage não inicializado");
-        return NextResponse.json({
-          error: "Storage not initialized",
-          message: "Firebase Storage connection failed",
-          success: false
-        }, { status: 500 });
-      }
+      const buffer = Buffer.from(arrayBuffer);
 
-      console.log("POST /api/company/photo - Referência ao Firebase Storage criada");
-      const storageRef = ref(storage, filePath);
+      console.log("POST /api/company/photo - Upload usando Firebase Admin SDK");
       
-      console.log("POST /api/company/photo - Iniciando upload do buffer");
-      const snapshot = await uploadBytes(storageRef, buffer);
-
-      console.log("Upload concluído, obtendo URL de download...");
-      const downloadURL = await getDownloadURL(snapshot.ref);      if (!db) {
-        console.error("POST /api/company/photo - Firestore não inicializado");
-        return NextResponse.json({
-          error: "Database not initialized",
-          message: "Firestore connection failed",
-          success: false
-        }, { status: 500 });
+      // Upload using Firebase Admin SDK with bucket name
+      const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+      if (!bucketName) {
+        throw new Error("Firebase Storage bucket not configured");
       }
+      
+      const bucket = storage.bucket(bucketName);
+      
+      console.log("POST /api/company/photo - Verificando documento no Firestore");
+      const companyRef = db.collection("companies").doc(companyId);
+      const companyDoc = await companyRef.get();
 
-      console.log("POST /api/company/photo - Referência ao Firestore criada");
-      const companyRef = doc(db, "companies", companyId);
-      const companyDoc = await getDoc(companyRef);
+      // FAZER UPLOAD DA NOVA FOTO
+      console.log(`POST /api/company/photo - Fazendo upload da nova foto: ${filePath}`);
+      const fileRef = bucket.file(filePath);
 
-      if (companyDoc.exists()) {
+      // Agora fazer o upload da nova foto
+      await fileRef.save(buffer, {
+        metadata: {
+          contentType: file.type,
+        },
+      });
+
+      // Make the file publicly readable
+      await fileRef.makePublic();
+      
+      console.log("Upload concluído, gerando URL de download...");
+      // Get signed URL that works with Firebase Storage rules
+      const [downloadURL] = await fileRef.getSignedUrl({
+        action: 'read',
+        expires: '03-09-2491' // Far future date for public access
+      });
+
+      // Atualizar ou criar documento no Firestore
+      if (companyDoc.exists) {
         console.log("POST /api/company/photo - Atualizando documento da empresa no Firestore...");
-        await updateDoc(companyRef, {
+        await companyRef.update({
           photoURL: downloadURL,
           updatedAt: new Date().toISOString()
         });
       } else {
         console.log("POST /api/company/photo - Criando novo documento de empresa no Firestore...");
-        await setDoc(companyRef, {
+        await companyRef.set({
           companyId: companyId,
           photoURL: downloadURL,
           createdAt: new Date().toISOString(),
@@ -132,28 +145,25 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "companyId é obrigatório" }, { status: 400 });
     }
 
-    if (!db) {
-      console.error("GET /api/company/photo - Firestore não inicializado");
-      // Em vez de lançar erro, vamos retornar uma resposta JSON
-      return NextResponse.json({ 
-        error: "Firestore not initialized", 
-        message: "Database connection failed" 
-      }, { status: 500 });
-    }
+    // Initialize Firebase Admin
+    await initAdmin();
+    const db = getFirestore();
 
     // Buscar informações da empresa no Firestore
     console.log("GET /api/company/photo - Buscando dados da empresa:", companyId);
-    const companyRef = doc(db, "companies", companyId);
-    const companyDoc = await getDoc(companyRef);    if (companyDoc.exists()) {
+    const companyRef = db.collection("companies").doc(companyId);
+    const companyDoc = await companyRef.get();
+
+    if (companyDoc.exists) {
       const companyData = companyDoc.data();
       console.log("GET /api/company/photo - Empresa encontrada, dados:", {
-        name: companyData.name,
-        hasPhoto: !!companyData.photoURL
+        name: companyData?.name,
+        hasPhoto: !!companyData?.photoURL
       });
       
       return NextResponse.json({ 
-        photoUrl: companyData.photoURL || null,
-        photoURL: companyData.photoURL || null,
+        photoUrl: companyData?.photoURL || null,
+        photoURL: companyData?.photoURL || null,
         success: true
       });
     } else {
@@ -174,66 +184,6 @@ export async function GET(req: NextRequest) {
         message: error.message,
         success: false
       },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE: Remover a foto de perfil de uma empresa
-export async function DELETE(req: NextRequest) {
-  try {
-    const url = new URL(req.url);
-    const companyId = url.searchParams.get("companyId");
-
-    if (!companyId) {
-      return NextResponse.json({ error: "companyId é obrigatório" }, { status: 400 });
-    }
-
-    if (!db) {
-      throw new Error("Firestore is not initialized. Please check your Firebase configuration.");
-    }
-
-    const companyRef = doc(db, "companies", companyId);
-    const companyDoc = await getDoc(companyRef);
-
-    if (companyDoc.exists() && companyDoc.data().photoURL) {
-      const existingPhotoURL = companyDoc.data().photoURL;
-      
-      // Atualizar o documento para remover a referência à foto
-      await updateDoc(companyRef, {
-        photoURL: null,
-        updatedAt: new Date().toISOString()
-      });
-      
-      // Tentar excluir a foto do sistema de arquivos local
-      try {
-        // Extrair o nome do arquivo da URL
-        const fileName = existingPhotoURL.split('/').pop();
-        if (fileName) {
-          const filePath = path.join(process.cwd(), 'public', 'uploads', fileName);
-          
-          // Verificar se o arquivo existe antes de tentar excluí-lo
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-            console.log("Arquivo excluído com sucesso:", filePath);
-          } else {
-            console.log("Arquivo não encontrado para exclusão:", filePath);
-          }
-        }
-      } catch (deleteError) {
-        console.error("Erro ao excluir foto da empresa:", deleteError);
-        // Não interrompe o fluxo se a exclusão falhar
-      }
-    }
-
-    return NextResponse.json(
-      { success: true, message: "Foto de perfil da empresa removida com sucesso" },
-      { status: 200 }
-    );
-  } catch (error: any) {
-    console.error("Erro ao remover foto da empresa:", error);
-    return NextResponse.json(
-      { error: "Erro ao remover foto da empresa", message: error.message },
       { status: 500 }
     );
   }
