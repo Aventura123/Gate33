@@ -127,6 +127,7 @@ interface SeekerProfile {
   }[];
   
   // Social & Professional links
+  photoURL?: string; // Profile photo URL
   resumeUrl?: string; // Link to uploaded CV
   portfolioUrl?: string; // Main portfolio link
   githubUrl?: string;
@@ -322,9 +323,9 @@ const SeekerDashboard = () => {
       const seekerSnap = await getDoc(seekerRef);
       if (seekerSnap.exists()) {
         const data = seekerSnap.data();
-        // Check both photoUrl and photoURL for better compatibility
-        if (data.photoUrl || data.photoURL) {
-          setUserPhoto(data.photoUrl || data.photoURL);
+        // Check photoURL field (standard field used consistently)
+        if (data.photoURL) {
+          setUserPhoto(data.photoURL);
         } else {
           // Fetch default avatar from Firestore
           const defaultAvatarRef = doc(db, "config", "defaultAvatar");
@@ -355,10 +356,17 @@ const SeekerDashboard = () => {
         linkedinUrl: seekerProfile.linkedinUrl,
         twitterUrl: seekerProfile.twitterUrl,
         websiteUrl: seekerProfile.websiteUrl,
-        telegramUrl: seekerProfile.telegramUrl
+        telegramUrl: seekerProfile.telegramUrl,
+        photoURL: seekerProfile.photoURL
       });
     }
   }, [activeTab, settingsTab, seekerProfile]);
+
+  // Add debug logging for photo state changes
+  useEffect(() => {
+    console.log("Debug - userPhoto state changed:", userPhoto);
+    console.log("Debug - seekerProfile.photoURL:", seekerProfile.photoURL);
+  }, [userPhoto, seekerProfile.photoURL]);
 
   // Fetch seeker profile data - Updated to ensure all data is correctly loaded
   const fetchSeekerProfile = useCallback(async (id: string) => {
@@ -416,9 +424,30 @@ const SeekerDashboard = () => {
           references: data.references || [],
           languages: data.languages || [],
           preferredLocations: data.preferredLocations || [],
+          photoURL: data.photoURL || "",
         };
 
         setSeekerProfile(profileData);
+        
+        // Update photo state with the photo URL from profile
+        if (data.photoURL) {
+          setUserPhoto(data.photoURL);
+        } else {
+          // Fetch default avatar from Firestore
+          try {
+            const defaultAvatarRef = doc(db, "config", "defaultAvatar");
+            const defaultAvatarSnap = await getDoc(defaultAvatarRef);
+            if (defaultAvatarSnap.exists()) {
+              const defaultAvatarData = defaultAvatarSnap.data();
+              setUserPhoto(defaultAvatarData.url || "/images/default-avatar.png");
+            } else {
+              setUserPhoto("/images/default-avatar.png");
+            }
+          } catch (error) {
+            console.error("Error fetching default avatar:", error);
+            setUserPhoto("/images/default-avatar.png");
+          }
+        }
         
         // Load notification preferences
         if (data.notificationPreferences) {
@@ -486,6 +515,7 @@ const SeekerDashboard = () => {
         throw new Error("Seeker token not found");
       }
       const decodedToken = atob(token); // Assuming token is base64 encoded seeker ID
+      console.log("Debug - Decoded seeker token:", decodedToken);
       setSeekerId(decodedToken);
       // Call memoized fetch functions
       fetchSeekerPhoto(decodedToken);
@@ -573,7 +603,6 @@ const SeekerDashboard = () => {
         // Update the seeker profile state with the new photo URL
         setSeekerProfile(prev => ({
           ...prev,
-          photoUrl: responseData.url,
           photoURL: responseData.url
         }));
         
@@ -683,6 +712,7 @@ const SeekerDashboard = () => {
         references: seekerProfile.references || [],
         languages: seekerProfile.languages || [],
         preferredLocations: seekerProfile.preferredLocations || [],
+        photoURL: seekerProfile.photoURL || "",
       };
       await updateDoc(seekerRef, profileDataToUpdate);
       alert("Profile updated successfully!");
@@ -1123,11 +1153,22 @@ const SeekerDashboard = () => {
         <div className="flex flex-col md:flex-row items-center gap-8 mb-6">          {/* Profile photo */}
           <div className="relative">
             <img
-              src={userPhoto || "/images/default-avatar.png"}
+              src={
+                // Priority: userPhoto state first, then seekerProfile.photoURL, then default
+                (userPhoto && userPhoto !== "/images/default-avatar.png") ? userPhoto :
+                (seekerProfile.photoURL && seekerProfile.photoURL !== "") ? seekerProfile.photoURL :
+                "/images/default-avatar.png"
+              }
               alt="Profile"
               className={`w-40 h-40 rounded-full border-4 border-orange-500 object-cover shadow-lg cursor-pointer hover:opacity-80 transition-opacity ${isUploading ? 'opacity-50' : ''}`}
               onClick={() => !isUploading && document.getElementById('profile-photo-upload')?.click()}
               title={isUploading ? "Uploading..." : "Click to change profile photo"}
+              onError={(e) => {
+                console.log("Image failed to load, reverting to default avatar");
+                const target = e.target as HTMLImageElement;
+                target.src = "/images/default-avatar.png";
+                setUserPhoto("/images/default-avatar.png");
+              }}
             />
             
             {/* Upload indicator */}

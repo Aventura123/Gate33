@@ -32,6 +32,9 @@ firestore-rules-gatex.md
 firestore-rules-gate33-DEFINITIVAS.md
 firestore-rules-gatex-DEFINITIVAS.md
 
+# Firebase Storage rules (sensitive)
+storage.rules
+
 # vercel
 .vercel
 .vercelignore

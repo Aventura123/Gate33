@@ -3,7 +3,7 @@
 import React, { useState, useEffect, JSX, useCallback } from "react";
 import FullScreenLayout from "../../components/FullScreenLayout";
 import { useRouter } from "next/navigation";
-import { collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, updateDoc, onSnapshot, orderBy, serverTimestamp, writeBatch } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, updateDoc, setDoc, onSnapshot, orderBy, serverTimestamp, writeBatch } from "firebase/firestore";
 import { db, auth } from "../../lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 // Import payment related services
@@ -269,45 +269,35 @@ const PostJobPage = (): JSX.Element => {
   };  const fetchCompanyPhoto = async (id: string) => {
     try {
       console.log("Fetching photo for companyId:", id);
-      const response = await fetch(`/api/company/photo?companyId=${id}`);
-      console.log("Server response:", response.status, response.statusText);
       
-      if (!response.ok) {
-        console.error("Error fetching photo:", response.status, response.statusText);
-        setUserPhoto(""); // Clear photo on error
+      if (!db) {
+        console.error("Firestore not initialized");
+        setUserPhoto("");
         return;
       }
       
-      let data;
-      try {
-        const textResponse = await response.text();
-        console.log("Raw response:", textResponse.substring(0, 200)); // Log first 200 characters
+      // Buscar diretamente no Firestore (mesma lógica do UserProfileButton)
+      const companyRef = doc(db, "companies", id);
+      const companyDoc = await getDoc(companyRef);
+      
+      if (companyDoc.exists()) {
+        const data = companyDoc.data();
+        console.log("Company document found:", { hasPhotoURL: !!data.photoURL });
         
-        try {
-          data = JSON.parse(textResponse);
-          console.log("JSON data parsed successfully:", data);
-        } catch (jsonError) {
-          console.error("Error parsing JSON:", jsonError);
-          console.error("Response is not valid JSON:", textResponse.substring(0, 200));
-          setUserPhoto(""); // Clear photo on error
-          return;
+        if (data.photoURL) {
+          console.log("Photo URL found:", data.photoURL);
+          setUserPhoto(data.photoURL);
+        } else {
+          console.log("No photo URL found in document");
+          setUserPhoto("");
         }
-      } catch (textError) {
-        console.error("Error reading response as text:", textError);
-        setUserPhoto(""); // Clear photo on error
-        return;
-      }
-      
-      if (data.photoUrl || data.photoURL) {
-        console.log("Photo URL found:", data.photoUrl || data.photoURL);
-        setUserPhoto(data.photoUrl || data.photoURL); // Check both fields
       } else {
-        console.log("No photo URL found in data");
-        setUserPhoto(""); // Clear photo if not found
+        console.log("Company document not found");
+        setUserPhoto("");
       }
     } catch (error) {
       console.error("Error fetching company photo:", error);
-      setUserPhoto(""); // Clear photo on error
+      setUserPhoto("");
     }
   };
   // Function to fetch company profile data
@@ -589,57 +579,98 @@ const PostJobPage = (): JSX.Element => {
       };
       reader.readAsDataURL(file);
 
-      // Send the image to the server
+      // Upload directly to Firebase Storage
       setIsUploading(true);
       
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("companyId", companyId);
-
       try {
-        console.log("Sending file to server...", {
+        console.log("Starting direct Firebase upload...", {
           fileName: file.name,
           fileType: file.type,
           fileSize: file.size,
           companyId
         });
         
-        const response = await fetch("/api/company/photo", {
-          method: "POST",
-          body: formData,
-        });
-        
-        console.log("Response received from server:", {
-          status: response.status,
-          statusText: response.statusText
-        });
+        // Verificar tamanho do arquivo (limitar a 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error("File size must be less than 5MB");
+        }
 
-        // Try to read response as text first to ensure it's valid JSON
-        let responseData;
-        const responseText = await response.text();
-        console.log("Text response:", responseText.substring(0, 200));
+        // Verificar tipo de arquivo (apenas imagens)
+        if (!file.type.startsWith("image/")) {
+          throw new Error("Only image files are allowed");
+        }
+
+        // Import Firebase Storage functions
+        const { ref, uploadBytes, getDownloadURL, deleteObject } = await import("firebase/storage");
+        const { storage } = await import("../../lib/firebase");
         
-        try {
-          responseData = JSON.parse(responseText);
-          console.log("Response data:", responseData);
-        } catch (jsonError) {
-          console.error("Error parsing JSON:", jsonError);
-          throw new Error("Server response is not valid JSON");
+        if (!storage) {
+          throw new Error("Firebase Storage not initialized");
         }
         
-        if (!response.ok) {
-          throw new Error(responseData.message || "Failed to upload photo");
+        // First, get the current photo URL to delete the old one
+        let oldPhotoURL = null;
+        if (!db) {
+          throw new Error("Firestore not initialized");
         }
         
-        // Update the photo with the URL returned by the server
-        const photoUrl = responseData.url || responseData.photoURL || responseData.photoUrl;
-        if (photoUrl) {
-          console.log("Photo URL received:", photoUrl);
-          setUserPhoto(photoUrl);
+        const companyRef = doc(db, "companies", companyId);
+        const companyDoc = await getDoc(companyRef);
+        
+        if (companyDoc.exists() && companyDoc.data().photoURL) {
+          oldPhotoURL = companyDoc.data().photoURL;
+          console.log("Found old photo to delete:", oldPhotoURL);
+        }
+        
+        const fileExtension = file.name.split('.').pop();
+        const fileName = `company_${companyId}_${Date.now()}.${fileExtension}`;
+        const filePath = `company-photos/${companyId}/${fileName}`;
+        
+        console.log("Uploading to Firebase Storage:", filePath);
+        
+        const storageRef = ref(storage, filePath);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        
+        console.log("Upload successful, URL:", downloadURL);
+        
+        // Update Firestore document with new photo URL
+        if (companyDoc.exists()) {
+          console.log("Updating company document...");
+          await updateDoc(companyRef, {
+            photoURL: downloadURL,
+            updatedAt: new Date().toISOString()
+          });
         } else {
-          console.warn("No photo URL found in response");
+          console.log("Creating new company document...");
+          await setDoc(companyRef, {
+            companyId: companyId,
+            photoURL: downloadURL,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
         }
         
+        // Delete old photo from storage after successful upload and document update
+        if (oldPhotoURL) {
+          try {
+            // Extract the storage path from the URL
+            const url = new URL(oldPhotoURL);
+            const pathMatch = url.pathname.match(/\/o\/(.+)\?/);
+            if (pathMatch) {
+              const storagePath = decodeURIComponent(pathMatch[1]);
+              const oldPhotoRef = ref(storage, storagePath);
+              await deleteObject(oldPhotoRef);
+              console.log("Old photo deleted successfully:", storagePath);
+            }
+          } catch (deleteError) {
+            console.warn("Could not delete old photo:", deleteError);
+            // Don't throw error - the upload was successful, deletion is just cleanup
+          }
+        }
+        
+        // Update the photo with the URL returned
+        setUserPhoto(downloadURL);
         console.log("Upload completed successfully!");
         
         // Reload the data to ensure everything is updated
@@ -1619,17 +1650,6 @@ const InstantJobDetailCard: React.FC<{
               </li>
             </ul>
           </div>
-          
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center justify-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4a1 1 0 10-2 0v4.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L14 11.586V7z" clipRule="evenodd" />
-            </svg>
-            Logout
-          </button>
         </aside>
         
         {/* Main Content Area - Updated for mobile responsiveness */}

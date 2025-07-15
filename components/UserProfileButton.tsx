@@ -107,16 +107,25 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
           }
         }
         
-        // Check company
-        const companyId = localStorage.getItem("companyId") || 
-          (localStorage.getItem("token") ? atob(localStorage.getItem("token") || "") : null);
+        // Check company - use same logic as company dashboard
+        const firebaseUid = localStorage.getItem("companyFirebaseUid");
+        const legacyToken = localStorage.getItem("token");
+        
+        let companyId = null;
+        if (firebaseUid) {
+          // Company migrada para Firebase Auth - usar UID
+          companyId = firebaseUid;
+        } else if (legacyToken) {
+          // Company ainda no sistema legado
+          companyId = atob(legacyToken);
+        }
           
         if (companyId) {
-          console.log("Fetching company data from Firebase, ID:", companyId);
+          console.log("UserProfileButton: Fetching company data from Firebase, ID:", companyId);
           const companyData = await fetchUserDataFromFirebase('company', companyId);
           
           if (companyData) {
-            console.log("Company data obtained from Firebase:", companyData);
+            console.log("UserProfileButton: Company data obtained from Firebase:", companyData);
             return {
               name: companyData.name || "Company",
               photo: companyData.photoURL || companyData.photo || "/images/default-avatar.png",
