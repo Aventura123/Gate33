@@ -1,35 +1,82 @@
-// Add a log at the very beginning of the file to confirm loading
-console.log("--- firebase.ts loaded ---");
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, signInWithEmailAndPassword, type UserCredential, type Auth } from 'firebase/auth';
+import { getFirestore, doc, getDoc, type DocumentData, setDoc, updateDoc, deleteDoc, type Firestore } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, listAll, type StorageReference, type FirebaseStorage } from 'firebase/storage';
 
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithEmailAndPassword, UserCredential } from 'firebase/auth';
-import { getFirestore, doc, getDoc, DocumentData, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, listAll, StorageReference } from 'firebase/storage';
+// Helper function to clean environment variables (remove quotes if present)
+const cleanEnvVar = (value: string | undefined): string => {
+  if (!value) return '';
+  return value.replace(/^["']|["']$/g, ''); // Remove leading/trailing quotes
+};
 
 // Firebase configuration with sensitive information in environment variables
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyBUZ-F0kzPxRdlSkBacI2AnlNe8_-BuSZo",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "gate33-b5029.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "gate33-b5029",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "gate33-b5029.firebasestorage.app",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "823331487278",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:823331487278:web:932f2936eef09e37c3a9bf"
+  apiKey: cleanEnvVar(process.env.NEXT_PUBLIC_FIREBASE_API_KEY),
+  authDomain: cleanEnvVar(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN),
+  projectId: cleanEnvVar(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID),
+  storageBucket: cleanEnvVar(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: cleanEnvVar(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID),
+  appId: cleanEnvVar(process.env.NEXT_PUBLIC_FIREBASE_APP_ID)
 };
 
-// Initialize Firebase only once
-console.log("Initializing Firebase...");
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-console.log("Firebase initialized successfully");
+// Validate Firebase config before initialization
+const validateFirebaseConfig = () => {
+  const requiredFields = [
+    { key: 'NEXT_PUBLIC_FIREBASE_API_KEY', value: firebaseConfig.apiKey },
+    { key: 'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN', value: firebaseConfig.authDomain },
+    { key: 'NEXT_PUBLIC_FIREBASE_PROJECT_ID', value: firebaseConfig.projectId },
+    { key: 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET', value: firebaseConfig.storageBucket },
+    { key: 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID', value: firebaseConfig.messagingSenderId },
+    { key: 'NEXT_PUBLIC_FIREBASE_APP_ID', value: firebaseConfig.appId }
+  ];
 
-// Initialize Services
-console.log("Initializing Firebase services...");
-const auth = getAuth(app);
-const db = getFirestore(app);
+  const missingFields = requiredFields.filter(field => !field.value || field.value.trim() === '');
+  
+  if (missingFields.length > 0) {
+    console.error('❌ Missing Firebase configuration:');
+    missingFields.forEach(field => {
+      console.error(`  - ${field.key}: "${field.value}"`);
+    });
+    throw new Error(`Firebase configuration incomplete: ${missingFields.map(f => f.key).join(', ')}`);
+  }
 
-// Initialize storage with correct configuration
-console.log("Initializing Firebase Storage...");
-const storage = getStorage(app);
-console.log("Firebase Storage initialized successfully with bucket:", firebaseConfig.storageBucket);
+  console.log('✅ Firebase configuration validated:', {
+    apiKey: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 10)}...` : 'MISSING',
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId,
+    storageBucket: firebaseConfig.storageBucket,
+    messagingSenderId: firebaseConfig.messagingSenderId,
+    appId: firebaseConfig.appId ? `${firebaseConfig.appId.substring(0, 20)}...` : 'MISSING'
+  });
+};
+
+// Validate config before proceeding (only in browser)
+if (typeof window !== 'undefined') {
+  validateFirebaseConfig();
+}
+
+// Initialize Firebase only once with proper error handling
+let app: FirebaseApp;
+try {
+  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  console.log('✅ Firebase app initialized successfully');
+} catch (error) {
+  console.error('❌ Error initializing Firebase app:', error);
+  console.error('Firebase config being used:', firebaseConfig);
+  throw error;
+}
+
+// Initialize Services with error handling
+let auth: Auth, db: Firestore, storage: FirebaseStorage;
+try {
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+  console.log('✅ Firebase services initialized successfully');
+} catch (error) {
+  console.error('❌ Error initializing Firebase services:', error);
+  throw error;
+}
 
 // Define a type for the storage error
 interface StorageErrorType {
@@ -79,8 +126,6 @@ const handleStorageError = (error: StorageErrorType) => {
 // Advanced diagnostic function for Firebase Storage
 const diagnoseFBStorage = async () => {
   try {
-    console.log("Starting Firebase Storage diagnostic...");
-    
     // 1. Check if Firebase is initialized
     if (!storage) {
       console.error("Firebase Storage is not initialized!");
@@ -93,14 +138,11 @@ const diagnoseFBStorage = async () => {
     
     // 2. Try a simple operation - list files
     try {
-      console.log("Attempting to list references in the default bucket...");
       // This line will fail if there are permission or connectivity issues
       const rootRef = ref(storage, '/');
-      console.log("Root reference created successfully:", rootRef);
       
       // Try to create a reference to a test file
       const testRef = ref(storage, 'test-connection.txt');
-      console.log("Test reference created successfully:", testRef);
       
       return {
         status: "success",
