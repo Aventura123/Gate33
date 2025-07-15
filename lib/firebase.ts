@@ -173,7 +173,7 @@ const diagnoseFBStorage = async () => {
   }
 };
 
-// Helpers for common Firebase operations
+// Helpers for common Firebase opegrations
 const firebase = {
   app,
   auth,
