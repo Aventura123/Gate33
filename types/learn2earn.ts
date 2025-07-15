@@ -32,7 +32,7 @@ export interface Learn2Earn {
   startDate: Date | Timestamp | string | null;
   endDate: Date | Timestamp | string | null;
   tasks: Learn2EarnTask[];
-  status: 'active' | 'paused' | 'completed' | 'draft';
+  status: 'active' | 'paused' | 'completed' | 'draft' | 'pending';
   companyId: string;
   contractAddress?: string;  transactionHash?: string;
   createdAt?: Date | Timestamp | string;
