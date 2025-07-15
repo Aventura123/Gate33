@@ -44,6 +44,14 @@ const AdPopup: React.FC = () => {
   // Fetch active ads from Firestore
   const fetchAds = async () => {
     try {
+      console.log('Fetching ads from Firestore...');
+      
+      // Check if db is initialized
+      if (!db) {
+        console.error('Firestore db is not initialized');
+        return;
+      }
+      
       const adsRef = collection(db, 'advertisements');
       
       // A simple query that doesn't require a composite index
@@ -52,7 +60,9 @@ const AdPopup: React.FC = () => {
         where('active', '==', true)
       );
       
+      console.log('Executing Firestore query...');
       const querySnapshot = await getDocs(q);
+      console.log('Query executed successfully, empty:', querySnapshot.empty);
       
       if (!querySnapshot.empty) {
         // Convert all docs to Advertisement objects
@@ -65,6 +75,8 @@ const AdPopup: React.FC = () => {
             id: doc.id
           });
         });
+        
+        console.log('Found', ads.length, 'active ads');
         
         // Sort on the client side (JavaScript) by priority (descending)
         ads.sort((a, b) => (b.priority || 0) - (a.priority || 0));
@@ -85,17 +97,40 @@ const AdPopup: React.FC = () => {
             }, 2000);
           }
         }
+      } else {
+        console.log('No active ads found');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching advertisements:', error);
+      
+      // Log more specific error information
+      if (error.code) {
+        console.error('Firebase error code:', error.code);
+      }
+      if (error.message) {
+        console.error('Firebase error message:', error.message);
+      }
+      
+      // If it's a permission error, it might be related to Firestore rules
+      if (error.code === 'permission-denied') {
+        console.error('Permission denied - check Firestore rules');
+      }
     }
   };
   
   useEffect(() => {
-    fetchAds();
+    // Delay the initial fetch to ensure Firebase is fully initialized
+    const timer = setTimeout(() => {
+      fetchAds();
+    }, 1000);
+    
     // Check again every 5 minutes for new ads
     const interval = setInterval(fetchAds, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, []);
   
   // If there's no ad or it's not visible, don't render anything

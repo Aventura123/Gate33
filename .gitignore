@@ -67,6 +67,9 @@ dist/
 firebase-service-account*.json
 firebaseConfig.json
 serviceAccountKey.json
+firestore.rules
+firestore.indexes.json
+firebase.json
 
 # Local deployment files
 .env*.local
