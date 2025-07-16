@@ -316,10 +316,22 @@ const SeekerDashboard = () => {
     if (!url || url === "/images/default-avatar.png") return true;
     
     try {
-      const response = await fetch(url, { method: 'HEAD' });
+      // Create a promise with timeout
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      );
+      
+      const fetchPromise = fetch(url, { 
+        method: 'HEAD',
+        cache: 'no-cache'
+      });
+      
+      const response = await Promise.race([fetchPromise, timeoutPromise]);
       return response.ok;
-    } catch {
-      return false;
+    } catch (error) {
+      console.warn("Image validation failed (might be temporary):", error);
+      // Return true for temporary network issues - don't delete the photoURL
+      return true;
     }
   };
 
@@ -353,15 +365,10 @@ const SeekerDashboard = () => {
             console.log("Photo URL is valid, setting userPhoto");
             setUserPhoto(data.photoURL);
           } else {
-            console.warn("Photo URL is not accessible:", data.photoURL);
+            console.warn("Photo URL is not accessible (temporary issue):", data.photoURL);
             setUserPhoto("/images/default-avatar.png");
-            // Optionally, remove the broken URL from the profile
-            try {
-              await updateDoc(seekerRef, { photoURL: "" });
-              console.log("Removed broken photoURL from profile");
-            } catch (updateError) {
-              console.error("Failed to remove broken photoURL:", updateError);
-            }
+            // Note: Keeping photoURL in database - this might be a temporary connectivity issue
+            console.log("Using default avatar temporarily, keeping photoURL in database");
           }
         } else {
           console.log("No photoURL found in Firestore document, using default");
