@@ -19,11 +19,11 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [currentNetwork, setCurrentNetwork] = useState<string | null>(null);
+  const [currentNetwork, setCurrentNetwork] = useState<string | null>("base");
   const [isUsingWalletConnect, setIsUsingWalletConnect] = useState(false);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
-  const [availableNetworks] = useState<string[]>(["ethereum", "polygon", "binance", "avalanche", "optimism", "base"]);
+  const [availableNetworks] = useState<string[]>(["base", "polygon", "binance", "avalanche", "optimism"]);
 
   // Query provider and set state
   const updateWalletInfo = async () => {

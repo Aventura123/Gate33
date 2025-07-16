@@ -5,7 +5,6 @@ const INFURA_KEY = process.env.INFURA_KEY || process.env.NEXT_PUBLIC_INFURA_KEY 
 // Custom endpoints per network (allows override via env)
 const CUSTOM_RPC: Record<string, string | undefined> = {
   polygon: process.env.CUSTOM_POLYGON_RPC,
-  ethereum: process.env.CUSTOM_ETHEREUM_RPC,
   binance: process.env.CUSTOM_BSC_RPC,
   avalanche: process.env.CUSTOM_AVALANCHE_RPC,
   optimism: process.env.CUSTOM_OPTIMISM_RPC,
@@ -20,12 +19,6 @@ const HTTP_RPC_URLS: Record<string, string[]> = {
     'https://polygon-rpc.com',
     'https://polygon-bor.publicnode.com',
     'https://rpc-mainnet.matic.quiknode.pro',
-  ].filter(Boolean) as string[],
-  ethereum: [
-    CUSTOM_RPC.ethereum,
-    `https://mainnet.infura.io/v3/${INFURA_KEY}`,
-    'https://eth.llamarpc.com',
-    'https://rpc.ankr.com/eth',
   ].filter(Boolean) as string[],
   binance: [
     CUSTOM_RPC.binance,
@@ -57,10 +50,6 @@ const WS_RPC_URLS: Record<string, string[]> = {
     'wss://ws-matic-mainnet.chainstacklabs.com',
     'wss://polygon-bor.publicnode.com',
     'wss://polygon-rpc.com/ws',
-  ].filter(Boolean) as string[],
-  ethereum: [
-    CUSTOM_RPC.ethereum && CUSTOM_RPC.ethereum.startsWith('wss://') ? CUSTOM_RPC.ethereum : undefined,
-    `wss://mainnet.infura.io/ws/v3/${INFURA_KEY}`,
   ].filter(Boolean) as string[],
   binance: [
     CUSTOM_RPC.binance && CUSTOM_RPC.binance.startsWith('wss://') ? CUSTOM_RPC.binance : undefined,

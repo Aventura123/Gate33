@@ -15,7 +15,6 @@ class SmartContractService {
 
   // Mapeamento de endereços USDT por rede
   private USDT_ADDRESSES: Record<string, string> = {
-    ethereum: '0xdAC17F958D2ee523a2206206994597C13D831ec7',    // Ethereum Mainnet USDT
     polygon: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',     // Polygon USDT
     binance: '0x55d398326f99059fF775485246999027B3197955',     // BSC Mainnet USDT
     avalanche: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',   // Avalanche USDT
@@ -129,7 +128,6 @@ class SmartContractService {
   // Get network display name (user-friendly name)
   private getNetworkDisplayName(chainId: number): string {
     const displayNameMap: Record<number, string> = {
-      1: 'Ethereum Mainnet',
       3: 'Ropsten Testnet',
       4: 'Rinkeby Testnet',
       5: 'Goerli Testnet',
@@ -392,7 +390,6 @@ class SmartContractService {
   private getNetworkName(chainId: number): string | null {
     // Remove chainId 97 and 'binanceTestnet' from networkMap
     const networkMap: Record<number, string> = {
-      1: 'ethereum',    // Ethereum Mainnet
       3: 'ropsten',     // Ropsten Testnet
       4: 'rinkeby',     // Rinkeby Testnet
       5: 'goerli',      // Goerli Testnet

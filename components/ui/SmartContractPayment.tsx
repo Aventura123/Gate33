@@ -22,7 +22,7 @@ const SmartContractPayment: React.FC<SmartContractPaymentProps> = ({
   amount,
   recipientAddress,
   purpose,
-  network = "ethereum",
+  network = "base",
   includeFee = true,
   label = "Pagar via Contrato",
   className = "",

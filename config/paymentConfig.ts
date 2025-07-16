@@ -1,25 +1,10 @@
 // Web3 payment system configurations
 import { db } from "../lib/firebase";
 
-// Contract addresses for each network (fallback values)
-export const CONTRACT_ADDRESSES = {
-  ethereum: '0x0000000000000000000000000000000000000000',
-  polygon: '0x0000000000000000000000000000000000000000',
-  binance: '0x0000000000000000000000000000000000000000',
-  avalanche: '0x0000000000000000000000000000000000000000',
-  optimism: '0x0000000000000000000000000000000000000000',
-  base: '0x0000000000000000000000000000000000000000' // Placeholder - será atualizado quando os contratos forem deployados
-};
+
 
 // Network configurations
 export const NETWORK_CONFIG = {
-  ethereum: {
-    chainId: 1,
-    name: 'Ethereum Mainnet',
-    rpcUrl: 'https://mainnet.infura.io/v3/' + (process.env.NEXT_PUBLIC_INFURA_KEY || ''),
-    currencySymbol: 'ETH',
-    blockExplorer: 'https://etherscan.io'
-  },
   polygon: {
     chainId: 137,
     name: 'Polygon Mainnet',

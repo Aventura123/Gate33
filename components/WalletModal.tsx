@@ -50,7 +50,6 @@ const WalletModal: React.FC<WalletModalProps> = ({
   // Helper for network details  
   const getNetworkDetails = (network: string) => {
     switch (network) {
-      case 'ethereum': return { name: 'Ethereum Mainnet', color: 'bg-blue-500' };
       case 'polygon': return { name: 'Polygon Mainnet', color: 'bg-purple-500' };
       case 'binance': return { name: 'Binance Smart Chain', color: 'bg-yellow-500' };
       case 'optimism': return { name: 'Optimism', color: 'bg-pink-500' };
@@ -79,8 +78,8 @@ const WalletModal: React.FC<WalletModalProps> = ({
               <div key={idx} className="flex flex-row gap-3 justify-center">                {row.map((n: string) => {
                   const d = getNetworkDetails(n);
                   const isActive = n === currentNetwork;
-                  // Desbloquear a rede base: remover 'base' da lista de desabilitados
-                  const isDisabled = n === 'ethereum'; // Apenas Ethereum está desabilitada
+                  // Remover redes desabilitadas, todas as redes agora estão disponíveis
+                  const isDisabled = false;
                   return (
                     <button
                       key={n}
@@ -94,11 +93,9 @@ const WalletModal: React.FC<WalletModalProps> = ({
                       } min-w-90`}
                       type="button"
                       disabled={isDisabled}
-                      title={isDisabled ? 'Ethereum network temporarily disabled' : ''}
-                    >                      <span className={`w-3 h-3 rounded-full mr-2 ${d.color} ${isDisabled ? 'opacity-50' : ''}`} />
+                    >                      <span className={`w-3 h-3 rounded-full mr-2 ${d.color}`} />
                       <span className="flex flex-col items-start">
                         <span>{d.name}</span>
-                        {isDisabled && <span className="text-[9px] text-gray-500">Coming Soon</span>}
                       </span>
                     </button>
                   );

@@ -8,7 +8,6 @@ import WalletModal from './WalletModal';
 // Helper function to get network color
 const getNetworkColor = (network: NetworkType): string => {
   switch (network) {
-    case 'ethereum': return 'blue';
     case 'polygon': return 'purple';
     case 'binance': return 'yellow';
     case 'avalanche': return 'red';
@@ -21,12 +20,6 @@ const getNetworkColor = (network: NetworkType): string => {
 // Helper function to get network details
 const getNetworkDetails = (network: NetworkType) => {
   switch (network) {
-    case 'ethereum':
-      return {
-        name: 'Ethereum Mainnet',
-        nativeCurrency: 'ETH',
-        color: 'bg-blue-500'
-      };
     case 'polygon':
       return {
         name: 'Polygon Mainnet',
@@ -163,7 +156,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
   const [showNetworkSuccess, setShowNetworkSuccess] = useState(false);
   // Prefer context networks if available
   const availableNetworks: NetworkType[] = (propNetworks || contextNetworks || [
-    "ethereum", "polygon", "binance", "avalanche", "optimism", "base"
+    "base", "polygon", "binance", "avalanche", "optimism"
   ]) as NetworkType[];
 
   // Format address for display

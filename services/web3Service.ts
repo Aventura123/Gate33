@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-export type NetworkType = 'ethereum' | 'polygon' | 'binance' | 'avalanche' | 'optimism' | 'base';
+export type NetworkType = 'polygon' | 'binance' | 'avalanche' | 'optimism' | 'base';
 
 export interface WalletInfo {
   address: string;
@@ -57,8 +57,7 @@ class Web3Service {
   /**
    * Gets the name of a network from its chainId
    */  private getNetworkNameForChainId(chainId: number): string {
-    // Remove BSC Testnet (97) logic
-    if (chainId === 1) return 'Ethereum Mainnet';
+    // Remove Ethereum and BSC Testnet (97) logic
     if (chainId === 56) return 'Binance Smart Chain';
     if (chainId === 137) return 'Polygon Mainnet';
     if (chainId === 43114) return 'Avalanche C-Chain';
@@ -163,7 +162,7 @@ class Web3Service {
         
         if (!networkType) {
           console.log('[WalletConnect] Could not determine network type for chainId', numericChainId);
-          networkType = 'ethereum'; // Default
+          networkType = 'base'; // Default to base instead of polygon
         }
         
         // Re-initialize provider with the new chainId
@@ -310,7 +309,6 @@ class Web3Service {
       }
         // Initialize the provider with detected chainId, without forcing any specific network
       const networkName = chainId === 56 ? "bnb" : 
-                          chainId === 1 ? "homestead" : 
                           chainId === 137 ? "matic" :
                           chainId === 43114 ? "avalanche" :
                           chainId === 10 ? "optimism" : 
@@ -397,13 +395,15 @@ class Web3Service {
       throw new Error("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set in .env.local");
     }
     
-    // Use the unified Infura key logic from rpcConfig
-    const ethRpcList = getHttpRpcUrls('ethereum');
-    const infuraRpc = ethRpcList.find(url => url.includes('infura.io'));
-    if (!infuraRpc || infuraRpc.includes('undefined')) {
-      throw new Error('Ethereum Infura RPC endpoint is not properly configured. Please check your INFURA_KEY in .env.local and rpcConfig.ts.');
-    }    // Add popular networks for better wallet compatibility
-    const chains = [1, 137, 56, 43114, 10, 8453]; // Added Avalanche (43114), Optimism (10), and Base (8453)
+    // Use Polygon as the primary RPC endpoint
+    const polygonRpcList = getHttpRpcUrls('polygon');
+    const polygonRpc = polygonRpcList[0]; // Use first polygon RPC
+    if (!polygonRpc) {
+      throw new Error('Polygon RPC endpoint is not properly configured. Please check your rpcConfig.ts.');
+    }
+
+    // Remove Ethereum (chain 1) from supported chains, Base as primary
+    const chains = [8453, 137, 56, 43114, 10]; // Base, Polygon, BSC, Avalanche, Optimism
     
     // Initialize with optimal configuration for general wallet compatibility
     console.log('[WalletConnect] Creating provider with chains:', chains);
@@ -411,14 +411,13 @@ class Web3Service {
       this.wcV2Provider = await EthereumProvider.init({
         projectId,
         chains,
-        optionalChains: [1, 137, 56, 43114, 10, 8453], // Include Avalanche, Optimism, and Base
+        optionalChains: [8453, 137, 56, 43114, 10], // Base, Polygon, BSC, Avalanche, Optimism
         showQrModal: true,        rpcMap: {
-          1: infuraRpc,
+          8453: "https://mainnet.base.org",
           137: "https://polygon-rpc.com",
           56: "https://bsc-dataseed.binance.org/",
           43114: "https://api.avax.network/ext/bc/C/rpc",
-          10: "https://mainnet.optimism.io",
-          8453: "https://mainnet.base.org"
+          10: "https://mainnet.optimism.io"
         },
         disableProviderPing: false, // Keep connection alive with pings
         // Use standard storage options that are compatible with WalletConnect types
@@ -469,8 +468,8 @@ class Web3Service {
         console.log('[WalletConnect] Connected network:', network);
       } catch (networkError) {
         console.error('[WalletConnect] Failed to get network:', networkError);
-        // Use a default network if we can't detect it
-        network = { chainId: 1, name: 'unknown' };
+        // Use Base as default network if we can't detect it
+        network = { chainId: 8453, name: 'base' };
       }
       
       this.walletInfo = {
@@ -539,7 +538,6 @@ class Web3Service {
           // Determine the network name based on chainId
         let networkName = "any";
         if (numericChainId === 56) networkName = "bnb";
-        else if (numericChainId === 1) networkName = "homestead";
         else if (numericChainId === 137) networkName = "matic";
         else if (numericChainId === 43114) networkName = "avalanche";
         else if (numericChainId === 10) networkName = "optimism";
@@ -1574,11 +1572,11 @@ class Web3Service {
               continue;
             }
             
-            // If we've exhausted retries, return default with clear error message
-            this.connectionError = "Network detection issue. Using default configuration.";
+            // If we've exhausted retries, return Base as default with clear error message
+            this.connectionError = "Network detection issue. Using Base as default configuration.";
             return {
-              name: 'Ethereum (Fallback)',
-              chainId: 1 // Default Mainnet
+              name: 'Base (Fallback)',
+              chainId: 8453 // Default to Base
             };
           }
           
