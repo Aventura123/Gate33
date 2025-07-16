@@ -618,7 +618,7 @@ export default function DonatePage() {
             
             <div className="mb-8 flex justify-center">
               <div className="inline-flex rounded-md shadow">
-                <WalletButton className="px-8 py-3" availableNetworks={["ethereum", "polygon", "binance", "avalanche"]} />
+                <WalletButton className="px-8 py-3" availableNetworks={["polygon", "binance", "avalanche", "base"]} />
               </div>
             </div>
               {/* Token reward explanation */}            <div className="bg-black/30 border border-gray-700 hover:border-orange-500 p-6 rounded-lg shadow-lg mb-8 transition-colors duration-200">

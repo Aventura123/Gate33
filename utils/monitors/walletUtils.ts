@@ -91,6 +91,21 @@ export async function getWalletBalanceWithFallback(): Promise<string> {
 }
 
 /**
+ * Clears all cached wallet data from localStorage
+ */
+export function clearWalletCache(): void {
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('CACHED_WALLET_BALANCE');
+      localStorage.removeItem('CACHED_WALLET_BALANCE_TIMESTAMP');
+      console.log('[WalletUtils] Wallet cache cleared successfully');
+    }
+  } catch (error) {
+    console.error('Error clearing wallet cache:', error);
+  }
+}
+
+/**
  * Updates the cached wallet balance when receiving data from the API response
  * @param apiResponse The response from the diagnostics API
  */

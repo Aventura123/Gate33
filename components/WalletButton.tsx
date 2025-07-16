@@ -167,15 +167,29 @@ const WalletButton: React.FC<WalletButtonProps> = ({
 
   // Handle connect/disconnect
   const handleConnect = async (type: 'metamask' | 'walletconnect') => {
+    // Prevent multiple connection attempts
+    if (isConnectingWallet) {
+      console.log('[WalletButton] Connection already in progress, ignoring request');
+      return;
+    }
+    
     try {
       await connectWallet(type);
       if (onConnect && walletAddress) onConnect(walletAddress);
       setShowWalletOptions(false);
-    } catch {}
+    } catch (error) {
+      console.error('[WalletButton] Connection error:', error);
+    }
   };
-  const handleDisconnect = () => {
-    disconnectWallet();
-    if (onDisconnect) onDisconnect();
+  const handleDisconnect = async () => {
+    try {
+      await disconnectWallet();
+      if (onDisconnect) onDisconnect();
+    } catch (error) {
+      console.error('[WalletButton] Error during disconnect:', error);
+      // Still call onDisconnect even if there was an error
+      if (onDisconnect) onDisconnect();
+    }
   };
 
   // Handle network switch
@@ -223,14 +237,16 @@ const WalletButton: React.FC<WalletButtonProps> = ({
             <div className="absolute z-10 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 left-1/2 transform -translate-x-1/2">
               <button
                 onClick={() => handleConnect('metamask')}
-                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-gray-800 rounded-t-lg flex items-center gap-2"
+                disabled={isConnectingWallet}
+                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-gray-800 rounded-t-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span role="img" aria-label="MetaMask" className="mr-2">🦊</span>
                 MetaMask
               </button>
               <button
                 onClick={() => handleConnect('walletconnect')}
-                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-gray-800 rounded-b-lg border-t border-gray-100 flex items-center gap-2"
+                disabled={isConnectingWallet}
+                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-gray-800 rounded-b-lg border-t border-gray-100 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span role="img" aria-label="WalletConnect" className="mr-2">🔗</span>
                 WalletConnect

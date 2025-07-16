@@ -94,16 +94,16 @@ class Web3Service {
     }
 
     // Listener for session disconnection
-    this.wcV2Provider.on?.('session_delete', () => {
+    this.wcV2Provider.on?.('session_delete', async () => {
       console.log('[WalletConnect] Session deleted event received');
-      this.disconnectWallet();
+      await this.disconnectWallet();
       window.dispatchEvent(new CustomEvent('web3WalletDisconnected'));
     });
     
     // Specific listener for disconnect event (complements session_delete)
-    this.wcV2Provider.on?.('disconnect', () => {
+    this.wcV2Provider.on?.('disconnect', async () => {
       console.log('[WalletConnect] Disconnect event received');
-      this.disconnectWallet();
+      await this.disconnectWallet();
       window.dispatchEvent(new CustomEvent('web3WalletDisconnected'));
     });
     
@@ -113,12 +113,12 @@ class Web3Service {
     });
 
     // Listener for account change with better error handling
-    this.wcV2Provider.on?.('accountsChanged', (accounts: string[]) => {
+    this.wcV2Provider.on?.('accountsChanged', async (accounts: string[]) => {
       console.log('[WalletConnect] Accounts changed:', accounts);
       
       if (!accounts || accounts.length === 0) {
         console.log('[WalletConnect] No accounts available, disconnecting wallet');
-        this.disconnectWallet();
+        await this.disconnectWallet();
         window.dispatchEvent(new CustomEvent('web3WalletDisconnected'));
       } else {
         try {
@@ -590,7 +590,7 @@ class Web3Service {
     window.ethereum.on('accountsChanged', async (accounts: string[]) => {
       if (accounts.length === 0) {
         // User disconnected the wallet
-        this.disconnectWallet();
+        await this.disconnectWallet();
         window.dispatchEvent(new CustomEvent('web3WalletDisconnected'));
       } else {
         // User switched accounts
@@ -650,10 +650,189 @@ class Web3Service {
   /**
    * Disconnects the current wallet
    */
-  disconnectWallet() {
+  async disconnectWallet() {
+    console.log('[disconnectWallet] Starting complete wallet disconnection...');
+    
+    // Properly disconnect WalletConnect if it's active
+    if (this.wcV2Provider) {
+      try {
+        console.log('[disconnectWallet] Disconnecting WalletConnect provider...');
+        await this.wcV2Provider.disconnect();
+        console.log('[disconnectWallet] WalletConnect provider disconnected successfully');
+      } catch (error) {
+        console.warn('[disconnectWallet] Error disconnecting WalletConnect provider:', error);
+        // Continue with cleanup even if disconnect fails
+      }
+      
+      // Remove all event listeners to prevent memory leaks
+      try {
+        this.wcV2Provider.removeAllListeners?.();
+      } catch (error) {
+        console.warn('[disconnectWallet] Error removing WalletConnect listeners:', error);
+      }
+      
+      // Clear the WalletConnect provider reference
+      this.wcV2Provider = null;
+    }
+    
+    // Clear all wallet-related state
     this.provider = null;
     this.signer = null;
     this.walletInfo = null;
+    this.connectionError = null;
+
+    // Remove MetaMask event listeners to prevent memory leaks
+    if (typeof window !== 'undefined' && window.ethereum) {
+      try {
+        // Remove all event listeners from window.ethereum
+        window.ethereum.removeAllListeners?.();
+        
+        // If removeAllListeners is not available, try to remove specific listeners
+        if (!window.ethereum.removeAllListeners) {
+          window.ethereum.removeListener?.('chainChanged');
+          window.ethereum.removeListener?.('accountsChanged');
+          window.ethereum.removeListener?.('connect');
+          window.ethereum.removeListener?.('disconnect');
+        }
+        
+        console.log('[disconnectWallet] MetaMask event listeners removed');
+      } catch (error) {
+        console.warn('[disconnectWallet] Error removing MetaMask listeners:', error);
+      }
+    }
+    
+    // Clear all localStorage related to wallet data
+    if (typeof window !== 'undefined') {
+      try {
+        // Clear cached wallet balance using utility function
+        const { clearWalletCache } = await import('../utils/monitors/walletUtils');
+        clearWalletCache();
+        
+        // Clear any stored network preference
+        localStorage.removeItem('currentNetwork');
+        localStorage.removeItem('selectedNetwork');
+        
+        // Clear any WalletConnect specific storage
+        localStorage.removeItem('walletconnect');
+        localStorage.removeItem('wc@2:client:0.3//session');
+        localStorage.removeItem('wc@2:core:0.3//messages');
+        localStorage.removeItem('wc@2:core:0.3//subscription');
+        localStorage.removeItem('wc@2:core:0.3//history');
+        localStorage.removeItem('wc@2:core:0.3//expirer');
+        localStorage.removeItem('wc@2:core:0.3//keychain');
+        localStorage.removeItem('wc@2:core:0.3//pairing');
+        
+        // Clear additional WalletConnect data that might persist
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (
+            key.startsWith('wc@2:') || 
+            key.startsWith('walletconnect') ||
+            key.includes('ethereum-provider') ||
+            key.includes('web3modal') ||
+            key.includes('@web3modal') ||
+            key.includes('wallet-connect') ||
+            key.includes('W3M_') ||
+            key.includes('wc_')
+          )) {
+            keysToRemove.push(key);
+          }
+        }
+        
+        keysToRemove.forEach(key => {
+          try {
+            localStorage.removeItem(key);
+            console.log(`[disconnectWallet] Cleared localStorage key: ${key}`);
+          } catch (error) {
+            console.warn(`[disconnectWallet] Failed to clear localStorage key ${key}:`, error);
+          }
+        });
+        
+        console.log('[disconnectWallet] All localStorage wallet data cleared');
+      } catch (error) {
+        console.warn('[disconnectWallet] Error clearing localStorage:', error);
+      }
+      
+      // Clear sessionStorage as well
+      try {
+        sessionStorage.removeItem('walletconnect');
+        sessionStorage.removeItem('currentNetwork');
+        sessionStorage.removeItem('selectedNetwork');
+        
+        const sessionKeysToRemove = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && (
+            key.startsWith('wc@2:') || 
+            key.startsWith('walletconnect') ||
+            key.includes('ethereum-provider') ||
+            key.includes('web3modal') ||
+            key.includes('@web3modal') ||
+            key.includes('wallet-connect') ||
+            key.includes('W3M_') ||
+            key.includes('wc_')
+          )) {
+            sessionKeysToRemove.push(key);
+          }
+        }
+        
+        sessionKeysToRemove.forEach(key => {
+          try {
+            sessionStorage.removeItem(key);
+            console.log(`[disconnectWallet] Cleared sessionStorage key: ${key}`);
+          } catch (error) {
+            console.warn(`[disconnectWallet] Failed to clear sessionStorage key ${key}:`, error);
+          }
+        });
+        
+        console.log('[disconnectWallet] All sessionStorage wallet data cleared');
+      } catch (error) {
+        console.warn('[disconnectWallet] Error clearing sessionStorage:', error);
+      }
+      
+      // Clear IndexedDB data for WalletConnect and Web3Modal
+      try {
+        if ('indexedDB' in window) {
+          // Clear WalletConnect IndexedDB data
+          const dbNamesToDelete = [
+            'keyvaluestorage',
+            'wc@2:core',
+            'wc@2:sign-client',
+            'web3modal',
+            '@web3modal/storage'
+          ];
+          
+          for (const dbName of dbNamesToDelete) {
+            try {
+              const deleteRequest = indexedDB.deleteDatabase(dbName);
+              deleteRequest.onsuccess = () => {
+                console.log(`[disconnectWallet] Cleared IndexedDB: ${dbName}`);
+              };
+              deleteRequest.onerror = () => {
+                console.warn(`[disconnectWallet] Failed to clear IndexedDB: ${dbName}`);
+              };
+            } catch (error) {
+              console.warn(`[disconnectWallet] Error deleting IndexedDB ${dbName}:`, error);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('[disconnectWallet] Error clearing IndexedDB:', error);
+      }
+    }
+    
+    // Dispatch disconnect event to notify all components
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('web3WalletDisconnected', {
+        detail: { 
+          timestamp: Date.now(),
+          reason: 'User initiated disconnect'
+        }
+      }));
+    }
+    
+    console.log('[disconnectWallet] Complete wallet disconnection and cleanup finished');
   }
 
   /**
