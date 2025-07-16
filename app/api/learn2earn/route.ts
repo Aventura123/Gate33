@@ -8,19 +8,35 @@ function getAdminDb() {
   if (!getApps().length) {
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+    console.log('Firebase config check:', {
+      hasPrivateKey: !!privateKey,
+      privateKeyLength: privateKey?.length,
+      clientEmail,
+      projectId,
+      envKeys: Object.keys(process.env).filter(key => key.includes('FIREBASE'))
+    });
 
     if (!privateKey || !clientEmail || !projectId) {
-      throw new Error('Missing Firebase Admin credentials');
+      const errorMsg = `Missing Firebase Admin credentials: privateKey=${!!privateKey}, clientEmail=${!!clientEmail}, projectId=${!!projectId}`;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
 
-    initializeApp({
-      credential: cert({
-        projectId,
-        clientEmail,
-        privateKey,
-      }),
-    });
+    try {
+      initializeApp({
+        credential: cert({
+          projectId,
+          clientEmail,
+          privateKey,
+        }),
+      });
+      console.log('Firebase Admin initialized successfully');
+    } catch (error) {
+      console.error('Error initializing Firebase Admin:', error);
+      throw error;
+    }
   }
   
   return getFirestore();
