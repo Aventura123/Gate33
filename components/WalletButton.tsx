@@ -227,7 +227,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
             {isConnectingWallet ? 'Connecting...' : title}
           </button>
           {showWalletOptions && !isConnectingWallet && (
-            <div className="absolute z-10 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 left-0">
+            <div className="absolute z-10 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 left-1/2 transform -translate-x-1/2">
               <button
                 onClick={() => handleConnect('metamask')}
                 className="w-full text-left px-4 py-2 hover:bg-orange-100 text-gray-800 rounded-t-lg flex items-center gap-2"

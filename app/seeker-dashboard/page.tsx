@@ -14,6 +14,7 @@ import WalletButton from '../../components/WalletButton';
 import { web3Service } from "../../services/web3Service";
 import NotificationsPanel, { NotificationBell } from '../../components/ui/NotificationsPanel';
 import SupportPanel from '../../components/support/SupportPanel';
+import { useAuth } from '../../components/AuthProvider';
 
 const isProduction = process.env.NEXT_PUBLIC_DEPLOY_STAGE === "production";
 
@@ -310,6 +311,18 @@ const SeekerDashboard = () => {
     return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
+  // Function to validate image URLs
+  const validateImageUrl = async (url: string): Promise<boolean> => {
+    if (!url || url === "/images/default-avatar.png") return true;
+    
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  };
+
   // Fetch seeker photo (adapt API endpoint) - Wrapped in useCallback
   const fetchSeekerPhoto = useCallback(async (id: string) => {
     if (!db) {
@@ -319,25 +332,43 @@ const SeekerDashboard = () => {
     }
 
     try {
+      console.log("Fetching seeker photo for ID:", id);
       const seekerRef = doc(db, "seekers", id);
       const seekerSnap = await getDoc(seekerRef);
+      
       if (seekerSnap.exists()) {
         const data = seekerSnap.data();
+        console.log("Seeker document found:", {
+          id: seekerSnap.id,
+          hasPhotoURL: !!data.photoURL,
+          photoURL: data.photoURL
+        });
+        
         // Check photoURL field (standard field used consistently)
         if (data.photoURL) {
-          setUserPhoto(data.photoURL);
-        } else {
-          // Fetch default avatar from Firestore
-          const defaultAvatarRef = doc(db, "config", "defaultAvatar");
-          const defaultAvatarSnap = await getDoc(defaultAvatarRef);
-          if (defaultAvatarSnap.exists()) {
-            const defaultAvatarData = defaultAvatarSnap.data();
-            setUserPhoto(defaultAvatarData.url || "/images/default-avatar.png");
+          console.log("Found photoURL in Firestore:", data.photoURL);
+          // Validate the URL before setting it
+          const isValid = await validateImageUrl(data.photoURL);
+          if (isValid) {
+            console.log("Photo URL is valid, setting userPhoto");
+            setUserPhoto(data.photoURL);
           } else {
+            console.warn("Photo URL is not accessible:", data.photoURL);
             setUserPhoto("/images/default-avatar.png");
+            // Optionally, remove the broken URL from the profile
+            try {
+              await updateDoc(seekerRef, { photoURL: "" });
+              console.log("Removed broken photoURL from profile");
+            } catch (updateError) {
+              console.error("Failed to remove broken photoURL:", updateError);
+            }
           }
+        } else {
+          console.log("No photoURL found in Firestore document, using default");
+          setUserPhoto("/images/default-avatar.png");
         }
       } else {
+        console.log("Seeker document not found, using default avatar");
         setUserPhoto("/images/default-avatar.png");
       }
     } catch (error) {
@@ -429,24 +460,20 @@ const SeekerDashboard = () => {
 
         setSeekerProfile(profileData);
         
+        // Debug logs for photo handling
+        console.log("fetchSeekerProfile - Photo debug:", {
+          hasPhotoURL: !!data.photoURL,
+          photoURL: data.photoURL,
+          currentUserPhoto: userPhoto
+        });
+        
         // Update photo state with the photo URL from profile
         if (data.photoURL) {
+          console.log("Setting userPhoto from profile data:", data.photoURL);
           setUserPhoto(data.photoURL);
         } else {
-          // Fetch default avatar from Firestore
-          try {
-            const defaultAvatarRef = doc(db, "config", "defaultAvatar");
-            const defaultAvatarSnap = await getDoc(defaultAvatarRef);
-            if (defaultAvatarSnap.exists()) {
-              const defaultAvatarData = defaultAvatarSnap.data();
-              setUserPhoto(defaultAvatarData.url || "/images/default-avatar.png");
-            } else {
-              setUserPhoto("/images/default-avatar.png");
-            }
-          } catch (error) {
-            console.error("Error fetching default avatar:", error);
-            setUserPhoto("/images/default-avatar.png");
-          }
+          console.log("No photoURL in profile, using default");
+          setUserPhoto("/images/default-avatar.png");
         }
         
         // Load notification preferences
@@ -1164,10 +1191,15 @@ const SeekerDashboard = () => {
               onClick={() => !isUploading && document.getElementById('profile-photo-upload')?.click()}
               title={isUploading ? "Uploading..." : "Click to change profile photo"}
               onError={(e) => {
-                console.log("Image failed to load, reverting to default avatar");
+                console.log("Image failed to load, URL was:", (e.target as HTMLImageElement).src);
+                console.log("Reverting to default avatar");
                 const target = e.target as HTMLImageElement;
-                target.src = "/images/default-avatar.png";
-                setUserPhoto("/images/default-avatar.png");
+                if (target.src !== "/images/default-avatar.png") {
+                  target.src = "/images/default-avatar.png";
+                  setUserPhoto("/images/default-avatar.png");
+                  // Also update the profile to remove the broken URL
+                  setSeekerProfile(prev => ({ ...prev, photoURL: "" }));
+                }
               }}
             />
             

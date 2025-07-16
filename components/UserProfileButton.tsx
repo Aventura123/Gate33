@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useAuth } from './AuthProvider';
 
 interface UserProfileButtonProps {
   className?: string;
@@ -19,6 +20,15 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Try to get auth context, but don't require it
+  const authContext = (() => {
+    try {
+      return useAuth();
+    } catch {
+      return null;
+    }
+  })();
   
   // Detect if it's a mobile version to adjust the dropdown behavior
   useEffect(() => {
@@ -94,15 +104,23 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
             : null;
             
           if (seekerId) {
+            console.log("UserProfileButton: Fetching seeker data from Firebase, ID:", seekerId);
             const seekerData = await fetchUserDataFromFirebase('seeker', seekerId);
             
             if (seekerData) {
+              console.log("UserProfileButton: Seeker data obtained from Firebase:", {
+                name: seekerData.name,
+                hasPhotoURL: !!seekerData.photoURL,
+                photoURL: seekerData.photoURL
+              });
               return {
                 name: seekerData.name || "User",
                 photo: seekerData.photoURL || "/images/default-avatar.png",
                 role: "Job Seeker",
                 type: 'seeker' as const
               };
+            } else {
+              console.log("UserProfileButton: No seeker data found");
             }
           }
         }
@@ -201,7 +219,22 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
     };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // Try to use AuthProvider logout if available
+      if (authContext && authContext.logout) {
+        console.log("Using AuthProvider logout");
+        await authContext.logout();
+      } else {
+        console.log("AuthProvider not available, using manual cleanup");
+      }
+    } catch (error) {
+      console.error("Error with AuthProvider logout:", error);
+    }
+    
+    // Always perform manual cleanup to ensure everything is cleared
+    console.log("Performing manual localStorage cleanup");
+    
     // Clear all possible authentication tokens
     localStorage.removeItem("seekerId");
     localStorage.removeItem("seekerName");
@@ -217,13 +250,24 @@ const UserProfileButton: React.FC<UserProfileButtonProps> = ({ className = "" })
     localStorage.removeItem("companyId");
     localStorage.removeItem("companyName");
     localStorage.removeItem("companyPhoto");
+    localStorage.removeItem("companyToken");
+    localStorage.removeItem("companyEmail");
+    localStorage.removeItem("companyFirebaseUid");
     
+    localStorage.removeItem("firebaseToken");
+    localStorage.removeItem("firebaseUid");
+    
+    // Clear authentication cookie
     document.cookie = "isAuthenticated=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    
+    // Reset local state
+    setUserInfo(null);
+    setIsDropdownOpen(false);
     
     // Redirect to home page
     router.push("/");
     
-    // Reload the page to ensure the component state is updated
+    // Reload the page to ensure all components are updated
     setTimeout(() => {
       window.location.reload();
     }, 100);

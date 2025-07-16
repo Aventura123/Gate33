@@ -8,12 +8,14 @@ import { db } from "../../lib/firebase";
 import { Learn2Earn } from "../../types/learn2earn";
 import { formatDate } from "../../utils/formatDate";
 import WalletButton from '../../components/WalletButton';
+import { useAuth } from '../../components/AuthProvider';
 
 export default function Learn2EarnPage() {
   const [learn2earns, setLearn2Earns] = useState<Learn2Earn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const { user, userRole } = useAuth();
 
   useEffect(() => {
     const fetchLearn2Earns = async () => {
@@ -187,47 +189,103 @@ export default function Learn2EarnPage() {
           {/* Learn2Earn Cards */}
           {!loading && !error && learn2earns.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {learn2earns.map((item) => (
-                <Link 
-                  key={item.id} 
-                  href={`/learn2earn/${item.id}`}
-                  className="bg-black/30 rounded-lg p-6 transition-all hover:bg-black/40 hover:translate-y-[-4px] hover:shadow-lg"
-                  title={`View details of ${item.title}`}
-                  aria-label={`Learn2Earn opportunity: ${item.title}`}
-                >
-                  <h3 className="text-xl font-semibold text-orange-400 mb-2">{item.title}</h3>
-                  <p className="text-gray-300 mb-4 text-sm line-clamp-2">{item.description}</p>
-                  
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-xs">
-                      {item.tokenPerParticipant} {item.tokenSymbol}
-                    </span>
-                    {item.status === 'active' ? (
-                      <span className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-xs">Active</span>
-                    ) : (
-                      <span className="bg-gray-500/20 text-gray-300 px-3 py-1 rounded-full text-xs">Completed</span>
-                    )}
-                    {item.network && (
-                      <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-xs">
-                        {item.network}
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="flex justify-between items-center text-xs text-gray-400 mb-4">
-                    <div>
-                      <p>Ends: {formatDate(item.endDate)}</p>
+              {learn2earns.map((item) => {
+                const isLoggedInAsSeeker = user && userRole === 'seeker';
+                
+                if (isLoggedInAsSeeker) {
+                  return (
+                    <Link 
+                      key={item.id} 
+                      href={`/learn2earn/${item.id}`}
+                      className="bg-black/30 rounded-lg p-6 transition-all hover:bg-black/40 hover:translate-y-[-4px] hover:shadow-lg"
+                      title={`View details of ${item.title}`}
+                      aria-label={`Learn2Earn opportunity: ${item.title}`}
+                    >
+                      <h3 className="text-xl font-semibold text-orange-400 mb-2">{item.title}</h3>
+                      <p className="text-gray-300 mb-4 text-sm line-clamp-2">{item.description}</p>
+                      
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <span className="bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-xs">
+                          {item.tokenPerParticipant} {item.tokenSymbol}
+                        </span>
+                        {item.status === 'active' ? (
+                          <span className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-xs">Active</span>
+                        ) : (
+                          <span className="bg-gray-500/20 text-gray-300 px-3 py-1 rounded-full text-xs">Completed</span>
+                        )}
+                        {item.network && (
+                          <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-xs">
+                            {item.network}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-xs text-gray-400 mb-4">
+                        <div>
+                          <p>Ends: {formatDate(item.endDate)}</p>
+                        </div>
+                        <div>
+                          <p>{item.tasks?.length || 0} Tasks</p>
+                        </div>
+                      </div>
+                      
+                      <div className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg text-sm font-medium transition text-center">
+                        View Details
+                      </div>
+                    </Link>
+                  );
+                } else {
+                  return (
+                    <div 
+                      key={item.id} 
+                      className="bg-black/30 rounded-lg p-6 relative group cursor-not-allowed opacity-75"
+                      title={user ? "Only seekers can participate in Learn2Earn" : "Please login as a seeker to participate"}
+                    >
+                      <h3 className="text-xl font-semibold text-orange-400 mb-2">{item.title}</h3>
+                      <p className="text-gray-300 mb-4 text-sm line-clamp-2">{item.description}</p>
+                      
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <span className="bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-xs">
+                          {item.tokenPerParticipant} {item.tokenSymbol}
+                        </span>
+                        {item.status === 'active' ? (
+                          <span className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-xs">Active</span>
+                        ) : (
+                          <span className="bg-gray-500/20 text-gray-300 px-3 py-1 rounded-full text-xs">Completed</span>
+                        )}
+                        {item.network && (
+                          <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-xs">
+                            {item.network}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-xs text-gray-400 mb-4">
+                        <div>
+                          <p>Ends: {formatDate(item.endDate)}</p>
+                        </div>
+                        <div>
+                          <p>{item.tasks?.length || 0} Tasks</p>
+                        </div>
+                      </div>
+                      
+                      <div className="w-full bg-gray-600 text-gray-300 py-2 rounded-lg text-sm font-medium text-center cursor-not-allowed">
+                        {user ? "Seeker Access Required" : "Login Required"}
+                      </div>
+                      
+                      {/* Tooltip */}
+                      <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                        <div className="bg-white text-black px-4 py-2 rounded-lg text-sm font-medium text-center">
+                          {user 
+                            ? "Only seekers can participate in Learn2Earn opportunities" 
+                            : "Please login as a seeker to participate in Learn2Earn"
+                          }
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p>{item.tasks?.length || 0} Tasks</p>
-                    </div>
-                  </div>
-                  
-                  <div className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg text-sm font-medium transition text-center">
-                    View Details
-                  </div>
-                </Link>
-              ))}
+                  );
+                }
+              })}
             </div>
           )}
           

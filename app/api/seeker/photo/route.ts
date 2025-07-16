@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("POST /api/seeker/photo - Iniciando requisição");
+    console.log("POST /api/seeker/photo - Starting request");
     
     // Initialize Firebase Admin
     await initAdmin();
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     const seekerId = formData.get("seekerId") as string | null;
 
     if (!file || !seekerId) {
-      console.log("POST /api/seeker/photo - Dados inválidos:", { hasFile: !!file, hasSeekerId: !!seekerId });
+    console.log("POST /api/seeker/photo - Invalid data:", { hasFile: !!file, hasSeekerId: !!seekerId });
       return NextResponse.json({ 
         error: "Invalid request", 
         message: "File and seekerId are required",
@@ -26,11 +26,11 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log("POST /api/seeker/photo - Iniciando upload de foto para seeker:", seekerId);
-    console.log("Tipo de arquivo:", file.type);
-    console.log("Tamanho do arquivo:", file.size, "bytes");
+    console.log("POST /api/seeker/photo - Starting photo upload for seeker:", seekerId);
+    console.log("File type:", file.type);
+    console.log("File size:", file.size, "bytes");
 
-    // Verificar tamanho do arquivo (limitar a 5MB)
+    // Check file size (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ 
         error: "File too large", 
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Verificar tipo de arquivo (apenas imagens)
+    // Check file type (only images allowed)
     if (!file.type.startsWith("image/")) {
       return NextResponse.json({ 
         error: "Invalid file type", 
@@ -51,12 +51,12 @@ export async function POST(req: NextRequest) {
       const fileName = `seeker_${seekerId}_${Date.now()}.${fileExtension}`;
       const filePath = `seekers/${seekerId}/${fileName}`;
 
-      console.log("Gerando referência para Firebase Storage:", filePath);
+      console.log("Generating reference for Firebase Storage:", filePath);
 
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      console.log("POST /api/seeker/photo - Upload usando Firebase Admin SDK");
+      console.log("POST /api/seeker/photo - Upload using Firebase Admin SDK");
       
       // Upload using Firebase Admin SDK with bucket name
       const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
@@ -76,71 +76,51 @@ export async function POST(req: NextRequest) {
       // Make the file publicly readable
       await fileRef.makePublic();
       
-      console.log("Upload concluído, gerando URL de download...");
-      // Get signed URL that works with Firebase Storage rules
-      const [downloadURL] = await fileRef.getSignedUrl({
-        action: 'read',
-        expires: '03-09-2491' // Far future date for public access
-      });
+      console.log("Upload finished, generating download URL...");
+      // Generate public URL for Firebase Storage
+      const downloadURL = `https://storage.googleapis.com/${bucketName}/${filePath}`;
+      console.log("POST /api/seeker/photo - Generated URL:", downloadURL);
 
-      console.log("POST /api/seeker/photo - Atualizando Firestore");
+      console.log("POST /api/seeker/photo - Updating Firestore");
       const seekerRef = db.collection("seekers").doc(seekerId);
       const seekerDoc = await seekerRef.get();
 
-      // Eliminar todas as fotos antigas deste seeker
+      // Update seeker document in Firestore
       if (seekerDoc.exists) {
-        const existingData = seekerDoc.data();
-        const oldPhotoURL = existingData?.photoURL;
-        
-        console.log("POST /api/seeker/photo - Eliminando fotos antigas do seeker:", seekerId);
-        try {
-          // Listar e eliminar todos os ficheiros na pasta do seeker
-          const seekerFolder = `seekers/${seekerId}/`;
-          const [files] = await bucket.getFiles({
-            prefix: seekerFolder
-          });
-          
-          console.log(`POST /api/seeker/photo - Encontradas ${files.length} fotos antigas para eliminar`);
-          
-          // Eliminar todos os ficheiros encontrados
-          for (const file of files) {
-            try {
-              await file.delete();
-              console.log(`POST /api/seeker/photo - Foto eliminada: ${file.name}`);
-            } catch (deleteError) {
-              console.error(`POST /api/seeker/photo - Erro ao eliminar ${file.name}:`, deleteError);
-            }
-          }
-          
-          console.log("POST /api/seeker/photo - Limpeza de fotos antigas concluída");
-        } catch (deleteError) {
-          console.error("POST /api/seeker/photo - Erro ao eliminar fotos antigas:", deleteError);
-          // Não interrompe o processo se a eliminação falhar
-        }
-        
-        console.log("POST /api/seeker/photo - Atualizando documento do seeker no Firestore...");
+        console.log("POST /api/seeker/photo - Updating seeker document in Firestore...");
+        console.log("POST /api/seeker/photo - Current document data:", seekerDoc.data());
         await seekerRef.update({
           photoURL: downloadURL,
           updatedAt: new Date().toISOString()
         });
+        console.log("POST /api/seeker/photo - Document updated successfully with photoURL:", downloadURL);
+        
+        // Verify the update
+        const updatedDoc = await seekerRef.get();
+        if (updatedDoc.exists) {
+          const updatedData = updatedDoc.data();
+          console.log("POST /api/seeker/photo - Verification - Updated photoURL:", updatedData?.photoURL);
+        }
       } else {
-        console.log("POST /api/seeker/photo - Criando novo documento de seeker no Firestore...");
+        console.log("POST /api/seeker/photo - Creating new seeker document in Firestore...");
         await seekerRef.set({
           seekerId: seekerId,
           photoURL: downloadURL,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
+        console.log("POST /api/seeker/photo - New document created successfully with photoURL:", downloadURL);
       }
       
-      console.log("POST /api/seeker/photo - Operação concluída com sucesso, retornando URL:", downloadURL);
+      console.log("POST /api/seeker/photo - Operation completed successfully, returning URL:", downloadURL);
       return NextResponse.json({ 
         success: true, 
         url: downloadURL,
-        photoURL: downloadURL
+        photoURL: downloadURL,
+        message: "Profile photo uploaded successfully"
       }, { status: 200 });
     } catch (storageError: any) {
-      console.error("Erro durante o upload para Firebase Storage:", storageError);
+      console.error("Error during upload to Firebase Storage:", storageError);
       return NextResponse.json({
         error: "Storage error",
         message: storageError.message || "Error during file upload",
@@ -159,31 +139,33 @@ export async function POST(req: NextRequest) {
 // GET: Buscar foto de perfil de um seeker específico
 export async function GET(req: NextRequest) {
   try {
-    console.log("GET /api/seeker/photo - Iniciando requisição");
+    console.log("GET /api/seeker/photo - Starting request");
     const url = new URL(req.url);
     const seekerId = url.searchParams.get("seekerId");
 
     console.log("GET /api/seeker/photo - SeekerId:", seekerId);
 
     if (!seekerId) {
-      console.log("GET /api/seeker/photo - SeekerId não fornecido");
-      return NextResponse.json({ error: "seekerId é obrigatório" }, { status: 400 });
+      console.log("GET /api/seeker/photo - SeekerId not provided");
+      return NextResponse.json({ error: "seekerId is required" }, { status: 400 });
     }
 
     // Initialize Firebase Admin
     await initAdmin();
     const db = getFirestore();
 
-    // Buscar informações do seeker no Firestore
-    console.log("GET /api/seeker/photo - Buscando dados do seeker:", seekerId);
+    // Fetch seeker information from Firestore
+    console.log("GET /api/seeker/photo - Fetching seeker data:", seekerId);
     const seekerRef = db.collection("seekers").doc(seekerId);
     const seekerDoc = await seekerRef.get();
 
     if (seekerDoc.exists) {
       const seekerData = seekerDoc.data();
-      console.log("GET /api/seeker/photo - Seeker encontrado, dados:", {
-        name: seekerData?.name,
-        hasPhoto: !!seekerData?.photoURL
+      console.log("GET /api/seeker/photo - Seeker found, full data:", seekerData);
+      console.log("GET /api/seeker/photo - Photo URL check:", {
+        hasPhotoURL: !!seekerData?.photoURL,
+        photoURLValue: seekerData?.photoURL,
+        photoURLType: typeof seekerData?.photoURL
       });
       
       return NextResponse.json({ 
@@ -192,7 +174,7 @@ export async function GET(req: NextRequest) {
         success: true
       });
     } else {
-      console.log("GET /api/seeker/photo - Seeker não encontrado");
+      console.log("GET /api/seeker/photo - Seeker not found in Firestore");
       return NextResponse.json({ 
         photoUrl: null, 
         photoURL: null,
@@ -201,11 +183,11 @@ export async function GET(req: NextRequest) {
       });
     }
   } catch (error: any) {
-    console.error("Erro ao buscar foto do seeker:", error);
+    console.error("Error fetching seeker photo:", error);
     console.error("Stack trace:", error.stack);
     return NextResponse.json(
       { 
-        error: "Erro ao buscar foto do seeker", 
+        error: "Error fetching seeker photo", 
         message: error.message,
         success: false
       },
@@ -221,7 +203,7 @@ export async function DELETE(req: NextRequest) {
     const seekerId = url.searchParams.get("seekerId");
 
     if (!seekerId) {
-      return NextResponse.json({ error: "seekerId é obrigatório" }, { status: 400 });
+      return NextResponse.json({ error: "seekerId is required" }, { status: 400 });
     }
 
     // Initialize Firebase Admin
@@ -234,52 +216,45 @@ export async function DELETE(req: NextRequest) {
 
     if (seekerDoc.exists && seekerDoc.data()?.photoURL) {
       const existingPhotoURL = seekerDoc.data()?.photoURL;
-      
-      // Eliminar a foto do Firebase Storage
+      // Delete photo from Firebase Storage
       try {
         const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
         if (bucketName) {
           const bucket = storage.bucket(bucketName);
-          
-          // Extrair o caminho do ficheiro da URL
+          // Extract file path from URL
           const urlParts = existingPhotoURL.split('/');
           const filePathIndex = urlParts.findIndex((part: string) => part === 'seekers');
-          
           if (filePathIndex !== -1 && filePathIndex < urlParts.length - 2) {
             const filePath = urlParts.slice(filePathIndex, filePathIndex + 3).join('/');
-            console.log("DELETE /api/seeker/photo - Eliminando ficheiro:", filePath);
-            
+            console.log("DELETE /api/seeker/photo - Deleting file:", filePath);
             const fileRef = bucket.file(filePath);
             const [exists] = await fileRef.exists();
-            
             if (exists) {
               await fileRef.delete();
-              console.log("DELETE /api/seeker/photo - Ficheiro eliminado com sucesso");
+              console.log("DELETE /api/seeker/photo - File deleted successfully");
             } else {
-              console.log("DELETE /api/seeker/photo - Ficheiro não encontrado no storage");
+              console.log("DELETE /api/seeker/photo - File not found in storage");
             }
           }
         }
       } catch (deleteError) {
-        console.error("DELETE /api/seeker/photo - Erro ao eliminar ficheiro do storage:", deleteError);
-        // Continua mesmo se a eliminação do ficheiro falhar
+        console.error("DELETE /api/seeker/photo - Error deleting file from storage:", deleteError);
+        // Continue even if file deletion fails
       }
-      
-      // Atualizar o documento para remover a referência à foto
+      // Update document to remove photo reference
       await seekerRef.update({
         photoURL: null,
         updatedAt: new Date().toISOString()
       });
     }
-
     return NextResponse.json(
-      { success: true, message: "Foto de perfil do seeker removida com sucesso" },
+      { success: true, message: "Seeker profile photo removed successfully" },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error("Erro ao remover foto do seeker:", error);
+    console.error("Error removing seeker photo:", error);
     return NextResponse.json(
-      { error: "Erro ao remover foto do seeker", message: error.message },
+      { error: "Error removing seeker photo", message: error.message },
       { status: 500 }
     );
   }

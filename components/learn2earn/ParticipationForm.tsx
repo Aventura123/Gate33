@@ -41,7 +41,6 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
   // Add new state for tracking if the opportunity has ended
   const [hasEnded, setHasEnded] = useState(false);
   const [hasTimeSyncIssue, setHasTimeSyncIssue] = useState(false);
-  const [showWalletModal, setShowWalletModal] = useState(false);
   const [showNetworkModal, setShowNetworkModal] = useState(false);
   
   // Function to check if user has already registered participation
@@ -377,37 +376,12 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
           </p>
           
           {!walletAddress ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setShowWalletModal(true)}
-                disabled={isConnectingWallet}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg flex justify-center items-center"
-              >
-                {isConnectingWallet ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Connecting Wallet...
-                  </>
-                ) : "Connect Wallet to Participate"}
-              </button>
-              {showWalletModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-                  <div className="absolute inset-0" onClick={() => setShowWalletModal(false)} />
-                  <div className="relative z-10">
-                    <WalletButton 
-                      showNetworkSelector={false}
-                      title="Connect Wallet"
-                      onConnect={() => setShowWalletModal(false)}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              )}
-            </>
+            <WalletButton 
+              showNetworkSelector={false}
+              title="Connect to Participate"
+              onConnect={() => {}}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg"
+            />
           ) : !participationChecked ? (
             <div className="flex justify-center">
               <svg className="animate-spin h-10 w-10 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -419,9 +393,19 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
           ) : !isRegistered ? (
             <form onSubmit={handleRegisterParticipation} className="space-y-6">
               <div className="p-4 bg-gray-800 rounded-lg">
-                <h4 className="text-gray-400 text-sm mb-1">Connected Wallet</h4>
-                <p className="text-orange-400 font-mono text-sm break-all">{walletAddress}</p>
-                <p className="text-gray-500 text-xs mt-1">Make sure you're connected to the {network} network.</p>
+                <h4 className="text-white text-sm mb-1 text-center">Connected Wallet</h4>
+                <div className="mt-2">
+                  <WalletButton 
+                    showNetworkSelector={true}
+                    title="Connect Wallet"
+                    onConnect={() => {}}
+                    className=""
+                  />
+                </div>
+                <div className="text-center mt-3">
+                  <p className="text-white text-xs">Make sure you're connected to the <span className="text-orange-400 font-medium">{network}</span> network.</p>
+                  <p className="text-gray-300 text-xs mt-1">The network indicator above should show a colored dot when properly connected.</p>
+                </div>
               </div>
               
               <div className="flex items-center">
@@ -455,9 +439,19 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="p-4 bg-gray-800 rounded-lg">
-                <h4 className="text-gray-400 text-sm mb-1">Connected Wallet</h4>
-                <p className="text-orange-400 font-mono text-sm break-all">{walletAddress}</p>
-                <p className="text-gray-500 text-xs mt-1">Make sure you're connected to the {network} network.</p>
+                <h4 className="text-white text-sm mb-1 text-center">Connected Wallet</h4>
+                <div className="mt-2">
+                  <WalletButton 
+                    showNetworkSelector={true}
+                    title="Connect Wallet"
+                    onConnect={() => {}}
+                    className=""
+                  />
+                </div>
+                <div className="text-center mt-3">
+                  <p className="text-white text-xs">Make sure you're connected to the <span className="text-orange-400 font-medium">{network}</span> network.</p>
+                  <p className="text-gray-300 text-xs mt-1">The network indicator above should show a colored dot when properly connected.</p>
+                </div>
               </div>
               
               <div className="p-4 bg-blue-500/20 border border-blue-500 rounded-lg">

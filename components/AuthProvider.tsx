@@ -345,31 +345,47 @@ export const AuthProvider = ({ children, initialRole = 'seeker' }: { children: R
   const logout = async () => {
     setError(null);
     try {
-      // If it's a Firebase-authenticated user (seeker or company)
-      if (userRole === 'seeker') {
-        await signOut(auth);
-        localStorage.removeItem('seekerToken');
-        // Remover também tokens de compatibilidade
-        localStorage.removeItem('token');
-      } else if (userRole === 'company') {
-        await signOut(auth);
-        localStorage.removeItem('companyToken');
-        // Also remove legacy tokens if they exist
-        localStorage.removeItem('token');
-        localStorage.removeItem('companyId');
-        localStorage.removeItem('companyName');
-        localStorage.removeItem('companyEmail');
-        localStorage.removeItem('companyFirebaseUid');
-        localStorage.removeItem('firebaseToken');
-      }
+      // Sign out from Firebase Auth
+      await signOut(auth);
       
-      setUserRole(null);
+      // Clear ALL possible authentication tokens and user data
+      // Seeker-related data
+      localStorage.removeItem('seekerToken');
+      localStorage.removeItem('seekerId');
+      localStorage.removeItem('seekerName');
+      localStorage.removeItem('seekerPhoto');
+      
+      // Company-related data
+      localStorage.removeItem('companyToken');
+      localStorage.removeItem('companyId');
+      localStorage.removeItem('companyName');
+      localStorage.removeItem('companyEmail');
+      localStorage.removeItem('companyPhoto');
+      localStorage.removeItem('companyFirebaseUid');
+      
+      // Generic/legacy tokens
+      localStorage.removeItem('token');
+      localStorage.removeItem('firebaseToken');
+      localStorage.removeItem('firebaseUid');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userPhoto');
+      localStorage.removeItem('userRole');
+      
+      // Clear authentication cookie
       document.cookie = "isAuthenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      
+      // Reset state
+      setUser(null);
+      setUserRole(null);
+      
     } catch (err: any) {
+      console.error('Logout error:', err);
       setError(err.message || 'Failed to logout');
       throw err;
     }
   };
+
   const resetPassword = async (email: string) => {
     setError(null);
     try {
