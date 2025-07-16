@@ -109,7 +109,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
   // --- Main functions and useEffects (fetch, create, toggle, etc) ---
 
   // Function to toggle status (activate/deactivate) Learn2Earn
-  const toggle = async (learn2earn: Learn2Earn, newStatus: 'active' | 'completed' | 'draft' | 'pending') => {
+  const toggle = async (learn2earn: Learn2Earn, newStatus: 'active' | 'completed' | 'draft') => {
     try {
       const learn2EarnRef = doc(db,"learn2earn", learn2earn.id);
       await updateDoc(learn2EarnRef, { status: newStatus });
@@ -407,6 +407,37 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         let newStatus = l2l.status;
         const now = new Date();
 
+        // PRIORIDADE 1: Se tem learn2earnId (está na blockchain), usar sincronizador da blockchain
+        if (l2l.learn2earnId && typeof l2l.learn2earnId === "number") {
+          console.log(`Learn2Earn ${l2l.id} está na blockchain (ID: ${l2l.learn2earnId}), usando sincronizador da blockchain`);
+          try {
+            // Usar o sincronizador da blockchain que é mais preciso
+            const syncResult = await fetch(`/api/learn2earn/sync`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: l2l.id })
+            });
+            
+            if (syncResult.ok) {
+              const result = await syncResult.json();
+              if (result.success && result.newStatus && result.newStatus !== l2l.status) {
+                warnings.push({id: l2l.id, msg: `Status atualizado via blockchain: ${l2l.status} → ${result.newStatus}`});
+                l2l.status = result.newStatus;
+              }
+            } else {
+              console.warn(`Falha ao sincronizar ${l2l.id} via blockchain, usando lógica de fallback`);
+              // Continuar com lógica de tempo como fallback
+            }
+          } catch (blockchainSyncError) {
+            console.warn(`Erro ao sincronizar ${l2l.id} via blockchain:`, blockchainSyncError);
+            // Continuar com lógica de tempo como fallback
+          }
+          continue; // Pular lógica baseada em tempo
+        }
+
+        // PRIORIDADE 2: Para Learn2Earns que NÃO estão na blockchain, aplicar lógica de tempo
+        console.log(`Learn2Earn ${l2l.id} não está na blockchain, aplicando lógica de tempo`);
+
         // Robust date parsing
         let startDate: Date | null = null;
         let endDate: Date | null = null;
@@ -449,18 +480,21 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         const maxParticipants = typeof l2l.maxParticipants === "number" && !isNaN(l2l.maxParticipants) ? l2l.maxParticipants : undefined;
         const totalParticipants = typeof l2l.totalParticipants === "number" && !isNaN(l2l.totalParticipants) ? l2l.totalParticipants : 0;
 
-        // Rule 1: If not started yet (should be pending, not draft)
+        // Para Learn2Earns que NÃO estão na blockchain, aplicar lógica de tempo
+        // Status possíveis: "draft" (antes de criar), "pending" (criado mas não começou), "active", "paused", "completed"
+        
+        // Rule 1: Se ainda não começou, mas já foi criado na blockchain, deve ser "pending" (não "draft")
         if (startDate && now < startDate) {
-          newStatus = "pending";
+          newStatus = "draft"; // Só "draft" se não estiver na blockchain
         }
-        // Rule 2: If already ended (date or participants)
+        // Rule 2: Se já terminou (data ou participantes)
         else if (
           (endDate && now > endDate) ||
           (maxParticipants !== undefined && totalParticipants >= maxParticipants)
         ) {
           newStatus = "completed";
         }
-        // Rule 3: If active (started but not ended)
+        // Rule 3: Se está ativo (começou mas não terminou)
         else if (
           startDate && now >= startDate &&
           (!endDate || now <= endDate) &&
@@ -468,7 +502,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         ) {
           newStatus = "active";
         } else {
-          // defensive fallback - if no start date, should be draft
+          // defensive fallback - só draft para Learn2Earns que não estão na blockchain
           newStatus = "draft";
         }
 
@@ -805,35 +839,35 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         setDepositError("Token already approved. Proceeding with creation...");
       }
       const learn2earnFirebaseId = `learn2earn_${Date.now()}`;
-      let contractStartDate: Date, contractEndDate: Date;
+      let startDate: Date, endDate: Date;
       if (learn2earnData.startDate) {
         if (typeof learn2earnData.startDate === 'object') {
           if ('toDate' in learn2earnData.startDate && typeof learn2earnData.startDate.toDate === 'function') {
-            contractStartDate = learn2earnData.startDate.toDate();
+            startDate = learn2earnData.startDate.toDate();
           } else if (learn2earnData.startDate instanceof Date) {
-            contractStartDate = learn2earnData.startDate;
+            startDate = learn2earnData.startDate;
           } else {
-            contractStartDate = new Date(Date.now() + 5 * 60 * 1000);
+            startDate = new Date(Date.now() + 5 * 60 * 1000);
           }
         } else if (typeof learn2earnData.startDate === 'string') {
-          contractStartDate = new Date(learn2earnData.startDate);
+          startDate = new Date(learn2earnData.startDate);
         } else {
-          contractStartDate = new Date(Date.now() + 5 * 60 * 1000);
+          startDate = new Date(Date.now() + 5 * 60 * 1000);
         }      } else {
-        contractStartDate = new Date(Date.now() + 5 * 60 * 1000);
+        startDate = new Date(Date.now() + 5 * 60 * 1000);
       }
 
       // Set endDate to 365 days after startDate
-      contractEndDate = new Date(contractStartDate);
-      contractEndDate.setDate(contractEndDate.getDate() + 365);
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 365);
 
-      const currentTime = new Date();
-      const minStartTime = new Date(currentTime.getTime() + 5 * 60 * 1000);
-      if (contractStartDate < currentTime) {
-        contractStartDate = minStartTime;
+      const now = new Date();
+      const minStartTime = new Date(now.getTime() + 5 * 60 * 1000);
+      if (startDate < now) {
+        startDate = minStartTime;
       }
       const endBuffer = 1 * 60 * 60 * 1000;
-      const adjustedEndDate = new Date(contractEndDate.getTime() + endBuffer);      // Calculate the total value to be sent, considering that the contract subtracts the fee
+      const adjustedEndDate = new Date(endDate.getTime() + endBuffer);      // Calculate the total value to be sent, considering that the contract subtracts the fee
       // To ensure that the specified amount is actually available for distribution
       // If the user wants to distribute X tokens, we need to send X / (1 - fee/100) tokens
       const feeMultiplier = 1 - (feePercent / 100);
@@ -846,8 +880,8 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
         learn2earnFirebaseId,
         learn2earnData.tokenAddress,
         adjustedTokenAmount, // Adjusted value to compensate for the fee deduction
-        contractStartDate,
-        contractEndDate,
+        startDate,
+        endDate,
         learn2earnData.maxParticipants || 0
       );
       if (!depositResult.success) {
@@ -873,28 +907,10 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
       // Step 4: Save to Firestore
       setDepositError("Saving to database...");
       const learn2earnCollection = collection(db, "learn2earn");
-      
-      // Determine status based on start date
-      const currentDateTime = new Date();
-      let statusStartDate: Date;
-      
-      if (learn2earnData.startDate instanceof Date) {
-        statusStartDate = learn2earnData.startDate;
-      } else if (learn2earnData.startDate && typeof learn2earnData.startDate === 'object' && 'toDate' in learn2earnData.startDate) {
-        statusStartDate = (learn2earnData.startDate as any).toDate();
-      } else if (learn2earnData.startDate && typeof learn2earnData.startDate === 'string') {
-        statusStartDate = new Date(learn2earnData.startDate);
-      } else {
-        statusStartDate = new Date(); // fallback to current date
-      }
-      
-      // If start date is in the future, set as pending, otherwise active
-      const initialStatus = statusStartDate > currentDateTime ? 'pending' : 'active';
-      
       const newLearn2Earn = {
         ...learn2earnData,
         companyId,
-        status: initialStatus,
+        status: 'active',
         transactionHash: depositResult.transactionHash,
         learn2earnId: depositResult.learn2earnId,
         contractAddress: depositResult.contractAddress || learn2earnData.tokenAddress,
@@ -1886,8 +1902,7 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
           <p className="text-gray-300 py-4">Loading & synchronizing Learn2Earn opportunities...</p>
         ) : (          <div>
             <div>
-              {/* Filter out drafts for the main view, show only active, pending and completed */}
-              {learn2earn.filter(item => item.status !== 'draft').length === 0 ? (
+              {learn2earn.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-300">You haven't created any Learn2Earn opportunities yet.</p>
                   <button
@@ -1901,55 +1916,8 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                   </button>
                 </div>
               ) : (
-                <div>
-                  {/* Show drafts section if any exist */}
-                  {learn2earn.filter(item => item.status === 'draft').length > 0 && (
-                    <div className="mb-8">
-                      <h3 className="text-lg font-semibold text-yellow-400 mb-4">Drafts</h3>
-                      <div className="space-y-4">
-                        {learn2earn.filter(item => item.status === 'draft').map((item) => (
-                          <div
-                            key={item.id}
-                            className="bg-yellow-500/10 rounded-lg border border-yellow-500/30 p-4"
-                          >
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <h4 className="text-lg font-medium text-yellow-300">{item.title || 'Untitled Draft'}</h4>
-                                <p className="text-yellow-200/80 text-sm">{item.description || 'No description'}</p>
-                              </div>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Load draft for editing - implementation would go here
-                                    alert('Draft editing feature coming soon');
-                                  }}
-                                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirm('Are you sure you want to delete this draft?')) {
-                                      toggle(item, 'draft'); // This could be improved with a delete function
-                                    }
-                                  }}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Active, pending and completed Learn2Earn opportunities */}
-                  <div className="space-y-6">
-                    {learn2earn.filter(item => item.status !== 'draft').map((item) => {
+                <div className="space-y-6">
+                  {learn2earn.map((item) => {
                     const isExpanded = expandedCardId === item.id;
                     return (
                       <div
@@ -1965,7 +1933,6 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                           <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                             item.status === 'active' ? 'bg-green-500/20 text-green-400' :
                             item.status === 'completed' ? 'bg-orange-500/20 text-orange-400' :
-                            item.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
                             'bg-gray-500/20 text-gray-400'
                           }`}>
                             {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
@@ -2074,13 +2041,10 @@ const Learn2EarnManager: React.FC<Learn2EarnManagerProps> = ({
                         )}
                       </div>
                     );
-                  })}
-                  </div>
-                </div>
+                  })}                </div>
               )}
             </div>
-          </div>
-        )
+          </div>        )
       )}
         {/* Draft Modal - Gate33 Style */}
       {showDraftModal && (

@@ -1383,6 +1383,9 @@ class Learn2EarnContractService {
       
       const currentTime = Math.floor(Date.now() / 1000);
       
+      // Para Learn2Earns que estão na blockchain, nunca usar status "draft"
+      // Os status possíveis são: "pending", "active", "paused", "completed"
+      
       // Verificar se Learn2Earn expirou pelo tempo
       if (endTime.toNumber() < currentTime) {
         newStatus = "completed";
@@ -1402,7 +1405,7 @@ class Learn2EarnContractService {
         }
       }
       // Verificar se Learn2Earn foi pausado na blockchain
-      else if (!active && learn2EarnData.status === "active") {
+      else if (!active && ["active", "pending"].includes(learn2EarnData.status)) {
         newStatus = "paused";
         needsUpdate = true;
         updates.status = newStatus;
@@ -1414,6 +1417,25 @@ class Learn2EarnContractService {
         needsUpdate = true;
         updates.status = newStatus;
         console.log(`Learn2Earn foi reativado na blockchain. Novo status: ${newStatus}`);
+      }
+      // Verificar se Learn2Earn ainda não começou (pending)
+      else if (active && currentTime < startTime.toNumber()) {
+        newStatus = "pending";
+        if (learn2EarnData.status !== "pending") {
+          needsUpdate = true;
+          updates.status = newStatus;
+          console.log(`Learn2Earn ainda não começou. Status: ${newStatus}`);
+        }
+      }
+      // Verificar se Learn2Earn está ativo na blockchain
+      else if (active && 
+               currentTime >= startTime.toNumber() && 
+               currentTime <= endTime.toNumber() && 
+               ["pending", "draft"].includes(learn2EarnData.status)) {
+        newStatus = "active";
+        needsUpdate = true;
+        updates.status = newStatus;
+        console.log(`Learn2Earn está ativo na blockchain. Corrigindo para: ${newStatus}`);
       }
       
       // Atualizar documento no Firestore se necessário

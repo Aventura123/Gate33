@@ -10,6 +10,16 @@ export async function syncLearn2EarnStatusJob(): Promise<void> {
     const l2l = docSnap.data();
     let newStatus = l2l.status;
 
+    // PRIORIDADE 1: Se tem learn2earnId (está na blockchain), não alterar status baseado apenas em tempo
+    // A blockchain é a fonte da verdade para Learn2Earns já criados
+    if (l2l.learn2earnId && typeof l2l.learn2earnId === "number") {
+      console.log(`Learn2Earn ${docSnap.id} está na blockchain (ID: ${l2l.learn2earnId}), mantendo status atual: ${l2l.status}`);
+      continue; // Pular sincronização baseada em tempo - deixar para o sincronizador da blockchain
+    }
+
+    // PRIORIDADE 2: Para Learn2Earns que NÃO estão na blockchain, aplicar lógica de tempo
+    console.log(`Learn2Earn ${docSnap.id} não está na blockchain, aplicando lógica de tempo`);
+
     // Parse dates
     let startDate: Date | null = null;
     let endDate: Date | null = null;
@@ -25,8 +35,11 @@ export async function syncLearn2EarnStatusJob(): Promise<void> {
     const maxParticipants = typeof l2l.maxParticipants === "number" ? l2l.maxParticipants : undefined;
     const totalParticipants = typeof l2l.totalParticipants === "number" ? l2l.totalParticipants : 0;
 
+    // Para Learn2Earns que NÃO estão na blockchain, aplicar lógica de tempo
+    // Status possíveis: "draft" (apenas antes de criar na blockchain)
+    
     if (startDate && now < startDate) {
-      newStatus = "draft";
+      newStatus = "draft"; // Só para Learn2Earns que não foram criados na blockchain
     } else if (
       (endDate && now > endDate) ||
       (maxParticipants && totalParticipants >= maxParticipants)
@@ -39,7 +52,7 @@ export async function syncLearn2EarnStatusJob(): Promise<void> {
     ) {
       newStatus = "active";
     } else {
-      newStatus = "draft";
+      newStatus = "draft"; // Fallback apenas para Learn2Earns não criados na blockchain
     }
 
     if (l2l.status !== newStatus) {
@@ -61,7 +74,7 @@ export async function syncLearn2EarnStatusJob(): Promise<void> {
 }
 
 export const syncLearn2EarnStatusV2 = scheduler.onSchedule({
-  schedule: "0 0 * * *", // Executa à meia-noite todos os dias
+  schedule: "0 3 * * *", // Executa às 3 da manhã todos os dias
   timeZone: "Europe/Lisbon", // Fuso horário de Lisboa
   retryCount: 3
 }, async () => {

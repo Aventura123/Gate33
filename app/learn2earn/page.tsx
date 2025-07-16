@@ -13,7 +13,7 @@ export default function Learn2EarnPage() {
   const [learn2earns, setLearn2Earns] = useState<Learn2Earn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'active' | 'pending' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
 
   useEffect(() => {
     const fetchLearn2Earns = async () => {
@@ -25,13 +25,12 @@ export default function Learn2EarnPage() {
         
         // Create different queries based on filter
         let querySnapshot;
-        if (filter === 'all') {
-          // Show active, pending and completed, not draft
-          const filteredQuery = query(learn2earnCollection, where("status", "in", ["active", "pending", "completed"]));
+        if (filter !== 'all') {
+          const filteredQuery = query(learn2earnCollection, where("status", "==", filter));
           querySnapshot = await getDocs(filteredQuery);
         } else {
-          // Filter by specific status
-          const filteredQuery = query(learn2earnCollection, where("status", "==", filter));
+          // Only show active and completed, not draft
+          const filteredQuery = query(learn2earnCollection, where("status", "in", ["active", "completed"]));
           querySnapshot = await getDocs(filteredQuery);
         }
         
@@ -123,17 +122,6 @@ export default function Learn2EarnPage() {
                 All
               </button>
               <button
-                onClick={() => setFilter('pending')}
-                className={`px-4 py-2 text-sm font-medium ${
-                  filter === 'pending' 
-                    ? 'bg-orange-500 text-white' 
-                    : 'bg-black/50 text-gray-300 hover:bg-black/70'
-                }`}
-                aria-label="Show pending opportunities"
-              >
-                Pending
-              </button>
-              <button
                 onClick={() => setFilter('active')}
                 className={`px-4 py-2 text-sm font-medium ${
                   filter === 'active' 
@@ -200,88 +188,45 @@ export default function Learn2EarnPage() {
           {!loading && !error && learn2earns.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {learn2earns.map((item) => (
-                item.status === 'pending' ? (
-                  // Non-clickable card for pending items
-                  <div 
-                    key={item.id}
-                    className="bg-black/30 rounded-lg p-6 transition-all cursor-default opacity-80"
-                    title={`Coming soon: ${item.title}`}
-                    aria-label={`Learn2Earn opportunity: ${item.title} - Coming Soon`}
-                  >
-                    <h3 className="text-xl font-semibold text-orange-400 mb-2">{item.title}</h3>
-                    <p className="text-gray-300 mb-4 text-sm line-clamp-2">{item.description}</p>
-                    
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-xs">
-                        {item.tokenPerParticipant} {item.tokenSymbol}
+                <Link 
+                  key={item.id} 
+                  href={`/learn2earn/${item.id}`}
+                  className="bg-black/30 rounded-lg p-6 transition-all hover:bg-black/40 hover:translate-y-[-4px] hover:shadow-lg"
+                  title={`View details of ${item.title}`}
+                  aria-label={`Learn2Earn opportunity: ${item.title}`}
+                >
+                  <h3 className="text-xl font-semibold text-orange-400 mb-2">{item.title}</h3>
+                  <p className="text-gray-300 mb-4 text-sm line-clamp-2">{item.description}</p>
+                  
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <span className="bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-xs">
+                      {item.tokenPerParticipant} {item.tokenSymbol}
+                    </span>
+                    {item.status === 'active' ? (
+                      <span className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-xs">Active</span>
+                    ) : (
+                      <span className="bg-gray-500/20 text-gray-300 px-3 py-1 rounded-full text-xs">Completed</span>
+                    )}
+                    {item.network && (
+                      <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-xs">
+                        {item.network}
                       </span>
-                      <span className="bg-yellow-500/20 text-yellow-300 px-3 py-1 rounded-full text-xs">Pending</span>
-                      {item.network && (
-                        <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-xs">
-                          {item.network}
-                        </span>
-                      )}
+                    )}
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-xs text-gray-400 mb-4">
+                    <div>
+                      <p>Ends: {formatDate(item.endDate)}</p>
                     </div>
-                    
-                    <div className="flex justify-between items-center text-xs text-gray-400 mb-4">
-                      <div>
-                        {/* No specific date shown for pending opportunities */}
-                      </div>
-                      <div>
-                        <p>{item.tasks?.length || 0} Tasks</p>
-                      </div>
-                    </div>
-                    
-                    <div className="w-full bg-yellow-500/60 text-yellow-200 py-2 rounded-lg text-sm font-medium text-center cursor-not-allowed">
-                      Coming Soon
+                    <div>
+                      <p>{item.tasks?.length || 0} Tasks</p>
                     </div>
                   </div>
-                ) : (
-                  // Clickable card for active/completed items
-                  <Link 
-                    key={item.id} 
-                    href={`/learn2earn/${item.id}`}
-                    className="bg-black/30 rounded-lg p-6 transition-all hover:bg-black/40 hover:translate-y-[-4px] hover:shadow-lg"
-                    title={`View details of ${item.title}`}
-                    aria-label={`Learn2Earn opportunity: ${item.title}`}
-                  >
-                    <h3 className="text-xl font-semibold text-orange-400 mb-2">{item.title}</h3>
-                    <p className="text-gray-300 mb-4 text-sm line-clamp-2">{item.description}</p>
-                    
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-xs">
-                        {item.tokenPerParticipant} {item.tokenSymbol}
-                      </span>
-                      {item.status === 'active' ? (
-                        <span className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-xs">Active</span>
-                      ) : (
-                        <span className="bg-gray-500/20 text-gray-300 px-3 py-1 rounded-full text-xs">Completed</span>
-                      )}
-                      {item.network && (
-                        <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-xs">
-                          {item.network}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="flex justify-between items-center text-xs text-gray-400 mb-4">
-                      <div>
-                        <p>Ends: {formatDate(item.endDate)}</p>
-                      </div>
-                      <div>
-                        <p>{item.tasks?.length || 0} Tasks</p>
-                      </div>
-                    </div>
-                    
-                    <div className={`w-full py-2 rounded-lg text-sm font-medium transition text-center ${
-                      item.status === 'active'
-                      ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                      : 'bg-gray-500 hover:bg-gray-600 text-white'
-                    }`}>
-                      View Details
-                    </div>
-                  </Link>
-                )
+                  
+                  <div className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg text-sm font-medium transition text-center">
+                    View Details
+                  </div>
+                </Link>
               ))}
             </div>
           )}
