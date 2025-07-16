@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
 import { Learn2Earn, Learn2EarnTask } from "../../../types/learn2earn";
@@ -9,6 +9,7 @@ import Layout from "../../../components/Layout";
 import TaskCard from "../../../components/learn2earn/TaskCard";
 import ParticipationForm from "../../../components/learn2earn/ParticipationForm";
 import { formatDate } from "../../../utils/formatDate";
+import { useAuth } from "../../../components/AuthProvider";
 import Link from "next/link";
 import "../../../styles/learn2earn.css";
 
@@ -22,7 +23,9 @@ enum CardStep {
 
 export default function Learn2EarnDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params?.id as string;
+  const { user, loading: authLoading, userRole } = useAuth();
 
   const [learn2Earn, setLearn2Earn] = useState<Learn2Earn | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,6 +39,17 @@ export default function Learn2EarnDetailPage() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [allCorrect, setAllCorrect] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+
+  // Authentication check - redirect if not logged in as seeker
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user || userRole !== 'seeker') {
+        // Redirect to main learn2earn page if not logged in as seeker
+        router.push('/learn2earn');
+        return;
+      }
+    }
+  }, [user, userRole, authLoading, router]);
 
   useEffect(() => {
     const fetchLearn2Earn = async () => {
@@ -68,11 +82,55 @@ export default function Learn2EarnDetailPage() {
     fetchLearn2Earn();
   }, [id]);
 
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gradient-to-b from-black to-orange-900 pt-20 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="flex justify-center items-center">
+              <svg className="animate-spin h-10 w-10 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p className="ml-3 text-gray-300">Checking authentication...</p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Redirect if not authenticated as seeker (this should not be reached due to useEffect redirect)
+  if (!user || userRole !== 'seeker') {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gradient-to-b from-black to-orange-900 pt-20 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="bg-yellow-500/20 border border-yellow-500 rounded-lg p-6">
+              <div className="text-yellow-500 text-4xl mb-4">🔒</div>
+              <h3 className="text-xl font-semibold text-yellow-400 mb-2">Access Restricted</h3>
+              <p className="text-gray-300 mb-4">
+                You must be logged in as a seeker to access Learn2Earn opportunities.
+              </p>
+              <Link
+                href="/learn2earn"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-lg inline-block"
+              >
+                Back to Learn2Earn
+              </Link>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   // Block access if status is completed
   if (learn2Earn && learn2Earn.status === "completed") {
     return (
       <Layout>
-        <div className="min-h-screen bg-gradient-to-b from-black to-orange-900 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-gradient-to-b from-black to-orange-900 pt-20 py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <div className="bg-green-500/20 border border-green-500 text-green-500 p-4 rounded-lg mb-6">
               This Learn2Earn opportunity has already been completed. You can no longer access its details.

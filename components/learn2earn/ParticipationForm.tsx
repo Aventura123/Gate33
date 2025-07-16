@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useWallet } from '../WalletProvider';
+import { useAuth } from '../AuthProvider';
 import learn2earnContractService from '../../services/learn2earnContractService';
 import { collection, addDoc, query, where, getDocs, updateDoc, doc, increment, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -24,6 +25,9 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
     connectWallet,
     currentNetwork
   } = useWallet();
+  
+  const { user } = useAuth();
+  
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -47,15 +51,34 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
   const checkParticipation = async (address: string) => {
     try {
       const participantsRef = collection(db, "learn2earnParticipants");
-      const q = query(
+      
+      // Check by wallet address OR by seeker ID to prevent duplicate participation
+      const queries = [];
+      
+      // Query by wallet address
+      queries.push(query(
         participantsRef, 
         where("walletAddress", "==", address.toLowerCase()),
         where("learn2earnId", "==", learn2earnId)
-      );
-      const querySnapshot = await getDocs(q);
+      ));
       
-      if (!querySnapshot.empty) {
-        // User has already registered
+      // Query by seeker ID if user is authenticated
+      if (user?.uid) {
+        queries.push(query(
+          participantsRef, 
+          where("seekerId", "==", user.uid),
+          where("learn2earnId", "==", learn2earnId)
+        ));
+      }
+      
+      // Execute all queries
+      const queryResults = await Promise.all(queries.map(q => getDocs(q)));
+      
+      // Check if any query returned results
+      const hasParticipated = queryResults.some(querySnapshot => !querySnapshot.empty);
+      
+      if (hasParticipated) {
+        // User has already registered (either with this wallet or with this account)
         setIsRegistered(true);
         console.log("User has already registered participation");
         // Call the registration complete callback if provided
@@ -71,6 +94,12 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
   // Function to register participation
   const handleRegisterParticipation = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user?.uid) {
+      setError('You must be logged in to participate. Please log in to your account first.');
+      return;
+    }
+    
     if (!walletAddress) {
       await connectWallet();
       if (!walletAddress) {
@@ -83,8 +112,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
     setError(null);
     
     try {
-      // Register the user's participation
-      // Instead of directly writing to Firestore, use the API for better validation
+      // Register the user's participation with both wallet address and seeker ID
       const response = await fetch('/api/learn2earn', {
         method: 'POST',
         headers: {
@@ -93,6 +121,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
         body: JSON.stringify({
           learn2earnId,
           walletAddress,
+          seekerId: user.uid, // Include seeker ID for validation
           answers: [], // Simple participation, no quiz answers
         }),
       });
@@ -119,6 +148,12 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user?.uid) {
+      setError('You must be logged in to claim tokens. Please log in to your account first.');
+      return;
+    }
+    
     if (!walletAddress) {
       await connectWallet();
       if (!walletAddress) {
@@ -133,7 +168,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
     }
 
     if (!network) {
-      setError('Network information not available. Please try again later.');
+      setError(`Network information not available for this Learn2Earn opportunity. Please refresh the page and try again.`);
       return;
     }
     
@@ -155,17 +190,37 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
         // Update the participation document to mark as claimed
         try {
           const participantsRef = collection(db, "learn2earnParticipants");
-          const q = query(
-            participantsRef, 
-            where("walletAddress", "==", walletAddress.toLowerCase()),
-            where("learn2earnId", "==", learn2earnId)
-          );
-          const querySnapshot = await getDocs(q);
           
-          if (!querySnapshot.empty) {
-            // Update the first matching document (should only be one)
-            const docRef = querySnapshot.docs[0].ref;
-            await updateDoc(docRef, {
+          // Try to find the participation document by seeker ID first, then by wallet address
+          let participationDoc = null;
+          
+          if (user?.uid) {
+            const seekerQuery = query(
+              participantsRef, 
+              where("seekerId", "==", user.uid),
+              where("learn2earnId", "==", learn2earnId)
+            );
+            const seekerSnapshot = await getDocs(seekerQuery);
+            if (!seekerSnapshot.empty) {
+              participationDoc = seekerSnapshot.docs[0];
+            }
+          }
+          
+          // Fallback to wallet address if not found by seeker ID
+          if (!participationDoc) {
+            const walletQuery = query(
+              participantsRef, 
+              where("walletAddress", "==", walletAddress.toLowerCase()),
+              where("learn2earnId", "==", learn2earnId)
+            );
+            const walletSnapshot = await getDocs(walletQuery);
+            if (!walletSnapshot.empty) {
+              participationDoc = walletSnapshot.docs[0];
+            }
+          }
+          
+          if (participationDoc) {
+            await updateDoc(participationDoc.ref, {
               claimed: true,
               claimedAt: new Date(),
               transactionHash: result.transactionHash
@@ -189,17 +244,21 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
         setHasEnded(true);
       } else if (result.specificError === "timeSync") {
         // There's a time synchronization issue between the blockchain and our database
-        setHasTimeSyncIssue(true);
-      } else if (result.notEligible) {
+        setHasTimeSyncIssue(true);              } else if (result.notEligible) {
         // If the user is not eligible to claim tokens
-        setError("You are not eligible to claim tokens for this Learn2Earn opportunity. Make sure you've completed all tasks.");
+        setError(`You are not eligible to claim tokens for this Learn2Earn opportunity. Please ensure you've completed all required tasks and that your wallet is connected to the ${network} network.`);
       } else if (result.notSupported) {
         // If the network is not supported
         setNetworkMismatch(true);
-        setError(`This network (${network}) is not currently supported for Learn2Earn.`);
+        setError(`This Learn2Earn opportunity requires the ${network} network. Please switch your wallet to ${network} to participate.`);
       } else {
-        // Set generic error
-        setError(result.message || 'Failed to claim tokens');
+        // Set generic error with network verification reminder
+        const errorMessage = result.message || 'Failed to claim tokens';
+        if (errorMessage.toLowerCase().includes('reward amount') || errorMessage.toLowerCase().includes('network')) {
+          setError(`${errorMessage}\n\nPlease verify that your wallet is connected to the ${network} network, which is required for this Learn2Earn opportunity.`);
+        } else {
+          setError(errorMessage);
+        }
       }
     } catch (err: any) {
       console.error('Error claiming tokens:', err);
@@ -208,9 +267,10 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
       // Check if this is a network mismatch error
       if (errorMsg.toLowerCase().includes("network") || 
           errorMsg.toLowerCase().includes("chain") || 
-          errorMsg.toLowerCase().includes("wrong")) {
+          errorMsg.toLowerCase().includes("wrong") ||
+          errorMsg.toLowerCase().includes("reward amount")) {
         setNetworkMismatch(true);
-        setError(`Please make sure you're connected to the ${network} network.`);
+        setError(`Network mismatch detected. This Learn2Earn opportunity requires the ${network} network. Please switch your wallet to ${network} and try again.`);
       } else {
         setError(errorMsg);
       }
@@ -219,12 +279,12 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
     }
   };
 
-  // Check participation on component load if wallet is already connected
+  // Check participation on component load if wallet is connected and user is authenticated
   useEffect(() => {
-    if (walletAddress) {
+    if (walletAddress && user?.uid) {
       checkParticipation(walletAddress);
     }
-  }, [learn2earnId, walletAddress]);
+  }, [learn2earnId, walletAddress, user?.uid]);
   
   // Helper: should show switch network button?
   const shouldShowSwitchNetwork = walletAddress && network && currentNetwork && currentNetwork !== network;
@@ -240,20 +300,6 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
   
   return (
     <div>
-      {/* WalletModal for network switching (auto-open) */}
-      {showNetworkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="absolute inset-0" onClick={() => setShowNetworkModal(false)} />
-          <div className="relative z-10">
-            <WalletButton
-              showNetworkSelector={true}
-              title="Switch Network"
-              onConnect={() => setShowNetworkModal(false)}
-              className="w-full"
-            />
-          </div>
-        </div>
-      )}
       
       {success ? (
         <div className="bg-green-500/20 border border-green-500 rounded-lg p-6 text-center">
@@ -347,26 +393,21 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
         </div>
       ) : networkMismatch ? (
         <>
-          {/* Network mismatch: open WalletModal automatically, no button */}
-          {showNetworkModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-              <div className="absolute inset-0" onClick={() => setShowNetworkModal(false)} />
-              <div className="relative z-10">
-                <WalletButton
-                  showNetworkSelector={true}
-                  title="Switch Network"
-                  onConnect={() => setShowNetworkModal(false)}
-                  className="w-full"
-                />
-              </div>
-            </div>
-          )}
+          {/* Network mismatch: show message only */}
           <div className="bg-orange-500/20 border border-orange-500 rounded-lg p-6 text-center">
-            <h3 className="text-xl font-semibold text-orange-400 mb-2">Network Mismatch</h3>
+            <div className="text-orange-500 text-5xl mb-4">🔗</div>
+            <h3 className="text-xl font-semibold text-orange-400 mb-2">Wrong Network</h3>
             <p className="text-gray-300 mb-4">
-              Please make sure you're connected to the <strong className="text-orange-400">{network}</strong> network in your wallet.
+              This Learn2Earn opportunity requires the <strong className="text-orange-400">{network}</strong> network, but you're currently connected to <strong className="text-orange-400">{currentNetwork}</strong>.
             </p>
-            <p className="text-orange-400 text-sm">Select the correct network in the modal above.</p>
+            <p className="text-orange-400 text-sm mb-4">Please switch to the {network} network in your wallet to participate in this opportunity.</p>
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded p-3 text-sm text-gray-300">
+              <strong>How to switch networks:</strong><br/>
+              1. Open your wallet (MetaMask, etc.)<br/>
+              2. Look for the network selector<br/>
+              3. Select "{network}" from the list<br/>
+              4. Return here and try again
+            </div>
           </div>
         </>
       ) : (
@@ -484,7 +525,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Submitting...
+                    Check your wallet - Approve transaction
                   </>
                 ) : `Submit & Claim ${tokenSymbol} Tokens`}
               </button>
