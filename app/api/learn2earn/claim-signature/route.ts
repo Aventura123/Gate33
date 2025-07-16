@@ -228,11 +228,16 @@ async function handleExistingDocument(
     }
 
     // Usar a chave privada administradora ou uma chave temporária para desenvolvimento local
-    const privateKey = ADMIN_PRIVATE_KEY || 
+    let privateKey = ADMIN_PRIVATE_KEY || 
       (isDevelopment && !isVercel ? "0x0000000000000000000000000000000000000000000000000000000000000001" : null);
     
     if (!privateKey) {
       throw new Error("No private key available for signature generation");
+    }
+
+    // Garantir que a chave privada tenha o prefixo 0x (necessário em produção)
+    if (!privateKey.startsWith('0x')) {
+      privateKey = '0x' + privateKey;
     }
 
     // Usar a chave privada para assinar a mensagem
