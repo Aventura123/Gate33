@@ -24,6 +24,9 @@ export async function GET(request: Request) {
   try {
     // Autenticação é necessária para este endpoint em produção!
     console.log(`Environment: ${process.env.NODE_ENV}, Vercel: ${isVercel}`);
+    console.log(`ADMIN_PRIVATE_KEY exists: ${!!ADMIN_PRIVATE_KEY}`);
+    console.log(`ADMIN_PRIVATE_KEY length: ${ADMIN_PRIVATE_KEY ? ADMIN_PRIVATE_KEY.length : 0}`);
+    console.log(`ADMIN_PRIVATE_KEY starts with 0x: ${ADMIN_PRIVATE_KEY ? ADMIN_PRIVATE_KEY.startsWith('0x') : false}`);
 
     // Extrair parâmetros da URL
     const { searchParams } = new URL(request.url);
@@ -216,8 +219,11 @@ async function handleExistingDocument(
   // Se chegamos até aqui, o usuário está qualificado para receber os tokens
   // Agora vamos gerar a assinatura digital
   try {
+    console.log('Starting signature generation...');
+    
     // Verificar a disponibilidade da chave privada
     if (!ADMIN_PRIVATE_KEY) {
+      console.error('ADMIN_PRIVATE_KEY is not available');
       if (!isDevelopment || isVercel) {
         throw new Error("Admin private key not configured in environment variables");
       }
@@ -231,28 +237,44 @@ async function handleExistingDocument(
     let privateKey = ADMIN_PRIVATE_KEY || 
       (isDevelopment && !isVercel ? "0x0000000000000000000000000000000000000000000000000000000000000001" : null);
     
+    console.log(`Private key available: ${!!privateKey}`);
+    console.log(`Private key length: ${privateKey ? privateKey.length : 0}`);
+    console.log(`Private key starts with 0x: ${privateKey ? privateKey.startsWith('0x') : false}`);
+    
     if (!privateKey) {
       throw new Error("No private key available for signature generation");
     }
 
     // Garantir que a chave privada tenha o prefixo 0x (necessário em produção)
     if (!privateKey.startsWith('0x')) {
+      console.log('Adding 0x prefix to private key');
       privateKey = '0x' + privateKey;
     }
 
+    console.log(`Final private key length: ${privateKey.length}`);
+    console.log(`Final private key starts with 0x: ${privateKey.startsWith('0x')}`);
+
     // Usar a chave privada para assinar a mensagem
+    console.log('Creating wallet...');
     const wallet = new ethers.Wallet(privateKey);
+    console.log(`Wallet address: ${wallet.address}`);
     
     // Criando a mensagem para assinar (deve corresponder à verificação feita no contrato)
     // No contrato: keccak256(abi.encodePacked(_user, _learn2earnId, _amount))
+    console.log(`Creating message hash with: userAddress=${userAddress}, contractId=${contractId}, amount=${amount}`);
+    
     const messageHash = ethers.utils.solidityKeccak256(
       ['address', 'uint256', 'uint256'],
       [userAddress, contractId, ethers.BigNumber.from(amount)]
     );
     
+    console.log(`Message hash created: ${messageHash}`);
+    
     // Assinar o hash diretamente (o contrato já vai adicionar o prefixo Ethereum)
+    console.log('Signing message...');
     const signature = await wallet.signMessage(ethers.utils.arrayify(messageHash));
     
+    console.log(`Signature generated successfully: ${signature}`);
     console.log(`Generated signature for user ${userAddress}, contractId ${contractId}, amount ${amount}`);
     
     // Indicar se estamos em modo de desenvolvimento local
