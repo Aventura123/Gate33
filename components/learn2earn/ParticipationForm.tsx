@@ -94,7 +94,7 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
         body: JSON.stringify({
           learn2earnId,
           walletAddress,
-          completedTasks: true,
+          answers: [], // Simple participation, no quiz answers
         }),
       });
       
@@ -110,13 +110,6 @@ const ParticipationForm: React.FC<ParticipationFormProps> = ({
       // Call the registration complete callback if provided
       if (onRegistrationComplete) onRegistrationComplete();
       
-      // Sync the blockchain data with Firestore to ensure accurate participant count
-      try {
-        await learn2earnContractService.syncLearn2EarnStatus(learn2earnId);
-      } catch (syncErr) {
-        // Don't block the user from continuing if sync fails
-        console.warn("Failed to sync Learn2Earn status after registration:", syncErr);
-      }
     } catch (err: any) {
       console.error('Error registering participation:', err);
       setError(err.message || 'Failed to register participation');

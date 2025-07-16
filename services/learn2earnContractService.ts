@@ -1148,14 +1148,6 @@ class Learn2EarnContractService {
         console.error("Error updating participation status:", updateErr);
       }
       
-      // Update the Learn2Earn document to ensure participant count is in sync
-      try {
-        await this.syncLearn2EarnStatus(firebaseId);
-      } catch (syncErr) {
-        console.warn("Error syncing Learn2Earn status after claiming:", syncErr);
-        // Don't block success for this error
-      }
-      
       return {
         success: true,
         transactionHash: receipt.transactionHash,
