@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import Layout from '../../components/Layout';
 import '../../components/index-page.css';
 import '../../components/global.css';
@@ -12,6 +13,7 @@ interface Partner {
   id: string;
   logo: string;
   name: string;
+  slug?: string;
   description: string;
   type: string;
   website?: string;
@@ -29,14 +31,16 @@ export default function PartnersPage() {
           const data = doc.data();
           return {
             id: doc.id,
-            logo: data.logoUrl || '',
+            logo: data.logoUrl || data.logo || '',
             name: data.name || '',
+            slug: data.slug || '',
             description: data.description || '',
             type: data.type || '',
             website: data.website || ''
           };
         });
         setPartners(partnersData);
+        console.log('Partners loaded:', partnersData); // Debug: verificar dados
       } catch (error) {
         console.error('Error fetching partners:', error);
       }
@@ -53,6 +57,19 @@ export default function PartnersPage() {
           <div className="relative z-10 text-center max-w-2xl mx-auto">
             <h1 className="text-gate33-orange text-h1-desktop md:text-h1-desktop mb-6">Featured Partners</h1>
             <p className="text-body-lg text-white/80 mb-8">Discover the main events and partners driving the crypto ecosystem. Explore opportunities, networking, and innovation in Web3.</p>
+            
+            {/* Quick Navigation */}
+            <div className="flex flex-wrap justify-center gap-4 mb-0">
+              <Link href="/partners/events" className="gate33-btn-orange">
+                View Events
+              </Link>
+              <button
+                onClick={() => setShowContactModal(true)}
+                className="gate33-btn-orange"
+              >
+                Become a Partner
+              </button>
+            </div>
           </div>
         </section>
 
@@ -64,27 +81,31 @@ export default function PartnersPage() {
             {partners.map(partner => (
               <div key={partner.id} className="card-orange-glow p-6 flex flex-col items-center">
                 {partner.logo && (
-                  <img src={partner.logo} alt={partner.name} className="w-20 h-20 mb-4 rounded-full bg-white/10" />
+                  <img src={partner.logo} alt={partner.name} className="w-20 h-20 mb-4 rounded-full bg-white/10 object-cover" />
                 )}
                 <h3 className="gate33-h3 mb-2">{partner.name}</h3>
                 <p className="gate33-body-sm mb-4 text-center text-white/80">{partner.description}</p>
-                <a href={partner.type === 'event' ? `/partners/events/${partner.name}` : partner.website} className="gate33-btn-orange font-bold mt-2">View details</a>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {partner.type.toLowerCase() === 'event' ? (
+                    <Link 
+                      href={`/partners/events/${partner.slug || partner.name.toLowerCase().replace(/\s+/g, '-')}`}
+                      className="gate33-btn-orange font-bold text-sm"
+                    >
+                      Visit Partner
+                    </Link>
+                  ) : (
+                    <a 
+                      href={partner.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="gate33-btn-orange font-bold text-sm"
+                    >
+                      Visit Partner
+                    </a>
+                  )}
+                </div>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* Call to Action */}
-        <section className="py-16 text-center bg-transparent">
-          <h3 className="text-h2-desktop text-gate33-orange mb-4">Want to become a partner?</h3>
-          <p className="text-body-base text-white/80 mb-6">Contact us to integrate your project or company with the Gate33 ecosystem.</p>
-          <div className="flex justify-center mt-8">
-            <button
-              onClick={() => setShowContactModal(true)}
-              className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition"
-            >
-              Contact Us
-            </button>
           </div>
         </section>
 
