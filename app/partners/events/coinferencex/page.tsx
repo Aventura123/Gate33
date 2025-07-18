@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import Layout from '../../../../components/Layout';
+import FullScreenLayout from '../../../../components/FullScreenLayout';
 import '../../../../components/index-page.css';
 import '../../../../components/global.css';
 import { doc, getDoc } from 'firebase/firestore';
@@ -50,7 +50,7 @@ export default function CoinferenceXPage() {
   }, []);
 
   return (
-    <Layout>
+    <FullScreenLayout>
       <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 relative overflow-hidden">
         
         {/* Enhanced Background with Professional Dark Gradient */}
@@ -604,6 +604,6 @@ export default function CoinferenceXPage() {
         
         </div> {/* End of relative z-10 content container */}
       </div>
-    </Layout>
+    </FullScreenLayout>
   );
 }
