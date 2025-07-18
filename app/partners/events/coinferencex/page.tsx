@@ -197,55 +197,55 @@ export default function CoinferenceXPage() {
               }} />
             </div>
             
-            <div className="relative z-10 text-left max-w-2xl px-4 animate-fadeInUp pt-8 md:pt-16 ml-12 md:ml-20 lg:ml-32">
+            <div className="relative z-10 text-left max-w-2xl px-4 animate-fadeInUp pt-8 md:pt-16 ml-4 md:ml-12 lg:ml-20 xl:ml-32">
               {/* Logo with Enhanced Animation */}
-              <div className="flex items-center justify-center mb-8 animate-delay-100">
+              <div className="flex items-center justify-center mb-6 md:mb-8 animate-delay-100">
                 <div className="relative group">
                   <div className="absolute inset-0 bg-yellow-400/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <img 
                     src="https://coinferencex.com/_next/image?url=%2Fassets%2FLogo_nofont_!.png&w=256&q=75"
                     alt="CoinferenceX Logo"
-                    className="w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 object-contain relative z-10 transform group-hover:scale-110 transition-transform duration-300"
+                    className="w-20 h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 xl:w-36 xl:h-36 object-contain relative z-10 transform group-hover:scale-110 transition-transform duration-300"
                   />
                 </div>
               </div>
               
               {/* Main Title with Text Shadow */}
-              <h1 className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white mb-4 tracking-tight animate-delay-200 text-center"
+              <h1 className="text-3xl md:text-4xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-bold text-white mb-4 tracking-tight animate-delay-200 text-center"
                   style={{
                     textShadow: '0 0 30px rgba(255,165,0,0.3), 0 0 60px rgba(255,165,0,0.1)'
                   }}>
                 CoinFerenceX
               </h1>
-              <p className="text-lg md:text-xl lg:text-2xl text-yellow-300 mb-6 font-medium animate-delay-300 text-center">
+              <p className="text-base md:text-lg lg:text-xl xl:text-2xl text-yellow-300 mb-4 md:mb-6 font-medium animate-delay-300 text-center">
                 The World's First <span className="text-yellow-400 font-bold">Decentralized Summit</span>
               </p>
               
               {/* Date and Location with Better Styling */}
-              <div className="mb-8 animate-delay-400 text-center">
-                <h2 className="text-base md:text-lg lg:text-xl text-yellow-200 font-bold mb-2">
+              <div className="mb-6 md:mb-8 animate-delay-400 text-center">
+                <h2 className="text-sm md:text-base lg:text-lg xl:text-xl text-yellow-200 font-bold mb-2">
                   September 29-30, 2025 | Singapore
                 </h2>
-                <p className="text-sm md:text-base lg:text-lg text-gray-300 max-w-2xl leading-relaxed">
+                <p className="text-xs md:text-sm lg:text-base xl:text-lg text-gray-300 max-w-2xl leading-relaxed px-2">
                   Singapore will bring together 25,000+ decision-makers to connect, exchange ideas, 
                   network, and shape the industry on September 29-30, 2025
                 </p>
               </div>
               
-              {/* Enhanced CTA Buttons */}
-              <div className="flex flex-wrap justify-center gap-4 mb-2 animate-delay-500">
+              {/* Enhanced CTA Buttons - Mobile Optimized */}
+              <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 mb-2 animate-delay-500 px-2">
                 {!loading && dynamicData?.affiliateLink ? (
                   <>
                     <a 
                       href={dynamicData.affiliateLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 overflow-hidden animate-glow"
+                      className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-4 py-2 sm:px-6 sm:py-3 md:px-10 md:py-4 rounded-full font-bold text-sm sm:text-base md:text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 overflow-hidden animate-glow w-full sm:w-auto text-center"
                     >
                       <span className="relative z-10">
                         Buy Tickets with Discount
                         {dynamicData.discountCode && (
-                          <span className="ml-2 text-sm bg-black/20 px-3 py-1 rounded-full">
+                          <span className="ml-1 sm:ml-2 text-xs sm:text-sm bg-black/20 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">
                             {dynamicData.discountCode}
                           </span>
                         )}
@@ -256,7 +256,7 @@ export default function CoinferenceXPage() {
                       href="https://coinferencex.com/sponsors"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="relative group bg-gradient-to-r from-gray-700 to-gray-800 text-white border-2 border-yellow-300 px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:bg-gradient-to-r hover:from-yellow-300 hover:to-yellow-400 hover:text-black overflow-hidden"
+                      className="relative group bg-gradient-to-r from-gray-700 to-gray-800 text-white border-2 border-yellow-300 px-4 py-2 sm:px-6 sm:py-3 md:px-10 md:py-4 rounded-full font-bold text-sm sm:text-base md:text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:bg-gradient-to-r hover:from-yellow-300 hover:to-yellow-400 hover:text-black overflow-hidden w-full sm:w-auto text-center"
                     >
                       <span className="relative z-10">Become a Sponsor</span>
                       <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
@@ -265,14 +265,14 @@ export default function CoinferenceXPage() {
                 ) : (
                   <>
                     <button 
-                      className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 cursor-pointer overflow-hidden"
+                      className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-4 py-2 sm:px-6 sm:py-3 md:px-10 md:py-4 rounded-full font-bold text-sm sm:text-base md:text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 cursor-pointer overflow-hidden w-full sm:w-auto text-center"
                     >
                       <span className="relative z-10 group-hover:opacity-0 transition-opacity duration-300">Buy Tickets with Discount</span>
                       <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">Coming Soon</span>
                       <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                     </button>
                     <button 
-                      className="relative group bg-gradient-to-r from-gray-700 to-gray-800 text-white border-2 border-yellow-300 px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:bg-gradient-to-r hover:from-yellow-300 hover:to-yellow-400 hover:text-black cursor-pointer overflow-hidden"
+                      className="relative group bg-gradient-to-r from-gray-700 to-gray-800 text-white border-2 border-yellow-300 px-4 py-2 sm:px-6 sm:py-3 md:px-10 md:py-4 rounded-full font-bold text-sm sm:text-base md:text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:bg-gradient-to-r hover:from-yellow-300 hover:to-yellow-400 hover:text-black cursor-pointer overflow-hidden w-full sm:w-auto text-center"
                     >
                       <span className="relative z-10 group-hover:opacity-0 transition-opacity duration-300">Become a Sponsor</span>
                       <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">Coming Soon</span>
@@ -284,7 +284,7 @@ export default function CoinferenceXPage() {
               
               {/* Price Range */}
               {!loading && dynamicData?.priceRange && (
-                <p className="text-yellow-300 text-lg animate-delay-600 text-center">
+                <p className="text-yellow-300 text-base md:text-lg animate-delay-600 text-center">
                   Tickets from {dynamicData.priceRange}
                 </p>
               )}
@@ -294,10 +294,10 @@ export default function CoinferenceXPage() {
           {/* Stats Section - Enhanced with Dark Background and Animations */}
           <section className="py-16 px-4 relative z-20 bg-gradient-to-r from-gray-900/80 via-gray-800/80 to-gray-900/80 backdrop-blur-sm border-y border-gray-700/20">
             <div className="max-w-7xl mx-auto animate-fadeInUp">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 text-center">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 text-center">
                 Get your project invested. See how with
               </h2>
-              <h3 className="text-3xl md:text-4xl font-bold text-yellow-300 mb-16 text-center">
+              <h3 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-yellow-300 mb-8 md:mb-16 text-center">
                 CoinferenceX Singapore
               </h3>
               
@@ -312,7 +312,7 @@ export default function CoinferenceXPage() {
                 ].map((stat, index) => (                <div key={index} className={`text-center group hover:scale-105 transition-all duration-300 animate-fadeInUp animate-delay-${(index + 1) * 100} p-4 rounded-lg hover:bg-gray-800/30`}>
                   <div className="relative">
                     <div className="absolute inset-0 bg-yellow-300/12 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="text-4xl md:text-5xl font-bold text-yellow-300 mb-2 relative z-10 group-hover:text-yellow-200 transition-colors drop-shadow-lg">
+                    <div className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-yellow-300 mb-2 relative z-10 group-hover:text-yellow-200 transition-colors drop-shadow-lg">
                       {stat.number}
                     </div>
                   </div>
@@ -324,7 +324,7 @@ export default function CoinferenceXPage() {
               </div>
               
               <div className="text-center mt-12 animate-fadeInUp animate-delay-700">
-                <p className="text-lg text-gray-500 font-medium">Global Web3 Collective</p>
+                <p className="text-base md:text-lg text-gray-500 font-medium">Global Web3 Collective</p>
               </div>
             </div>
           </section>
@@ -334,10 +334,10 @@ export default function CoinferenceXPage() {
           <div className="max-w-7xl mx-auto">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div className="space-y-6 animate-slideInLeft">
-                <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
+                <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 md:mb-8">
                   Singapore is where blockchain dreams become reality — and the world's leading Web3 projects already believe in the vision.
                 </h2>
-                <p className="text-gray-400 text-lg leading-relaxed">
+                <p className="text-gray-400 text-base md:text-lg leading-relaxed">
                   These were the builders, backers, and believers of our Dubai edition.
                 </p>
                 <div className="pt-6">
@@ -346,7 +346,7 @@ export default function CoinferenceXPage() {
                       href={dynamicData.affiliateLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 inline-block overflow-hidden"
+                      className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full font-bold text-sm sm:text-base md:text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 inline-block overflow-hidden"
                     >
                       <span className="relative z-10">Buy Tickets with Discount</span>
                       <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
@@ -374,14 +374,14 @@ export default function CoinferenceXPage() {
           </div>
         </section>
 
-        {/* Topics Section - Enhanced with Better Cards */}
-        <section className="py-20 px-4 relative z-20">
+        {/* Topics Section - Enhanced with Better Cards - Mobile Optimized */}
+        <section className="py-12 md:py-20 px-4 relative z-20">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-16 text-center animate-fadeInUp">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-6 md:mb-16 text-center animate-fadeInUp">
               What Topics <span className="text-yellow-300">Will Be Discussed?</span>
             </h2>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
               {[
                 { name: 'Sustainable Blockchain', icon: '🌱' },
                 { name: 'Infrastructure', icon: '🏗️' },
@@ -396,11 +396,11 @@ export default function CoinferenceXPage() {
                 { name: 'Memecoins', icon: '🐸' },
                 { name: 'DeFi 2.0', icon: '💰' }
               ].map((topic, index) => (
-                <div key={topic.name} className={`text-center p-6 bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl backdrop-blur-sm border border-gray-600/40 hover:border-yellow-300/50 transition-all duration-300 group hover:scale-105 hover:shadow-2xl hover:shadow-yellow-300/20 animate-fadeInUp animate-delay-${(index + 1) * 100} hover:bg-gradient-to-br hover:from-gray-700/90 hover:to-gray-800/90`}>
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-yellow-300/20 to-yellow-400/20 rounded-full flex items-center justify-center group-hover:from-yellow-300/30 group-hover:to-yellow-400/30 transition-all duration-300 group-hover:scale-110 shadow-lg">
-                    <span className="text-2xl group-hover:scale-110 transition-transform duration-300 filter drop-shadow-sm">{topic.icon}</span>
+                <div key={topic.name} className={`text-center p-3 md:p-6 bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-lg md:rounded-xl backdrop-blur-sm border border-gray-600/40 hover:border-yellow-300/50 transition-all duration-300 group hover:scale-105 hover:shadow-2xl hover:shadow-yellow-300/20 animate-fadeInUp animate-delay-${(index + 1) * 100} hover:bg-gradient-to-br hover:from-gray-700/90 hover:to-gray-800/90`}>
+                  <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-4 bg-gradient-to-br from-yellow-300/20 to-yellow-400/20 rounded-full flex items-center justify-center group-hover:from-yellow-300/30 group-hover:to-yellow-400/30 transition-all duration-300 group-hover:scale-110 shadow-lg">
+                    <span className="text-lg md:text-2xl group-hover:scale-110 transition-transform duration-300 filter drop-shadow-sm">{topic.icon}</span>
                   </div>
-                  <p className="text-gray-300 font-medium text-sm group-hover:text-white transition-colors duration-300">{topic.name}</p>
+                  <p className="text-gray-300 font-medium text-xs md:text-sm group-hover:text-white transition-colors duration-300">{topic.name}</p>
                 </div>
               ))}
             </div>
@@ -408,16 +408,16 @@ export default function CoinferenceXPage() {
         </section>
 
         {/* Past Speakers Section - Enhanced with Hover Effects */}
-        <section className="py-20 px-4 relative z-20">
+        <section className="py-16 md:py-20 px-4 relative z-20">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 text-center animate-fadeInUp">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 md:mb-6 text-center animate-fadeInUp">
               Past Speakers
             </h2>
-            <p className="text-xl text-gray-400 mb-16 text-center animate-fadeInUp animate-delay-200">
+            <p className="text-base md:text-lg xl:text-xl text-gray-400 mb-8 md:mb-12 lg:mb-16 text-center animate-fadeInUp animate-delay-200">
               The Leading Voices On Crypto's Biggest Stage.
             </p>
             
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-6 mb-12">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4 md:gap-6 mb-8 md:mb-12">
               {[
                 'vivien.png', 'kevinlee.png', 'sergey.png', 'yusuf.png', 'clara.png', 'dimitriy.png', 'kennymanta.png',
                 'alexmomot.png', 'dyma.png', 'arbane.png', 'sasha.png', 'joshua.png', 'parker.png', 'vivien.png'
@@ -437,7 +437,7 @@ export default function CoinferenceXPage() {
             </div>
             
             <div className="text-center animate-fadeInUp animate-delay-700">
-              <p className="text-gray-400 text-lg mb-6">
+              <p className="text-gray-400 text-base md:text-lg mb-4 md:mb-6 px-4">
                 Join industry leaders, investors, and innovators at the most anticipated Web3 event of 2025.
               </p>
             </div>
@@ -447,13 +447,13 @@ export default function CoinferenceXPage() {
         {/* What People Say Section - Horizontal Carousel */}
         <section className="py-20 relative z-20">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center mb-16">
+            <div className="text-center mb-8 md:mb-16">
               <img 
                 src="https://coinferencex.com/_next/image?url=%2Fassets%2FHashtag_CoinFerenceX.png&w=384&q=75"
                 alt="CoinferenceX Hashtag"
-                className="w-64 h-auto mx-auto mb-8 animate-fadeInUp"
+                className="w-48 md:w-64 h-auto mx-auto mb-4 md:mb-8 animate-fadeInUp"
               />
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-8 animate-fadeInUp animate-delay-200">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 md:mb-8 animate-fadeInUp animate-delay-200">
                 What People Say About CoinferenceX?
               </h2>
             </div>
@@ -495,7 +495,7 @@ export default function CoinferenceXPage() {
             </div>
           </div>
           
-          {/* Enhanced CTA Buttons */}
+          {/* Enhanced CTA Buttons - Mobile Optimized */}
           <div className="text-center animate-fadeInUp animate-delay-500 px-4">
             <div className="flex flex-wrap justify-center gap-4">
               {!loading && dynamicData?.affiliateLink && (
@@ -503,7 +503,7 @@ export default function CoinferenceXPage() {
                   href={dynamicData.affiliateLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-8 py-3 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 overflow-hidden"
+                  className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-3 rounded-full font-bold text-sm sm:text-base md:text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 overflow-hidden"
                 >
                   <span className="relative z-10">Buy Tickets with Discount</span>
                   <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
@@ -519,11 +519,11 @@ export default function CoinferenceXPage() {
             <div className="max-w-4xl mx-auto text-center animate-fadeInUp">
               <div className="relative">
                 <div className="absolute inset-0 bg-green-400/10 blur-2xl rounded-full"></div>
-                <h2 className="text-3xl font-bold text-green-400 mb-4 relative z-10">
+                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-green-400 mb-4 relative z-10">
                   🎟️ Special Gate33 Offer
                 </h2>
               </div>
-              <p className="text-gray-200 text-lg mb-6 animate-fadeInUp animate-delay-200">
+              <p className="text-gray-200 text-base md:text-lg mb-6 animate-fadeInUp animate-delay-200">
                 {dynamicData.specialOffer}
               </p>
               {dynamicData.affiliateLink && (
@@ -531,7 +531,7 @@ export default function CoinferenceXPage() {
                   href={dynamicData.affiliateLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="relative group inline-block bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-green-600 hover:to-green-700 overflow-hidden animate-fadeInUp animate-delay-400"
+                  className="relative group inline-block bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full font-bold text-sm sm:text-base md:text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-green-600 hover:to-green-700 overflow-hidden animate-fadeInUp animate-delay-400"
                 >
                   <span className="relative z-10">Claim Your Discount</span>
                   <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
@@ -544,25 +544,25 @@ export default function CoinferenceXPage() {
         {/* Enhanced Final CTA Section */}
         <section className="py-20 px-4 text-center relative z-20 bg-gradient-to-r from-gray-800/60 via-gray-900/60 to-gray-800/60 backdrop-blur-sm border-t border-gray-700/30">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 animate-fadeInUp">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 md:mb-6 animate-fadeInUp">
               Ready to Experience the Future?
             </h2>
-            <p className="text-gray-300 text-xl mb-8 animate-fadeInUp animate-delay-200">
+            <p className="text-gray-300 text-base md:text-lg xl:text-xl mb-6 md:mb-8 animate-fadeInUp animate-delay-200">
               Join the conference that's actually built by the Web3 community, for the Web3 community.
             </p>
             
-            <div className="flex flex-wrap justify-center gap-6 animate-fadeInUp animate-delay-400">
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6 animate-fadeInUp animate-delay-400">
               {!loading && dynamicData?.affiliateLink ? (
                 <a 
                   href={dynamicData.affiliateLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 overflow-hidden"
+                  className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-4 py-2 sm:px-6 sm:py-3 md:px-10 md:py-4 rounded-full font-bold text-sm sm:text-base md:text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 overflow-hidden"
                 >
                   <span className="relative z-10">
                     Get Your Tickets with Discount
                     {dynamicData.discountCode && (
-                      <span className="ml-2 text-sm bg-black/20 px-3 py-1 rounded-full">
+                      <span className="ml-1 sm:ml-2 text-xs sm:text-sm bg-black/20 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">
                         {dynamicData.discountCode}
                       </span>
                     )}
@@ -571,7 +571,7 @@ export default function CoinferenceXPage() {
                 </a>
               ) : (
                 <button 
-                  className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 cursor-pointer overflow-hidden"
+                  className="relative group bg-gradient-to-r from-yellow-300 to-yellow-400 text-black px-4 py-2 sm:px-6 sm:py-3 md:px-10 md:py-4 rounded-full font-bold text-sm sm:text-base md:text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 cursor-pointer overflow-hidden"
                 >
                   <span className="relative z-10 group-hover:opacity-0 transition-opacity duration-300">Get Your Tickets with Discount</span>
                   <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">Coming Soon</span>
